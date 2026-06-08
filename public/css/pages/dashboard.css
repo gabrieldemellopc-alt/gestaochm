@@ -3378,3 +3378,559 @@
 .operation-modal-footer .chm-page-button:disabled:hover {
     transform: none;
 }
+
+/* Dashboard corporate visual standard */
+
+.dashboard-page {
+    --dashboard-surface: #202a40;
+    --dashboard-surface-soft: #253149;
+    --dashboard-surface-muted: #1b2437;
+    --dashboard-border: rgba(203, 213, 225, .14);
+    --dashboard-border-strong: rgba(203, 213, 225, .22);
+    --dashboard-text: #f1f5f9;
+    --dashboard-muted: #a8b1c1;
+    --dashboard-subtle: #7f8a9d;
+    --dashboard-accent: #e0525b;
+    --dashboard-positive: #73b58a;
+    --dashboard-warning: #d2b77a;
+
+    width: 100%;
+    max-width: 1680px;
+    margin: 0 auto;
+    color: var(--dashboard-text);
+}
+
+.dashboard-page .kpi-grid {
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.dashboard-page .kpi-card.compact,
+.dashboard-page .kpi-actions-card {
+    min-height: 88px;
+    padding: 14px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 8px;
+    background: var(--dashboard-surface);
+    box-shadow: none;
+}
+
+.dashboard-page .kpi-card.clickable {
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.dashboard-page .kpi-card.clickable:hover {
+    border-color: var(--dashboard-border-strong);
+    background: var(--dashboard-surface-soft);
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .kpi-card.clickable.active {
+    border-color: rgba(224, 82, 91, .5);
+    background: var(--dashboard-surface-soft);
+    box-shadow: inset 3px 0 0 var(--dashboard-accent);
+}
+
+.dashboard-page .kpi-card.compact .kpi-icon {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--dashboard-border-strong);
+    border-radius: 6px;
+    color: #b9c4d5;
+    background: var(--dashboard-surface-muted);
+}
+
+.dashboard-page .kpi-card.compact .kpi-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.dashboard-page .kpi-card.compact.warning .kpi-icon,
+.dashboard-page .kpi-card.compact.maintenance .kpi-icon {
+    color: var(--dashboard-warning);
+    border-color: rgba(210, 183, 122, .28);
+    background: rgba(210, 183, 122, .06);
+}
+
+.dashboard-page .kpi-card.compact.danger .kpi-icon {
+    color: #ef8a91;
+    border-color: rgba(224, 82, 91, .32);
+    background: rgba(224, 82, 91, .07);
+}
+
+.dashboard-page .kpi-content small,
+.dashboard-page .kpi-action-btn small {
+    color: var(--dashboard-muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.dashboard-page .kpi-content strong {
+    color: var(--dashboard-text);
+    font-size: 23px;
+    font-weight: 750;
+    line-height: 1.1;
+}
+
+.dashboard-page .kpi-action-btn {
+    min-height: 36px;
+    border: 1px solid var(--dashboard-border-strong);
+    border-radius: 6px;
+    color: #d7deea;
+    background: transparent;
+    box-shadow: none;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.dashboard-page .kpi-action-btn.primary {
+    color: #fff;
+    border-color: #495a78;
+    background: #33425e;
+}
+
+.dashboard-page .kpi-action-btn:hover,
+.dashboard-page .kpi-action-btn.primary:hover {
+    color: #fff;
+    border-color: #60708b;
+    background: #3b4b68;
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .kpi-action-btn.disabled {
+    border-color: var(--dashboard-border);
+    background: var(--dashboard-surface-muted);
+    opacity: .55;
+}
+
+.dashboard-page .dashboard-filter-bar {
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 8px;
+    background: var(--dashboard-surface);
+    box-shadow: none;
+}
+
+.dashboard-page .dashboard-search-box label {
+    color: var(--dashboard-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.dashboard-page .dashboard-search-input {
+    min-height: 36px;
+    border: 1px solid var(--dashboard-border-strong);
+    border-radius: 6px;
+    background: var(--dashboard-surface-muted);
+    box-shadow: none;
+}
+
+.dashboard-page .dashboard-search-input svg {
+    color: var(--dashboard-subtle);
+}
+
+.dashboard-page .dashboard-search-input input {
+    color: var(--dashboard-text);
+}
+
+.dashboard-page .dashboard-search-input input::placeholder {
+    color: var(--dashboard-subtle);
+}
+
+.dashboard-page .dashboard-filter-pills {
+    gap: 6px;
+}
+
+.dashboard-page .dashboard-filter-pills button {
+    min-height: 34px;
+    padding: 0 11px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 5px;
+    color: var(--dashboard-muted);
+    background: transparent;
+    box-shadow: none;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.dashboard-page .dashboard-filter-pills button:hover {
+    color: var(--dashboard-text);
+    border-color: var(--dashboard-border-strong);
+    background: var(--dashboard-surface-soft);
+}
+
+.dashboard-page .dashboard-filter-pills button.active {
+    color: #fff;
+    border-color: #586985;
+    background: #33425e;
+    box-shadow: none;
+}
+
+.dashboard-page .dashboard-grid {
+    gap: 14px;
+}
+
+.dashboard-page .vehicles-grid {
+    gap: 10px;
+}
+
+.dashboard-page .vehicle-card {
+    overflow: hidden;
+    padding: 14px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 8px;
+    background: var(--dashboard-surface);
+    box-shadow: none;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.dashboard-page .vehicle-card:hover {
+    border-color: var(--dashboard-border-strong);
+    background: var(--dashboard-surface-soft);
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .vehicle-card.is-in-operation {
+    border-color: rgba(115, 181, 138, .36);
+    box-shadow: inset 3px 0 0 var(--dashboard-positive);
+}
+
+.dashboard-page .vehicle-header {
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.dashboard-page .vehicle-type-icon {
+    border: 1px solid var(--dashboard-border);
+    border-radius: 6px;
+    color: #b9c4d5;
+    background: var(--dashboard-surface-muted);
+}
+
+.dashboard-page .vehicle-main-info .vehicle-plate,
+.dashboard-page .vehicle-info span {
+    color: var(--dashboard-muted);
+}
+
+.dashboard-page .vehicle-main-info h3,
+.dashboard-page .vehicle-info strong {
+    color: var(--dashboard-text);
+}
+
+.dashboard-page .vehicle-operation-pill {
+    padding: 4px 7px;
+    border: 1px solid var(--dashboard-border-strong);
+    border-radius: 4px;
+    color: #c2cbd9;
+    background: var(--dashboard-surface-muted);
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.dashboard-page .vehicle-operation-pill.operational,
+.dashboard-page .vehicle-operation-pill.in-operation {
+    color: #9bcbaa;
+    border-color: rgba(115, 181, 138, .3);
+    background: rgba(115, 181, 138, .07);
+}
+
+.dashboard-page .vehicle-operation-pill.maintenance {
+    color: var(--dashboard-warning);
+    border-color: rgba(210, 183, 122, .28);
+    background: rgba(210, 183, 122, .06);
+}
+
+.dashboard-page .vehicle-operation-pill.inactive {
+    color: #ef9ba1;
+    border-color: rgba(224, 82, 91, .28);
+    background: rgba(224, 82, 91, .07);
+}
+
+.dashboard-page .vehicle-info {
+    gap: 8px;
+    padding: 10px 0;
+    border-top: 1px solid var(--dashboard-border);
+    border-bottom: 1px solid var(--dashboard-border);
+}
+
+.dashboard-page .vehicle-info > div {
+    border-color: var(--dashboard-border);
+}
+
+.dashboard-page .vehicle-card-bottom-action {
+    margin-top: 10px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 6px;
+    color: var(--dashboard-muted);
+    background: var(--dashboard-surface-muted);
+    box-shadow: none;
+}
+
+.dashboard-page .vehicle-card-bottom-action.has-alert.danger {
+    color: #ef9ba1;
+    border-color: rgba(224, 82, 91, .28);
+    background: rgba(224, 82, 91, .07);
+}
+
+.dashboard-page .vehicle-card-bottom-action.has-alert.warning,
+.dashboard-page .vehicle-card-bottom-action.has-alert.maintenance {
+    color: var(--dashboard-warning);
+    border-color: rgba(210, 183, 122, .28);
+    background: rgba(210, 183, 122, .06);
+}
+
+.dashboard-page .vehicle-card:hover .vehicle-card-bottom-action.is-clean {
+    color: var(--dashboard-text);
+    border-color: var(--dashboard-border-strong);
+    background: var(--dashboard-surface-soft);
+}
+
+.dashboard-page .vehicle-operation-actions {
+    gap: 6px;
+}
+
+.dashboard-page .vehicle-operation-action-btn {
+    min-height: 32px;
+    border-radius: 5px;
+    box-shadow: none;
+}
+
+.dashboard-page .vehicle-operation-action-btn:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .dashboard-side-column {
+    gap: 12px;
+}
+
+.dashboard-page .operation-panel,
+.dashboard-page .operation-panel.compact {
+    padding: 16px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 9px;
+    background: var(--dashboard-surface);
+    box-shadow: none;
+}
+
+.dashboard-page .operation-panel-header {
+    margin-bottom: 12px;
+    padding-bottom: 11px;
+    border-bottom: 1px solid var(--dashboard-border);
+}
+
+.dashboard-page .operation-panel-header small {
+    color: var(--dashboard-subtle);
+    font-size: 9px;
+    letter-spacing: .08em;
+}
+
+.dashboard-page .operation-panel-header h2 {
+    color: var(--dashboard-text);
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.dashboard-page .operation-panel-icon {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(224, 82, 91, .3);
+    border-radius: 6px;
+    color: #ef8a91;
+    background: rgba(224, 82, 91, .07);
+    box-shadow: none;
+}
+
+.dashboard-page .operation-task-list {
+    gap: 0;
+}
+
+.dashboard-page .operation-task,
+.dashboard-page .operation-panel.compact .operation-task {
+    min-height: auto;
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid var(--dashboard-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.dashboard-page .operation-task:last-child {
+    border-bottom: 0;
+}
+
+.dashboard-page .operation-task:hover,
+.dashboard-page .operation-task.static:hover {
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .operation-task .task-icon,
+.dashboard-page .operation-panel.compact .operation-task .task-icon {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 5px;
+    color: #b9c4d5;
+    background: var(--dashboard-surface-muted);
+}
+
+.dashboard-page .operation-task.danger .task-icon {
+    color: #ef8a91;
+    border-color: rgba(224, 82, 91, .28);
+    background: rgba(224, 82, 91, .07);
+}
+
+.dashboard-page .operation-task.warning .task-icon,
+.dashboard-page .operation-task.stock-warning .task-icon {
+    color: var(--dashboard-warning);
+    border-color: rgba(210, 183, 122, .28);
+    background: rgba(210, 183, 122, .06);
+}
+
+.dashboard-page .operation-task.success .task-icon {
+    color: #9bcbaa;
+    border-color: rgba(115, 181, 138, .3);
+    background: rgba(115, 181, 138, .07);
+}
+
+.dashboard-page .operation-task .task-content strong {
+    color: var(--dashboard-text);
+    font-size: 11px;
+}
+
+.dashboard-page .operation-task .task-content p {
+    color: var(--dashboard-muted);
+    font-size: 10px;
+}
+
+.dashboard-page .modal-overlay,
+.dashboard-page .operation-modal-backdrop {
+    background: rgba(7, 12, 24, .76);
+    backdrop-filter: none;
+}
+
+.dashboard-page .vehicle-center-modal,
+.dashboard-page .operation-modal-card,
+.dashboard-page .checklist-modal {
+    border: 1px solid var(--dashboard-border-strong);
+    border-radius: 10px;
+    background: var(--dashboard-surface);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .24);
+}
+
+.dashboard-page .vehicle-center-header,
+.dashboard-page .operation-modal-header,
+.dashboard-page .checklist-modal-header {
+    border-bottom: 1px solid var(--dashboard-border);
+    background: var(--dashboard-surface-muted);
+}
+
+.dashboard-page .vehicle-center-icon,
+.dashboard-page .vehicle-center-card,
+.dashboard-page .vehicle-center-kpi {
+    border: 1px solid var(--dashboard-border);
+    border-radius: 7px;
+    background: var(--dashboard-surface-muted);
+    box-shadow: none;
+}
+
+.dashboard-page .vehicle-center-title-row h2,
+.dashboard-page .vehicle-center-card-header h3,
+.dashboard-page .vehicle-center-kpi strong,
+.dashboard-page .operation-modal-header h2,
+.dashboard-page .checklist-modal-header h2 {
+    color: var(--dashboard-text);
+}
+
+.dashboard-page .vehicle-center-meta,
+.dashboard-page .vehicle-center-card-header small,
+.dashboard-page .vehicle-center-kpi small,
+.dashboard-page .vehicle-center-kpi span,
+.dashboard-page .operation-modal-header p,
+.dashboard-page .checklist-modal-header p {
+    color: var(--dashboard-muted);
+}
+
+.dashboard-page .vehicle-center-status,
+.dashboard-page .vehicle-center-alert,
+.dashboard-page .vehicle-center-log,
+.dashboard-page .vehicle-center-maintenance,
+.dashboard-page .operation-modal-alert {
+    border-radius: 6px;
+    box-shadow: none;
+}
+
+.dashboard-page .vehicle-center-action,
+.dashboard-page .vehicle-center-input-row button,
+.dashboard-page .vehicle-center-status-form button,
+.dashboard-page .operation-modal-footer .chm-page-button {
+    border-radius: 6px;
+    box-shadow: none;
+}
+
+.dashboard-page .vehicle-center-action:hover,
+.dashboard-page .vehicle-center-input-row button:hover,
+.dashboard-page .vehicle-center-status-form button:hover,
+.dashboard-page .operation-modal-footer .chm-page-button:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .operation-modal-footer .chm-page-button.primary {
+    color: #fff;
+    border-color: #495a78;
+    background: #33425e;
+}
+
+.dashboard-page .operation-modal-footer .chm-page-button.primary:hover {
+    border-color: #60708b;
+    background: #3b4b68;
+}
+
+.dashboard-page .operation-modal-footer .chm-page-button.secondary {
+    color: #d7deea;
+    border-color: var(--dashboard-border-strong);
+    background: transparent;
+}
+
+@media (max-width: 900px) {
+    .dashboard-page .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-page .operation-panel,
+    .dashboard-page .operation-panel.compact {
+        padding: 14px;
+    }
+}
+
+@media (max-width: 700px) {
+    .dashboard-page .kpi-grid {
+        gap: 8px;
+    }
+
+    .dashboard-page .dashboard-filter-bar {
+        padding: 10px;
+    }
+
+    .dashboard-page .vehicle-card {
+        padding: 12px;
+    }
+
+    .dashboard-page .vehicle-center-modal,
+    .dashboard-page .operation-modal-card,
+    .dashboard-page .checklist-modal {
+        border-radius: 8px;
+    }
+}

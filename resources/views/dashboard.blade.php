@@ -12,14 +12,16 @@
 
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/dashboard.css') }}"
+    href="{{ asset('css/pages/dashboard.css') }}?v=2"
 >
 
 @endpush
 @section('content')
 
 <div
-    x-data="dashboardFleet()"
+    class="dashboard-page"
+
+    x-data="dashboardFleet()"
 >
 
     {{-- KPIs --}}

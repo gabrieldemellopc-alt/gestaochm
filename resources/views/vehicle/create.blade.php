@@ -3,7 +3,7 @@
 @push('styles')
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/vehicles.css') }}"
+    href="{{ asset('css/pages/vehicles.css') }}?v=2"
 >
 @endpush
 
@@ -21,7 +21,7 @@
     $selectedType = old('type', 'automovel');
     $selectedIcon = $vehicleTypeIcons[$selectedType] ?? 'automovel.png';
 @endphp
-<div class="vehicle-edit-header">
+<div class="vehicle-edit-header vehicle-create-page">
 
     <div>
 
@@ -57,7 +57,7 @@
 <form
     action="{{ route('vehicles.store') }}"
     method="POST"
-    class="vehicle-edit-page"
+    class="vehicle-edit-page vehicle-create-page"
     id="vehicleCreateForm"
 >
 

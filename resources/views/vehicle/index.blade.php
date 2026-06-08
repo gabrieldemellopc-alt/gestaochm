@@ -3,7 +3,7 @@
 @push('styles')
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/vehicles.css') }}"
+    href="{{ asset('css/pages/vehicles.css') }}?v=2"
 >
 @endpush
 

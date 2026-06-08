@@ -84,8 +84,29 @@
     {{-- USER --}}
     <div class="topbar-right">
 
-        <div
-            class="topbar-user-wrapper"
+        <button
+            type="button"
+            class="chm-theme-toggle"
+            data-chm-theme-toggle
+            aria-label="Ativar modo claro corporativo"
+            aria-pressed="false"
+            title="Ativar modo claro corporativo"
+        >
+            <span class="chm-theme-toggle-icon chm-theme-toggle-icon-dark" aria-hidden="true">
+                <i data-lucide="moon"></i>
+            </span>
+
+            <span class="chm-theme-toggle-icon chm-theme-toggle-icon-light" aria-hidden="true">
+                <i data-lucide="sun"></i>
+            </span>
+
+            <span class="chm-theme-toggle-label" data-chm-theme-label>
+                Escuro
+            </span>
+        </button>
+
+        <div
+            class="topbar-user-wrapper"
             x-data="{ open: false }"
         >
 

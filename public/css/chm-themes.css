@@ -1,0 +1,234 @@
+:root {
+    --chm-theme-accent: #e0525b;
+    --chm-theme-text: #f1f5f9;
+    --chm-theme-muted: #a8b1c1;
+    --chm-theme-border: rgba(203, 213, 225, .16);
+}
+
+html[data-chm-theme="corporate-light"] {
+    color-scheme: dark;
+    --chm-theme-page: #263249;
+    --chm-theme-page-soft: #2e3b55;
+    --chm-theme-shell: #2d3951;
+    --chm-theme-surface: #34425b;
+    --chm-theme-card: #3b4a66;
+    --chm-theme-card-elevated: #435373;
+    --chm-theme-input: #4a5c7b;
+    --chm-theme-border: rgba(226, 232, 240, .26);
+    --chm-theme-border-strong: rgba(226, 232, 240, .38);
+    --chm-theme-text: #f8fafc;
+    --chm-theme-muted: #d0d7e2;
+    --chm-theme-subtle: #aeb9c9;
+}
+
+.chm-theme-toggle {
+    min-height: 38px;
+    padding: 6px 10px;
+    border: 1px solid var(--chm-theme-border);
+    border-radius: 8px;
+    color: var(--chm-theme-muted);
+    background: rgba(255, 255, 255, .035);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.chm-theme-toggle:hover {
+    color: var(--chm-theme-text);
+    border-color: rgba(224, 82, 91, .45);
+    background: rgba(255, 255, 255, .07);
+}
+
+.chm-theme-toggle:focus-visible {
+    outline: 2px solid rgba(224, 82, 91, .55);
+    outline-offset: 2px;
+}
+
+.chm-theme-toggle-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chm-theme-toggle-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 1.8;
+}
+
+.chm-theme-toggle-icon-light {
+    display: none;
+}
+
+html[data-chm-theme="corporate-light"] .chm-theme-toggle-icon-dark {
+    display: none;
+}
+
+html[data-chm-theme="corporate-light"] .chm-theme-toggle-icon-light {
+    display: inline-flex;
+}
+
+html[data-chm-theme="corporate-light"] body,
+html[data-chm-theme="corporate-light"] .chm-body,
+html[data-chm-theme="corporate-light"] .chm-main,
+html[data-chm-theme="corporate-light"] .chm-content,
+html[data-chm-theme="corporate-light"] .app-main,
+html[data-chm-theme="corporate-light"] .content-wrapper,
+html[data-chm-theme="corporate-light"] .portal-layout,
+html[data-chm-theme="corporate-light"] .portal-main,
+html[data-chm-theme="corporate-light"] .portal-content {
+    background-color: var(--chm-theme-page);
+}
+
+html[data-chm-theme="corporate-light"] .chm-content,
+html[data-chm-theme="corporate-light"] .content-wrapper,
+html[data-chm-theme="corporate-light"] .portal-content {
+    background-color: var(--chm-theme-page-soft);
+}
+
+html[data-chm-theme="corporate-light"] .sidebar,
+html[data-chm-theme="corporate-light"] .topbar {
+    background-color: var(--chm-theme-shell);
+    border-color: var(--chm-theme-border);
+}
+
+html[data-chm-theme="corporate-light"] .chm-card,
+html[data-chm-theme="corporate-light"] .card,
+html[data-chm-theme="corporate-light"] .panel,
+html[data-chm-theme="corporate-light"] .form-card,
+html[data-chm-theme="corporate-light"] .section-card,
+html[data-chm-theme="corporate-light"] .filter-bar,
+html[data-chm-theme="corporate-light"] .filters-panel,
+html[data-chm-theme="corporate-light"] .user-dropdown {
+    background-color: var(--chm-theme-card);
+    border-color: var(--chm-theme-border);
+}
+
+html[data-chm-theme="corporate-light"] .card-header,
+html[data-chm-theme="corporate-light"] .panel-header,
+html[data-chm-theme="corporate-light"] .modal-header,
+html[data-chm-theme="corporate-light"] .dropdown-user {
+    background-color: var(--chm-theme-card-elevated);
+    border-color: var(--chm-theme-border);
+}
+
+html[data-chm-theme="corporate-light"] input,
+html[data-chm-theme="corporate-light"] select,
+html[data-chm-theme="corporate-light"] textarea {
+    color: var(--chm-theme-text);
+    background-color: var(--chm-theme-input);
+    border-color: var(--chm-theme-border);
+}
+
+html[data-chm-theme="corporate-light"] input::placeholder,
+html[data-chm-theme="corporate-light"] textarea::placeholder {
+    color: var(--chm-theme-muted);
+}
+
+html[data-chm-theme="corporate-light"] .btn-secondary,
+html[data-chm-theme="corporate-light"] .secondary-button,
+html[data-chm-theme="corporate-light"] .chm-page-button.secondary {
+    color: var(--chm-theme-text);
+    background-color: var(--chm-theme-card-elevated);
+    border-color: var(--chm-theme-border-strong);
+}
+
+html[data-chm-theme="corporate-light"] .btn-secondary:hover,
+html[data-chm-theme="corporate-light"] .secondary-button:hover,
+html[data-chm-theme="corporate-light"] .chm-page-button.secondary:hover {
+    background-color: #4a5b7b;
+    border-color: rgba(224, 82, 91, .48);
+}
+
+html[data-chm-theme="corporate-light"] .workshop-page,
+html[data-chm-theme="corporate-light"] .workshop-home-page {
+    --workshop-surface: var(--chm-theme-card);
+    --workshop-surface-soft: var(--chm-theme-card-elevated);
+    --workshop-surface-muted: var(--chm-theme-surface);
+    --workshop-border: var(--chm-theme-border);
+    --workshop-border-strong: var(--chm-theme-border-strong);
+    --workshop-text: var(--chm-theme-text);
+    --workshop-muted: var(--chm-theme-muted);
+    --workshop-subtle: var(--chm-theme-subtle);
+}
+
+html[data-chm-theme="corporate-light"] .dashboard-page {
+    --dashboard-surface: var(--chm-theme-card);
+    --dashboard-surface-soft: var(--chm-theme-card-elevated);
+    --dashboard-surface-muted: var(--chm-theme-surface);
+    --dashboard-border: var(--chm-theme-border);
+    --dashboard-border-strong: var(--chm-theme-border-strong);
+    --dashboard-text: var(--chm-theme-text);
+    --dashboard-muted: var(--chm-theme-muted);
+    --dashboard-subtle: var(--chm-theme-subtle);
+}
+
+html[data-chm-theme="corporate-light"] .vehicles-page,
+html[data-chm-theme="corporate-light"] .vehicle-create-page,
+html[data-chm-theme="corporate-light"] .vehicle-edit-page {
+    --vehicles-surface: var(--chm-theme-card);
+    --vehicles-surface-soft: var(--chm-theme-card-elevated);
+    --vehicles-surface-muted: var(--chm-theme-surface);
+    --vehicles-border: var(--chm-theme-border);
+    --vehicles-border-strong: var(--chm-theme-border-strong);
+    --vehicles-text: var(--chm-theme-text);
+    --vehicles-muted: var(--chm-theme-muted);
+    --vehicles-subtle: var(--chm-theme-subtle);
+}
+
+html[data-chm-theme="corporate-light"] .vehicle-details-page {
+    --vehicle-details-surface: var(--chm-theme-card);
+    --vehicle-details-surface-soft: var(--chm-theme-card-elevated);
+    --vehicle-details-surface-muted: var(--chm-theme-surface);
+    --vehicle-details-border: var(--chm-theme-border);
+    --vehicle-details-border-strong: var(--chm-theme-border-strong);
+    --vehicle-details-text: var(--chm-theme-text);
+    --vehicle-details-muted: var(--chm-theme-muted);
+    --vehicle-details-subtle: var(--chm-theme-subtle);
+}
+
+html[data-chm-theme="corporate-light"] .workshop-page input,
+html[data-chm-theme="corporate-light"] .workshop-home-page input,
+html[data-chm-theme="corporate-light"] .dashboard-page input,
+html[data-chm-theme="corporate-light"] .vehicles-page input,
+html[data-chm-theme="corporate-light"] .vehicle-create-page input,
+html[data-chm-theme="corporate-light"] .vehicle-edit-page input,
+html[data-chm-theme="corporate-light"] .vehicle-details-page input,
+html[data-chm-theme="corporate-light"] .workshop-page select,
+html[data-chm-theme="corporate-light"] .workshop-home-page select,
+html[data-chm-theme="corporate-light"] .dashboard-page select,
+html[data-chm-theme="corporate-light"] .vehicles-page select,
+html[data-chm-theme="corporate-light"] .vehicle-create-page select,
+html[data-chm-theme="corporate-light"] .vehicle-edit-page select,
+html[data-chm-theme="corporate-light"] .vehicle-details-page select,
+html[data-chm-theme="corporate-light"] .vehicle-create-page textarea,
+html[data-chm-theme="corporate-light"] .vehicle-edit-page textarea {
+    background-color: var(--chm-theme-input);
+    border-color: var(--chm-theme-border-strong);
+}
+
+html[data-chm-theme="corporate-light"] .chm-theme-toggle {
+    color: var(--chm-theme-text);
+    border-color: var(--chm-theme-border-strong);
+    background: var(--chm-theme-card-elevated);
+}
+
+@media (max-width: 720px) {
+    .chm-theme-toggle {
+        width: 38px;
+        padding: 6px;
+    }
+
+    .chm-theme-toggle-label {
+        display: none;
+    }
+}
