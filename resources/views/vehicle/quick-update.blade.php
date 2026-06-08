@@ -1,0 +1,300 @@
+@extends('layouts.app')
+
+@push('styles')
+<link
+    rel="stylesheet"
+    href="{{ asset('css/pages/dashboard.css') }}"
+>
+@endpush
+
+@section('content')
+
+<div class="quick-update-page">
+
+    <div class="quick-update-header">
+
+        <div>
+            <span class="quick-update-kicker">
+                Operacional
+            </span>
+
+            <h1>
+                Atualização rápida de KM/Horímetro
+            </h1>
+
+            <p>
+                Atualize em massa a quilometragem e o horímetro dos veículos da frota.
+            </p>
+        </div>
+
+        <a
+            href="{{ route('dashboard') }}"
+            class="quick-update-back"
+        >
+            <i data-lucide="arrow-left"></i>
+            Voltar ao dashboard
+        </a>
+
+    </div>
+
+    @if(session('success'))
+
+        <div class="quick-update-alert success">
+
+            <i data-lucide="check-circle"></i>
+
+            <span>
+                {{ session('success') }}
+            </span>
+
+        </div>
+
+    @endif
+
+    @if($errors->any())
+
+        <div class="quick-update-alert danger">
+
+            <i data-lucide="triangle-alert"></i>
+
+            <span>
+                Verifique os campos informados. Não é permitido lançar valores negativos.
+            </span>
+
+        </div>
+
+    @endif
+
+    <form
+        method="POST"
+        action="{{ route('vehicle.quick-update.store') }}"
+    >
+        @csrf
+
+        <div class="quick-update-card">
+
+            <div class="quick-update-card-header">
+
+                <div>
+                    <h2>
+                        Veículos
+                    </h2>
+
+                    <p>
+                        Preencha apenas os campos que deseja atualizar.
+                    </p>
+                </div>
+
+                <button
+                    type="submit"
+                    class="quick-update-save"
+                >
+                    <i data-lucide="save"></i>
+                    Salvar atualizações
+                </button>
+
+            </div>
+
+            <div class="quick-update-table-wrap">
+
+                <table class="quick-update-table">
+
+                    <thead>
+                        <tr>
+                            <th>Veículo</th>
+                            <th>Placa</th>
+                            <th>KM</th>
+                            <th>Horímetro</th>          
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @forelse($vehicles as $index => $vehicle)
+
+                            <tr
+                                class="{{
+                                    isset($vehicle->operational_update_alerts)
+                                    &&
+                                    $vehicle->operational_update_alerts->count()
+                                        ? 'quick-row-has-alert'
+                                        : ''
+                                }}"
+                            >
+                                <td>
+
+                                    <input
+                                        type="hidden"
+                                        name="vehicles[{{ $index }}][id]"
+                                        value="{{ $vehicle->id }}"
+                                    >
+
+                                    <div class="quick-vehicle-main">
+
+                                        <div class="quick-vehicle-icon">
+
+                                            @if(!empty($vehicle->type_icon))
+
+                                                <img
+                                                    src="{{ asset('images/' . $vehicle->type_icon) }}"
+                                                    alt="Veículo"
+                                                >
+
+                                            @else
+
+                                                <i data-lucide="truck"></i>
+
+                                            @endif
+
+                                        </div>
+
+                                        <div>
+
+                                            <strong>
+                                                {{ $vehicle->name ?? $vehicle->model ?? 'Veículo' }}
+                                            </strong>
+                                            
+                                            @if(!empty($vehicle->brand) || !empty($vehicle->year))
+                                            
+                                                <small>
+                                                    {{ $vehicle->brand ?? '' }}
+                                                    {{ $vehicle->year ? ' • '.$vehicle->year : '' }}
+                                                </small>
+                                            
+                                            @endif
+                                            
+                                            @if(
+                                                isset($vehicle->operational_update_alerts)
+                                                &&
+                                                $vehicle->operational_update_alerts->count()
+                                            )
+                                            
+                                                <div class="quick-update-tags">
+                                            
+                                                    @foreach($vehicle->operational_update_alerts as $alert)
+                                            
+                                                        <span class="quick-update-tag {{ $alert['status'] }}">
+                                            
+                                                            <i data-lucide="triangle-alert"></i>
+                                            
+                                                            {{ $alert['message'] }}
+                                            
+                                                        </span>
+                                            
+                                                    @endforeach
+                                            
+                                                </div>
+                                            
+                                            @endif
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="quick-plate">
+                                        {{ $vehicle->plate ?? '-' }}
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="quick-input-wrap">
+                                
+                                        <input
+                                            type="number"
+                                            step="1"
+                                            min="{{ $vehicle->current_km ?? 0 }}"
+                                            name="vehicles[{{ $index }}][current_km]"
+                                            class="quick-input"
+                                            value="{{ $vehicle->current_km }}"
+                                        >
+                                
+                                        <span>
+                                            km
+                                        </span>
+                                
+                                    </div>
+                                
+                                </td>
+                                
+                                <td>
+                                
+                                    <div class="quick-input-wrap">
+                                
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            min="{{ $vehicle->current_hours ?? 0 }}"
+                                            name="vehicles[{{ $index }}][current_hours]"
+                                            class="quick-input"
+                                            value="{{ $vehicle->current_hours }}"
+                                        >
+                                
+                                        <span>
+                                            h
+                                        </span>
+                                
+                                    </div>
+                                
+                                </td>
+
+                            </tr>
+
+                        @empty
+
+                            <tr>
+                                <td colspan="6">
+
+                                    <div class="quick-empty">
+
+                                        <i data-lucide="inbox"></i>
+
+                                        <strong>
+                                            Nenhum veículo cadastrado
+                                        </strong>
+
+                                        <p>
+                                            Cadastre veículos para utilizar a atualização rápida.
+                                        </p>
+
+                                    </div>
+
+                                </td>
+                            </tr>
+
+                        @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            @if($vehicles->count())
+
+                <div class="quick-update-footer">
+
+                    <button
+                        type="submit"
+                        class="quick-update-save large"
+                    >
+                        <i data-lucide="save"></i>
+                        Salvar atualizações
+                    </button>
+
+                </div>
+
+            @endif
+
+        </div>
+
+    </form>
+
+</div>
+
+@endsection

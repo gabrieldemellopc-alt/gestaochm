@@ -1,0 +1,41 @@
+h1 {
+
+    font-size: 56px;
+
+    font-weight: 800;
+
+    line-height: 1;
+}
+
+h2 {
+
+    font-size: 34px;
+
+    font-weight: 700;
+}
+
+h3 {
+
+    font-size: 26px;
+
+    font-weight: 700;
+}
+
+h4 {
+
+    font-size: 18px;
+
+    font-weight: 600;
+}
+
+p {
+
+    color: var(--text-secondary);
+
+    line-height: 1.6;
+}
+
+small {
+
+    color: var(--text-muted);
+}

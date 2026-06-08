@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Vehicle extends Model
+{
+    protected $fillable = [
+        'tenant_id',
+        'name',
+        'plate',
+        'brand',
+        'model',
+        'year',
+        'type',
+        'location_id',
+        'division_id',
+        'current_km',
+        'current_hours',
+        'status',
+        'operation_started_at',
+        'operational_status',
+        'notes',
+        'tire_layout',
+        'asset_code',
+        'last_km_update_at',
+        'last_hours_update_at',
+    ];
+    protected $casts = [
+    
+        'operation_started_at' => 'date',
+    
+    ];
+    
+    protected $attributes = [
+    
+        'operational_status' => 'operational',
+    
+    ];
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+    public function checklistExecutions()
+    {
+        return $this->hasMany(
+            ChecklistExecution::class
+        );
+    }
+    public function allocations()
+    {
+        return $this->hasMany(VehicleAllocation::class);
+    }
+    public function procedures()
+    {
+        return $this->belongsToMany(
+            Procedure::class
+        );
+    }
+    public function maintenances()
+    {
+        return $this->hasMany(MaintenanceRecord::class);
+    }
+    public function currentAllocation()
+    {
+        return $this->hasOne(
+            VehicleAllocation::class
+        )->where('is_current', true);
+    }
+    public function activeMaintenances()
+    {
+        return $this->hasMany(
+            MaintenanceRecord::class
+        )
+        ->latest();
+    }
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+    
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+    public function getTypeIconAttribute()
+    {
+        return match($this->type) {
+    
+            'lixo' => 'lixo.png',
+    
+            'cacamba' => 'cacamba.png',
+    
+            'bau' => 'bau.png',
+    
+            'trator' => 'trator.png',
+    
+            default => 'lixo.png',
+        };
+    }
+    public function updateLogs()
+    {
+        return $this->hasMany(
+            VehicleUpdateLog::class
+        )
+        ->latest();
+    }
+     public function tirePositions()
+    {
+        return $this->hasMany(VehicleTirePosition::class);
+    }
+    
+    public function tireInstallations()
+    {
+        return $this->hasMany(TireInstallation::class);
+    }
+    
+    public function activeTireInstallations()
+    {
+        return $this->hasMany(TireInstallation::class)
+            ->where('active', true);
+    }
+    
+    public function tireMeasurements()
+    {
+        return $this->hasMany(TireMeasurement::class);
+    }   
+    public function operations()
+    {
+        return $this->hasMany(\App\Models\VehicleOperation::class);
+    }
+    
+    public function openOperation()
+    {
+        return $this->hasOne(\App\Models\VehicleOperation::class)
+            ->where('status', 'open')
+            ->latestOfMany();
+    }
+}

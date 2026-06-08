@@ -1,0 +1,856 @@
+/* =========================================================
+   CHM REFINED CSS
+   Consolidação inicial sem duplicações críticas
+========================================================= */
+
+/* =========================================================
+   ROOT
+========================================================= */
+
+:root {
+
+    --chm-green: #22c55e;
+    --chm-dark: #0f172a;
+    --chm-card: #111827;
+
+    --bg-primary: #07122d;
+    --bg-secondary: #111a36;
+    --bg-tertiary: #1a2344;
+
+    --border-primary: rgba(255,255,255,.06);
+
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --text-muted: #8e99be;
+
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+
+    --radius-sm: 14px;
+    --radius-md: 18px;
+    --radius-lg: 24px;
+    --radius-xl: 28px;
+
+    --transition: .2s ease;
+}
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* =========================================================
+   GLOBAL LAYOUT
+========================================================= */
+
+.chm-main,
+.app-layout,
+.main-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.page-header {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 18px;
+
+    margin-bottom: 28px;
+}
+
+.page-header h1 {
+
+    margin: 0;
+
+    font-size: 42px;
+    font-weight: 800;
+
+    color: #fff;
+}
+
+.page-header p {
+
+    margin-top: 6px;
+
+    color: var(--text-secondary);
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.btn-chm-primary,
+.chm-btn-primary {
+
+    height: 54px;
+
+    padding: 0 24px;
+
+    border: none;
+    border-radius: var(--radius-sm);
+
+    background: var(--chm-green);
+
+    color: #fff;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition: var(--transition);
+}
+
+.btn-chm-primary:hover,
+.chm-btn-primary:hover {
+
+    transform: translateY(-1px);
+
+    filter: brightness(1.05);
+}
+
+.nf-secondary-button {
+
+    height: 54px;
+
+    padding: 0 20px;
+
+    border-radius: var(--radius-sm);
+
+    border: 1px solid var(--border-primary);
+
+    background: rgba(255,255,255,.04);
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition: var(--transition);
+}
+
+.nf-secondary-button:hover {
+
+    background: rgba(255,255,255,.08);
+}
+
+/* =========================================================
+   FORMS
+========================================================= */
+
+.form-group {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+.form-group label {
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #cbd5e1;
+}
+
+.form-input,
+.nf-input,
+.nf-select {
+
+    width: 100%;
+
+    height: 52px;
+
+    padding: 0 18px;
+
+    border-radius: 16px;
+
+    border: 1px solid rgba(255,255,255,.06);
+
+    background: rgba(0,0,0,.18);
+
+    color: #fff;
+
+    font-size: 15px;
+
+    transition: var(--transition);
+}
+
+.form-input:focus,
+.nf-input:focus,
+.nf-select:focus {
+
+    outline: none;
+
+    border-color: rgba(59,130,246,.4);
+
+    box-shadow:
+        0 0 0 4px rgba(59,130,246,.12);
+}
+
+.textarea,
+textarea.form-input {
+
+    min-height: 100px;
+
+    padding: 14px 18px;
+
+    resize: vertical;
+}
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.chm-card,
+.edit-card,
+.sidebar-card,
+.vehicle-side-card,
+.history-section,
+.stock-category-card {
+
+    background: var(--bg-secondary);
+
+    border: 1px solid var(--border-primary);
+
+    border-radius: var(--radius-lg);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.25);
+}
+
+/* =========================================================
+   VEHICLES PAGE
+========================================================= */
+
+.vehicles-page {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 24px;
+}
+
+.vehicles-header {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.vehicles-header h1 {
+
+    font-size: 38px;
+    font-weight: 800;
+
+    color: #fff;
+}
+
+.vehicles-header p {
+
+    color: var(--text-secondary);
+
+    margin-top: 4px;
+}
+
+.vehicles-filters {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0,2fr)
+        repeat(3,minmax(160px,1fr));
+
+    gap: 14px;
+}
+
+.vehicles-search,
+.vehicles-filter {
+
+    height: 56px;
+
+    border-radius: 18px;
+
+    background: var(--bg-primary);
+
+    border: 1px solid rgba(255,255,255,.04);
+
+    color: #fff;
+
+    padding: 0 20px;
+}
+
+/* =========================================================
+   VEHICLES TABLE
+========================================================= */
+
+.vehicles-table-wrapper {
+
+    overflow: hidden;
+
+    border-radius: var(--radius-lg);
+
+    background: var(--bg-secondary);
+
+    border: 1px solid var(--border-primary);
+}
+
+.vehicles-table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.vehicles-table thead {
+
+    background: rgba(255,255,255,.02);
+}
+
+.vehicles-table th {
+
+    padding: 18px;
+
+    text-align: left;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    color: var(--text-secondary);
+}
+
+.vehicles-table td {
+
+    padding: 18px;
+
+    border-top: 1px solid rgba(255,255,255,.04);
+
+    color: #fff;
+}
+
+/* =========================================================
+   VEHICLE MAIN
+========================================================= */
+
+.vehicle-main {
+
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+}
+
+.vehicle-type-icon,
+.vehicle-icon {
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 16px;
+
+    background: rgba(255,255,255,.04);
+
+    border: 1px solid rgba(255,255,255,.06);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vehicle-type-icon img,
+.vehicle-icon img {
+
+    width: 42px;
+    height: 42px;
+
+    object-fit: contain;
+}
+
+.vehicle-main-info {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status-badge,
+.vehicle-status-badge,
+.table-alert {
+
+    display: inline-flex;
+    align-items: center;
+
+    padding: 8px 14px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-badge.ok,
+.table-alert.ok,
+.vehicle-status-badge.operational {
+
+    background: rgba(34,197,94,.12);
+
+    color: #4ade80;
+}
+
+.status-badge.warning,
+.table-alert.warning,
+.vehicle-status-badge.maintenance {
+
+    background: rgba(245,158,11,.12);
+
+    color: #facc15;
+}
+
+.status-badge.danger,
+.table-alert.danger,
+.vehicle-status-badge.inactive {
+
+    background: rgba(239,68,68,.12);
+
+    color: #f87171;
+}
+
+/* =========================================================
+   HISTORY PAGE
+========================================================= */
+
+.vehicle-history-wrapper {
+
+    max-width: 1450px;
+
+    margin: 0 auto;
+
+    padding: 34px;
+}
+
+.vehicle-history-hero {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 24px;
+
+    padding: 34px;
+
+    margin-bottom: 28px;
+
+    border-radius: var(--radius-xl);
+
+    background: rgba(7,15,40,.82);
+
+    border: 1px solid rgba(255,255,255,.06);
+}
+
+.hero-left {
+
+    display: flex;
+    align-items: center;
+
+    gap: 22px;
+}
+
+.vehicle-avatar {
+
+    width: 84px;
+    height: 84px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.04);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vehicle-avatar img {
+
+    width: 58px;
+    height: 58px;
+
+    object-fit: contain;
+}
+
+.vehicle-title-row {
+
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    flex-wrap: wrap;
+}
+
+.vehicle-title-row h2 {
+
+    margin: 0;
+
+    font-size: 52px;
+    font-weight: 800;
+
+    color: #fff;
+}
+
+.vehicle-subtitle {
+
+    margin-top: 8px;
+
+    color: var(--text-secondary);
+}
+
+/* =========================================================
+   HERO KPIS
+========================================================= */
+
+.hero-kpis {
+
+    display: flex;
+
+    gap: 16px;
+}
+
+.hero-kpi-card {
+
+    width: 150px;
+
+    padding: 22px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.03);
+
+    border: 1px solid rgba(255,255,255,.05);
+}
+
+.hero-kpi-card small {
+
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: var(--text-secondary);
+}
+
+.hero-kpi-card strong {
+
+    display: block;
+
+    font-size: 42px;
+    line-height: 1;
+
+    color: #fff;
+}
+
+/* =========================================================
+   TABS
+========================================================= */
+
+.history-tabs,
+.vehicle-tabs {
+
+    display: flex;
+
+    gap: 14px;
+
+    margin-bottom: 24px;
+}
+
+.history-tab-btn,
+.vehicle-tabs button {
+
+    height: 52px;
+
+    padding: 0 20px;
+
+    border-radius: 16px;
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    background: rgba(255,255,255,.03);
+
+    color: #a5b4fc;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    font-weight: 700;
+
+    transition: var(--transition);
+}
+
+.history-tab-btn.active,
+.vehicle-tabs button.active {
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(79,111,255,.28),
+            rgba(79,111,255,.14)
+        );
+
+    border-color:
+        rgba(79,111,255,.55);
+
+    color: #fff;
+}
+
+/* =========================================================
+   TIMELINE
+========================================================= */
+
+.timeline-stack,
+.maintenance-stack {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+.timeline-card,
+.maintenance-card {
+
+    padding: 24px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.03);
+
+    border: 1px solid rgba(255,255,255,.05);
+}
+
+.timeline-card {
+
+    display: flex;
+
+    gap: 18px;
+}
+
+.timeline-dot {
+
+    width: 14px;
+    height: 14px;
+
+    border-radius: 999px;
+
+    background: #4f6fff;
+
+    margin-top: 10px;
+}
+
+/* =========================================================
+   FILTERS
+========================================================= */
+
+.maintenance-filters-wrapper {
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    margin-bottom: 26px;
+}
+
+.maintenance-filter-card,
+.maintenance-order-box {
+
+    min-width: 240px;
+
+    padding: 18px;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.03),
+            rgba(255,255,255,.015)
+        );
+
+    border: 1px solid rgba(255,255,255,.05);
+}
+
+.flex-grow-filter {
+
+    flex: 1;
+}
+
+.maintenance-filter-title {
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 14px;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    color: #dbe4ff;
+}
+
+.date-range-group {
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .page-header {
+
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .page-header h1 {
+
+        font-size: 34px;
+    }
+
+    .vehicles-header {
+
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .vehicles-filters {
+
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-history-wrapper {
+
+        padding: 20px;
+    }
+
+    .vehicle-history-hero {
+
+        flex-direction: column;
+        align-items: flex-start;
+
+        padding: 24px;
+    }
+
+    .vehicle-title-row {
+
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .vehicle-title-row h2 {
+
+        font-size: 28px;
+    }
+
+    .hero-kpis {
+
+        width: 100%;
+
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+    }
+
+    .hero-kpi-card {
+
+        width: 100%;
+    }
+
+    .history-tabs,
+    .vehicle-tabs {
+
+        display: grid;
+
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .maintenance-filters-wrapper {
+
+        flex-direction: column;
+    }
+
+    .maintenance-filter-card,
+    .maintenance-order-box,
+    .flex-grow-filter {
+
+        width: 100%;
+
+        min-width: unset;
+    }
+
+    .date-range-group {
+
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .timeline-card {
+
+        flex-direction: column;
+    }
+
+    .maintenance-meta {
+
+        display: grid;
+
+        grid-template-columns: 1fr 1fr;
+
+        gap: 18px;
+    }
+}

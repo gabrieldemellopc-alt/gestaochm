@@ -1,0 +1,942 @@
+@extends('layouts.app')
+
+@push('styles')
+<link
+    rel="stylesheet"
+    href="{{ asset('css/pages/procedures.css') }}"
+>
+@endpush
+
+@section('content')
+
+<div class="procedures-form-page">
+
+    <div class="procedures-form-header">
+
+        <div>
+            <h1>
+                Editar procedimento
+            </h1>
+
+            <p>
+                Atualize regras de validade, execução e campos operacionais.
+            </p>
+        </div>
+
+        <div class="procedures-form-actions-top">
+
+            <a
+                href="{{ route('procedures.index') }}"
+                class="procedure-back-button"
+            >
+                <i data-lucide="arrow-left"></i>
+            
+                Voltar para procedimentos
+            </a>
+
+        </div>
+
+    </div>
+
+    <form
+        action="{{ route('procedures.update', $procedure->id) }}"
+        method="POST"
+        class="procedure-form-shell"
+        id="procedureForm"
+    >
+        @csrf
+        @method('PUT')
+
+        <div class="procedure-form-grid">
+
+            <div class="procedure-main-card">
+
+                <div class="procedure-section">
+                    <div class="procedure-section-header">
+                        <h3>Dados principais</h3>
+                        <p>Informações básicas e tipo de execução do procedimento.</p>
+                    </div>
+
+                    <div class="procedure-two-cols">
+
+                        <div class="form-group">
+                            <label>Nome do procedimento</label>
+                            <input
+                                type="text"
+                                name="name"
+                                class="form-input"
+                                value="{{ old('name', $procedure->name) }}"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Oficina interna?</label>
+                            <select
+                                name="can_be_internal"
+                                class="form-input"
+                            >
+                                <option
+                                    value="1"
+                                    @selected(old('can_be_internal', $procedure->can_be_internal) == 1)
+                                >
+                                    Sim
+                                </option>
+
+                                <option
+                                    value="0"
+                                    @selected(old('can_be_internal', $procedure->can_be_internal) == 0)
+                                >
+                                    Não
+                                </option>
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="procedure-section">
+                    <div class="procedure-section-header">
+                        <h3>Regras de validade</h3>
+                        <p>
+                            Defina se o procedimento será controlado por quilometragem,
+                            horímetro e/ou período em dias.
+                        </p>
+                    </div>
+
+                    <div class="procedure-validity-grid">
+
+                        <div class="validity-card">
+                            <div class="validity-card-top">
+                                <label class="validity-check">
+                                    <input
+                                        type="checkbox"
+                                        name="validity_km"
+                                        id="validityKm"
+                                        value="1"
+                                        @checked(old('validity_km', $procedure->validity_km))
+                                    >
+                                    <span>Controle por KM</span>
+                                </label>
+
+                                <span class="validity-helper">
+                                    Use para procedimentos baseados em quilometragem rodada.
+                                </span>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label>Intervalo em KM</label>
+                                <input
+                                    type="number"
+                                    name="interval_km"
+                                    id="intervalKm"
+                                    class="form-input @error('interval_km') input-invalid @enderror"
+                                    value="{{ old('interval_km', $procedure->interval_km) }}"
+                                    min="0"
+                                    step="1"
+                                >
+                                
+                                <small
+                                    class="form-error"
+                                    id="intervalKmError"
+                                    style="display:none;"
+                                >
+                                    Informe o intervalo em KM.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="validity-card">
+                            <div class="validity-card-top">
+                                <label class="validity-check">
+                                    <input
+                                        type="checkbox"
+                                        name="validity_hours"
+                                        id="validityHours"
+                                        value="1"
+                                        @checked(old('validity_hours', $procedure->validity_hours))
+                                    >
+                                    <span>Controle por Horas</span>
+                                </label>
+
+                                <span class="validity-helper">
+                                    Use para equipamentos monitorados por horímetro.
+                                </span>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label>Intervalo em horas</label>
+                                <input
+                                    type="number"
+                                    name="interval_hours"
+                                    id="intervalHours"
+                                    class="form-input @error('interval_hours') input-invalid @enderror"
+                                    value="{{ old('interval_hours', $procedure->interval_hours) }}"
+                                    min="0"
+                                    step="1"
+                                >
+                                
+                                <small
+                                    class="form-error"
+                                    id="intervalHoursError"
+                                    style="display:none;"
+                                >
+                                    Informe o intervalo em horas.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="validity-card">
+                            <div class="validity-card-top">
+                                <label class="validity-check">
+                                    <input
+                                        type="checkbox"
+                                        name="validity_period"
+                                        id="validityPeriod"
+                                        value="1"
+                                        @checked(old('validity_period', $procedure->validity_period))
+                                    >
+                                    <span>Controle por Período</span>
+                                </label>
+
+                                <span class="validity-helper">
+                                    Use para procedimentos recorrentes por tempo, em dias.
+                                </span>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label>Intervalo em dias</label>
+                                <input
+                                    type="number"
+                                    name="interval_days"
+                                    id="intervalDays"
+                                    class="form-input @error('interval_days') input-invalid @enderror"
+                                    value="{{ old('interval_days', $procedure->interval_days) }}"
+                                    min="0"
+                                    step="1"
+                                >
+                                
+                                <small
+                                    class="form-error"
+                                    id="intervalDaysError"
+                                    style="display:none;"
+                                >
+                                    Informe o intervalo em dias.
+                                </small>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="procedure-section">
+                    <div class="procedure-section-header with-action">
+                        <div>
+                            <h3>Campos do procedimento</h3>
+                            <p>Adicione ou ajuste os campos complementares.</p>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="procedure-add-field-btn"
+                            id="add-field-btn"
+                        >
+                            <i data-lucide="plus"></i>
+                        
+                            Adicionar campo
+                        </button>
+                    </div>
+
+                    <div id="procedure-fields-wrapper" class="procedure-fields-builder">
+                        @php
+                            $existingFields = old(
+                                'fields',
+                                $procedure->fields->map(function ($field) {
+                                    return [
+                                        'label' => $field->label,
+                                        'field_type' => $field->field_type,
+                                        'stock_category_id' => $field->stock_category_id,
+                                        'has_quantity' => $field->has_quantity,
+                                        'required' => $field->required,
+                                    ];
+                                })->toArray()
+                            );
+                        @endphp
+                        
+                        @forelse($existingFields as $index => $field)
+                        
+                            @php
+                                $fieldType = $field['field_type'] ?? 'text';
+                            @endphp
+                        
+                            <div class="procedure-field-row {{ $fieldType === 'stock_item' ? 'is-stock-item' : '' }}">
+                        
+                                {{-- LINHA PRINCIPAL --}}
+                                <div class="procedure-field-main-row">
+                        
+                                    <div class="form-group field-col-name">
+                        
+                                        <label>
+                                            Nome do campo
+                                        </label>
+                        
+                                        <input
+                                            type="text"
+                                            name="fields[{{ $index }}][label]"
+                                            class="form-input"
+                                            value="{{ $field['label'] ?? '' }}"
+                                            placeholder="Ex: Tipo do óleo"
+                                        >
+                        
+                                    </div>
+                        
+                                    <div class="form-group field-col-type">
+                        
+                                        <label>
+                                            Tipo
+                                        </label>
+                        
+                                        <select
+                                            name="fields[{{ $index }}][field_type]"
+                                            class="form-input field-type-select"
+                                            onchange="toggleStockFields(this)"
+                                        >
+                        
+                                            <option
+                                                value="text"
+                                                @selected($fieldType == 'text')
+                                            >
+                                                Texto
+                                            </option>
+                        
+                                            <option
+                                                value="number"
+                                                @selected($fieldType == 'number')
+                                            >
+                                                Número
+                                            </option>
+                        
+                                            <option
+                                                value="stock_item"
+                                                @selected($fieldType == 'stock_item')
+                                            >
+                                                Item de estoque
+                                            </option>
+                        
+                                        </select>
+                        
+                                    </div>
+                        
+                                    <div class="procedure-field-options field-col-required">
+                        
+                                        <label class="procedure-option-check">
+                        
+                                            <input
+                                                type="checkbox"
+                                                name="fields[{{ $index }}][required]"
+                                                value="1"
+                                                @checked(!empty($field['required']))
+                                            >
+                        
+                                            <span>
+                                                Obrigatório
+                                            </span>
+                        
+                                        </label>
+                        
+                                    </div>
+                        
+                                    <div class="field-col-remove">
+                        
+                                        <button
+                                            type="button"
+                                            class="field-remove-btn"
+                                            onclick="this.closest('.procedure-field-row').remove()"
+                                        >
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
+                        
+                                    </div>
+                        
+                                </div>
+                        
+                                {{-- LINHA DE ESTOQUE --}}
+                                <div class="procedure-field-stock-row">
+                        
+                                    <div class="form-group stock-category-group">
+                        
+                                        <label>
+                                            Categoria de estoque
+                                        </label>
+                        
+                                        <select
+                                            name="fields[{{ $index }}][stock_category_id]"
+                                            class="form-input"
+                                        >
+                        
+                                            <option value="">
+                                                Selecione
+                                            </option>
+                        
+                                            @foreach($categories ?? [] as $category)
+                        
+                                                <option
+                                                    value="{{ $category->id }}"
+                                                    @selected(($field['stock_category_id'] ?? null) == $category->id)
+                                                >
+                                                    {{ $category->name }}
+                                                </option>
+                        
+                                            @endforeach
+                        
+                                        </select>
+                        
+                                    </div>
+                        
+                                    <div class="procedure-field-options stock-options-group">
+                        
+                                        <label class="procedure-option-check">
+                        
+                                            <input
+                                                type="checkbox"
+                                                name="fields[{{ $index }}][has_quantity]"
+                                                value="1"
+                                                @checked(!empty($field['has_quantity']))
+                                            >
+                        
+                                            <span>
+                                                Solicitar quantidade usada
+                                            </span>
+                        
+                                        </label>
+                        
+                                    </div>
+                        
+                                </div>
+                        
+                            </div>
+                        
+                        @empty
+                        
+                            <div
+                                class="procedure-fields-empty"
+                                id="procedure-fields-empty"
+                            >
+                                Nenhum campo adicional inserido.
+                            </div>
+                        
+                        @endforelse
+                        </div>
+                </div>
+
+            </div>
+
+            <div class="procedure-side-card">
+
+                <div class="procedure-section compact">
+                    <div class="procedure-section-header">
+                        <h3>Resumo</h3>
+                        <p>Revise antes de salvar.</p>
+                    </div>
+
+                    <div
+                        class="procedure-summary-list"
+                        id="procedureSummaryList"
+                    >
+                    
+                        <div class="summary-empty" id="summaryEmpty">
+                    
+                            <i data-lucide="settings"></i>
+                    
+                            <div>
+                                <strong>
+                                    Sem validade automática
+                                </strong>
+                    
+                                <span>
+                                    O procedimento será executado manualmente.
+                                </span>
+                            </div>
+                    
+                        </div>
+                    
+                    </div>
+                </div>
+
+                <div class="procedure-side-actions">
+                    <a
+                        href="{{ route('procedures.index') }}"
+                        class="procedure-cancel-btn"
+                    >
+                        Cancelar
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="chm-page-button primary full"
+                    >
+                        <i data-lucide="save"></i>
+                        Salvar alterações
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+window.toggleStockFields = function(select) {
+
+    const row =
+        select.closest('.procedure-field-row');
+
+    if (!row) {
+        return;
+    }
+
+    const isStockItem =
+        select.value === 'stock_item';
+
+    row.classList.toggle(
+        'is-stock-item',
+        isStockItem
+    );
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const form =
+        document.getElementById('procedureForm');
+
+    const addFieldBtn =
+        document.getElementById('add-field-btn');
+
+    const wrapper =
+        document.getElementById('procedure-fields-wrapper');
+
+    const summaryList =
+        document.getElementById('procedureSummaryList');
+
+    const validityKm =
+        document.getElementById('validityKm');
+
+    const validityHours =
+        document.getElementById('validityHours');
+
+    const validityPeriod =
+        document.getElementById('validityPeriod');
+
+    const intervalKm =
+        document.getElementById('intervalKm');
+
+    const intervalHours =
+        document.getElementById('intervalHours');
+
+    const intervalDays =
+        document.getElementById('intervalDays');
+
+    const intervalKmError =
+        document.getElementById('intervalKmError');
+
+    const intervalHoursError =
+        document.getElementById('intervalHoursError');
+
+    const intervalDaysError =
+        document.getElementById('intervalDaysError');
+
+    let fieldIndex =
+        {{ count($existingFields ?? []) }};
+
+    function refreshIcons() {
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
+    }
+
+    function removeEmptyState() {
+
+        const empty =
+            document.getElementById('procedure-fields-empty');
+
+        if (empty) {
+            empty.remove();
+        }
+
+    }
+
+    function getNumber(input) {
+
+        return Number(input?.value || 0);
+
+    }
+
+    function clearValidation() {
+
+        [
+            intervalKm,
+            intervalHours,
+            intervalDays
+        ].forEach(input => {
+
+            if (input) {
+                input.classList.remove('input-invalid');
+            }
+
+        });
+
+        [
+            intervalKmError,
+            intervalHoursError,
+            intervalDaysError
+        ].forEach(error => {
+
+            if (error) {
+                error.style.display = 'none';
+            }
+
+        });
+
+    }
+
+    function addSummaryItem(type, label, value, suffix, icon) {
+
+        const item =
+            document.createElement('div');
+
+        item.className =
+            `summary-item summary-${type}`;
+
+        item.innerHTML = `
+            <span>
+                <i data-lucide="${icon}"></i>
+                ${label}
+            </span>
+
+            <strong>
+                ${value} ${suffix}
+            </strong>
+        `;
+
+        summaryList.appendChild(item);
+
+    }
+
+    function updateSummary() {
+
+        if (!summaryList) {
+            return;
+        }
+
+        summaryList.innerHTML = '';
+
+        let hasRule = false;
+
+        if (validityKm?.checked) {
+
+            hasRule = true;
+
+            addSummaryItem(
+                'km',
+                'Controle por KM',
+                getNumber(intervalKm).toLocaleString('pt-BR'),
+                'km',
+                'gauge'
+            );
+
+        }
+
+        if (validityHours?.checked) {
+
+            hasRule = true;
+
+            addSummaryItem(
+                'hours',
+                'Controle por Horas',
+                getNumber(intervalHours).toLocaleString('pt-BR'),
+                'h',
+                'clock'
+            );
+
+        }
+
+        if (validityPeriod?.checked) {
+
+            hasRule = true;
+
+            addSummaryItem(
+                'days',
+                'Controle por Período',
+                getNumber(intervalDays).toLocaleString('pt-BR'),
+                'dias',
+                'calendar-days'
+            );
+
+        }
+
+        if (!hasRule) {
+
+            const empty =
+                document.createElement('div');
+
+            empty.className =
+                'summary-empty';
+
+            empty.innerHTML = `
+                <i data-lucide="settings"></i>
+
+                <div>
+                    <strong>
+                        Sem validade automática
+                    </strong>
+
+                    <span>
+                        O procedimento será executado manualmente.
+                    </span>
+                </div>
+            `;
+
+            summaryList.appendChild(empty);
+
+        }
+
+        refreshIcons();
+
+    }
+
+    function validateValidityRules() {
+
+        clearValidation();
+
+        let valid = true;
+
+        if (
+            validityKm?.checked
+            &&
+            getNumber(intervalKm) <= 0
+        ) {
+
+            intervalKm.classList.add('input-invalid');
+
+            if (intervalKmError) {
+                intervalKmError.style.display = 'block';
+            }
+
+            valid = false;
+
+        }
+
+        if (
+            validityHours?.checked
+            &&
+            getNumber(intervalHours) <= 0
+        ) {
+
+            intervalHours.classList.add('input-invalid');
+
+            if (intervalHoursError) {
+                intervalHoursError.style.display = 'block';
+            }
+
+            valid = false;
+
+        }
+
+        if (
+            validityPeriod?.checked
+            &&
+            getNumber(intervalDays) <= 0
+        ) {
+
+            intervalDays.classList.add('input-invalid');
+
+            if (intervalDaysError) {
+                intervalDaysError.style.display = 'block';
+            }
+
+            valid = false;
+
+        }
+
+        return valid;
+
+    }
+
+    [
+        validityKm,
+        validityHours,
+        validityPeriod,
+        intervalKm,
+        intervalHours,
+        intervalDays
+    ].forEach(element => {
+
+        if (element) {
+
+            element.addEventListener(
+                'input',
+                updateSummary
+            );
+
+            element.addEventListener(
+                'change',
+                updateSummary
+            );
+
+        }
+
+    });
+
+    if (form) {
+
+        form.addEventListener('submit', (event) => {
+
+            if (!validateValidityRules()) {
+
+                event.preventDefault();
+
+                const firstInvalid =
+                    document.querySelector('.input-invalid');
+
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
+
+                return false;
+
+            }
+
+        });
+
+    }
+
+    if (addFieldBtn && wrapper) {
+
+        addFieldBtn.addEventListener('click', () => {
+
+            removeEmptyState();
+
+            const row =
+                document.createElement('div');
+
+            row.className =
+                'procedure-field-row';
+
+            row.innerHTML = `
+                <div class="procedure-field-main-row">
+
+                    <div class="form-group field-col-name">
+                        <label>Nome do campo</label>
+
+                        <input
+                            type="text"
+                            name="fields[${fieldIndex}][label]"
+                            class="form-input"
+                            placeholder="Ex: Tipo do óleo"
+                        >
+                    </div>
+
+                    <div class="form-group field-col-type">
+                        <label>Tipo</label>
+
+                        <select
+                            name="fields[${fieldIndex}][field_type]"
+                            class="form-input field-type-select"
+                            onchange="toggleStockFields(this)"
+                        >
+                            <option value="text">Texto</option>
+                            <option value="number">Número</option>
+                            <option value="stock_item">Item de estoque</option>
+                        </select>
+                    </div>
+
+                    <div class="procedure-field-options field-col-required">
+                        <label class="procedure-option-check">
+                            <input
+                                type="checkbox"
+                                name="fields[${fieldIndex}][required]"
+                                value="1"
+                            >
+
+                            <span>
+                                Obrigatório
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="field-col-remove">
+                        <button
+                            type="button"
+                            class="field-remove-btn"
+                            onclick="this.closest('.procedure-field-row').remove()"
+                        >
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="procedure-field-stock-row">
+
+                    <div class="form-group stock-category-group">
+                        <label>Categoria de estoque</label>
+
+                        <select
+                            name="fields[${fieldIndex}][stock_category_id]"
+                            class="form-input"
+                        >
+                            <option value="">Selecione</option>
+
+                            @foreach($categories ?? [] as $category)
+                                <option value="{{ $category->id }}">
+                                    {{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="procedure-field-options stock-options-group">
+                        <label class="procedure-option-check">
+                            <input
+                                type="checkbox"
+                                name="fields[${fieldIndex}][has_quantity]"
+                                value="1"
+                            >
+
+                            <span>
+                                Solicitar quantidade usada
+                            </span>
+                        </label>
+                    </div>
+
+                </div>
+            `;
+
+            wrapper.appendChild(row);
+
+            fieldIndex++;
+
+            refreshIcons();
+
+        });
+
+    }
+
+    document
+        .querySelectorAll('.field-type-select')
+        .forEach(select => {
+            window.toggleStockFields(select);
+        });
+
+    updateSummary();
+
+    refreshIcons();
+
+});
+</script>
+@endsection

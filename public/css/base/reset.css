@@ -1,0 +1,51 @@
+* {
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+}
+
+html,
+body {
+
+    min-height: 100%;
+}
+
+body {
+
+    background: var(--bg-primary);
+
+    color: var(--text-primary);
+
+    font-family: Inter, sans-serif;
+
+    overflow-x: hidden;
+}
+
+a {
+
+    color: inherit;
+
+    text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+
+    font: inherit;
+
+    outline: none;
+
+    border: none;
+}
+
+img {
+
+    max-width: 100%;
+
+    display: block;
+}

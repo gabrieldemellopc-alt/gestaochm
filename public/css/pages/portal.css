@@ -1,0 +1,124 @@
+/*
+|--------------------------------------------------------------------------
+| PORTAL
+|--------------------------------------------------------------------------
+*/
+
+.portal-page {
+
+    min-height: 100vh;
+
+    padding: 42px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| HEADER
+|--------------------------------------------------------------------------
+*/
+
+.portal-header {
+
+    margin-bottom: 38px;
+}
+
+.portal-header h1 {
+
+    font-size: 52px;
+
+    font-weight: 800;
+
+    margin-bottom: 8px;
+}
+
+.portal-header p {
+
+    color: var(--text-secondary);
+}
+
+/*
+|--------------------------------------------------------------------------
+| GRID
+|--------------------------------------------------------------------------
+*/
+
+.portal-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(340px, 1fr));
+
+    gap: 24px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CARD
+|--------------------------------------------------------------------------
+*/
+
+.portal-card {
+
+    position: relative;
+
+    padding: 28px;
+
+    border-radius: 28px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.03),
+            rgba(255,255,255,.015)
+        );
+
+    border: 1px solid rgba(255,255,255,.06);
+
+    overflow: hidden;
+
+    transition: var(--transition-normal);
+}
+
+.portal-card:hover {
+
+    transform: translateY(-2px);
+
+    border-color: rgba(255,255,255,.08);
+}
+
+/*
+|--------------------------------------------------------------------------
+| ICON
+|--------------------------------------------------------------------------
+*/
+
+.portal-card-icon {
+
+    width: 64px;
+
+    height: 64px;
+
+    border-radius: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: rgba(255,255,255,.04);
+
+    margin-bottom: 22px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| BUTTON
+|--------------------------------------------------------------------------
+*/
+
+.portal-button {
+
+    margin-top: 24px;
+}

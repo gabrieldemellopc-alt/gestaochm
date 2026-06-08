@@ -1,0 +1,115 @@
+/*
+|--------------------------------------------------------------------------
+| MODAL BACKDROP
+|--------------------------------------------------------------------------
+*/
+
+.nf-modal-backdrop {
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0,0,0,.62);
+
+    backdrop-filter: blur(8px);
+
+    z-index: 999;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 24px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| MODAL
+|--------------------------------------------------------------------------
+*/
+
+.nf-modal {
+
+    width: 100%;
+
+    max-width: 960px;
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    background:
+        linear-gradient(
+            180deg,
+            #111936,
+            #0d1430
+        );
+
+    border-radius: 28px;
+
+    border: 1px solid rgba(255,255,255,.06);
+
+    box-shadow:
+        0 18px 50px rgba(0,0,0,.42);
+}
+
+/*
+|--------------------------------------------------------------------------
+| HEADER
+|--------------------------------------------------------------------------
+*/
+
+.nf-modal-header {
+
+    padding: 26px 28px;
+
+    border-bottom: 1px solid rgba(255,255,255,.05);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 18px;
+}
+
+.nf-modal-title {
+
+    font-size: 28px;
+
+    font-weight: 800;
+}
+
+/*
+|--------------------------------------------------------------------------
+| BODY
+|--------------------------------------------------------------------------
+*/
+
+.nf-modal-body {
+
+    padding: 28px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| FOOTER
+|--------------------------------------------------------------------------
+*/
+
+.nf-modal-footer {
+
+    padding: 24px 28px;
+
+    border-top: 1px solid rgba(255,255,255,.05);
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 14px;
+}

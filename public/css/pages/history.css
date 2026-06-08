@@ -1,0 +1,244 @@
+/*
+|--------------------------------------------------------------------------
+| HISTORY PAGE
+|--------------------------------------------------------------------------
+*/
+
+.vehicle-history-wrapper {
+
+    max-width: 1450px;
+
+    margin: 0 auto;
+
+    padding: 34px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| HERO
+|--------------------------------------------------------------------------
+*/
+
+.vehicle-history-hero {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 24px;
+
+    padding: 34px;
+
+    border-radius: 28px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.03),
+            rgba(255,255,255,.015)
+        );
+
+    border: 1px solid rgba(255,255,255,.06);
+
+    margin-bottom: 28px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| HERO LEFT
+|--------------------------------------------------------------------------
+*/
+
+.hero-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 22px;
+}
+
+.vehicle-avatar {
+
+    width: 84px;
+
+    height: 84px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.04);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+.vehicle-avatar img {
+
+    width: 54px;
+
+    height: 54px;
+
+    object-fit: contain;
+}
+
+/*
+|--------------------------------------------------------------------------
+| KPI GROUP
+|--------------------------------------------------------------------------
+*/
+
+.hero-kpis {
+
+    display: flex;
+
+    gap: 16px;
+}
+
+.hero-kpi-card {
+
+    width: 150px;
+
+    padding: 22px;
+
+    border-radius: 24px;
+
+    background: rgba(255,255,255,.03);
+
+    border: 1px solid rgba(255,255,255,.05);
+}
+
+/*
+|--------------------------------------------------------------------------
+| FILTERS
+|--------------------------------------------------------------------------
+*/
+
+.maintenance-filters-wrapper {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    margin-bottom: 26px;
+}
+
+.maintenance-filter-card {
+
+    min-width: 280px;
+
+    padding: 18px;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.03),
+            rgba(255,255,255,.015)
+        );
+
+    border: 1px solid rgba(255,255,255,.05);
+}
+
+/*
+|--------------------------------------------------------------------------
+| TIMELINE
+|--------------------------------------------------------------------------
+*/
+
+.timeline-stack {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+.timeline-card {
+
+    display: flex;
+
+    gap: 18px;
+
+    padding: 24px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.03);
+
+    border: 1px solid rgba(255,255,255,.05);
+}
+
+/*
+|--------------------------------------------------------------------------
+| MAINTENANCE
+|--------------------------------------------------------------------------
+*/
+
+.maintenance-stack {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+.maintenance-card {
+
+    padding: 24px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.03);
+
+    border: 1px solid rgba(255,255,255,.05);
+}
+.timeline-dot.success {
+
+    background: #22c55e;
+}
+
+.timeline-observation {
+
+    margin-top: 14px;
+
+    padding: 14px;
+
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.03);
+
+    color: #cbd5e1;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+.timeline-start {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 10px;
+
+    font-size: 16px;
+
+    color: #e2e8f0;
+}
+
+.timeline-start strong {
+
+    color: #fff;
+}

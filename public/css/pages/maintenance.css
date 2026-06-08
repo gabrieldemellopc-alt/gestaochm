@@ -1,0 +1,868 @@
+.maintenance-create-page {
+    color: #ffffff;
+}
+
+.maintenance-create-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 22px;
+    margin-bottom: 24px;
+}
+
+.maintenance-kicker {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 13px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, .12);
+    border: 1px solid rgba(34, 197, 94, .32);
+    color: #86efac;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 12px;
+}
+
+.maintenance-create-header h1 {
+    margin: 0 0 8px;
+    color: #ffffff;
+    font-size: 44px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+}
+
+.maintenance-create-header p {
+    margin: 0;
+    color: #aeb9dc;
+    font-size: 16px;
+}
+
+.maintenance-back-button {
+    min-height: 46px;
+    padding: 0 18px;
+    border-radius: 13px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .14);
+    color: #dce4ff !important;
+
+    text-decoration: none !important;
+    font-size: 14px;
+    font-weight: 900;
+
+    transition: all .2s ease;
+}
+
+.maintenance-back-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+.maintenance-back-button:hover {
+    background: rgba(255, 255, 255, .10);
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+/* CONTEXTO */
+
+.maintenance-context-card {
+    margin-bottom: 22px;
+    padding: 22px;
+    border-radius: 24px;
+
+    background: rgba(49, 61, 102, .72);
+    border: 1px solid rgba(100, 116, 170, .32);
+    box-shadow: 0 22px 48px rgba(0, 0, 0, .14);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+}
+
+.maintenance-vehicle-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.maintenance-vehicle-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .10);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.maintenance-vehicle-icon img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+}
+
+.maintenance-vehicle-info h2 {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+}
+
+.maintenance-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: #aeb9dc;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.maintenance-status-badge {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 28px;
+    padding: 0 11px;
+    border-radius: 999px;
+
+    background: rgba(34, 197, 94, .12);
+    border: 1px solid rgba(34, 197, 94, .28);
+    color: #86efac;
+
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.maintenance-context-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 12px;
+    min-width: 520px;
+}
+
+.maintenance-context-item {
+    min-height: 76px;
+    padding: 13px;
+    border-radius: 16px;
+
+    background: rgba(15, 23, 42, .22);
+    border: 1px solid rgba(100, 116, 170, .22);
+}
+
+.maintenance-context-item span {
+    display: block;
+    color: #9fb0e8;
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+}
+
+.maintenance-context-item strong {
+    display: block;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 950;
+}
+
+/* LAYOUT */
+
+.maintenance-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 22px;
+    align-items: start;
+}
+
+.maintenance-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.maintenance-card,
+.maintenance-summary-card {
+    background: rgba(49, 61, 102, .72);
+    border: 1px solid rgba(100, 116, 170, .32);
+    border-radius: 24px;
+    box-shadow: 0 22px 48px rgba(0, 0, 0, .14);
+}
+
+.maintenance-card {
+    padding: 24px;
+}
+
+.maintenance-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.maintenance-card-header span,
+.maintenance-summary-header span {
+    display: block;
+    color: #9fb0e8;
+    font-size: 10px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+}
+
+.maintenance-card-header h3,
+.maintenance-summary-header h3 {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 24px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.035em;
+}
+
+.maintenance-card-header p {
+    margin: 0;
+    color: #aeb9dc;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.maintenance-card-header > svg {
+    width: 24px;
+    height: 24px;
+    color: #9fb0e8;
+    flex-shrink: 0;
+}
+
+.maintenance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.form-group.full-width,
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #dbe5ff;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.form-input {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 15px;
+
+    border-radius: 15px;
+    background: rgba(15, 23, 42, .45);
+    border: 1px solid rgba(148, 163, 184, .20);
+
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+textarea.form-input {
+    padding-top: 14px;
+    resize: vertical;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: rgba(34, 197, 94, .60);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, .10);
+    background: rgba(15, 23, 42, .58);
+}
+
+.required-mark {
+    color: #fca5a5;
+}
+
+/* CAMPOS DINÂMICOS */
+
+.maintenance-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.maintenance-field-row {
+    padding: 16px;
+    border-radius: 18px;
+
+    background: rgba(15, 23, 42, .18);
+    border: 1px solid rgba(100, 116, 170, .22);
+}
+
+.maintenance-stock-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: 14px;
+    align-items: start;
+}
+
+.field-help {
+    display: block;
+    margin-top: 7px;
+    color: #9fb0e8;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.maintenance-empty-fields {
+    min-height: 180px;
+    padding: 24px;
+    border-radius: 20px;
+
+    background: rgba(15, 23, 42, .18);
+    border: 1px dashed rgba(255, 255, 255, .13);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    text-align: center;
+    color: #aeb9dc;
+}
+
+.maintenance-empty-fields svg {
+    width: 32px;
+    height: 32px;
+    color: #9fb0e8;
+}
+
+.maintenance-empty-fields strong {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 950;
+}
+
+.maintenance-empty-fields p {
+    margin: 0;
+    color: #aeb9dc;
+    font-size: 13px;
+}
+
+/* SIDEBAR */
+
+.maintenance-side {
+    position: sticky;
+    top: 20px;
+}
+
+.maintenance-summary-card {
+    padding: 22px;
+}
+
+.maintenance-summary-header {
+    margin-bottom: 16px;
+}
+
+.maintenance-summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.maintenance-summary-item {
+    min-height: 52px;
+    padding: 0 14px;
+    border-radius: 14px;
+
+    background: rgba(15, 23, 42, .22);
+    border: 1px solid rgba(100, 116, 170, .20);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.maintenance-summary-item span {
+    color: #c7d2fe;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.maintenance-summary-item strong {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 950;
+    text-align: right;
+}
+
+.maintenance-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.maintenance-cancel-btn {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 13px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #dce4ff !important;
+
+    text-decoration: none !important;
+    font-size: 13px;
+    font-weight: 900;
+
+    transition: all .2s ease;
+}
+
+.maintenance-cancel-btn:hover {
+    background: rgba(255, 255, 255, .10);
+    color: #ffffff !important;
+}
+
+.chm-page-button.full {
+    width: 100%;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 1150px) {
+    .maintenance-context-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .maintenance-context-grid {
+        min-width: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .maintenance-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-side {
+        position: static;
+    }
+}
+
+@media (max-width: 760px) {
+    .maintenance-create-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .maintenance-create-header h1 {
+        font-size: 34px;
+    }
+
+    .maintenance-back-button {
+        width: 100%;
+    }
+
+    .maintenance-grid,
+    .maintenance-stock-field {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-context-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* =========================================================
+   MAINTENANCE INDEX
+========================================================= */
+
+.maintenance-index-page {
+    color: #ffffff;
+}
+
+.maintenance-alert-shortcuts,
+.maintenance-procedures-card {
+    margin-top: 22px;
+    padding: 24px;
+    border-radius: 24px;
+
+    background: rgba(49, 61, 102, .72);
+    border: 1px solid rgba(100, 116, 170, .32);
+    box-shadow: 0 22px 48px rgba(0, 0, 0, .14);
+}
+
+.maintenance-section-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.maintenance-section-title span {
+    display: block;
+    color: #9fb0e8;
+    font-size: 10px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+}
+
+.maintenance-section-title h2 {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 26px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+}
+
+.maintenance-section-title p {
+    margin: 0;
+    color: #aeb9dc;
+    font-size: 13px;
+}
+
+.maintenance-alert-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.maintenance-alert-card {
+    min-height: 82px;
+    padding: 14px;
+    border-radius: 18px;
+
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) 20px;
+    align-items: center;
+    gap: 12px;
+
+    text-decoration: none;
+    transition: all .2s ease;
+}
+
+.maintenance-alert-card.warning {
+    background: rgba(234, 179, 8, .12);
+    border: 1px solid rgba(234, 179, 8, .30);
+}
+
+.maintenance-alert-card.danger {
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .30);
+}
+
+.maintenance-alert-card:hover {
+    transform: translateY(-2px);
+}
+
+.maintenance-alert-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.maintenance-alert-card.warning .maintenance-alert-icon {
+    background: rgba(234, 179, 8, .14);
+    color: #fde047;
+}
+
+.maintenance-alert-card.danger .maintenance-alert-icon {
+    background: rgba(239, 68, 68, .14);
+    color: #fca5a5;
+}
+
+.maintenance-alert-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.maintenance-alert-card strong {
+    display: block;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 950;
+    margin-bottom: 4px;
+}
+
+.maintenance-alert-card span {
+    display: block;
+    color: #dbe5ff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.maintenance-alert-card > svg {
+    color: #c7d2fe;
+    width: 18px;
+    height: 18px;
+}
+
+.maintenance-procedure-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 16px;
+}
+
+.maintenance-procedure-card {
+    padding: 18px;
+    border-radius: 20px;
+
+    background: rgba(15, 23, 42, .20);
+    border: 1px solid rgba(100, 116, 170, .22);
+
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.maintenance-procedure-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+}
+
+.maintenance-procedure-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .10);
+    color: #9fb0e8;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+}
+
+.maintenance-procedure-icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+.maintenance-procedure-header h3 {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 19px;
+    line-height: 1.1;
+    font-weight: 950;
+    letter-spacing: -0.03em;
+}
+
+.maintenance-procedure-rules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.maintenance-procedure-rules span {
+    min-height: 26px;
+    padding: 0 9px;
+    border-radius: 999px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .10);
+    color: #c7d2fe;
+
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.maintenance-procedure-rules svg {
+    width: 13px;
+    height: 13px;
+}
+
+.maintenance-procedure-form {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+@media (max-width: 760px) {
+    .maintenance-alert-grid,
+    .maintenance-procedure-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-alert-shortcuts,
+    .maintenance-procedures-card {
+        padding: 18px;
+    }
+}
+/* =========================================================
+   MAINTENANCE WORKSPACE — ATALHOS 35% / PROCEDIMENTOS 65%
+========================================================= */
+
+.maintenance-workspace {
+    display: grid;
+    grid-template-columns: minmax(300px, 35%) minmax(0, 65%);
+    gap: 22px;
+    align-items: start;
+    margin-top: 22px;
+}
+
+.maintenance-workspace .maintenance-alert-shortcuts,
+.maintenance-workspace .maintenance-procedures-card {
+    margin-top: 0;
+    height: 100%;
+}
+
+.maintenance-workspace .maintenance-alert-shortcuts {
+    position: sticky;
+    top: 20px;
+}
+
+.maintenance-workspace .maintenance-alert-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.maintenance-workspace .maintenance-alert-card {
+    width: 100%;
+    min-height: 84px;
+}
+
+.maintenance-workspace .maintenance-procedure-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.maintenance-empty-shortcuts {
+    min-height: 220px;
+    padding: 24px;
+    border-radius: 20px;
+
+    background: rgba(15, 23, 42, .18);
+    border: 1px dashed rgba(255, 255, 255, .13);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    text-align: center;
+}
+
+.maintenance-empty-shortcuts svg {
+    width: 34px;
+    height: 34px;
+    color: #86efac;
+}
+
+.maintenance-empty-shortcuts strong {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 950;
+}
+
+.maintenance-empty-shortcuts p {
+    margin: 0;
+    color: #aeb9dc;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+@media (max-width: 1100px) {
+    .maintenance-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-workspace .maintenance-alert-shortcuts {
+        position: static;
+    }
+}
+/* =========================================================
+   BOTÕES PADRÃO — MANUTENÇÃO
+========================================================= */
+
+.chm-page-button {
+    min-height: 46px;
+    padding: 0 20px;
+    border-radius: 13px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    border: 0;
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
+
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition: all .2s ease;
+}
+
+.chm-page-button svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.chm-page-button.primary {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    border: 1px solid rgba(34, 197, 94, .45);
+    color: #ffffff !important;
+    box-shadow: 0 14px 30px rgba(34, 197, 94, .18);
+}
+
+.chm-page-button.primary:hover {
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 18px 36px rgba(34, 197, 94, .26);
+}
+
+.chm-page-button.full {
+    width: 100%;
+}
+.maintenance-procedure-form .chm-page-button {
+    min-height: 44px;
+    margin-top: 6px;
+}

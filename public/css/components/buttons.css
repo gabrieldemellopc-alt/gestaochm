@@ -1,0 +1,149 @@
+/*
+|--------------------------------------------------------------------------
+| PRIMARY BUTTON
+|--------------------------------------------------------------------------
+*/
+
+.nf-primary-button {
+
+    height: 48px;
+
+    padding: 0 22px;
+
+    border-radius: var(--radius-md);
+
+    background: var(--button-primary);
+
+    color: white;
+
+    font-weight: 600;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+
+    box-shadow: var(--shadow-soft);
+}
+
+.nf-primary-button:hover {
+
+    background: var(--button-primary-hover);
+
+    transform: translateY(-1px);
+}
+
+/*
+|--------------------------------------------------------------------------
+| SECONDARY BUTTON
+|--------------------------------------------------------------------------
+*/
+
+.nf-secondary-button {
+
+    height: 48px;
+
+    padding: 0 20px;
+
+    border-radius: var(--radius-md);
+
+    background: rgba(255,255,255,.03);
+
+    border: 1px solid var(--border-color);
+
+    color: white;
+
+    font-weight: 600;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    transition: var(--transition-fast);
+}
+
+.nf-secondary-button:hover {
+
+    background: rgba(255,255,255,.06);
+}
+
+/*
+|--------------------------------------------------------------------------
+| ICON BUTTON
+|--------------------------------------------------------------------------
+*/
+
+.nf-icon-button {
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 14px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: rgba(255,255,255,.04);
+
+    border: 1px solid var(--border-color);
+
+    transition: var(--transition-fast);
+}
+
+.nf-icon-button:hover {
+
+    background: rgba(255,255,255,.08);
+}
+
+/*
+|--------------------------------------------------------------------------
+| BADGE BUTTON
+|--------------------------------------------------------------------------
+*/
+
+.nf-badge-button {
+
+    height: 36px;
+
+    padding: 0 16px;
+
+    border-radius: 999px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    background: rgba(255,255,255,.04);
+
+    border: 1px solid var(--border-color);
+}
+
+.nf-badge-button.active {
+
+    background: rgba(79,124,255,.18);
+
+    border-color: rgba(79,124,255,.45);
+
+    color: white;
+}

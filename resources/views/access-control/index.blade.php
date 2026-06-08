@@ -1,0 +1,1313 @@
+@extends('layouts.app')
+@push('styles')
+
+<link
+    rel="stylesheet"
+    href="{{ asset('css/access-control.css') }}"
+>
+
+@endpush
+@section('content')
+
+<div class="page-header">
+
+    <div>
+
+        <span class="page-kicker">
+            Administração
+        </span>
+
+        <h1 class="page-title">
+            Controle de acessos
+        </h1>
+
+        <p class="page-subtitle">
+            Usuários, divisões e permissões operacionais
+        </p>
+
+    </div>
+
+    <button
+        type="button"
+        class="chm-page-add-btn"
+        onclick="openNewUserModal()"
+    >
+        <i data-lucide="plus"></i>
+        <span>Novo usuário</span>
+    </button>
+
+</div>
+
+<div class="nf-card chm-users-card">
+
+    <div class="chm-users-table">
+
+        <div class="chm-users-table-head">
+
+            <div>
+                Usuário
+            </div>
+
+            <div>
+                E-mail
+            </div>
+
+            <div>
+                Status
+            </div>
+
+            <div>
+                Ação
+            </div>
+
+        </div>
+
+        <div class="chm-users-table-body">
+
+            @foreach($users as $user)
+
+                <div class="chm-user-row">
+
+                    <div class="chm-user-main">
+
+                        <div class="chm-user-avatar">
+                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                        </div>
+
+                        <div class="chm-user-info">
+
+                            <strong>
+                                {{ $user->name }}
+                            </strong>
+
+                            <span>
+                                ID #{{ $user->id }}
+                            </span>
+
+                            <div class="chm-user-access-list">
+
+                                @forelse($user->divisionAccesses as $access)
+
+                                    <span class="chm-user-access-pill">
+
+                                        <i data-lucide="shield-check"></i>
+
+                                        {{ optional($access->division)->name ?? 'Divisão' }}
+
+                                        <small>
+                                            /
+                                            @switch($access->profile)
+                                                @case('driver')
+                                                    Motorista
+                                                    @break
+
+                                                @case('mechanic')
+                                                    Mecânico
+                                                    @break
+
+                                                @case('supervisor')
+                                                    Supervisor
+                                                    @break
+
+                                                @case('manager')
+                                                    Gestor
+                                                    @break
+
+                                                @default
+                                                    {{ $access->profile }}
+                                            @endswitch
+
+                                            @if($access->location_id)
+                                                · {{ optional($access->location)->name }}
+                                            @else
+                                                · Todas unidades
+                                            @endif
+                                        </small>
+
+                                    </span>
+
+                                @empty
+
+                                    <span class="chm-user-access-empty">
+                                        Nenhuma permissão vinculada
+                                    </span>
+
+                                @endforelse
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="chm-user-email">
+                        {{ $user->email }}
+                    </div>
+
+                    <div>
+                        @if($user->active)
+                        
+                            <span class="nf-badge success">
+                                Ativo
+                            </span>
+                        
+                        @else
+                        
+                            <span class="nf-badge danger">
+                                Desativado
+                            </span>
+                        
+                        @endif
+                    </div>
+
+                    <div class="chm-user-actions">
+
+                        <button
+                            type="button"
+                            class="chm-edit-access-btn"
+                            onclick="openEditUserModal({{ $user->id }})"
+                            title="Editar acessos"
+                        >
+                            <i data-lucide="shield"></i>
+                            <span>Editar</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+            @endforeach
+
+        </div>
+
+    </div>
+
+</div>
+
+<div
+    class="nf-modal chm-access-modal"
+    id="newUserModal"
+>
+
+    <div
+        class="nf-modal-backdrop"
+        onclick="closeNewUserModal()"
+    ></div>
+
+    <div class="nf-modal-content chm-access-modal-content">
+
+        <div class="chm-modal-hero">
+
+            <div class="chm-modal-hero-left">
+
+                <div class="chm-modal-icon">
+                    <i data-lucide="shield-check"></i>
+                </div>
+
+                <div>
+                    <span class="chm-modal-kicker">
+                        Controle operacional
+                    </span>
+
+                    <h2>
+                        Novo usuário
+                    </h2>
+
+                    <p>
+                        Cadastre usuários e defina permissões por divisão, módulo, unidade e perfil de acesso.
+                    </p>
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="nf-modal-close chm-modal-close"
+                onclick="closeNewUserModal()"
+            >
+                <i data-lucide="x"></i>
+            </button>
+
+        </div>
+
+        <form
+            method="POST"
+            action="{{ route('access-control.store') }}"
+            class="chm-access-form"
+        >
+
+            @csrf
+
+            <div class="chm-modal-body">
+
+                <section class="chm-section-card">
+
+                    <div class="chm-section-header">
+
+                        <div>
+                            <span class="chm-section-step">
+                                01
+                            </span>
+
+                            <h3>
+                                Dados do usuário
+                            </h3>
+
+                            <p>
+                                Informações básicas para criação do acesso ao sistema.
+                            </p>
+                        </div>
+
+                        <i data-lucide="user-round"></i>
+
+                    </div>
+
+                    <div class="chm-user-grid">
+
+                        <div class="chm-field chm-field-wide">
+                            <label>
+                                Nome completo
+                            </label>
+
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Ex: João da Silva"
+                                class="nf-input chm-input"
+                                required
+                            >
+                        </div>
+
+                        <div class="chm-field">
+                            <label>
+                                E-mail
+                            </label>
+
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="usuario@empresa.com"
+                                class="nf-input chm-input"
+                                required
+                            >
+                        </div>
+
+                        <div class="chm-field">
+                            <label>
+                                Senha provisória
+                            </label>
+
+                            <input
+                                type="text"
+                                name="password"
+                                placeholder="Senha inicial"
+                                class="nf-input chm-input"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section class="chm-section-card">
+
+                    <div class="chm-section-header">
+
+                        <div>
+                            <span class="chm-section-step">
+                                02
+                            </span>
+
+                            <h3>
+                                Permissões operacionais
+                            </h3>
+
+                            <p>
+                                Monte os acessos do usuário conforme a estrutura hierárquica da operação.
+                            </p>
+                        </div>
+
+                        <i data-lucide="key-round"></i>
+
+                    </div>
+
+                    <div class="chm-access-builder">
+
+                        <div class="chm-access-field">
+                            <label>
+                                Divisão
+                            </label>
+
+                            <select
+                                id="divisionSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option
+                                    value=""
+                                    disabled
+                                    selected
+                                >
+                                    Selecione a divisão
+                                </option>
+
+                                @foreach($divisions as $division)
+
+                                    <option
+                                        value="{{ $division->id }}"
+                                    >
+                                        {{ $division->name }}
+                                    </option>
+
+                                @endforeach
+
+                            </select>
+                        </div>
+
+                        <div class="chm-access-field">
+                            <label>
+                                Módulo
+                            </label>
+
+                            <select
+                                id="moduleSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option value="fleet">
+                                    Frota
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="chm-access-field">
+                            <label>
+                                Perfil
+                            </label>
+
+                            <select
+                                id="profileSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option value="driver">
+                                    Motorista
+                                </option>
+                            
+                                <option value="mechanic">
+                                    Mecânico
+                                </option>
+                            
+                                <option value="supervisor">
+                                    Supervisor
+                                </option>
+                            
+                                <option value="manager">
+                                    Gestor
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="chm-access-field">
+                            <label>
+                                Unidade
+                            </label>
+
+                            <select
+                                id="locationSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option value="">
+                                    Todas unidades
+                                </option>
+                            </select>
+
+                            <small>
+                                Deixe como “Todas unidades” para liberar toda a divisão.
+                            </small>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="chm-add-access-btn"
+                            onclick="addAccess()"
+                            title="Adicionar acesso"
+                        >
+                            <i data-lucide="plus"></i>
+                            <span>Adicionar</span>
+                        </button>
+
+                    </div>
+
+                </section>
+
+                <section class="chm-section-card chm-access-list-card">
+
+                    <div class="chm-section-header chm-list-header">
+
+                        <div>
+                            <span class="chm-section-step">
+                                03
+                            </span>
+
+                            <h3>
+                                Acessos adicionados
+                            </h3>
+
+                            <p>
+                                Cada permissão adicionada será vinculada ao usuário no momento da criação.
+                            </p>
+                        </div>
+
+                        <span class="chm-access-counter">
+                            Permissões
+                        </span>
+
+                    </div>
+
+                    <div
+                        id="accessList"
+                        class="access-list chm-access-list"
+                    >
+
+                        <div class="chm-empty-access">
+                            <i data-lucide="layers-3"></i>
+
+                            <strong>
+                                Nenhum acesso adicionado
+                            </strong>
+
+                            <span>
+                                Selecione os dados acima e clique em adicionar acesso.
+                            </span>
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+            <div class="chm-modal-actions">
+
+                <button
+                    type="button"
+                    class="chm-btn chm-btn-muted"
+                    onclick="closeNewUserModal()"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="chm-btn chm-btn-primary"
+                >
+                    <i data-lucide="save"></i>
+                    Criar usuário
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div
+    class="nf-modal chm-access-modal"
+    id="editUserModal"
+>
+
+    <div
+        class="nf-modal-backdrop"
+        onclick="closeEditUserModal()"
+    ></div>
+
+    <div class="nf-modal-content chm-access-modal-content">
+
+        <div class="chm-modal-hero">
+
+            <div class="chm-modal-hero-left">
+
+                <div class="chm-modal-icon">
+                    <i data-lucide="shield-check"></i>
+                </div>
+
+                <div>
+                    <span class="chm-modal-kicker">
+                        Edição de acesso
+                    </span>
+
+                    <h2>
+                        Editar usuário
+                    </h2>
+
+                    <p>
+                        Atualize os dados do usuário e revise as permissões operacionais vinculadas.
+                    </p>
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="nf-modal-close chm-modal-close"
+                onclick="closeEditUserModal()"
+            >
+                <i data-lucide="x"></i>
+            </button>
+
+        </div>
+
+        <form
+            method="POST"
+            id="editUserForm"
+            class="chm-access-form"
+        >
+
+            @csrf
+            @method('PUT')
+
+            <div class="chm-modal-body">
+
+                <section class="chm-section-card">
+
+                    <div class="chm-section-header">
+
+                        <div>
+                            <span class="chm-section-step">
+                                01
+                            </span>
+
+                            <h3>
+                                Dados do usuário
+                            </h3>
+
+                            <p>
+                                Altere nome, e-mail ou informe uma nova senha.
+                            </p>
+                        </div>
+
+                        <i data-lucide="user-round"></i>
+
+                    </div>
+
+                    <div class="chm-user-grid">
+
+                        <div class="chm-field chm-field-wide">
+                            <label>
+                                Nome completo
+                            </label>
+
+                            <input
+                                type="text"
+                                name="name"
+                                id="editUserName"
+                                class="nf-input chm-input"
+                                required
+                            >
+                        </div>
+
+                        <div class="chm-field">
+                            <label>
+                                E-mail
+                            </label>
+
+                            <input
+                                type="email"
+                                name="email"
+                                id="editUserEmail"
+                                class="nf-input chm-input"
+                                required
+                            >
+                        </div>
+
+                        <div class="chm-field">
+                            <label>
+                                Nova senha
+                            </label>
+
+                            <input
+                                type="text"
+                                name="password"
+                                id="editUserPassword"
+                                placeholder="Deixe vazio para manter"
+                                class="nf-input chm-input"
+                            >
+                        </div>
+
+                    </div>
+                    <div class="chm-user-status-box">
+                    
+                        <div>
+                            <strong>
+                                Status do usuário
+                            </strong>
+                    
+                            <span>
+                                Usuários desativados não poderão acessar o sistema, mas seus dados serão preservados.
+                            </span>
+                        </div>
+                    
+                        <label class="chm-switch">
+                            <input
+                                type="checkbox"
+                                name="active"
+                                id="editUserActive"
+                                value="1"
+                            >
+                    
+                            <span></span>
+                        </label>
+                    
+                    </div>
+                </section>
+
+                <section class="chm-section-card">
+
+                    <div class="chm-section-header">
+
+                        <div>
+                            <span class="chm-section-step">
+                                02
+                            </span>
+
+                            <h3>
+                                Adicionar permissão
+                            </h3>
+
+                            <p>
+                                Inclua novas permissões ao usuário selecionado.
+                            </p>
+                        </div>
+
+                        <i data-lucide="key-round"></i>
+
+                    </div>
+
+                    <div class="chm-access-builder">
+
+                        <div class="chm-access-field">
+                            <label>
+                                Divisão
+                            </label>
+
+                            <select
+                                id="editDivisionSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option
+                                    value=""
+                                    disabled
+                                    selected
+                                >
+                                    Selecione a divisão
+                                </option>
+
+                                @foreach($divisions as $division)
+
+                                    <option value="{{ $division->id }}">
+                                        {{ $division->name }}
+                                    </option>
+
+                                @endforeach
+
+                            </select>
+                        </div>
+
+                        <div class="chm-access-field">
+                            <label>
+                                Módulo
+                            </label>
+
+                            <select
+                                id="editModuleSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option value="fleet">
+                                    Frota
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="chm-access-field">
+                            <label>
+                                Perfil
+                            </label>
+
+                            <select
+                                id="editProfileSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option value="driver">
+                                    Motorista
+                                </option>
+                            
+                                <option value="mechanic">
+                                    Mecânico
+                                </option>
+                            
+                                <option value="supervisor">
+                                    Supervisor
+                                </option>
+                            
+                                <option value="manager">
+                                    Gestor
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="chm-access-field">
+                            <label>
+                                Unidade
+                            </label>
+
+                            <select
+                                id="editLocationSelect"
+                                class="nf-select chm-select"
+                            >
+                                <option value="">
+                                    Todas unidades
+                                </option>
+                            </select>
+
+                            <small>
+                                Deixe como “Todas unidades” para liberar toda a divisão.
+                            </small>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="chm-add-access-btn"
+                            onclick="addEditAccess()"
+                            title="Adicionar acesso"
+                        >
+                            <i data-lucide="plus"></i>
+                            <span>Adicionar</span>
+                        </button>
+
+                    </div>
+
+                </section>
+
+                <section class="chm-section-card chm-access-list-card">
+
+                    <div class="chm-section-header chm-list-header">
+
+                        <div>
+                            <span class="chm-section-step">
+                                03
+                            </span>
+
+                            <h3>
+                                Permissões atuais
+                            </h3>
+
+                            <p>
+                                Remova ou mantenha os acessos vinculados ao usuário.
+                            </p>
+                        </div>
+
+                        <span class="chm-access-counter">
+                            Permissões
+                        </span>
+
+                    </div>
+
+                    <div
+                        id="editAccessList"
+                        class="access-list chm-access-list"
+                    ></div>
+
+                </section>
+
+            </div>
+
+            <div class="chm-modal-actions">
+
+                <button
+                    type="button"
+                    class="chm-btn chm-btn-muted"
+                    onclick="closeEditUserModal()"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="chm-btn chm-btn-primary"
+                >
+                    <i data-lucide="save"></i>
+                    Salvar alterações
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@php
+    $accessControlDivisions = $divisions->map(function ($division) {
+        return [
+            'id' => $division->id,
+            'name' => $division->name,
+            'locations' => $division->locations->map(function ($location) {
+                return [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                ];
+            })->values(),
+        ];
+    })->values();
+    
+    $accessControlUsers = $users->map(function ($user) {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'active' => (bool) $user->active,
+            'accesses' => $user->divisionAccesses->map(function ($access) {
+                return [
+                    'division_id' => $access->division_id,
+                    'division_name' => optional($access->division)->name,
+                    'module' => $access->module,
+                    'profile' => $access->profile,
+                    'location_id' => $access->location_id,
+                    'location_name' => optional($access->location)->name,
+                ];
+            })->values(),
+        ];
+    })->values();
+@endphp
+
+<script>
+    window.accessControlUsers = {{ Illuminate\Support\Js::from($accessControlUsers) }};
+</script>
+<script>
+    window.accessControlDivisions = {{ Illuminate\Support\Js::from($accessControlDivisions) }};
+</script>
+<script>
+
+function openNewUserModal()
+{
+    document
+        .getElementById('newUserModal')
+        .classList
+        .add('active');
+}
+
+function closeNewUserModal()
+{
+    document
+        .getElementById('newUserModal')
+        .classList
+        .remove('active');
+}
+
+
+</script>
+<script>
+lucide.createIcons();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const divisionSelect = document.getElementById('divisionSelect');
+    const locationSelect = document.getElementById('locationSelect');
+
+    if (!divisionSelect || !locationSelect) {
+        return;
+    }
+
+    divisionSelect.addEventListener('change', function () {
+        const divisionId = String(this.value);
+
+        locationSelect.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Todas unidades';
+        locationSelect.appendChild(defaultOption);
+
+        const divisions = window.accessControlDivisions || [];
+
+        const selectedDivision = divisions.find(function (division) {
+            return String(division.id) === divisionId;
+        });
+
+        if (!selectedDivision || !selectedDivision.locations) {
+            return;
+        }
+
+        selectedDivision.locations.forEach(function (location) {
+            const option = document.createElement('option');
+
+            option.value = location.id;
+            option.textContent = location.name;
+
+            locationSelect.appendChild(option);
+        });
+    });
+});
+
+</script>
+<script>
+let accessIndex = 0;
+
+function getSelectText(select) {
+    if (!select || !select.options || select.selectedIndex < 0) {
+        return '';
+    }
+
+    return select.options[select.selectedIndex].text;
+}
+
+function addAccess() {
+    const divisionSelect = document.getElementById('divisionSelect');
+    const moduleSelect = document.getElementById('moduleSelect');
+    const profileSelect = document.getElementById('profileSelect');
+    const locationSelect = document.getElementById('locationSelect');
+    const accessList = document.getElementById('accessList');
+
+    if (!divisionSelect || !moduleSelect || !profileSelect || !locationSelect || !accessList) {
+        return;
+    }
+
+    const divisionId = divisionSelect.value;
+    const module = moduleSelect.value;
+    const profile = profileSelect.value;
+    const locationId = locationSelect.value;
+
+    if (!divisionId) {
+        alert('Selecione uma divisão antes de adicionar o acesso.');
+        return;
+    }
+
+    if (!module) {
+        alert('Selecione um módulo.');
+        return;
+    }
+
+    if (!profile) {
+        alert('Selecione um perfil.');
+        return;
+    }
+
+    const duplicate = accessList.querySelector(
+        `[data-division-id="${divisionId}"][data-module="${module}"][data-profile="${profile}"][data-location-id="${locationId}"]`
+    );
+
+    if (duplicate) {
+        alert('Esse acesso já foi adicionado.');
+        return;
+    }
+
+    const emptyState = accessList.querySelector('.chm-empty-access');
+
+    if (emptyState) {
+        emptyState.remove();
+    }
+
+    const divisionName = getSelectText(divisionSelect);
+    const moduleName = getSelectText(moduleSelect);
+    const profileName = getSelectText(profileSelect);
+    const locationName = locationId ? getSelectText(locationSelect) : 'Todas unidades';
+
+    const item = document.createElement('div');
+
+    item.className = 'access-item';
+    item.dataset.divisionId = divisionId;
+    item.dataset.module = module;
+    item.dataset.profile = profile;
+    item.dataset.locationId = locationId;
+
+    item.innerHTML = `
+        <input type="hidden" name="accesses[${accessIndex}][division_id]" value="${divisionId}">
+        <input type="hidden" name="accesses[${accessIndex}][module]" value="${module}">
+        <input type="hidden" name="accesses[${accessIndex}][profile]" value="${profile}">
+        <input type="hidden" name="accesses[${accessIndex}][location_id]" value="${locationId}">
+
+        <span class="access-badge">${divisionName}</span>
+        <span class="access-badge">${moduleName}</span>
+        <span class="access-badge">${profileName}</span>
+        <span class="access-badge">${locationName}</span>
+
+        <button type="button" onclick="removeAccess(this)">
+            <i data-lucide="x"></i>
+        </button>
+    `;
+
+    accessList.appendChild(item);
+
+    accessIndex++;
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+function removeAccess(button) {
+    const item = button.closest('.access-item');
+    const accessList = document.getElementById('accessList');
+
+    if (item) {
+        item.remove();
+    }
+
+    if (accessList && accessList.querySelectorAll('.access-item').length === 0) {
+        accessList.innerHTML = `
+            <div class="chm-empty-access">
+                <i data-lucide="layers-3"></i>
+
+                <strong>
+                    Nenhum acesso adicionado
+                </strong>
+
+                <span>
+                    Selecione os dados acima e clique em adicionar acesso.
+                </span>
+            </div>
+        `;
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+}
+</script>
+<script>
+let editAccessIndex = 0;
+
+const moduleLabels = {
+    fleet: 'Frota',
+};
+
+const profileLabels = {
+    driver: 'Motorista',
+    mechanic: 'Mecânico',
+    supervisor: 'Supervisor',
+    manager: 'Gestor',
+};
+
+function openEditUserModal(userId)
+{
+    const users = window.accessControlUsers || [];
+
+    const user = users.find(function (item) {
+        return Number(item.id) === Number(userId);
+    });
+
+    if (!user) {
+        return;
+    }
+
+    editAccessIndex = 0;
+
+    const form = document.getElementById('editUserForm');
+
+    form.action = `/access-control/${user.id}`;
+
+    document.getElementById('editUserName').value = user.name || '';
+    document.getElementById('editUserEmail').value = user.email || '';
+    document.getElementById('editUserPassword').value = '';
+    document.getElementById('editUserActive').checked = !!user.active;
+    
+    const accessList = document.getElementById('editAccessList');
+
+    accessList.innerHTML = '';
+
+    if (!user.accesses || user.accesses.length === 0) {
+        renderEditEmptyState();
+    } else {
+        user.accesses.forEach(function (access) {
+            appendEditAccessItem({
+                division_id: access.division_id,
+                division_name: access.division_name,
+                module: access.module,
+                module_name: moduleLabels[access.module] || access.module,
+                profile: access.profile,
+                profile_name: profileLabels[access.profile] || access.profile,
+                location_id: access.location_id || '',
+                location_name: access.location_name || 'Todas unidades',
+            });
+        });
+    }
+
+    document
+        .getElementById('editUserModal')
+        .classList
+        .add('active');
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+function closeEditUserModal()
+{
+    document
+        .getElementById('editUserModal')
+        .classList
+        .remove('active');
+}
+
+function renderEditEmptyState()
+{
+    const accessList = document.getElementById('editAccessList');
+
+    accessList.innerHTML = `
+        <div class="chm-empty-access">
+            <i data-lucide="layers-3"></i>
+
+            <strong>
+                Nenhuma permissão vinculada
+            </strong>
+
+            <span>
+                Adicione pelo menos uma permissão antes de salvar.
+            </span>
+        </div>
+    `;
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+function addEditAccess()
+{
+    const divisionSelect = document.getElementById('editDivisionSelect');
+    const moduleSelect = document.getElementById('editModuleSelect');
+    const profileSelect = document.getElementById('editProfileSelect');
+    const locationSelect = document.getElementById('editLocationSelect');
+    const accessList = document.getElementById('editAccessList');
+
+    const divisionId = divisionSelect.value;
+    const module = moduleSelect.value;
+    const profile = profileSelect.value;
+    const locationId = locationSelect.value;
+
+    if (!divisionId) {
+        alert('Selecione uma divisão.');
+        return;
+    }
+
+    const duplicate = accessList.querySelector(
+        `[data-division-id="${divisionId}"][data-module="${module}"][data-profile="${profile}"][data-location-id="${locationId}"]`
+    );
+
+    if (duplicate) {
+        alert('Esse acesso já foi adicionado.');
+        return;
+    }
+
+    const emptyState = accessList.querySelector('.chm-empty-access');
+
+    if (emptyState) {
+        emptyState.remove();
+    }
+
+    appendEditAccessItem({
+        division_id: divisionId,
+        division_name: getSelectText(divisionSelect),
+        module: module,
+        module_name: getSelectText(moduleSelect),
+        profile: profile,
+        profile_name: getSelectText(profileSelect),
+        location_id: locationId,
+        location_name: locationId ? getSelectText(locationSelect) : 'Todas unidades',
+    });
+}
+
+function appendEditAccessItem(access)
+{
+    const accessList = document.getElementById('editAccessList');
+
+    const item = document.createElement('div');
+
+    item.className = 'access-item';
+    item.dataset.divisionId = access.division_id;
+    item.dataset.module = access.module;
+    item.dataset.profile = access.profile;
+    item.dataset.locationId = access.location_id || '';
+
+    item.innerHTML = `
+        <input type="hidden" name="accesses[${editAccessIndex}][division_id]" value="${access.division_id}">
+        <input type="hidden" name="accesses[${editAccessIndex}][module]" value="${access.module}">
+        <input type="hidden" name="accesses[${editAccessIndex}][profile]" value="${access.profile}">
+        <input type="hidden" name="accesses[${editAccessIndex}][location_id]" value="${access.location_id || ''}">
+
+        <span class="access-badge">${access.division_name || 'Divisão'}</span>
+        <span class="access-badge">${access.module_name || access.module}</span>
+        <span class="access-badge">${access.profile_name || access.profile}</span>
+        <span class="access-badge">${access.location_name || 'Todas unidades'}</span>
+
+        <button type="button" onclick="removeEditAccess(this)">
+            <i data-lucide="x"></i>
+        </button>
+    `;
+
+    accessList.appendChild(item);
+
+    editAccessIndex++;
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+function removeEditAccess(button)
+{
+    const item = button.closest('.access-item');
+    const accessList = document.getElementById('editAccessList');
+
+    if (item) {
+        item.remove();
+    }
+
+    if (accessList && accessList.querySelectorAll('.access-item').length === 0) {
+        renderEditEmptyState();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const editDivisionSelect = document.getElementById('editDivisionSelect');
+    const editLocationSelect = document.getElementById('editLocationSelect');
+
+    if (!editDivisionSelect || !editLocationSelect) {
+        return;
+    }
+
+    editDivisionSelect.addEventListener('change', function () {
+        const divisionId = String(this.value);
+
+        editLocationSelect.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Todas unidades';
+        editLocationSelect.appendChild(defaultOption);
+
+        const divisions = window.accessControlDivisions || [];
+
+        const selectedDivision = divisions.find(function (division) {
+            return String(division.id) === divisionId;
+        });
+
+        if (!selectedDivision || !selectedDivision.locations) {
+            return;
+        }
+
+        selectedDivision.locations.forEach(function (location) {
+            const option = document.createElement('option');
+
+            option.value = location.id;
+            option.textContent = location.name;
+
+            editLocationSelect.appendChild(option);
+        });
+    });
+});
+</script>
+@endsection

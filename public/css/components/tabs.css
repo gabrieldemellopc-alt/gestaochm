@@ -1,0 +1,69 @@
+/*
+|--------------------------------------------------------------------------
+| TABS
+|--------------------------------------------------------------------------
+*/
+
+.nf-tabs {
+
+    display: flex;
+
+    gap: 12px;
+
+    margin-bottom: 22px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| TAB BUTTON
+|--------------------------------------------------------------------------
+*/
+
+.nf-tab-button {
+
+    height: 48px;
+
+    padding: 0 20px;
+
+    border-radius: 16px;
+
+    background: rgba(255,255,255,.03);
+
+    border: 1px solid rgba(255,255,255,.05);
+
+    color: var(--text-secondary);
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    font-weight: 600;
+
+    transition: var(--transition-fast);
+}
+
+.nf-tab-button:hover {
+
+    background: rgba(255,255,255,.06);
+
+    color: white;
+}
+
+.nf-tab-button.active {
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(79,124,255,.22),
+            rgba(79,124,255,.10)
+        );
+
+    border-color: rgba(79,124,255,.28);
+
+    color: white;
+
+    box-shadow:
+        0 0 18px rgba(79,124,255,.18);
+}

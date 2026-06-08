@@ -1,0 +1,850 @@
+@extends('layouts.app')
+
+@section('content')
+@push('styles')
+
+<link
+    rel="stylesheet"
+    href="{{ asset('css/pages/history.css') }}"
+>
+
+@endpush
+<div class="vehicle-history-wrapper">
+
+    {{-- HEADER --}}
+    <div class="page-header">
+
+        <div>
+
+            <h1>
+                Histórico do Veículo
+            </h1>
+
+            <p>
+                Gestão operacional e técnica da frota
+            </p>
+
+        </div>
+
+        <a
+            href="{{ route('dashboard') }}"
+            class="back-button"
+        >
+
+            <i data-lucide="arrow-left"></i>
+
+            Voltar
+
+        </a>
+
+    </div>
+
+    {{-- HERO --}}
+    <div class="vehicle-history-hero">
+
+        <div class="hero-left">
+
+            <div class="vehicle-avatar">
+
+                <img
+                    src="{{ asset('images/' . ($vehicle->type ?? 'default') . '.png') }}"
+                    alt=""
+                >
+            </div>
+
+            <div>
+
+                <div class="vehicle-title-row">
+
+                    <h2>
+                        {{ $vehicle->name }}
+                    </h2>
+
+                    <span class="vehicle-status-badge">
+
+                        {{ ucfirst($vehicle->operational_status ?? 'operacional') }}
+
+                    </span>
+
+                </div>
+
+                <div class="vehicle-subtitle">
+
+                    {{ $vehicle->plate }}
+                    •
+
+                    {{ $vehicle->division->name ?? 'Divisão' }}
+                    •
+
+                    {{ $vehicle->location->name ?? 'Operação urbana' }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="hero-kpis">
+
+            <div class="hero-kpi-card">
+
+                <small>
+                    Hodômetro
+                </small>
+
+                <strong>
+
+                    {{ number_format($vehicle->current_km ?? 0, 0, ',', '.') }}
+
+                </strong>
+
+                <span>
+                    KM
+                </span>
+
+            </div>
+
+            <div class="hero-kpi-card">
+
+                <small>
+                    Horímetro
+                </small>
+
+                <strong>
+
+                    {{ number_format($vehicle->current_hours ?? 0, 0, ',', '.') }}
+
+                </strong>
+
+                <span>
+                    Horas
+                </span>
+
+            </div>
+
+            <div class="hero-kpi-card">
+
+                <small>
+                    Manutenções
+                </small>
+
+                <strong>
+
+                    {{ $vehicle->maintenances->count() }}
+
+                </strong>
+
+                <span>
+                    Registros
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- TABS --}}
+    <div
+        x-data="{
+    
+            tab: 'operational',
+    
+            maintenanceFilterProcedure: '',
+    
+            maintenanceFilterStartDate: '',
+    
+            maintenanceFilterEndDate: '',
+    
+            maintenanceSearch: '',
+    
+            maintenanceOrder: 'desc'
+    
+        }"
+        class="history-tabs-wrapper"
+    >
+
+        <div class="history-tabs">
+
+            <button
+                @click="tab = 'operational'"
+                :class="{ 'active': tab === 'operational' }"
+                class="history-tab-btn"
+            >
+
+                <i data-lucide="activity"></i>
+
+                Operacional
+
+            </button>
+
+            <button
+                @click="tab = 'maintenances'"
+                :class="{ 'active': tab === 'maintenances' }"
+                class="history-tab-btn"
+            >
+
+                <i data-lucide="wrench"></i>
+
+                Manutenções
+
+            </button>
+            
+            <button
+                @click="tab = 'locations'"
+                :class="{ 'active': tab === 'locations' }"
+                class="history-tab-btn"
+            >
+            
+                <i data-lucide="map-pinned"></i>
+            
+                Localizações
+            
+            </button>
+
+        </div>
+
+        {{-- OPERACIONAL --}}
+        <div
+            x-show="tab === 'operational'"
+            x-transition
+            class="history-section"
+        >
+
+            <div class="history-section-header">
+
+                <h3>
+                    Histórico operacional
+                </h3>
+
+                <p>
+                    Atualizações de KM, horímetro e movimentações
+                </p>
+
+            </div>
+
+            <div class="timeline-stack">
+
+                @forelse($vehicle->updateLogs as $log)
+
+                    <div class="timeline-card">
+
+                        <div class="timeline-dot"></div>
+
+                        <div class="timeline-body">
+
+                            <div class="timeline-top">
+
+                                <strong>
+
+                                    @switch($log->type)
+
+                                        @case('km')
+                                            Hodômetro
+                                            @break
+
+                                        @case('hours')
+                                            Horímetro
+                                            @break
+                                        @case('location')
+                                            Local
+                                            @break
+
+                                        @default
+                                            {{ ucfirst($log->type) }}
+
+                                    @endswitch
+
+                                </strong>
+
+                                <span>
+
+                                    {{ $log->created_at->format('d/m/Y H:i') }}
+
+                                </span>
+
+                            </div>
+
+                            <div class="timeline-values">
+
+                            @if($log->type === 'location')
+                        
+                                <span>
+                        
+                                    {{ $log->old_location_name ?? '--' }}
+                        
+                                </span>
+                        
+                                <i data-lucide="arrow-right"></i>
+                        
+                                <strong>
+                        
+                                    {{ $log->new_location_name ?? '--' }}
+                        
+                                </strong>
+                        
+                            @elseif($log->type === 'km')
+                        
+                                <span>
+                        
+                                    {{ number_format($log->old_value ?? 0, 0, ',', '.') }} KM
+                        
+                                </span>
+                        
+                                <i data-lucide="arrow-right"></i>
+                        
+                                <strong>
+                        
+                                    {{ number_format($log->new_value ?? 0, 0, ',', '.') }} KM
+                        
+                                </strong>
+                        
+                            @elseif($log->type === 'hours')
+                        
+                                <span>
+                        
+                                    {{ number_format($log->old_value ?? 0, 0, ',', '.') }} H
+                        
+                                </span>
+                        
+                                <i data-lucide="arrow-right"></i>
+                        
+                                <strong>
+                        
+                                    {{ number_format($log->new_value ?? 0, 0, ',', '.') }} H
+                        
+                                </strong>
+                        
+                            @else
+                        
+                                <span>
+                        
+                                    {{ $log->old_value ?? '--' }}
+                        
+                                </span>
+                        
+                                <i data-lucide="arrow-right"></i>
+                        
+                                <strong>
+                        
+                                    {{ $log->new_value ?? '--' }}
+                        
+                                </strong>
+                        
+                            @endif
+                        
+                        </div>
+
+                            @if($log->user)
+
+                                <small>
+
+                                    por {{ $log->user->name }}
+
+                                </small>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                @empty
+
+                    <div class="history-empty">
+
+                        Nenhum histórico operacional encontrado.
+
+                    </div>
+
+                @endforelse
+
+            </div>
+
+        </div>
+
+        {{-- MANUTENÇÕES --}}
+        <div
+            x-show="tab === 'maintenances'"
+            x-transition
+            class="history-section"
+        >
+        
+            <div class="history-section-header">
+        
+                <div>
+        
+                    <h3>
+                        Histórico de manutenções
+                    </h3>
+        
+                    <p>
+                        Serviços realizados neste veículo
+                    </p>
+        
+                </div>
+        
+            </div>
+        
+            {{-- FILTROS --}}
+            <div class="maintenance-filters-wrapper">
+            
+                {{-- PROCEDIMENTO --}}
+                <div class="maintenance-filter-card">
+            
+                    <div class="maintenance-filter-title">
+            
+                        <i data-lucide="wrench"></i>
+            
+                        Procedimento
+            
+                    </div>
+            
+                    <select
+                        x-model="maintenanceFilterProcedure"
+                        class="nf-input"
+                    >
+            
+                        <option value="">
+                            Todos os procedimentos
+                        </option>
+            
+                        @foreach(
+                            $vehicle->procedures
+                                ->unique('id')
+                                ->sortBy('name')
+                            as $procedure
+                        )
+            
+                            <option value="{{ $procedure->id }}">
+            
+                                {{ $procedure->name }}
+            
+                            </option>
+            
+                        @endforeach
+            
+                    </select>
+            
+                </div>
+            
+                {{-- DATA --}}
+                <div class="maintenance-filter-card">
+            
+                    <div class="maintenance-filter-title">
+            
+                        <i data-lucide="calendar-days"></i>
+            
+                        Período
+            
+                    </div>
+            
+                    <div class="date-range-group">
+            
+                        <input
+                            type="date"
+                            x-model="maintenanceFilterStartDate"
+                            class="nf-input"
+                        >
+            
+                        <span class="date-separator">
+                            até
+                        </span>
+            
+                        <input
+                            type="date"
+                            x-model="maintenanceFilterEndDate"
+                            class="nf-input"
+                        >
+            
+                    </div>
+            
+                </div>
+            
+                {{-- OBSERVAÇÃO --}}
+                <div class="maintenance-filter-card flex-grow-filter">
+            
+                    <div class="maintenance-filter-title">
+            
+                        <i data-lucide="search"></i>
+            
+                        Observações
+            
+                    </div>
+            
+                    <input
+                        type="text"
+                        x-model="maintenanceSearch"
+                        placeholder="Buscar observação, oficina, detalhe..."
+                        class="nf-input"
+                    >
+            
+                </div>
+            
+                {{-- ORDENAÇÃO --}}
+                <div class="maintenance-order-box">
+            
+                    <div class="maintenance-filter-title">
+            
+                        <i data-lucide="arrow-down-up"></i>
+            
+                        Ordenação
+            
+                    </div>
+            
+                    <select
+                        x-model="maintenanceOrder"
+                        class="nf-input compact-input"
+                    >
+            
+                        <option value="desc">
+                            Mais recentes
+                        </option>
+            
+                        <option value="asc">
+                            Mais antigas
+                        </option>
+            
+                    </select>
+            
+                </div>
+            
+            </div>        
+            {{-- LISTA --}}
+            <div class="maintenance-stack">
+        
+                @forelse($vehicle->maintenances as $maintenance)
+        
+                    <div
+                        class="maintenance-card"
+        
+                        x-show="
+        
+                            (
+                                !maintenanceFilterProcedure
+                                ||
+                                maintenanceFilterProcedure == '{{ $maintenance->procedure_id }}'
+                            )
+        
+                            &&
+        
+                            (
+                                !maintenanceSearch
+                                ||
+                                '{{ strtolower($maintenance->notes ?? '') }}'
+                                    .includes(
+                                        maintenanceSearch.toLowerCase()
+                                    )
+                            )
+        
+                            &&
+        
+                            (
+                                !maintenanceFilterStartDate
+                                ||
+                                '{{ \Carbon\Carbon::parse($maintenance->performed_at)->format('Y-m-d') }}'
+                                    >=
+                                maintenanceFilterStartDate
+                            )
+        
+                            &&
+        
+                            (
+                                !maintenanceFilterEndDate
+                                ||
+                                '{{ \Carbon\Carbon::parse($maintenance->performed_at)->format('Y-m-d') }}'
+                                    <=
+                                maintenanceFilterEndDate
+                            )
+        
+                        "
+                    >
+        
+                        <div class="maintenance-top">
+        
+                            <div>
+        
+                                <h4>
+        
+                                    {{ $maintenance->procedure->name ?? 'Procedimento' }}
+        
+                                </h4>
+        
+                                <small>
+        
+                                    {{ ucfirst($maintenance->reason ?? 'preventiva') }}
+        
+                                    •
+        
+                                    {{ $maintenance->maintenance_type == 'internal'
+                                        ? 'Oficina interna'
+                                        : 'Serviço terceirizado'
+                                    }}
+        
+                                </small>
+        
+                            </div>
+        
+                            <span class="maintenance-badge {{ $maintenance->maintenance_type }}">
+        
+                                {{ $maintenance->maintenance_type == 'internal'
+                                    ? 'Interna'
+                                    : 'Externa'
+                                }}
+        
+                            </span>
+        
+                        </div>
+        
+                        <div class="maintenance-meta">
+        
+                            <div>
+        
+                                <small>
+                                    KM
+                                </small>
+        
+                                <strong>
+        
+                                    {{ number_format($maintenance->performed_km ?? 0, 0, ',', '.') }}
+        
+                                </strong>
+        
+                            </div>
+        
+                            <div>
+        
+                                <small>
+                                    Valor
+                                </small>
+        
+                                <strong>
+        
+                                    R$
+                                    {{ number_format($maintenance->total_cost ?? 0, 2, ',', '.') }}
+        
+                                </strong>
+        
+                            </div>
+        
+                            <div>
+        
+                                <small>
+                                    Data
+                                </small>
+        
+                                <strong>
+        
+                                    {{ \Carbon\Carbon::parse($maintenance->performed_at)->format('d/m/Y') }}
+        
+                                </strong>
+        
+                            </div>
+        
+                        </div>
+        
+                        @if($maintenance->provider_name)
+        
+                            <div class="maintenance-provider">
+        
+                                <i data-lucide="building-2"></i>
+        
+                                {{ $maintenance->provider_name }}
+        
+                            </div>
+        
+                        @endif
+        
+                        @if($maintenance->notes)
+        
+                            <div class="maintenance-notes">
+        
+                                {{ $maintenance->notes }}
+        
+                            </div>
+        
+                        @endif
+        
+                    </div>
+        
+                @empty
+        
+                    <div class="history-empty">
+        
+                        Nenhuma manutenção registrada.
+        
+                    </div>
+        
+                @endforelse
+        
+            </div>
+        
+        </div>
+
+        {{-- LOCALIZAÇÕES --}}
+        <div
+            x-show="tab === 'locations'"
+            x-transition
+            class="history-section"
+        >
+        
+            <div class="history-section-header">
+        
+                <h3>
+                    Histórico de localizações
+                </h3>
+        
+                <p>
+                    Movimentações operacionais do veículo
+                </p>
+        
+            </div>
+        
+            <div class="timeline-stack">
+        
+                @if($locationLogs->count())
+        
+                    {{-- PRIMEIRO REGISTRO --}}
+                    <div class="timeline-card">
+        
+                        <div class="timeline-dot success"></div>
+        
+                        <div class="timeline-body">
+        
+                            <div class="timeline-top">
+        
+                                <strong>
+                                    Início
+                                </strong>
+        
+                                <span>
+        
+                                    {{ optional(
+                                        $locationLogs->first()->created_at
+                                    )->format('d/m/Y H:i') }}
+        
+                                </span>
+        
+                            </div>
+        
+                            <div class="timeline-start">
+                            <span>{{ $locationLogs->first()->new_location_name ?? 'Sem localização' }}</span>
+                            
+                            </div>
+        
+                        </div>
+        
+                    </div>
+        
+                    {{-- MOVIMENTAÇÕES --}}
+                    @foreach($locationLogs as $log)
+        
+                        <div class="timeline-card">
+        
+                            <div class="timeline-dot"></div>
+        
+                            <div class="timeline-body">
+        
+                                <div class="timeline-top">
+        
+                                    <strong>
+                                        Alteração de localização
+                                    </strong>
+        
+                                    <span>
+        
+                                        {{ $log->created_at->format('d/m/Y H:i') }}
+        
+                                    </span>
+        
+                                </div>
+        
+                                <div class="timeline-values">
+        
+                                    <span>
+        
+                                        {{ $log->old_location_name ?? '--' }}        
+                                    </span>
+        
+                                    <i data-lucide="arrow-right"></i>
+        
+                                    <strong>
+        
+                                        {{ $log->new_location_name ?? '--' }}        
+                                    </strong>
+        
+                                </div>
+        
+                                @if($log->user)
+        
+                                    <small>
+        
+                                        por {{ $log->user->name }}
+        
+                                    </small>
+        
+                                @endif
+        
+                                @if($log->observation)
+        
+                                    <div class="timeline-observation">
+        
+                                        {{ $log->observation }}
+        
+                                    </div>
+        
+                                @endif
+        
+                            </div>
+        
+                        </div>
+        
+                    @endforeach
+        
+                @else
+        
+                    <div class="timeline-card">
+        
+                        <div class="timeline-dot success"></div>
+        
+                        <div class="timeline-body">
+        
+                            <div class="timeline-top">
+        
+                                <strong>
+                                    Início
+                                </strong>
+        
+                            </div>
+        
+                            <div class="timeline-values">
+        
+                                <span>
+                                    --
+                                </span>
+        
+                                <i data-lucide="arrow-right"></i>
+        
+                                <strong>
+        
+                                    {{ $vehicle->currentAllocation->location->name ?? 'Sem localização' }}
+        
+                                </strong>
+        
+                            </div>
+        
+                        </div>
+        
+                    </div>
+        
+                @endif
+        
+            </div>
+        
+        </div>
+    
+    </div>
+
+</div>
+
+@endsection
