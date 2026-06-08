@@ -88,7 +88,11 @@ class Vehicle extends Model
     {
         return match($this->type) {
     
-            'lixo' => 'lixo.png',
+            'automovel' => 'automovel.png',
+
+            'prancha' => 'prancha.png',
+
+            'lixo' => 'lixo.png',
     
             'cacamba' => 'cacamba.png',
     
@@ -96,7 +100,7 @@ class Vehicle extends Model
     
             'trator' => 'trator.png',
     
-            default => 'lixo.png',
+            default => 'automovel.png',
         };
     }
     public function updateLogs()
