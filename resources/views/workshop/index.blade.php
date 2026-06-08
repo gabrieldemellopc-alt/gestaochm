@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/pages/workshop.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('css/pages/workshop.css') }}?v=5">
 @endpush
 
 @section('content')
@@ -24,17 +24,17 @@
             </p>
 
             <div class="workshop-hero-actions">
-                <a href="{{ route('workshop.tires.index') }}" class="chm-page-button primary">
+                <a href="{{ route('workshop.tires.index') }}" class="workshop-action-button primary">
                     <i data-lucide="circle-dot"></i>
                     Controle de pneus
                 </a>
 
-                <a href="{{ route('stock.index') }}" class="chm-page-button secondary">
+                <a href="{{ route('stock.index') }}" class="workshop-action-button secondary">
                     <i data-lucide="boxes"></i>
                     Estoque
                 </a>
 
-                <a href="{{ route('procedures.index') }}" class="chm-page-button secondary">
+                <a href="{{ route('procedures.index') }}" class="workshop-action-button secondary">
                     <i data-lucide="clipboard-list"></i>
                     Procedimentos
                 </a>
@@ -61,7 +61,7 @@
 
     <div class="workshop-summary-grid">
 
-        <div class="workshop-summary-card">
+        <div class="workshop-summary-card">
             <div class="workshop-summary-icon">
                 <i data-lucide="truck"></i>
             </div>
@@ -73,7 +73,7 @@
             </div>
         </div>
 
-        <div class="workshop-summary-card">
+        <div class="workshop-summary-card">
             <div class="workshop-summary-icon danger">
                 <i data-lucide="triangle-alert"></i>
             </div>
@@ -85,7 +85,7 @@
             </div>
         </div>
 
-        <div class="workshop-summary-card">
+        <div class="workshop-summary-card">
             <div class="workshop-summary-icon warning">
                 <i data-lucide="circle-dot"></i>
             </div>
@@ -97,7 +97,7 @@
             </div>
         </div>
 
-        <div class="workshop-summary-card">
+        <div class="workshop-summary-card">
             <div class="workshop-summary-icon">
                 <i data-lucide="clipboard-list"></i>
             </div>
