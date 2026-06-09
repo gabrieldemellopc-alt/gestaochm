@@ -450,3 +450,231 @@
         overflow-x: auto;
     }
 }
+
+/* CHM corporate visual layer */
+
+.operations-page {
+    --operations-surface: #202a40;
+    --operations-surface-soft: #253149;
+    --operations-surface-muted: #1b2437;
+    --operations-border: rgba(203, 213, 225, .14);
+    --operations-border-strong: rgba(203, 213, 225, .22);
+    --operations-text: #f1f5f9;
+    --operations-muted: #a8b1c1;
+    --operations-subtle: #7f8a9d;
+    --operations-accent: #e0525b;
+    --operations-positive: #73b58a;
+    --operations-danger: #e67880;
+    color: var(--operations-text);
+}
+
+.operations-page .operations-header,
+.operations-page .operation-form-header,
+.operations-page .operations-summary-card,
+.operations-page .operations-tabs,
+.operations-page .operations-panel,
+.operations-page .operation-form-card,
+.operations-page .operation-current-box > div {
+    border: 1px solid var(--operations-border);
+    border-radius: 10px;
+    background: var(--operations-surface);
+    box-shadow: none;
+}
+
+.operations-page .operations-header,
+.operations-page .operation-form-header {
+    padding: 22px;
+    border-left: 3px solid var(--operations-accent);
+}
+
+.operations-page .operations-kicker {
+    padding: 0;
+    margin-bottom: 8px;
+    border: 0;
+    border-radius: 0;
+    color: var(--operations-muted);
+    background: transparent;
+}
+
+.operations-page .operations-header h1,
+.operations-page .operation-form-header h1,
+.operations-page .operations-summary-card strong,
+.operations-page .operation-vehicle strong,
+.operations-page .operation-info strong,
+.operations-page .operation-delay-box strong,
+.operations-page .operation-current-box strong,
+.operations-page .operations-empty strong {
+    color: var(--operations-text);
+}
+
+.operations-page .operations-header p,
+.operations-page .operation-form-header p,
+.operations-page .operations-summary-card span,
+.operations-page .operation-vehicle span,
+.operations-page .operation-info span,
+.operations-page .operation-delay-box p,
+.operations-page .operation-current-box span,
+.operations-page .operations-empty,
+.operations-page .operation-closed-at {
+    color: var(--operations-muted);
+}
+
+.operations-page .operations-summary-card {
+    padding: 16px;
+}
+
+.operations-page .operations-summary-icon,
+.operations-page .operation-vehicle-icon,
+.operations-page .operations-empty > div {
+    border: 1px solid var(--operations-border-strong);
+    border-radius: 8px;
+    color: var(--operations-muted);
+    background: var(--operations-surface-muted);
+}
+
+.operations-page .operations-summary-icon.active {
+    color: #a9c4e8;
+    border-color: rgba(169, 196, 232, .28);
+    background: rgba(169, 196, 232, .08);
+}
+
+.operations-page .operations-tabs {
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.operations-page .operations-tabs a {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--operations-muted);
+}
+
+.operations-page .operations-tabs a:hover {
+    color: var(--operations-text);
+    background: var(--operations-surface-soft);
+}
+
+.operations-page .operations-tabs a.active {
+    color: var(--operations-text);
+    border: 1px solid var(--operations-border-strong);
+    background: var(--operations-surface-soft);
+    box-shadow: inset 3px 0 0 var(--operations-accent);
+}
+
+.operations-page .operations-panel,
+.operations-page .operation-form-card {
+    padding: 18px;
+}
+
+.operations-page .operation-row,
+.operations-page .operation-delay-box {
+    border: 1px solid var(--operations-border);
+    border-radius: 8px;
+    background: var(--operations-surface-muted);
+}
+
+.operations-page .operation-row:hover {
+    border-color: var(--operations-border-strong);
+    background: var(--operations-surface-soft);
+}
+
+.operations-page .operation-badge,
+.operations-page .operation-action-btn {
+    border-radius: 6px;
+}
+
+.operations-page .operation-badge.open {
+    color: #b8cee9 !important;
+    border-color: rgba(169, 196, 232, .28);
+    background: rgba(169, 196, 232, .08);
+}
+
+.operations-page .operation-badge.closed {
+    color: var(--operations-positive) !important;
+    border-color: rgba(115, 181, 138, .28);
+    background: rgba(115, 181, 138, .08);
+}
+
+.operations-page .operation-action-btn.primary {
+    color: var(--operations-text);
+    border: 1px solid var(--operations-border-strong);
+    background: var(--operations-surface-soft);
+}
+
+.operations-page .operation-action-btn.primary:hover {
+    border-color: rgba(224, 82, 91, .4);
+    background: var(--operations-surface);
+}
+
+.operations-page .form-group label {
+    color: var(--operations-muted);
+}
+
+.operations-page .form-group input,
+.operations-page .form-group textarea,
+.operations-page .form-group select {
+    border: 1px solid var(--operations-border-strong);
+    border-radius: 7px;
+    color: var(--operations-text);
+    background: var(--operations-surface-muted);
+    box-shadow: none;
+}
+
+.operations-page .form-group input:focus,
+.operations-page .form-group textarea:focus,
+.operations-page .form-group select:focus {
+    border-color: rgba(224, 82, 91, .45);
+    box-shadow: 0 0 0 2px rgba(224, 82, 91, .1);
+}
+
+.operations-page .form-group small {
+    color: var(--operations-danger);
+}
+
+.operations-page .chm-page-button {
+    border: 1px solid var(--operations-border-strong);
+    border-radius: 7px;
+    box-shadow: none;
+    transform: none;
+}
+
+.operations-page .chm-page-button.primary {
+    color: #fff;
+    border-color: #b9434c;
+    background: #b9434c;
+}
+
+.operations-page .chm-page-button.primary:hover {
+    color: #fff;
+    border-color: #c94c55;
+    background: #c94c55;
+    transform: none;
+}
+
+.operations-page .chm-page-button.secondary {
+    color: var(--operations-text);
+    border-color: var(--operations-border-strong);
+    background: var(--operations-surface-muted);
+}
+
+.operations-page .chm-page-button.secondary:hover {
+    border-color: var(--operations-border-strong);
+    background: var(--operations-surface-soft);
+}
+
+html[data-chm-theme="corporate-light"] .operations-page {
+    --operations-surface: var(--chm-theme-card, #3b4a66);
+    --operations-surface-soft: var(--chm-theme-card-elevated, #435373);
+    --operations-surface-muted: var(--chm-theme-surface, #34425b);
+    --operations-border: var(--chm-theme-border, rgba(226, 232, 240, .26));
+    --operations-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .38));
+    --operations-text: var(--chm-theme-text, #f8fafc);
+    --operations-muted: var(--chm-theme-muted, #d0d7e2);
+    --operations-subtle: var(--chm-theme-subtle, #aeb9c9);
+}
+
+html[data-chm-theme="corporate-light"] .operations-page .form-group input,
+html[data-chm-theme="corporate-light"] .operations-page .form-group textarea,
+html[data-chm-theme="corporate-light"] .operations-page .form-group select {
+    background: var(--chm-theme-input, #4a5c7b);
+}
