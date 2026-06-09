@@ -6,7 +6,8 @@ use App\Models\Tire;
 use App\Models\TireEntry;
 use App\Models\TireEntryItem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class WorkshopTireController extends Controller
 {
@@ -33,7 +34,8 @@ class WorkshopTireController extends Controller
                 ->with([
                     'activeInstallation.vehicle',
                     'latestMeasurement',
-                ]);
+                ])
+                ->withCount('retreads');
     
         /*
         |--------------------------------------------------------------------------
@@ -393,7 +395,70 @@ class WorkshopTireController extends Controller
         );
     }
     
-    public function update(Request $request, Tire $tire)
+    public function storeRetread(Request $request, Tire $tire)
+    {
+        $user = auth()->user();
+
+        $data = $request->validate([
+            'new_tread_depth' => ['required', 'numeric', 'min:0.01', 'max:50'],
+            'retreaded_at' => ['required', 'date', 'before_or_equal:today'],
+            'provider_name' => ['required', 'string', 'max:150'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        DB::transaction(function () use ($data, $tire, $user) {
+            $lockedTire = Tire::query()
+                ->where('id', $tire->id)
+                ->where('tenant_id', $user->tenant_id)
+                ->lockForUpdate()
+                ->first();
+
+            abort_unless($lockedTire, 403);
+
+            if ($lockedTire->status !== 'maintenance') {
+                throw ValidationException::withMessages([
+                    'retread' => 'Somente pneus em manutencao podem ser recapados.',
+                ]);
+            }
+
+            if ($lockedTire->activeInstallation()->exists()) {
+                throw ValidationException::withMessages([
+                    'retread' => 'O pneu precisa estar removido do veiculo antes da recapagem.',
+                ]);
+            }
+
+            $previousTreadReference = $lockedTire->measurements()
+                    ->latest('measured_at')
+                    ->latest('id')
+                    ->value('minimum_tread')
+                ?? $lockedTire->retreads()
+                    ->latest('retreaded_at')
+                    ->latest('id')
+                    ->value('new_tread_depth')
+                ?? $lockedTire->initial_tread_depth;
+
+            $lockedTire->retreads()->create([
+                'tenant_id' => $user->tenant_id,
+                'retreaded_at' => $data['retreaded_at'],
+                'new_tread_depth' => $data['new_tread_depth'],
+                'previous_tread_reference' => $previousTreadReference,
+                'provider_name' => $data['provider_name'],
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $user->id,
+            ]);
+
+            $lockedTire->update([
+                'status' => 'available',
+            ]);
+        });
+
+        return back()->with(
+            'success',
+            'Recapagem registrada e pneu disponibilizado.'
+        );
+    }
+
+    public function update(Request $request, Tire $tire)
     {
         $user =
             auth()->user();

@@ -58,4 +58,22 @@ class Tire extends Model
         return $this->hasOne(TireMeasurement::class)
             ->latestOfMany('measured_at');
     }
+    public function retreads()
+
+    {
+
+        return $this->hasMany(TireRetread::class);
+
+    }
+
+    public function latestRetread()
+
+    {
+
+        return $this->hasOne(TireRetread::class)
+
+            ->latestOfMany('retreaded_at');
+
+    }
+
 }

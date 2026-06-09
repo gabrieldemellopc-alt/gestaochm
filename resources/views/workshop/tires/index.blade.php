@@ -8,7 +8,7 @@
 @push('styles')
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/workshop-tires.css') }}"
+    href="{{ asset('css/pages/workshop-tires.css') }}?v=3"
 >
 @endpush
 
@@ -468,7 +468,7 @@
                     <span class="workshop-status {{ $tire->status }}">
                         @switch($tire->status)
                             @case('available')
-                                Disponível
+                                Disponível{{ $tire->retreads_count > 0 ? '-R' . $tire->retreads_count : '' }}
                                 @break
 
                             @case('installed')
@@ -525,7 +525,29 @@
                         ];
                     @endphp
                     
-                    <button
+                    @if($tire->status === 'maintenance')
+
+                        <button
+
+                            type="button"
+
+                            class="workshop-table-action retread"
+
+                            onclick="openRetreadModal({{ $tire->id }}, {{ Illuminate\Support\Js::from($tire->code) }})"
+
+                        >
+
+                            <i data-lucide="refresh-cw"></i>
+
+                            Recapar
+
+                        </button>
+
+                    @endif
+
+
+
+                    <button
                         type="button"
                         class="workshop-table-action"
                         onclick="openEditTireModal({{ Illuminate\Support\Js::from($tirePayload) }})"
@@ -765,8 +787,144 @@
 
     </div>
 </div>
-<script>
-function openEditTireModal(tire) {
+<div class="workshop-modal-overlay" id="retreadTireModal" style="display:none;">
+
+    <div class="workshop-tire-modal workshop-retread-modal">
+
+        <div class="workshop-tire-modal-header">
+
+            <div>
+
+                <span>Oficina / Pneus</span>
+
+                <h2>Registrar recapagem</h2>
+
+                <p id="retreadTireCode">Pneu</p>
+
+            </div>
+
+            <button type="button" onclick="closeRetreadModal()">
+
+                <i data-lucide="x"></i>
+
+            </button>
+
+        </div>
+
+        <form method="POST" id="retreadTireForm" class="workshop-tire-modal-form">
+
+            @csrf
+
+            <div class="workshop-retread-form-grid">
+
+                <div class="form-group">
+
+                    <label>Novo sulco</label>
+
+                    <div class="input-with-suffix">
+
+                        <input type="number" name="new_tread_depth" step="0.01" min="0.01" max="50" required>
+
+                        <span>mm</span>
+
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Data da recapagem</label>
+
+                    <input type="date" name="retreaded_at" value="{{ now()->format('Y-m-d') }}" required>
+
+                </div>
+
+                <div class="form-group full-width">
+
+                    <label>Fornecedor / quem recapou</label>
+
+                    <input type="text" name="provider_name" maxlength="150" required>
+
+                </div>
+
+                <div class="form-group full-width">
+
+                    <label>Observação</label>
+
+                    <textarea name="notes" rows="3" maxlength="2000"></textarea>
+
+                </div>
+
+            </div>
+
+            <div class="workshop-tire-modal-footer">
+
+                <button type="button" class="workshop-modal-cancel" onclick="closeRetreadModal()">
+
+                    Cancelar
+
+                </button>
+
+                <button type="submit" class="workshop-modal-save retread">
+
+                    <i data-lucide="refresh-cw"></i>
+
+                    Registrar recapagem
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<script>
+function openRetreadModal(tireId, tireCode) {
+
+    document.getElementById('retreadTireForm').action =
+
+        "{{ url('/workshop/tires') }}/" + tireId + "/retreads";
+
+
+
+    document.getElementById('retreadTireCode').innerText =
+
+        tireCode || 'Pneu';
+
+
+
+    document.getElementById('retreadTireModal').style.display =
+
+        'flex';
+
+
+
+    if (window.lucide) {
+
+        lucide.createIcons();
+
+    }
+
+}
+
+
+
+function closeRetreadModal() {
+
+    document.getElementById('retreadTireModal').style.display =
+
+        'none';
+
+}
+
+
+
+function openEditTireModal(tire) {
     const modal =
         document.getElementById('editTireModal');
 

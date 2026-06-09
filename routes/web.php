@@ -317,7 +317,14 @@ Route::middleware('auth')->group(function () {
             [WorkshopTireController::class, 'storeEntry']
         )->name('tires.entries.store');
 
-        Route::put(
+        Route::post(
+            '/tires/{tire}/retreads',
+            [WorkshopTireController::class, 'storeRetread']
+        )->name('tires.retreads.store');
+
+
+
+        Route::put(
             '/tires/{tire}',
             [WorkshopTireController::class, 'update']
         )->name('tires.update');
