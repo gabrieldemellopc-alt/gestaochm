@@ -5,7 +5,7 @@
 
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/history.css') }}"
+    href="{{ asset('css/pages/history.css') }}?v=2"
 >
 
 @endpush

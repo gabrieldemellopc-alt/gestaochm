@@ -866,3 +866,399 @@ textarea.form-input {
     min-height: 44px;
     margin-top: 6px;
 }
+/* CHM corporate visual layer */
+.maintenance-index-page,
+.maintenance-create-page {
+    --maintenance-surface: #202a40;
+    --maintenance-surface-soft: #253149;
+    --maintenance-surface-muted: #1b2437;
+    --maintenance-border: rgba(203, 213, 225, .14);
+    --maintenance-border-strong: rgba(203, 213, 225, .22);
+    --maintenance-text: #f1f5f9;
+    --maintenance-muted: #a8b1c1;
+    --maintenance-accent: #e0525b;
+    --maintenance-warning: #d2b77a;
+    --maintenance-danger: #e67880;
+    color: var(--maintenance-text);
+}
+
+.maintenance-index-page .maintenance-create-header,
+.maintenance-create-page .maintenance-create-header,
+.maintenance-index-page .maintenance-context-card,
+.maintenance-create-page .maintenance-context-card,
+.maintenance-index-page .maintenance-alert-shortcuts,
+.maintenance-index-page .maintenance-procedures-card,
+.maintenance-create-page .maintenance-card,
+.maintenance-create-page .maintenance-summary-card {
+    border: 1px solid var(--maintenance-border);
+    border-radius: 10px;
+    background: var(--maintenance-surface);
+    box-shadow: none;
+}
+
+.maintenance-index-page .maintenance-create-header,
+.maintenance-create-page .maintenance-create-header {
+    padding: 20px;
+    border-left: 3px solid var(--maintenance-accent);
+}
+
+.maintenance-index-page .maintenance-kicker,
+.maintenance-create-page .maintenance-kicker {
+    min-height: 0;
+    padding: 0;
+    margin-bottom: 8px;
+    border: 0;
+    border-radius: 0;
+    color: var(--maintenance-muted);
+    background: transparent;
+}
+
+.maintenance-index-page .maintenance-create-header h1,
+.maintenance-create-page .maintenance-create-header h1,
+.maintenance-index-page .maintenance-vehicle-info h2,
+.maintenance-create-page .maintenance-vehicle-info h2,
+.maintenance-index-page .maintenance-context-item strong,
+.maintenance-create-page .maintenance-context-item strong,
+.maintenance-index-page .maintenance-section-title h2,
+.maintenance-index-page .maintenance-procedure-header h3,
+.maintenance-create-page .maintenance-card-header h3,
+.maintenance-create-page .maintenance-summary-header h3,
+.maintenance-create-page .maintenance-summary-item strong,
+.maintenance-create-page .maintenance-empty-fields strong,
+.maintenance-index-page .maintenance-empty-shortcuts strong {
+    color: var(--maintenance-text);
+}
+
+.maintenance-index-page .maintenance-create-header p,
+.maintenance-create-page .maintenance-create-header p,
+.maintenance-index-page .maintenance-meta,
+.maintenance-create-page .maintenance-meta,
+.maintenance-index-page .maintenance-section-title p,
+.maintenance-create-page .maintenance-card-header p,
+.maintenance-create-page .field-help,
+.maintenance-create-page .maintenance-empty-fields,
+.maintenance-create-page .maintenance-empty-fields p,
+.maintenance-index-page .maintenance-empty-shortcuts p {
+    color: var(--maintenance-muted);
+}
+
+.maintenance-index-page .maintenance-back-button,
+.maintenance-create-page .maintenance-back-button,
+.maintenance-create-page .maintenance-cancel-btn {
+    border: 1px solid var(--maintenance-border-strong);
+    border-radius: 7px;
+    color: var(--maintenance-text) !important;
+    background: var(--maintenance-surface-muted);
+    box-shadow: none;
+}
+
+.maintenance-index-page .maintenance-back-button:hover,
+.maintenance-create-page .maintenance-back-button:hover,
+.maintenance-create-page .maintenance-cancel-btn:hover {
+    color: var(--maintenance-text) !important;
+    background: var(--maintenance-surface-soft);
+    transform: none;
+}
+
+.maintenance-index-page .maintenance-vehicle-icon,
+.maintenance-create-page .maintenance-vehicle-icon,
+.maintenance-index-page .maintenance-context-item,
+.maintenance-create-page .maintenance-context-item,
+.maintenance-index-page .maintenance-procedure-icon,
+.maintenance-index-page .maintenance-procedure-card,
+.maintenance-create-page .maintenance-field-row,
+.maintenance-create-page .maintenance-summary-item,
+.maintenance-create-page .maintenance-empty-fields,
+.maintenance-index-page .maintenance-empty-shortcuts {
+    border: 1px solid var(--maintenance-border);
+    border-radius: 8px;
+    background: var(--maintenance-surface-muted);
+    box-shadow: none;
+}
+
+.maintenance-index-page .maintenance-status-badge,
+.maintenance-create-page .maintenance-status-badge,
+.maintenance-index-page .maintenance-procedure-rules span {
+    border: 1px solid var(--maintenance-border-strong);
+    border-radius: 6px;
+    color: var(--maintenance-muted);
+    background: var(--maintenance-surface-soft);
+}
+
+.maintenance-index-page .maintenance-procedure-card:hover {
+    border-color: var(--maintenance-border-strong);
+    background: var(--maintenance-surface-soft);
+}
+
+.maintenance-index-page .maintenance-alert-card {
+    border-radius: 8px;
+    box-shadow: none;
+    transform: none;
+}
+
+.maintenance-index-page .maintenance-alert-card:hover {
+    transform: none;
+}
+
+.maintenance-index-page .maintenance-alert-card.warning {
+    border-color: rgba(210, 183, 122, .3);
+    background: rgba(210, 183, 122, .08);
+}
+
+.maintenance-index-page .maintenance-alert-card.danger {
+    border-color: rgba(230, 120, 128, .3);
+    background: rgba(230, 120, 128, .08);
+}
+
+.maintenance-index-page .maintenance-alert-card.warning .maintenance-alert-icon {
+    color: var(--maintenance-warning);
+    background: rgba(210, 183, 122, .1);
+}
+
+.maintenance-index-page .maintenance-alert-card.danger .maintenance-alert-icon {
+    color: var(--maintenance-danger);
+    background: rgba(230, 120, 128, .1);
+}
+
+.maintenance-create-page .form-group label,
+.maintenance-index-page .form-group label {
+    color: var(--maintenance-muted);
+}
+
+.maintenance-create-page .form-input,
+.maintenance-index-page .form-input {
+    border: 1px solid var(--maintenance-border-strong);
+    border-radius: 7px;
+    color: var(--maintenance-text);
+    background: var(--maintenance-surface-muted);
+    box-shadow: none;
+}
+
+.maintenance-create-page .form-input:focus,
+.maintenance-index-page .form-input:focus {
+    border-color: rgba(224, 82, 91, .45);
+    background: var(--maintenance-surface-muted);
+    box-shadow: 0 0 0 2px rgba(224, 82, 91, .1);
+}
+
+.maintenance-create-page .chm-page-button,
+.maintenance-index-page .chm-page-button {
+    border: 1px solid var(--maintenance-border-strong);
+    border-radius: 7px;
+    box-shadow: none;
+    transform: none;
+}
+
+.maintenance-create-page .chm-page-button.primary,
+.maintenance-index-page .chm-page-button.primary {
+    color: #fff !important;
+    border-color: #b9434c;
+    background: #b9434c;
+}
+
+.maintenance-create-page .chm-page-button.primary:hover,
+.maintenance-index-page .chm-page-button.primary:hover {
+    color: #fff !important;
+    border-color: #c94c55;
+    background: #c94c55;
+    box-shadow: none;
+    transform: none;
+}
+
+html[data-chm-theme="corporate-light"] .maintenance-index-page,
+html[data-chm-theme="corporate-light"] .maintenance-create-page {
+    --maintenance-surface: var(--chm-theme-card, #3b4a66);
+    --maintenance-surface-soft: var(--chm-theme-card-elevated, #435373);
+    --maintenance-surface-muted: var(--chm-theme-surface, #34425b);
+    --maintenance-border: var(--chm-theme-border, rgba(226, 232, 240, .26));
+    --maintenance-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .38));
+    --maintenance-text: var(--chm-theme-text, #f8fafc);
+    --maintenance-muted: var(--chm-theme-muted, #d0d7e2);
+}
+
+html[data-chm-theme="corporate-light"] .maintenance-create-page .form-input,
+html[data-chm-theme="corporate-light"] .maintenance-index-page .form-input {
+    background: var(--chm-theme-input, #4a5c7b);
+}
+
+/* Maintenance create overflow correction */
+
+.maintenance-create-page,
+.maintenance-create-page *,
+.maintenance-create-page *::before,
+.maintenance-create-page *::after {
+    box-sizing: border-box;
+}
+
+.maintenance-create-page .maintenance-create-header {
+    margin-bottom: 16px;
+    padding: 16px 18px;
+}
+
+.maintenance-create-page .maintenance-create-header h1 {
+    margin-bottom: 5px;
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -.025em;
+}
+
+.maintenance-create-page .maintenance-create-header p {
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.maintenance-create-page .maintenance-context-card {
+    margin-bottom: 16px;
+    padding: 16px;
+    gap: 16px;
+}
+
+.maintenance-create-page .maintenance-context-grid {
+    min-width: 0;
+    grid-template-columns: repeat(4, minmax(105px, 1fr));
+    gap: 8px;
+}
+
+.maintenance-create-page .maintenance-context-item {
+    min-width: 0;
+    min-height: 64px;
+    padding: 10px;
+}
+
+.maintenance-create-page .maintenance-layout {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 390px);
+    gap: 18px;
+}
+
+.maintenance-create-page .maintenance-main,
+.maintenance-create-page .maintenance-side,
+.maintenance-create-page .maintenance-card,
+.maintenance-create-page .maintenance-summary-card,
+.maintenance-create-page .maintenance-fields,
+.maintenance-create-page .maintenance-field-row,
+.maintenance-create-page .maintenance-stock-field,
+.maintenance-create-page .form-group {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.maintenance-create-page .maintenance-card,
+.maintenance-create-page .maintenance-summary-card {
+    padding: 16px;
+    overflow: hidden;
+}
+
+.maintenance-create-page .maintenance-summary-header {
+    min-width: 0;
+    margin-bottom: 12px;
+}
+
+.maintenance-create-page .maintenance-summary-header h3 {
+    margin: 0;
+    max-width: 100%;
+    font-size: 18px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.maintenance-create-page .maintenance-summary-list {
+    gap: 7px;
+}
+
+.maintenance-create-page .maintenance-summary-item {
+    min-width: 0;
+    min-height: 48px;
+    padding: 9px 11px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.maintenance-create-page .maintenance-summary-item span,
+.maintenance-create-page .maintenance-summary-item strong {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.maintenance-create-page .maintenance-summary-item span {
+    flex: 1 1 110px;
+}
+
+.maintenance-create-page .maintenance-summary-item strong {
+    flex: 1 1 130px;
+    text-align: right;
+}
+
+.maintenance-create-page .maintenance-actions {
+    width: 100%;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.maintenance-create-page .maintenance-actions .maintenance-cancel-btn,
+.maintenance-create-page .maintenance-actions .chm-page-button {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 42px;
+    padding: 0 12px;
+    white-space: normal;
+    text-align: center;
+}
+
+.maintenance-create-page .maintenance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.maintenance-create-page .form-input,
+.maintenance-create-page input,
+.maintenance-create-page select,
+.maintenance-create-page textarea {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 1280px) {
+    .maintenance-create-page .maintenance-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-create-page .maintenance-side {
+        position: static;
+    }
+
+    .maintenance-create-page .maintenance-summary-card {
+        width: 100%;
+    }
+
+    .maintenance-create-page .maintenance-summary-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .maintenance-create-page .maintenance-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 820px) {
+    .maintenance-create-page .maintenance-context-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .maintenance-create-page .maintenance-context-grid,
+    .maintenance-create-page .maintenance-summary-list,
+    .maintenance-create-page .maintenance-actions,
+    .maintenance-create-page .maintenance-grid,
+    .maintenance-create-page .maintenance-stock-field {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-create-page .maintenance-summary-item strong {
+        text-align: left;
+    }
+}
