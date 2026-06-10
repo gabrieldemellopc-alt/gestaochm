@@ -79,23 +79,75 @@ class WorkshopController extends Controller
 
         if (
             Schema::hasTable('tires') &&
-            Schema::hasTable('tire_measurements')
+            Schema::hasTable('tire_measurements') &&
+            Schema::hasTable('tire_retreads')
         ) {
-            $latestMeasurementSubquery = DB::table('tire_measurements')
-                ->select('tire_id', DB::raw('MAX(id) as latest_measurement_id'))
-                ->where('tenant_id', $tenantId)
-                ->groupBy('tire_id');
+            $latestMeasurementSubquery = DB::table('tire_measurements as measurement')
+                ->select('measurement.*')
+                ->where('measurement.tenant_id', $tenantId)
+                ->whereNotExists(function ($query) {
+                    $query
+                        ->select(DB::raw(1))
+                        ->from('tire_measurements as newer_measurement')
+                        ->whereColumn('newer_measurement.tenant_id', 'measurement.tenant_id')
+                        ->whereColumn('newer_measurement.tire_id', 'measurement.tire_id')
+                        ->where(function ($query) {
+                            $query
+                                ->whereColumn('newer_measurement.measured_at', '>', 'measurement.measured_at')
+                                ->orWhere(function ($query) {
+                                    $query
+                                        ->whereColumn('newer_measurement.measured_at', 'measurement.measured_at')
+                                        ->whereColumn('newer_measurement.id', '>', 'measurement.id');
+                                });
+                        });
+                });
+
+            $latestRetreadSubquery = DB::table('tire_retreads as retread')
+                ->select('retread.*')
+                ->where('retread.tenant_id', $tenantId)
+                ->whereNotExists(function ($query) {
+                    $query
+                        ->select(DB::raw(1))
+                        ->from('tire_retreads as newer_retread')
+                        ->whereColumn('newer_retread.tenant_id', 'retread.tenant_id')
+                        ->whereColumn('newer_retread.tire_id', 'retread.tire_id')
+                        ->where(function ($query) {
+                            $query
+                                ->whereColumn('newer_retread.retreaded_at', '>', 'retread.retreaded_at')
+                                ->orWhere(function ($query) {
+                                    $query
+                                        ->whereColumn('newer_retread.retreaded_at', 'retread.retreaded_at')
+                                        ->whereColumn('newer_retread.id', '>', 'retread.id');
+                                });
+                        });
+                });
+
+            $currentTreadSql = "
+                CASE
+                    WHEN latest_measurements.id IS NOT NULL
+                        AND (
+                            latest_retreads.id IS NULL
+                            OR latest_measurements.measured_at > latest_retreads.retreaded_at
+                        )
+                        THEN latest_measurements.minimum_tread
+                    WHEN latest_retreads.id IS NOT NULL
+                        THEN latest_retreads.new_tread_depth
+                    ELSE tires.initial_tread_depth
+                END
+            ";
 
             $tiresAttentionBase = DB::table('tires')
                 ->leftJoinSub($latestMeasurementSubquery, 'latest_measurements', function ($join) {
                     $join->on('latest_measurements.tire_id', '=', 'tires.id');
                 })
-                ->leftJoin('tire_measurements', 'tire_measurements.id', '=', 'latest_measurements.latest_measurement_id')
+                ->leftJoinSub($latestRetreadSubquery, 'latest_retreads', function ($join) {
+                    $join->on('latest_retreads.tire_id', '=', 'tires.id');
+                })
                 ->where('tires.tenant_id', $tenantId)
                 ->where('tires.location_id', $activeLocation->id)
-                ->where(function ($query) {
+                ->where(function ($query) use ($currentTreadSql) {
                     $query
-                        ->whereColumn('tire_measurements.minimum_tread', '<=', 'tires.warning_tread_depth')
+                        ->whereRaw("{$currentTreadSql} <= tires.warning_tread_depth")
                         ->orWhere('tires.status', 'maintenance')
                         ->orWhere('tires.status', 'discarded');
                 })
@@ -109,19 +161,21 @@ class WorkshopController extends Controller
                     'tires.initial_tread_depth',
                     'tires.warning_tread_depth',
                     'tires.critical_tread_depth',
-                    'tire_measurements.vehicle_id',
-                    'tire_measurements.position_code',
-                    'tire_measurements.measured_at',
-                    'tire_measurements.minimum_tread',
-                    'tire_measurements.average_tread',
-                    'tire_measurements.vehicle_km'
+                    'latest_measurements.vehicle_id',
+                    'latest_measurements.position_code',
+                    'latest_measurements.measured_at',
+                    DB::raw("{$currentTreadSql} as minimum_tread"),
+                    'latest_measurements.average_tread',
+                    'latest_measurements.vehicle_km',
+
+                    DB::raw("{$currentTreadSql} as current_tread_depth")
                 );
 
             $tiresAttentionCount = (clone $tiresAttentionBase)->count();
 
             $tiresAttention = $tiresAttentionBase
-                ->orderByRaw('tire_measurements.minimum_tread IS NULL')
-                ->orderBy('tire_measurements.minimum_tread')
+                ->orderByRaw("{$currentTreadSql} IS NULL")
+                ->orderByRaw($currentTreadSql)
                 ->limit(5)
                 ->get();
         }
