@@ -3,14 +3,26 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Schema;
+use App\Services\ActiveContextService;
 
 class WorkshopController extends Controller
 {
     public function index()
     {
         $tenantId = auth()->user()->tenant_id ?? 1;
-        $activeDivisionId = session('active_division_id');
+        $activeDivisionId = session('active_division_id');
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with(
+                    'warning',
+                    'Selecione uma unidade para continuar.'
+                );
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -155,19 +167,19 @@ class WorkshopController extends Controller
 
         if (Schema::hasTable('vehicles')) {
             if (Schema::hasColumn('vehicles', 'status')) {
-                $vehiclesInMaintenance = DB::table('vehicles')
-                    ->when($activeDivisionId, function ($query) use ($activeDivisionId) {
-                        $query->where('division_id', $activeDivisionId);
-                    })
+                $vehiclesInMaintenance = DB::table('vehicles')
+                    ->where('vehicles.tenant_id', $tenantId)
+                    ->where('vehicles.location_id', $activeLocation->id)
+                    ->where('vehicles.division_id', $activeDivisionId)
                     ->whereIn('status', ['maintenance', 'inactive', 'stopped'])
                     ->latest('updated_at')
                     ->limit(6)
                     ->get();
 
-                $maintenanceVehiclesCount = DB::table('vehicles')
-                    ->when($activeDivisionId, function ($query) use ($activeDivisionId) {
-                        $query->where('division_id', $activeDivisionId);
-                    })
+                $maintenanceVehiclesCount = DB::table('vehicles')
+                    ->where('vehicles.tenant_id', $tenantId)
+                    ->where('vehicles.location_id', $activeLocation->id)
+                    ->where('vehicles.division_id', $activeDivisionId)
                     ->whereIn('status', ['maintenance', 'inactive', 'stopped'])
                     ->count();
             }
@@ -177,11 +189,11 @@ class WorkshopController extends Controller
                 Schema::hasTable('maintenance_records') &&
                 Schema::hasColumn('maintenance_records', 'vehicle_id')
             ) {
-                $vehiclesInMaintenance = DB::table('maintenance_records')
-                    ->leftJoin('vehicles', 'vehicles.id', '=', 'maintenance_records.vehicle_id')
-                    ->when($activeDivisionId, function ($query) use ($activeDivisionId) {
-                        $query->where('vehicles.division_id', $activeDivisionId);
-                    })
+                $vehiclesInMaintenance = DB::table('maintenance_records')
+                    ->leftJoin('vehicles', 'vehicles.id', '=', 'maintenance_records.vehicle_id')
+                    ->where('vehicles.tenant_id', $tenantId)
+                    ->where('vehicles.location_id', $activeLocation->id)
+                    ->where('vehicles.division_id', $activeDivisionId)
                     ->select(
                         'vehicles.id',
                         'vehicles.name',
@@ -194,11 +206,11 @@ class WorkshopController extends Controller
                     ->limit(6)
                     ->get();
 
-                $maintenanceVehiclesCount = DB::table('maintenance_records')
-                    ->leftJoin('vehicles', 'vehicles.id', '=', 'maintenance_records.vehicle_id')
-                    ->when($activeDivisionId, function ($query) use ($activeDivisionId) {
-                        $query->where('vehicles.division_id', $activeDivisionId);
-                    })
+                $maintenanceVehiclesCount = DB::table('maintenance_records')
+                    ->leftJoin('vehicles', 'vehicles.id', '=', 'maintenance_records.vehicle_id')
+                    ->where('vehicles.tenant_id', $tenantId)
+                    ->where('vehicles.location_id', $activeLocation->id)
+                    ->where('vehicles.division_id', $activeDivisionId)
                     ->distinct('maintenance_records.vehicle_id')
                     ->count('maintenance_records.vehicle_id');
             }
