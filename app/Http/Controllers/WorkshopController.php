@@ -37,7 +37,8 @@ class WorkshopController extends Controller
         if (Schema::hasTable('stock_items')) {
             $lowStockItems = DB::table('stock_items')
                 ->where('tenant_id', $tenantId)
-                ->where('active', 1)
+                ->where('location_id', $activeLocation->id)
+                ->where('active', 1)
                 ->whereColumn('quantity', '<=', 'minimum_quantity')
                 ->orderBy('quantity')
                 ->limit(5)
@@ -45,7 +46,8 @@ class WorkshopController extends Controller
 
             $lowStockCount = DB::table('stock_items')
                 ->where('tenant_id', $tenantId)
-                ->where('active', 1)
+                ->where('location_id', $activeLocation->id)
+                ->where('active', 1)
                 ->whereColumn('quantity', '<=', 'minimum_quantity')
                 ->count();
         }
@@ -54,7 +56,8 @@ class WorkshopController extends Controller
             $latestStockMovements = DB::table('stock_movements')
                 ->leftJoin('stock_items', 'stock_items.id', '=', 'stock_movements.stock_item_id')
                 ->where('stock_movements.tenant_id', $tenantId)
-                ->select(
+                ->where('stock_movements.location_id', $activeLocation->id)
+                ->select(
                     'stock_movements.*',
                     'stock_items.name as item_name',
                     'stock_items.unit as item_unit'
@@ -89,7 +92,8 @@ class WorkshopController extends Controller
                 })
                 ->leftJoin('tire_measurements', 'tire_measurements.id', '=', 'latest_measurements.latest_measurement_id')
                 ->where('tires.tenant_id', $tenantId)
-                ->where(function ($query) {
+                ->where('tires.location_id', $activeLocation->id)
+                ->where(function ($query) {
                     $query
                         ->whereColumn('tire_measurements.minimum_tread', '<=', 'tires.warning_tread_depth')
                         ->orWhere('tires.status', 'maintenance')
@@ -125,7 +129,8 @@ class WorkshopController extends Controller
         if (Schema::hasTable('tire_entries')) {
             $latestTireEntries = DB::table('tire_entries')
                 ->where('tenant_id', $tenantId)
-                ->latest('created_at')
+                ->where('location_id', $activeLocation->id)
+                ->latest('created_at')
                 ->limit(5)
                 ->get();
         }
@@ -142,13 +147,15 @@ class WorkshopController extends Controller
         if (Schema::hasTable('procedures')) {
             $proceduresPreview = DB::table('procedures')
                 ->where('tenant_id', $tenantId)
-                ->latest('created_at')
+                ->where('location_id', $activeLocation->id)
+                ->latest('created_at')
                 ->limit(5)
                 ->get();
 
             $proceduresCount = DB::table('procedures')
                 ->where('tenant_id', $tenantId)
-                ->count();
+                ->where('location_id', $activeLocation->id)
+                ->count();
         }
 
         /*
