@@ -13,6 +13,7 @@ class VehicleUpdateLog extends Model
         'division_id',
         'location_id',
         'type',
+        'source',
         'old_value',
         'new_value',
         'observation',
