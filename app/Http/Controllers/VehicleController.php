@@ -1410,11 +1410,15 @@ class VehicleController extends Controller
         return null;
     }
 
-    public function maintenanceCreate(
-    Request $request,
-    Vehicle $vehicle
-) {
-    $data = $request->validate([
+public function maintenanceCreate(
+    Request $request,
+    Vehicle $vehicle
+) {
+    if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+        return $redirect;
+    }
+
+    $data = $request->validate([
 
         'procedure_id' => [
             'required',
@@ -1476,9 +1480,13 @@ class VehicleController extends Controller
     );
 }
  
- public function maintenanceIndex(Vehicle $vehicle)
-{
-    $vehicle->load([
+ public function maintenanceIndex(Vehicle $vehicle)
+{
+    if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+        return $redirect;
+    }
+
+    $vehicle->load([
         'division',
         'location',
         'maintenances.procedure',
