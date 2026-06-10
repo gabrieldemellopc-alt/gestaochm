@@ -9,7 +9,8 @@ use App\Models\Vehicle;
 use App\Models\Division;
 use App\Models\VehicleTirePosition;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\TireMeasurement;
 use App\Services\ActiveContextService;
@@ -117,7 +118,9 @@ class VehicleTireController extends Controller
         $availableTires =
             Tire::where('tenant_id', $vehicle->tenant_id)
                 ->withCurrentTreadContext()
-                ->where('status', 'available')
+                ->withCount('retreads')
+                ->where('location_id', $vehicle->location_id)
+                ->where('status', 'available')
                 ->orderBy('code')
                 ->get()
                 ->map(function ($tire) {
@@ -203,7 +206,28 @@ class VehicleTireController extends Controller
                 ],
             ]);
 
-        DB::transaction(function () use ($data, $vehicle, $authUser) {
+        DB::transaction(function () use ($data, $vehicle, $authUser) {
+
+            $tire = Tire::query()
+                ->where('id', $data['tire_id'])
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id)
+                ->where('status', 'available')
+                ->withCurrentTreadContext()
+                ->lockForUpdate()
+                ->first();
+
+            if (! $tire) {
+                throw ValidationException::withMessages([
+                    'tire_id' => 'O pneu selecionado não está disponível para esta unidade.',
+                ]);
+            }
+
+            if ($tire->activeInstallation()->exists()) {
+                throw ValidationException::withMessages([
+                    'tire_id' => 'O pneu selecionado já possui uma instalação ativa.',
+                ]);
+            }
 
             /*
             |--------------------------------------------------------------------------

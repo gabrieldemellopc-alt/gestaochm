@@ -8,6 +8,7 @@ class Tire extends Model
 {
     protected $fillable = [
         'tenant_id',
+        'location_id',
         'code',
         'brand',
         'model',
@@ -37,6 +38,11 @@ class Tire extends Model
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function installations()

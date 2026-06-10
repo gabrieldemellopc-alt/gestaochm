@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Tire;
 use App\Models\TireEntry;
-use App\Models\TireEntryItem;
+use App\Models\TireEntryItem;
+use App\Services\ActiveContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -16,7 +17,13 @@ class WorkshopTireController extends Controller
         $user =
             auth()->user();
     
-        $status =
+        $activeLocation = $this->activeLocation();
+
+        if (! $activeLocation) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $status =
             $request->get('status');
     
         $search =
@@ -31,6 +38,7 @@ class WorkshopTireController extends Controller
         $tiresQuery =
             Tire::query()
                 ->where('tenant_id', $user->tenant_id)
+                ->where('location_id', $activeLocation->id)
                 ->withCurrentTreadContext()
 
                 ->with([
@@ -114,26 +122,31 @@ class WorkshopTireController extends Controller
         $summary = [
             'total' =>
                 Tire::where('tenant_id', $user->tenant_id)
-                    ->count(),
+                    ->where('location_id', $activeLocation->id)
+                    ->count(),
     
             'available' =>
                 Tire::where('tenant_id', $user->tenant_id)
-                    ->where('status', 'available')
+                    ->where('location_id', $activeLocation->id)
+                    ->where('status', 'available')
                     ->count(),
     
             'installed' =>
                 Tire::where('tenant_id', $user->tenant_id)
-                    ->where('status', 'installed')
+                    ->where('location_id', $activeLocation->id)
+                    ->where('status', 'installed')
                     ->count(),
     
             'maintenance' =>
                 Tire::where('tenant_id', $user->tenant_id)
-                    ->where('status', 'maintenance')
+                    ->where('location_id', $activeLocation->id)
+                    ->where('status', 'maintenance')
                     ->count(),
     
             'discarded' =>
                 Tire::where('tenant_id', $user->tenant_id)
-                    ->where('status', 'discarded')
+                    ->where('location_id', $activeLocation->id)
+                    ->where('status', 'discarded')
                     ->count(),
         ];
     
@@ -145,7 +158,8 @@ class WorkshopTireController extends Controller
     
         $entries =
             TireEntry::where('tenant_id', $user->tenant_id)
-                ->withCount('items')
+                ->where('location_id', $activeLocation->id)
+                ->withCount('items')
                 ->latest('entry_date')
                 ->latest('id')
                 ->limit(10)
@@ -163,12 +177,18 @@ class WorkshopTireController extends Controller
         );
     }
 
-    public function storeEntry(Request $request)
+    public function storeEntry(Request $request)
     {
         $user =
             auth()->user();
 
-        $data =
+        $activeLocation = $this->activeLocation();
+
+        if (! $activeLocation) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $data =
             $request->validate([
                 'entry_date' => [
                     'required',
@@ -265,7 +285,7 @@ class WorkshopTireController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($data, $user) {
+        DB::transaction(function () use ($data, $user, $activeLocation) {
 
             $quantity =
                 (int) $data['quantity'];
@@ -280,7 +300,13 @@ class WorkshopTireController extends Controller
                     'tenant_id' =>
                         $user->tenant_id,
 
-                    'entry_date' =>
+                    'location_id' =>
+
+                        $activeLocation->id,
+
+
+
+                    'entry_date' =>
                         $data['entry_date'],
 
                     'supplier_name' =>
@@ -345,7 +371,13 @@ class WorkshopTireController extends Controller
                         'tenant_id' =>
                             $user->tenant_id,
 
-                        'entry_id' =>
+                        'location_id' =>
+
+                            $activeLocation->id,
+
+
+
+                        'entry_id' =>
                             $entry->id,
 
                         'code' =>
@@ -398,14 +430,8 @@ class WorkshopTireController extends Controller
     
     public function history(Tire $tire)
     {
-        $user = auth()->user();
-
-        if (
-            $user->id !== 1
-            &&
-            (int) $tire->tenant_id !== (int) $user->tenant_id
-        ) {
-            abort(403);
+        if ($redirect = $this->ensureTireInActiveContext($tire)) {
+            return $redirect;
         }
 
         $tire->load([
@@ -557,6 +583,12 @@ class WorkshopTireController extends Controller
     {
         $user = auth()->user();
 
+        if ($redirect = $this->ensureTireInActiveContext($tire)) {
+            return $redirect;
+        }
+
+        $activeLocation = $this->activeLocation();
+
         $data = $request->validate([
             'new_tread_depth' => ['required', 'numeric', 'min:0.01', 'max:50'],
             'retreaded_at' => ['required', 'date', 'before_or_equal:today'],
@@ -564,10 +596,11 @@ class WorkshopTireController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(function () use ($data, $tire, $user) {
+        DB::transaction(function () use ($data, $tire, $user, $activeLocation) {
             $lockedTire = Tire::query()
                 ->where('id', $tire->id)
                 ->where('tenant_id', $user->tenant_id)
+                ->where('location_id', $activeLocation->id)
                 ->lockForUpdate()
                 ->first();
 
@@ -618,7 +651,11 @@ class WorkshopTireController extends Controller
 
     public function update(Request $request, Tire $tire)
     {
-        $user =
+        if ($redirect = $this->ensureTireInActiveContext($tire)) {
+            return $redirect;
+        }
+
+        $user =
             auth()->user();
     
         if (
@@ -751,7 +788,38 @@ class WorkshopTireController extends Controller
         );
     }
 
-    private function nextSequenceForPrefix(
+    private function activeLocation()
+    {
+        return app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+    }
+
+    private function ensureTireInActiveContext(Tire $tire)
+    {
+        $activeLocation = $this->activeLocation();
+
+        if (! $activeLocation) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        if (
+            (int) $tire->tenant_id !== (int) auth()->user()->tenant_id
+            || (int) $tire->location_id !== (int) $activeLocation->id
+        ) {
+            abort(403);
+        }
+
+        return null;
+    }
+
+    private function missingActiveLocationRedirect()
+    {
+        return redirect()
+            ->route('portal')
+            ->with('warning', 'Selecione uma unidade para continuar.');
+    }
+
+    private function nextSequenceForPrefix(
         int $tenantId,
         string $prefix
     ): int {

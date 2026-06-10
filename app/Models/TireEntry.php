@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class TireEntry extends Model
 {
     protected $fillable = [
-        'tenant_id',
+        'tenant_id',
+
+        'location_id',
         'entry_date',
         'supplier_name',
         'invoice_number',
@@ -35,7 +37,17 @@ class TireEntry extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    public function items()
+    public function location()
+
+    {
+
+        return $this->belongsTo(Location::class);
+
+    }
+
+
+
+    public function items()
     {
         return $this->hasMany(TireEntryItem::class);
     }
