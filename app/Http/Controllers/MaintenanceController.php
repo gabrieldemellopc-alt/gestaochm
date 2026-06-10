@@ -17,9 +17,7 @@ class MaintenanceController extends Controller
 
         $data = $request->all();
 
-        $data['vehicle_id'] = $vehicle->id;
-
-        $result = MaintenanceService::create($data);
+        $result = MaintenanceService::create($data, $vehicle);
 
         return redirect()
             ->route('vehicle.maintenance.index', $vehicle->id)

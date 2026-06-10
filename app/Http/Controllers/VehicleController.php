@@ -1445,12 +1445,17 @@ public function maintenanceCreate(
         'location',
     ]);
 
-    $procedure =
-        Procedure::with([
-            'fields.stockCategory.items',
-        ])->findOrFail(
-            $data['procedure_id']
-        );
+    $procedure =
+        Procedure::with([
+            'fields.stockCategory.items' => function ($query) use ($vehicle) {
+                $query
+                    ->where('tenant_id', $vehicle->tenant_id)
+                    ->where('location_id', $vehicle->location_id)
+                    ->where('active', true);
+            },
+        ])->findOrFail(
+            $data['procedure_id']
+        );
 
     if (
         $data['execution_type'] === 'internal'
@@ -1493,11 +1498,16 @@ public function maintenanceCreate(
     ]);
 
     $vehicle->load([
-        'division',
-        'location',
-        'maintenances.procedure',
-        'procedures.fields.stockCategory.items',
-    ]);
+        'division',
+        'location',
+        'maintenances.procedure',
+        'procedures.fields.stockCategory.items' => function ($query) use ($vehicle) {
+            $query
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id)
+                ->where('active', true);
+        },
+    ]);
     
     $procedures =
         $vehicle
