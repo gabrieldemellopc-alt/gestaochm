@@ -613,6 +613,11 @@ Route::middleware('auth')->group(function () {
 
         )->name('tires.index');
 
+        Route::get(
+            '/tires/{tire}/history',
+            [WorkshopTireController::class, 'history']
+        )->name('tires.history');
+
 
 
         Route::post(

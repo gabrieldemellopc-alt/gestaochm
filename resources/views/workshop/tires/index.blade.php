@@ -8,7 +8,7 @@
 @push('styles')
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/workshop-tires.css') }}?v=3"
+    href="{{ asset('css/pages/workshop-tires.css') }}?v=4"
 >
 @endpush
 
@@ -471,15 +471,15 @@
                                 @break
 
                             @case('installed')
-                                Instalado
+                                Instalado{{ $tire->retreads_count > 0 ? '-R' . $tire->retreads_count : '' }}
                                 @break
 
                             @case('maintenance')
-                                Manutenção
+                                Manutenção{{ $tire->retreads_count > 0 ? '-R' . $tire->retreads_count : '' }}
                                 @break
 
                             @case('discarded')
-                                Descartado
+                                Descartado{{ $tire->retreads_count > 0 ? '-R' . $tire->retreads_count : '' }}
                                 @break
 
                             @default
@@ -542,6 +542,14 @@
 
                     @endif
 
+
+                    <a
+                        href="{{ route('workshop.tires.history', $tire) }}"
+                        class="workshop-table-action"
+                    >
+                        <i data-lucide="history"></i>
+                        Histórico
+                    </a>
 
 
                     <button

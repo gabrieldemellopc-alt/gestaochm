@@ -396,6 +396,163 @@ class WorkshopTireController extends Controller
         );
     }
     
+    public function history(Tire $tire)
+    {
+        $user = auth()->user();
+
+        if (
+            $user->id !== 1
+            &&
+            (int) $tire->tenant_id !== (int) $user->tenant_id
+        ) {
+            abort(403);
+        }
+
+        $tire->load([
+            'entry.items',
+            'installations.vehicle',
+            'measurements.vehicle',
+            'retreads',
+            'latestMeasurement',
+            'latestRetread',
+        ])->loadCount('retreads');
+
+        $timeline = collect();
+
+        if (
+            $tire->entry
+            &&
+            $tire->entry->items->contains('tire_id', $tire->id)
+        ) {
+            $entry = $tire->entry;
+
+            $timeline->push([
+                'type' => 'entry',
+                'title' => 'Entrada no estoque',
+                'date' => $entry->entry_date,
+                'sort_key' => $this->tireHistorySortKey($entry->entry_date, 10, $entry->id),
+                'details' => [
+                    'Fornecedor' => $entry->supplier_name,
+                    'Nota fiscal' => $entry->invoice_number,
+                    'Custo unitário' => $tire->unit_cost !== null
+                        ? 'R$ ' . number_format((float) $tire->unit_cost, 2, ',', '.')
+                        : null,
+                ],
+                'notes' => $entry->notes,
+            ]);
+        }
+
+        foreach ($tire->installations as $installation) {
+            $vehicle = $installation->vehicle;
+            $vehicleLabel = $vehicle
+                ? trim(($vehicle->name ?? '') . ($vehicle->plate ? ' · ' . $vehicle->plate : ''))
+                : null;
+
+            $timeline->push([
+                'type' => 'installation',
+                'title' => 'Instalação em veículo',
+                'date' => $installation->installed_at,
+                'sort_key' => $this->tireHistorySortKey(
+                    $installation->installed_at ?? $installation->created_at,
+                    20,
+                    $installation->id
+                ),
+                'details' => [
+                    'Veículo' => $vehicleLabel,
+                    'Posição' => $installation->position_code,
+                    'KM de instalação' => $installation->installed_km !== null
+                        ? number_format($installation->installed_km, 0, ',', '.') . ' km'
+                        : null,
+                ],
+                'notes' => null,
+            ]);
+
+            if ($installation->removed_at) {
+                $timeline->push([
+                    'type' => 'removal',
+                    'title' => 'Retirada do veículo',
+                    'date' => $installation->removed_at,
+                    'sort_key' => $this->tireHistorySortKey($installation->removed_at, 30, $installation->id),
+                    'details' => [
+                        'Veículo' => $vehicleLabel,
+                        'Posição' => $installation->position_code,
+                        'KM de retirada' => $installation->removed_km !== null
+                            ? number_format($installation->removed_km, 0, ',', '.') . ' km'
+                            : null,
+                        'Motivo' => $installation->removal_reason,
+                    ],
+                    'notes' => null,
+                ]);
+            }
+        }
+
+        foreach ($tire->measurements as $measurement) {
+            $vehicle = $measurement->vehicle;
+            $vehicleLabel = $vehicle
+                ? trim(($vehicle->name ?? '') . ($vehicle->plate ? ' · ' . $vehicle->plate : ''))
+                : null;
+
+            $timeline->push([
+                'type' => 'measurement',
+                'title' => 'Medição de sulco',
+                'date' => $measurement->measured_at,
+                'sort_key' => $this->tireHistorySortKey($measurement->measured_at, 40, $measurement->id),
+                'details' => [
+                    'Veículo' => $vehicleLabel,
+                    'Posição' => $measurement->position_code,
+                    'KM' => $measurement->vehicle_km !== null
+                        ? number_format($measurement->vehicle_km, 0, ',', '.') . ' km'
+                        : null,
+                    'Sulco mínimo' => $measurement->minimum_tread !== null
+                        ? number_format((float) $measurement->minimum_tread, 2, ',', '.') . ' mm'
+                        : null,
+                ],
+                'notes' => $measurement->notes,
+            ]);
+        }
+
+        $tire->retreads
+            ->sortBy([
+                ['retreaded_at', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values()
+            ->each(function ($retread, $index) use ($timeline) {
+                $retreadNumber = $index + 1;
+
+                $timeline->push([
+                    'type' => 'retread',
+                    'title' => 'Recapagem R' . $retreadNumber,
+                    'date' => $retread->retreaded_at,
+                    'sort_key' => $this->tireHistorySortKey($retread->retreaded_at, 50, $retread->id),
+                    'details' => [
+                        'Novo sulco' => number_format((float) $retread->new_tread_depth, 2, ',', '.') . ' mm',
+                        'Referência anterior' => $retread->previous_tread_reference !== null
+                            ? number_format((float) $retread->previous_tread_reference, 2, ',', '.') . ' mm'
+                            : null,
+                        'Fornecedor' => $retread->provider_name,
+                    ],
+                    'notes' => $retread->notes,
+                ]);
+            });
+
+        $timeline = $timeline
+            ->sortByDesc('sort_key')
+            ->values();
+
+        return view(
+            'workshop.tires.history',
+            compact('tire', 'timeline')
+        );
+    }
+
+    private function tireHistorySortKey($date, int $priority, int $id): string
+    {
+        return ($date?->format('Ymd') ?? '00000000')
+            . str_pad((string) $priority, 3, '0', STR_PAD_LEFT)
+            . str_pad((string) $id, 12, '0', STR_PAD_LEFT);
+    }
+
     public function storeRetread(Request $request, Tire $tire)
     {
         $user = auth()->user();

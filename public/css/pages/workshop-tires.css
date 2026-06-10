@@ -1459,3 +1459,294 @@ html[data-chm-theme="corporate-light"] .workshop-modal-overlay .workshop-retread
         grid-column: auto;
     }
 }
+
+/* CHM tire history phase 2 */
+.workshop-tire-history-page {
+    --tire-history-bg: #182136;
+    --tire-history-surface: #202a40;
+    --tire-history-surface-soft: #253149;
+    --tire-history-border: rgba(203, 213, 225, .14);
+    --tire-history-border-strong: rgba(203, 213, 225, .24);
+    --tire-history-text: #f1f5f9;
+    --tire-history-muted: #a8b1c1;
+    --tire-history-accent: #d95862;
+    width: 100%;
+    color: var(--tire-history-text);
+}
+
+.workshop-tire-history-page .tire-history-header,
+.workshop-tire-history-page .tire-history-summary article,
+.workshop-tire-history-page .tire-history-notice,
+.workshop-tire-history-page .tire-history-section,
+.workshop-tire-history-page .tire-history-event,
+.workshop-tire-history-page .tire-history-empty {
+    border: 1px solid var(--tire-history-border);
+    background: var(--tire-history-surface);
+}
+
+.workshop-tire-history-page .tire-history-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px;
+    border-left: 3px solid var(--tire-history-accent);
+    border-radius: 8px;
+}
+
+.workshop-tire-history-page .tire-history-back,
+.workshop-tire-history-page .tire-history-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--tire-history-border-strong);
+    border-radius: 6px;
+    color: var(--tire-history-text);
+    background: var(--tire-history-surface-soft);
+    text-decoration: none;
+}
+
+.workshop-tire-history-page .tire-history-back {
+    min-height: 36px;
+    margin-bottom: 16px;
+    padding: 7px 11px;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.workshop-tire-history-page .tire-history-back svg {
+    width: 15px;
+    height: 15px;
+}
+
+.workshop-tire-history-page .tire-history-header > div > span,
+.workshop-tire-history-page .tire-history-section-header span,
+.workshop-tire-history-page .tire-history-summary span,
+.workshop-tire-history-page .tire-history-event-top span,
+.workshop-tire-history-page .tire-history-event-details span {
+    color: var(--tire-history-muted);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.workshop-tire-history-page .tire-history-header h1 {
+    margin: 5px 0 3px;
+    font-size: clamp(1.45rem, 3vw, 2rem);
+    line-height: 1.1;
+}
+
+.workshop-tire-history-page .tire-history-header p,
+.workshop-tire-history-page .tire-history-notice p,
+.workshop-tire-history-page .tire-history-empty p,
+.workshop-tire-history-page .tire-history-event-notes {
+    margin: 0;
+    color: var(--tire-history-muted);
+}
+
+.workshop-tire-history-page .tire-history-status {
+    flex: 0 0 auto;
+    padding: 7px 10px;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.workshop-tire-history-page .tire-history-status.available {
+    color: #b9dbc5;
+}
+
+.workshop-tire-history-page .tire-history-status.maintenance {
+    color: #e4cc96;
+}
+
+.workshop-tire-history-page .tire-history-status.discarded {
+    color: #e7a6ab;
+}
+
+.workshop-tire-history-page .tire-history-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.workshop-tire-history-page .tire-history-summary article {
+    min-width: 0;
+    padding: 15px;
+    border-radius: 7px;
+}
+
+.workshop-tire-history-page .tire-history-summary strong {
+    display: block;
+    margin-top: 6px;
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+}
+
+.workshop-tire-history-page .tire-history-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 7px;
+}
+
+.workshop-tire-history-page .tire-history-notice svg {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    color: var(--tire-history-accent);
+}
+
+.workshop-tire-history-page .tire-history-section {
+    margin-top: 14px;
+    padding: 18px;
+    border-radius: 8px;
+}
+
+.workshop-tire-history-page .tire-history-section-header,
+.workshop-tire-history-page .tire-history-event-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.workshop-tire-history-page .tire-history-section-header h2,
+.workshop-tire-history-page .tire-history-event-top h3 {
+    margin: 4px 0 0;
+    color: var(--tire-history-text);
+}
+
+.workshop-tire-history-page .tire-history-section-header h2 {
+    font-size: 1.08rem;
+}
+
+.workshop-tire-history-page .tire-history-section-header > strong,
+.workshop-tire-history-page .tire-history-event-top time {
+    color: var(--tire-history-muted);
+    font-size: .8rem;
+}
+
+.workshop-tire-history-page .tire-history-timeline {
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.workshop-tire-history-page .tire-history-event {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-radius: 7px;
+}
+
+.workshop-tire-history-page .tire-history-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--tire-history-border-strong);
+    border-radius: 6px;
+    color: var(--tire-history-text);
+    background: var(--tire-history-surface-soft);
+}
+
+.workshop-tire-history-page .tire-history-marker svg {
+    width: 16px;
+    height: 16px;
+}
+
+.workshop-tire-history-page .tire-history-event.retread .tire-history-marker,
+.workshop-tire-history-page .tire-history-event.removal .tire-history-marker {
+    color: #e7a6ab;
+    border-color: rgba(217, 88, 98, .34);
+}
+
+.workshop-tire-history-page .tire-history-event-details {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 12px;
+}
+
+.workshop-tire-history-page .tire-history-event-details div {
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--tire-history-border);
+    border-radius: 6px;
+    background: var(--tire-history-surface-soft);
+}
+
+.workshop-tire-history-page .tire-history-event-details strong {
+    display: block;
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+    font-size: .84rem;
+}
+
+.workshop-tire-history-page .tire-history-event-notes {
+    margin-top: 10px;
+    padding: 9px 10px;
+    border-left: 2px solid var(--tire-history-accent);
+    background: var(--tire-history-surface-soft);
+    font-size: .84rem;
+}
+
+.workshop-tire-history-page .tire-history-empty {
+    margin-top: 16px;
+    padding: 28px;
+    border-radius: 7px;
+    text-align: center;
+}
+
+.workshop-tire-history-page .tire-history-empty svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 8px;
+    color: var(--tire-history-muted);
+}
+
+.workshop-tire-history-page .tire-history-empty strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+html[data-chm-theme="corporate-light"] .workshop-tire-history-page {
+    --tire-history-bg: var(--chm-theme-body, #263249);
+    --tire-history-surface: var(--chm-theme-card, #3b4a66);
+    --tire-history-surface-soft: var(--chm-theme-card-elevated, #435373);
+    --tire-history-border: var(--chm-theme-border, rgba(226, 232, 240, .26));
+    --tire-history-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .38));
+    --tire-history-text: var(--chm-theme-text, #f8fafc);
+    --tire-history-muted: var(--chm-theme-muted, #d0d7e2);
+}
+
+@media (max-width: 900px) {
+    .workshop-tire-history-page .tire-history-summary,
+    .workshop-tire-history-page .tire-history-event-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .workshop-tire-history-page .tire-history-header,
+    .workshop-tire-history-page .tire-history-section-header,
+    .workshop-tire-history-page .tire-history-event-top {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .workshop-tire-history-page .tire-history-summary,
+    .workshop-tire-history-page .tire-history-event-details {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .workshop-tire-history-page .tire-history-event {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
