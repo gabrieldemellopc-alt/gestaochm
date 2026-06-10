@@ -11,13 +11,18 @@ use App\Models\VehicleTirePosition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\TireMeasurement;
+use App\Models\TireMeasurement;
+use App\Services\ActiveContextService;
 
 class VehicleTireController extends Controller
 {
     public function index(Vehicle $vehicle)
     {
-        $authUser = auth()->user();
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $authUser = auth()->user();
 
         if (
             $authUser->id !== 1
@@ -157,9 +162,13 @@ class VehicleTireController extends Controller
         );
     }
 
-    public function storeInstallation(Request $request, Vehicle $vehicle)
+    public function storeInstallation(Request $request, Vehicle $vehicle)
     {
-        $authUser = auth()->user();
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $authUser = auth()->user();
 
         if (
             $authUser->id !== 1
@@ -354,11 +363,15 @@ class VehicleTireController extends Controller
         );
     }
 
-    public function storeMeasurement(
+    public function storeMeasurement(
         Request $request,
         Vehicle $vehicle
     ) {
-        $authUser =
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $authUser =
             auth()->user();
     
         if (
@@ -929,9 +942,13 @@ class VehicleTireController extends Controller
             1
         );
     }
-    public function report(Vehicle $vehicle)
+    public function report(Vehicle $vehicle)
     {
-        $authUser =
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $authUser =
             auth()->user();
     
         if (
@@ -1079,11 +1096,15 @@ class VehicleTireController extends Controller
         );
     }
 
-    public function removeInstallation(
+    public function removeInstallation(
         Request $request,
         Vehicle $vehicle
     ) {
-        $authUser =
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $authUser =
             auth()->user();
     
         if (
@@ -1233,6 +1254,31 @@ class VehicleTireController extends Controller
             'success',
             'Pneu removido da posição.'
         );
-    }
-    
+    }
+
+    private function ensureVehicleInActiveContext(Vehicle $vehicle)
+    {
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with(
+                    'warning',
+                    'Selecione uma unidade para continuar.'
+                );
+        }
+
+        if (
+            (int) $vehicle->tenant_id !== (int) auth()->user()->tenant_id
+            || (int) $vehicle->division_id !== (int) session('active_division_id')
+            || (int) $vehicle->location_id !== (int) $activeLocation->id
+        ) {
+            abort(403);
+        }
+
+        return null;
+    }
+
 }
