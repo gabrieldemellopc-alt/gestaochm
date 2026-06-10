@@ -9,7 +9,8 @@ use App\Services\PreventiveService;
 use App\Services\StockService;
 use App\Models\User;
 use App\Models\VehicleOperation;
-use App\Models\UserDivisionAccess;
+use App\Models\UserDivisionAccess;
+use App\Services\ActiveContextService;
 
 class DashboardController extends Controller
 {
@@ -42,7 +43,19 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $vehicles = Vehicle::with([
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with(
+                    'warning',
+                    'Selecione uma unidade para continuar.'
+                );
+        }
+
+        $vehicles = Vehicle::with([
         
             'maintenances.procedure',
             'procedures',
@@ -64,7 +77,8 @@ class DashboardController extends Controller
             session('active_division_id')
         
         )
-        ->latest()
+        ->where('location_id', $activeLocation->id)
+        ->latest()
         ->get();
 
         /*

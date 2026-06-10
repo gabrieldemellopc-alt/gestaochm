@@ -10,13 +10,25 @@ use App\Models\Division;
 use App\Models\VehicleUpdateLog;
 use Illuminate\Validation\Rule;
 use App\Services\PreventiveService;
-use App\Models\StockItem;
+use App\Models\StockItem;
+use App\Services\ActiveContextService;
 
 class VehicleController extends Controller
 {
     public function index()
     {
-        $activeDivisionId = session('active_division_id');
+        $activeDivisionId = session('active_division_id');
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with(
+                    'warning',
+                    'Selecione uma unidade para continuar.'
+                );
+        }
     
         $vehicles = Vehicle::with([
     
@@ -26,14 +38,18 @@ class VehicleController extends Controller
                 'location'
     
             ])
-            ->when($activeDivisionId, function ($query) use ($activeDivisionId) {
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('division_id', $activeDivisionId)
+            ->where('location_id', $activeLocation->id)
+            /*
     
                 $query->where(
                     'division_id',
                     $activeDivisionId
                 );
     
-            })
+            })
+            */
             ->latest()
             ->get();
     
@@ -74,7 +90,7 @@ class VehicleController extends Controller
 
     public function create()
     {
-        $procedures =
+        $procedures =
             Procedure::orderBy('name')
             ->get();
 
@@ -430,7 +446,11 @@ class VehicleController extends Controller
             Procedure::orderBy('name')
             ->get();
 
-        $vehicle->load(
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $vehicle->load(
 
             'procedures'
 
@@ -644,7 +664,11 @@ class VehicleController extends Controller
         |--------------------------------------------------------------------------
         */
     
-        $oldData = $vehicle->replicate();
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $oldData = $vehicle->replicate();
     
         /*
         |--------------------------------------------------------------------------
@@ -853,7 +877,11 @@ class VehicleController extends Controller
         |--------------------------------------------------------------------------
         */
     
-        $vehicle->load([
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $vehicle->load([
             'maintenances.procedure',
             'procedures',
             'activeMaintenances.procedure',
@@ -914,12 +942,16 @@ class VehicleController extends Controller
         );
     }
 
-    public function updateOperationalStatus(
+    public function updateOperationalStatus(
         Request $request,
         Vehicle $vehicle
     ) {
     
-        $request->validate([
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $request->validate([
     
             'operational_status' => [
     
@@ -962,7 +994,11 @@ class VehicleController extends Controller
     
         ]);
     
-        $oldKm = $vehicle->current_km;
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $oldKm = $vehicle->current_km;
         if (
             $oldKm !== null
             &&
@@ -1028,7 +1064,11 @@ class VehicleController extends Controller
     
         ]);
     
-        $oldHours = $vehicle->current_hours;
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $oldHours = $vehicle->current_hours;
         if (
             $oldHours !== null
             &&
@@ -1088,7 +1128,11 @@ class VehicleController extends Controller
     
             'maintenances.procedure'
         ]);
-        $locationLogs =
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $locationLogs =
             $vehicle->updateLogs
                 ->where('type', 'location')
                 ->sortBy('created_at')
@@ -1112,12 +1156,26 @@ class VehicleController extends Controller
 
     public function quickUpdate()
     {
-        $vehicles = Vehicle::query()
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with(
+                    'warning',
+                    'Selecione uma unidade para continuar.'
+                );
+        }
+
+        $vehicles = Vehicle::query()
             ->where(
                 'division_id',
                 session('active_division_id')
             )
-            ->orderBy('plate')
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('location_id', $activeLocation->id)
+            ->orderBy('plate')
             ->get();
     
         foreach ($vehicles as $vehicle) {
@@ -1158,7 +1216,20 @@ class VehicleController extends Controller
     
     public function quickUpdateStore(Request $request)
     {
-        $data = $request->validate([
+        $activeDivisionId = session('active_division_id');
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with(
+                    'warning',
+                    'Selecione uma unidade para continuar.'
+                );
+        }
+
+        $data = $request->validate([
             'vehicles' => ['required', 'array'],
     
             'vehicles.*.id' => [
@@ -1183,7 +1254,11 @@ class VehicleController extends Controller
     
         foreach ($data['vehicles'] as $vehicleData) {
     
-            $vehicle = Vehicle::find($vehicleData['id']);
+            $vehicle = Vehicle::query()
+                ->where('tenant_id', auth()->user()->tenant_id)
+                ->where('division_id', $activeDivisionId)
+                ->where('location_id', $activeLocation->id)
+                ->find($vehicleData['id']);
     
             if (!$vehicle) {
                 continue;
@@ -1310,7 +1385,32 @@ class VehicleController extends Controller
     }
 
 
-    public function maintenanceCreate(
+    private function ensureVehicleInActiveContext(Vehicle $vehicle)
+    {
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with(
+                    'warning',
+                    'Selecione uma unidade para continuar.'
+                );
+        }
+
+        if (
+            (int) $vehicle->tenant_id !== (int) auth()->user()->tenant_id
+            || (int) $vehicle->division_id !== (int) session('active_division_id')
+            || (int) $vehicle->location_id !== (int) $activeLocation->id
+        ) {
+            abort(403);
+        }
+
+        return null;
+    }
+
+    public function maintenanceCreate(
     Request $request,
     Vehicle $vehicle
 ) {
