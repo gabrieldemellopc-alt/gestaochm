@@ -444,7 +444,6 @@
 
             @php
                 $installation = $tire->activeInstallation;
-                $measurement = $tire->latestMeasurement;
             @endphp
 
             <div class="workshop-table-row">
@@ -500,10 +499,8 @@
                 </div>
 
                 <div>
-                    @if($tire->status === 'installed' && $measurement)
-                        {{ number_format($measurement->minimum_tread, 2, ',', '.') }} mm
-                    @elseif($tire->initial_tread_depth !== null)
-                        {{ number_format($tire->initial_tread_depth, 2, ',', '.') }} mm
+                    @if($tire->current_tread_depth !== null)
+                        {{ number_format($tire->current_tread_depth, 2, ',', '.') }} mm
                     @else
                         --
                     @endif

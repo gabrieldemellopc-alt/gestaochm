@@ -31,9 +31,10 @@ class WorkshopTireController extends Controller
         $tiresQuery =
             Tire::query()
                 ->where('tenant_id', $user->tenant_id)
-                ->with([
+                ->withCurrentTreadContext()
+
+                ->with([
                     'activeInstallation.vehicle',
-                    'latestMeasurement',
                 ])
                 ->withCount('retreads');
     
