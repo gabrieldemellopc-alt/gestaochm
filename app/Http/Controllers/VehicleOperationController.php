@@ -10,6 +10,7 @@ use App\Models\Vehicle;
 
 use App\Models\VehicleOperation;
 use App\Models\VehicleUpdateLog;
+use App\Services\ActiveContextService;
 use Carbon\Carbon;
 
 use Illuminate\Http\Request;
@@ -29,6 +30,15 @@ class VehicleOperationController extends Controller
     {
 
         $tenantId = auth()->user()->tenant_id ?? null;
+        $activeDivisionId = session('active_division_id');
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with('warning', 'Selecione uma unidade para continuar.');
+        }
 
 
 
@@ -44,6 +54,12 @@ class VehicleOperationController extends Controller
 
                 $query->where('tenant_id', $tenantId);
 
+            })
+            ->whereHas('vehicle', function ($query) use ($tenantId, $activeDivisionId, $activeLocation) {
+                $query
+                    ->where('tenant_id', $tenantId)
+                    ->where('division_id', $activeDivisionId)
+                    ->where('location_id', $activeLocation->id);
             })
 
             ->when($status !== 'all', function ($query) use ($status) {
@@ -67,6 +83,12 @@ class VehicleOperationController extends Controller
                 $query->where('tenant_id', $tenantId);
 
             })
+            ->whereHas('vehicle', function ($query) use ($tenantId, $activeDivisionId, $activeLocation) {
+                $query
+                    ->where('tenant_id', $tenantId)
+                    ->where('division_id', $activeDivisionId)
+                    ->where('location_id', $activeLocation->id);
+            })
 
             ->where('status', 'open')
 
@@ -80,6 +102,12 @@ class VehicleOperationController extends Controller
 
                 $query->where('tenant_id', $tenantId);
 
+            })
+            ->whereHas('vehicle', function ($query) use ($tenantId, $activeDivisionId, $activeLocation) {
+                $query
+                    ->where('tenant_id', $tenantId)
+                    ->where('division_id', $activeDivisionId)
+                    ->where('location_id', $activeLocation->id);
             })
 
             ->where('status', 'closed')
@@ -96,6 +124,12 @@ class VehicleOperationController extends Controller
 
                 $query->where('tenant_id', $tenantId);
 
+            })
+            ->whereHas('vehicle', function ($query) use ($tenantId, $activeDivisionId, $activeLocation) {
+                $query
+                    ->where('tenant_id', $tenantId)
+                    ->where('division_id', $activeDivisionId)
+                    ->where('location_id', $activeLocation->id);
             })
 
             ->where('status', 'open')
@@ -127,6 +161,9 @@ class VehicleOperationController extends Controller
     public function create(Vehicle $vehicle)
 
     {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
 
         $openOperation = VehicleOperation::query()
 
@@ -170,16 +207,6 @@ class VehicleOperationController extends Controller
 
     
 
-            $vehicleLocationId =
-
-                $vehicle->currentAllocation?->location_id
-
-                ?? $vehicle->location_id
-
-                ?? null;
-
-    
-
             $driversWithOpenOperations = VehicleOperation::query()
 
                 ->where('status', 'open')
@@ -200,21 +227,21 @@ class VehicleOperationController extends Controller
 
                 ->with('user')
 
+                ->where('tenant_id', auth()->user()->tenant_id)
+
                 ->where('division_id', $activeDivisionId)
 
                 ->where('module', 'fleet')
 
-                ->where('profile', 'driver')
+                ->whereIn('profile', ['driver', 'motorista'])
 
-                ->where('active', 1);
+                ->where('active', 1)
 
-    
-
-            if ($vehicleLocationId) {
-
-                $driversQuery->where('location_id', $vehicleLocationId);
-
-            }
+                ->where(function ($query) {
+                    $query
+                        ->where('location_id', session('active_location_id'))
+                        ->orWhereNull('location_id');
+                });
 
     
 
@@ -273,6 +300,9 @@ class VehicleOperationController extends Controller
     public function store(Request $request, Vehicle $vehicle)
 
     {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
 
         $reportedStart = Carbon::parse($request->start_datetime_reported);
 
@@ -406,17 +436,9 @@ class VehicleOperationController extends Controller
 
         
 
-            $vehicleLocationId =
-
-                $vehicle->currentAllocation?->location_id
-
-                ?? $vehicle->location_id
-
-                ?? null;
-
-        
-
             $driverAccessQuery = \App\Models\UserDivisionAccess::query()
+
+                ->where('tenant_id', auth()->user()->tenant_id)
 
                 ->where('user_id', $driverId)
 
@@ -424,17 +446,15 @@ class VehicleOperationController extends Controller
 
                 ->where('module', 'fleet')
 
-                ->where('profile', 'driver')
+                ->whereIn('profile', ['driver', 'motorista'])
 
-                ->where('active', 1);
+                ->where('active', 1)
 
-        
-
-            if ($vehicleLocationId) {
-
-                $driverAccessQuery->where('location_id', $vehicleLocationId);
-
-            }
+                ->where(function ($query) {
+                    $query
+                        ->where('location_id', session('active_location_id'))
+                        ->orWhereNull('location_id');
+                });
 
         
 
@@ -452,6 +472,12 @@ class VehicleOperationController extends Controller
 
             }
 
+        }
+
+        if (! $this->driverCanOperateAtActiveLocation($driverId)) {
+            return back()
+                ->withInput()
+                ->with('error', 'O motorista selecionado nÃ£o pertence Ã  mesma divisÃ£o/localidade do veÃ­culo.');
         }
 
         
@@ -545,6 +571,9 @@ class VehicleOperationController extends Controller
     public function close(VehicleOperation $operation)
 
     {
+        if ($redirect = $this->ensureOperationInActiveContext($operation)) {
+            return $redirect;
+        }
 
         $operation->load(['vehicle', 'driver']);
 
@@ -597,6 +626,9 @@ class VehicleOperationController extends Controller
     public function finish(Request $request, VehicleOperation $operation)
 
     {
+        if ($redirect = $this->ensureOperationInActiveContext($operation)) {
+            return $redirect;
+        }
 
         if ($operation->status !== 'open') {
 
@@ -741,6 +773,69 @@ class VehicleOperationController extends Controller
             ->to($request->input('return_url', url()->previous()))
             ->with('success', 'Operação encerrada com sucesso.');
 
+    }
+
+
+
+    private function ensureVehicleInActiveContext(Vehicle $vehicle)
+    {
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with('warning', 'Selecione uma unidade para continuar.');
+        }
+
+        if (
+            (int) $vehicle->tenant_id !== (int) auth()->user()->tenant_id
+            || (int) $vehicle->division_id !== (int) session('active_division_id')
+            || (int) $vehicle->location_id !== (int) $activeLocation->id
+        ) {
+            abort(403);
+        }
+
+        return null;
+    }
+
+
+
+    private function ensureOperationInActiveContext(VehicleOperation $operation)
+    {
+        $operation->loadMissing('vehicle');
+
+        if (! $operation->vehicle) {
+            abort(403);
+        }
+
+        return $this->ensureVehicleInActiveContext($operation->vehicle);
+    }
+
+
+
+    private function driverCanOperateAtActiveLocation(int $driverId): bool
+    {
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return false;
+        }
+
+        return \App\Models\UserDivisionAccess::query()
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('user_id', $driverId)
+            ->where('division_id', session('active_division_id'))
+            ->where('module', 'fleet')
+            ->whereIn('profile', ['driver', 'motorista'])
+            ->where('active', 1)
+            ->where(function ($query) use ($activeLocation) {
+                $query
+                    ->where('location_id', $activeLocation->id)
+                    ->orWhereNull('location_id');
+            })
+            ->exists();
     }
 
 
@@ -923,6 +1018,8 @@ class VehicleOperationController extends Controller
 
         return \App\Models\UserDivisionAccess::query()
 
+            ->where('tenant_id', auth()->user()->tenant_id)
+
             ->where('user_id', auth()->id())
 
             ->where('division_id', $activeDivisionId)
@@ -930,6 +1027,12 @@ class VehicleOperationController extends Controller
             ->where('module', 'fleet')
 
             ->where('active', 1)
+
+            ->where(function ($query) {
+                $query
+                    ->where('location_id', session('active_location_id'))
+                    ->orWhereNull('location_id');
+            })
 
             ->first();
 
