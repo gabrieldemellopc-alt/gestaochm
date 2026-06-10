@@ -1,4 +1,4 @@
-@php
+{{-- Active context is shared by AppServiceProvider.
 
     $activeDivision = null;
 
@@ -14,7 +14,7 @@
         );
 
     }
-@endphp
+--}}
 
 <header class="topbar">
 
@@ -82,7 +82,41 @@
     </div>
 
     {{-- USER --}}
-    <div class="topbar-right">
+    <div class="topbar-right">
+
+        @if($activeDivision)
+            <form
+                method="POST"
+                action="{{ route('active-location.update') }}"
+                class="topbar-location-selector"
+            >
+                @csrf
+
+                <label for="topbarActiveLocation">
+                    <i data-lucide="map-pin"></i>
+                    <span>Unidade</span>
+                </label>
+
+                <select
+                    id="topbarActiveLocation"
+                    name="location_id"
+                    aria-label="Unidade ativa"
+                    @if($availableLocations->count() <= 1) disabled @endif
+                    onchange="this.form.submit()"
+                >
+                    @forelse($availableLocations as $location)
+                        <option
+                            value="{{ $location->id }}"
+                            @selected($activeLocation?->id === $location->id)
+                        >
+                            {{ $location->name }}
+                        </option>
+                    @empty
+                        <option>Sem unidade disponível</option>
+                    @endforelse
+                </select>
+            </form>
+        @endif
 
         <button
             type="button"

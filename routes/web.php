@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AccessControlController;
 
+use App\Http\Controllers\ActiveLocationController;
+
 use App\Http\Controllers\ChecklistController;
 
 use App\Http\Controllers\ChecklistExecutionController;
@@ -183,6 +185,11 @@ Route::middleware('auth')->group(function () {
         [PortalController::class, 'leaveDivision']
 
     )->name('division.leave');
+
+    Route::post(
+        '/active-location',
+        [ActiveLocationController::class, 'update']
+    )->name('active-location.update');
 
 
 

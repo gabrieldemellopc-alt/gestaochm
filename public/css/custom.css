@@ -6914,7 +6914,85 @@
     color: #f8fafc;
 }
 
-.sidebar-group.open .sidebar-link.active {
+.sidebar-group.open .sidebar-link.active {
     background: rgba(148, 163, 184, .12);
     border: 1px solid rgba(148, 163, 184, .14);
+}
+
+/* CHM active location selector */
+.topbar .topbar-location-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 5px 7px 5px 9px;
+    border: 1px solid rgba(203, 213, 225, .16);
+    border-radius: 7px;
+    background: rgba(15, 23, 42, .24);
+}
+
+.topbar .topbar-location-selector label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #aeb8c8;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.topbar .topbar-location-selector label svg {
+    width: 14px;
+    height: 14px;
+    color: #d95862;
+}
+
+.topbar .topbar-location-selector select {
+    min-width: 130px;
+    max-width: 210px;
+    border: 0;
+    outline: 0;
+    color: #f1f5f9;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.topbar .topbar-location-selector select:disabled {
+    color: #cbd5e1;
+    cursor: default;
+    opacity: .9;
+}
+
+.topbar .topbar-location-selector select option {
+    color: #f1f5f9;
+    background: #263249;
+}
+
+html[data-chm-theme="corporate-light"] .topbar .topbar-location-selector {
+    border-color: var(--chm-theme-border, rgba(226, 232, 240, .26));
+    background: rgba(255, 255, 255, .06);
+}
+
+@media (max-width: 900px) {
+    .topbar .topbar-location-selector label span {
+        display: none;
+    }
+
+    .topbar .topbar-location-selector select {
+        min-width: 105px;
+        max-width: 145px;
+    }
+}
+
+@media (max-width: 620px) {
+    .topbar .topbar-location-selector {
+        padding-inline: 6px;
+    }
+
+    .topbar .topbar-location-selector select {
+        min-width: 82px;
+        max-width: 105px;
+    }
 }
