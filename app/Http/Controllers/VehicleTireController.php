@@ -29,7 +29,10 @@ class VehicleTireController extends Controller
 
         $vehicle->load([
             'tirePositions',
-            'activeTireInstallations.tire.latestMeasurement',
+            'activeTireInstallations.tire' =>
+                fn ($query) => $query
+                    ->withCurrentTreadContext()
+                    ->withCount('retreads'),
         ]);
 
         /*
@@ -45,7 +48,10 @@ class VehicleTireController extends Controller
 
             $vehicle->load([
                 'tirePositions',
-                'activeTireInstallations.tire.latestMeasurement',
+                'activeTireInstallations.tire' =>
+                    fn ($query) => $query
+                        ->withCurrentTreadContext()
+                        ->withCount('retreads'),
             ]);
         }
 
@@ -93,8 +99,7 @@ class VehicleTireController extends Controller
                             $installation?->tire,
                         'wear_percent' =>
                             $this->treadWearPercent(
-                                $installation?->tire,
-                                $latestMeasurement
+                                $installation?->tire
                             ),
                         'latest_measurement' =>
                             $latestMeasurement,
@@ -105,7 +110,8 @@ class VehicleTireController extends Controller
                 });
 
         $availableTires =
-            Tire::where('tenant_id', $vehicle->tenant_id)
+            Tire::where('tenant_id', $vehicle->tenant_id)
+                ->withCurrentTreadContext()
                 ->where('status', 'available')
                 ->orderBy('code')
                 ->get()
@@ -238,7 +244,8 @@ class VehicleTireController extends Controller
                 ]);
 
             $tire =
-                Tire::where('tenant_id', $vehicle->tenant_id)
+                Tire::where('tenant_id', $vehicle->tenant_id)
+                    ->withCurrentTreadContext()
                     ->where('id', $data['tire_id'])
                     ->firstOrFail();
             
@@ -287,11 +294,11 @@ class VehicleTireController extends Controller
             | medição da posição. Assim o sistema não gera alerta imediatamente.
             */
             
-            if ($tire->initial_tread_depth !== null) {
+            if ($tire->current_tread_depth !== null) {
             
                 $initialTread =
                     round(
-                        (float) $tire->initial_tread_depth,
+                        (float) $tire->current_tread_depth,
                         2
                     );
             
@@ -897,23 +904,22 @@ class VehicleTireController extends Controller
         return 'ok';
     }
     
-    private function treadWearPercent($tire, $measurement): ?float
+    private function treadWearPercent($tire): ?float
     {
         if (
             ! $tire
-            || ! $measurement
-            || ! $tire->initial_tread_depth
-            || ! $measurement->minimum_tread
-            || (float) $tire->initial_tread_depth <= 0
+            || $tire->tread_reference_depth === null
+            || $tire->current_tread_depth === null
+            || (float) $tire->tread_reference_depth <= 0
         ) {
             return null;
         }
     
         $initial =
-            (float) $tire->initial_tread_depth;
+            (float) $tire->tread_reference_depth;
     
         $current =
-            (float) $measurement->minimum_tread;
+            (float) $tire->current_tread_depth;
     
         $wear =
             (($initial - $current) / $initial) * 100;
@@ -947,7 +953,10 @@ class VehicleTireController extends Controller
             'division',
             'location',
             'tirePositions',
-            'tireInstallations.tire',
+            'tireInstallations.tire' =>
+                fn ($query) => $query
+                    ->withCurrentTreadContext()
+                    ->withCount('retreads'),
             'tireInstallations.creator',
         ]);
     
@@ -987,14 +996,13 @@ class VehicleTireController extends Controller
                             $installation,
     
                         'tire' =>
-                            $installation?->tire,
+                            $installation?->tire,
     
                         'latest_measurement' =>
                             $latestMeasurement,
                         'wear_percent' =>
                         $this->treadWearPercent(
                             $installation?->tire,
-                            $latestMeasurement
                         ),
                         'status' =>
                             $this->positionStatus(

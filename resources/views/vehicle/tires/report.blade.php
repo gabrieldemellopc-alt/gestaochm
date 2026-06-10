@@ -305,7 +305,25 @@
                         </td>
 
                         <td>
-                            {{ $tire?->code ?? '--' }}
+                            {{ $tire?->code ?? '--' }}
+
+                            @if($tire)
+                                <br>
+                                <span class="muted">
+                                    {{ $tire->retreads_count > 0 ? 'Recapagens: R' . $tire->retreads_count : 'Nenhuma recapagem' }}
+                                </span>
+
+                                @if($tire->latestRetread)
+                                    <br>
+                                    <span class="muted">
+                                        Última: {{ optional($tire->latestRetread->retreaded_at)->format('d/m/Y') ?? '--' }}
+                                        · {{ $tire->latestRetread->new_tread_depth }} mm
+                                        @if($tire->latestRetread->provider_name)
+                                            · {{ $tire->latestRetread->provider_name }}
+                                        @endif
+                                    </span>
+                                @endif
+                            @endif
                         </td>
 
                         <td>
@@ -318,7 +336,7 @@
                         </td>
 
                         <td>
-                            {{ $measurement?->minimum_tread ?? '--' }}{{ $measurement ? ' mm' : '' }}
+                            {{ $tire?->current_tread_depth ?? '--' }}{{ $tire ? ' mm' : '' }}
                         </td>
 
                         <td>

@@ -119,7 +119,11 @@
                             </span>
 
                             <strong>
-                                {{ $tire->code }}
+                                {{ $tire->code }}
+
+                                @if($tire->retreads_count > 0)
+                                    <small>R{{ $tire->retreads_count }}</small>
+                                @endif
                             </strong>
                         </div>
 
@@ -160,10 +164,10 @@
                     <div class="tire-measure-box">
 
                         <h3>
-                            Última medição
+                            Referência atual
                         </h3>
 
-                        @if($measurement)
+                        @if($tire->current_tread_source !== 'initial')
 
                         <div class="tire-measure-grid">
                         
@@ -173,8 +177,18 @@
                                 </span>
                         
                                 <strong>
-                                    {{ $measurement->minimum_tread }} mm
-                                </strong>
+                                    {{ $tire->current_tread_depth }} mm
+                                </strong>
+
+                                @if($tire->current_tread_source === 'retread')
+                                    <small>
+                                        Referência: Recapagem R{{ $tire->retreads_count }}
+                                    </small>
+                                @elseif($tire->current_tread_source === 'measurement')
+                                    <small>
+                                        Referência: Última medição
+                                    </small>
+                                @endif
                             </div>
                         
                             <div>
@@ -193,7 +207,7 @@
                                 </span>
                         
                                 <strong>
-                                    {{ $measurement->vehicle_km ? number_format($measurement->vehicle_km, 0, ',', '.') : '--' }}
+                                    {{ $measurement?->vehicle_km ? number_format($measurement->vehicle_km, 0, ',', '.') : '--' }}
                                 </strong>
                             </div>
                         
@@ -203,7 +217,7 @@
                                 </span>
                         
                                 <strong>
-                                    {{ optional($measurement->measured_at)->format('d/m/Y') }}
+                                    {{ optional($tire->current_tread_date)->format('d/m/Y') ?? '--' }}
                                 </strong>
                             </div>
                         
@@ -267,7 +281,7 @@
                                 type="number"
                                 step="0.01"
                                 name="current_tread"
-                                value="{{ old('current_tread', $measurement?->minimum_tread) }}"
+                                value="{{ old('current_tread', $tire->current_tread_depth) }}"
                                 placeholder="Ex: 16.68"
                                 required
                             >
