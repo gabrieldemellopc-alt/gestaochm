@@ -88,11 +88,22 @@ class VehicleController extends Controller
         );
     }
 
-    public function create()
-    {
+    public function create()
+    {
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with('warning', 'Selecione uma unidade para continuar.');
+        }
+
         $procedures =
-            Procedure::orderBy('name')
-            ->get();
+            Procedure::where('tenant_id', auth()->user()->tenant_id)
+            ->where('location_id', $activeLocation->id)
+            ->orderBy('name')
+            ->get();
 
         $divisions = Division::orderBy('name')->get();
         
@@ -108,8 +119,17 @@ class VehicleController extends Controller
         );
     }
 
-    public function store(Request $request)
-    {
+    public function store(Request $request)
+    {
+        $activeLocation = app(ActiveContextService::class)
+            ->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()
+                ->route('portal')
+                ->with('warning', 'Selecione uma unidade para continuar.');
+        }
+
         /*
         |--------------------------------------------------------------------------
         | NORMALIZAÇÃO DA PLACA
@@ -163,10 +183,11 @@ class VehicleController extends Controller
                 'exists:divisions,id',
             ],
     
-            'location_id' => [
-                'required',
-                'exists:locations,id',
-            ],
+            'location_id' => [
+                'required',
+                'exists:locations,id',
+                Rule::in([$activeLocation->id]),
+            ],
     
             'type' => [
                 'required',
@@ -244,9 +265,12 @@ class VehicleController extends Controller
                 'array',
             ],
     
-            'procedures.*' => [
-                'exists:procedures,id',
-            ],
+            'procedures.*' => [
+                Rule::exists('procedures', 'id')
+                    ->where(fn ($query) => $query
+                        ->where('tenant_id', auth()->user()->tenant_id)
+                        ->where('location_id', $activeLocation->id)),
+            ],
     
         ], [
     
@@ -423,7 +447,11 @@ class VehicleController extends Controller
     
         $vehicle->procedures()->sync(
     
-            $validated['procedures'] ?? []
+            $this->procedureIdsInContext(
+                $validated['procedures'] ?? [],
+                (int) $vehicle->tenant_id,
+                (int) $vehicle->location_id
+            )
     
         );
     
@@ -440,21 +468,25 @@ class VehicleController extends Controller
             );
     }
 
-    public function edit(Vehicle $vehicle)
-    {
-        $procedures =
-            Procedure::orderBy('name')
-            ->get();
-
+    public function edit(Vehicle $vehicle)
+    {
         if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
             return $redirect;
         }
 
-        $vehicle->load(
-
-            'procedures'
-
-        );
+        $procedures =
+            Procedure::where('tenant_id', $vehicle->tenant_id)
+            ->where('location_id', $vehicle->location_id)
+            ->orderBy('name')
+            ->get();
+
+        $vehicle->load([
+            'procedures' => function ($query) use ($vehicle) {
+                $query
+                    ->where('tenant_id', $vehicle->tenant_id)
+                    ->where('location_id', $vehicle->location_id);
+            },
+        ]);
         $divisions = Division::orderBy('name')->get();
         
         $locations = Location::orderBy('name')->get();
@@ -472,10 +504,13 @@ class VehicleController extends Controller
         );
     }
 
-    public function update(
-        Request $request,
-        Vehicle $vehicle
-    ) {
+    public function update(
+        Request $request,
+        Vehicle $vehicle
+    ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
     
         /*
         |--------------------------------------------------------------------------
@@ -601,19 +636,23 @@ class VehicleController extends Controller
                 'string',
                 'in:car_4_single,truck_6_mixed,truck_8_mixed,truck_10_mixed,truck_12_mixed',
             ],
-            'location_id' => [
-                'required',
-                'exists:locations,id',
-            ],
+            'location_id' => [
+                'required',
+                'exists:locations,id',
+                Rule::in([$vehicle->location_id]),
+            ],
     
             'procedures' => [
                 'nullable',
                 'array',
             ],
     
-            'procedures.*' => [
-                'exists:procedures,id',
-            ],
+            'procedures.*' => [
+                Rule::exists('procedures', 'id')
+                    ->where(fn ($query) => $query
+                        ->where('tenant_id', $vehicle->tenant_id)
+                        ->where('location_id', $vehicle->location_id)),
+            ],
     
         ], [
     
@@ -824,7 +863,11 @@ class VehicleController extends Controller
     
         $vehicle->procedures()->sync(
     
-            $validated['procedures'] ?? []
+            $this->procedureIdsInContext(
+                $validated['procedures'] ?? [],
+                (int) $vehicle->tenant_id,
+                (int) $vehicle->location_id
+            )
     
         );
     
@@ -882,9 +925,13 @@ class VehicleController extends Controller
         }
 
         $vehicle->load([
-            'maintenances.procedure',
-            'procedures',
-            'activeMaintenances.procedure',
+            'maintenances.procedure',
+            'procedures' => function ($query) use ($vehicle) {
+                $query
+                    ->where('tenant_id', $vehicle->tenant_id)
+                    ->where('location_id', $vehicle->location_id);
+            },
+            'activeMaintenances.procedure',
             'updateLogs.user',
             'currentAllocation.location',
             'currentAllocation.division',
@@ -924,9 +971,11 @@ class VehicleController extends Controller
         |--------------------------------------------------------------------------
         */
     
-        $procedures =
-            Procedure::with('fields.stockCategory')
-                ->get();
+        $procedures =
+            Procedure::with('fields.stockCategory')
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id)
+                ->get();
     
         $stockItems =
             StockItem::where('active', true)
@@ -1385,6 +1434,28 @@ class VehicleController extends Controller
     }
 
 
+    private function procedureIdsInContext(array $procedureIds, int $tenantId, int $locationId): array
+    {
+        $procedureIds = collect($procedureIds)
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $validIds = Procedure::query()
+            ->where('tenant_id', $tenantId)
+            ->where('location_id', $locationId)
+            ->whereIn('id', $procedureIds)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($validIds->count() !== $procedureIds->count()) {
+            abort(403);
+        }
+
+        return $validIds->all();
+    }
+
     private function ensureVehicleInActiveContext(Vehicle $vehicle)
     {
         $activeLocation = app(ActiveContextService::class)
@@ -1420,9 +1491,12 @@ public function maintenanceCreate(
 
     $data = $request->validate([
 
-        'procedure_id' => [
-            'required',
-            'exists:procedures,id',
+        'procedure_id' => [
+            'required',
+            Rule::exists('procedures', 'id')
+                ->where(fn ($query) => $query
+                    ->where('tenant_id', $vehicle->tenant_id)
+                    ->where('location_id', $vehicle->location_id)),
         ],
 
         'execution_type' => [
@@ -1453,7 +1527,10 @@ public function maintenanceCreate(
                     ->where('location_id', $vehicle->location_id)
                     ->where('active', true);
             },
-        ])->findOrFail(
+        ])
+        ->where('tenant_id', $vehicle->tenant_id)
+        ->where('location_id', $vehicle->location_id)
+        ->findOrFail(
             $data['procedure_id']
         );
 
@@ -1497,10 +1574,15 @@ public function maintenanceCreate(
         'maintenances.procedure',
     ]);
 
-    $vehicle->load([
+    $vehicle->load([
         'division',
         'location',
         'maintenances.procedure',
+        'procedures' => function ($query) use ($vehicle) {
+            $query
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id);
+        },
         'procedures.fields.stockCategory.items' => function ($query) use ($vehicle) {
             $query
                 ->where('tenant_id', $vehicle->tenant_id)

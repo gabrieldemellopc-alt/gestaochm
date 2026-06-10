@@ -18,6 +18,8 @@ class MaintenanceService
     {
         return DB::transaction(function () use ($data, $vehicle) {
             $procedure = Procedure::with('fields')
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id)
                 ->findOrFail($data['procedure_id']);
 
             $executionType = $data['maintenance_type'] ?? 'external';
