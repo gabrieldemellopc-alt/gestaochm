@@ -27,6 +27,8 @@ class BackfillLocationData extends Command
 
     private Collection $locations;
 
+    private Collection $allLocations;
+
     public function handle(): int
     {
         $commit = (bool) $this->option('commit');
@@ -66,10 +68,9 @@ class BackfillLocationData extends Command
 
     private function loadAndValidateLocations(): void
     {
-        $this->locations = DB::table('locations')
-            ->whereIn('id', [self::BARREIRAS, self::LUIS_EDUARDO, self::IMPERATRIZ])
-            ->get()
-            ->keyBy('id');
+        $this->allLocations = DB::table('locations')->get()->keyBy('id');
+        $this->locations = $this->allLocations
+            ->only([self::BARREIRAS, self::LUIS_EDUARDO, self::IMPERATRIZ]);
 
         foreach ([self::BARREIRAS, self::LUIS_EDUARDO, self::IMPERATRIZ] as $locationId) {
             if (! $this->locations->has($locationId)) {
@@ -137,6 +138,10 @@ class BackfillLocationData extends Command
         ];
 
         foreach (DB::table('stock_items')->orderBy('id')->get() as $item) {
+            if ($this->preserveValidLocation('stock_items', $item)) {
+                continue;
+            }
+
             $locationId = $approved[$item->id] ?? self::BARREIRAS;
 
             if (! isset($approved[$item->id])) {
@@ -153,6 +158,10 @@ class BackfillLocationData extends Command
         $items = DB::table('stock_items')->get()->keyBy('id');
 
         foreach (DB::table('stock_movements')->orderBy('id')->get() as $movement) {
+            if ($this->preserveValidLocation('stock_movements', $movement)) {
+                continue;
+            }
+
             $item = $items->get($movement->stock_item_id);
 
             if (! $item) {
@@ -232,6 +241,12 @@ class BackfillLocationData extends Command
 
     private function plannedStockItemLocation(object $item): int
     {
+        $existingLocationId = $this->validExistingLocationId($item);
+
+        if ($existingLocationId !== null) {
+            return $existingLocationId;
+        }
+
         return match ((int) $item->id) {
             11 => self::LUIS_EDUARDO,
             default => self::BARREIRAS,
@@ -263,14 +278,37 @@ class BackfillLocationData extends Command
                     && $source->name === $procedure->name
                     && in_array((int) $procedure->location_id, $approved[$sourceId], true);
             });
+            $hasValidLocation = $this->preserveValidLocation('procedures', $procedure);
 
-            if ($existingCloneSource) {
+            if ($existingCloneSource && $hasValidLocation) {
                 $procedureMap[$existingCloneSource->id][(int) $procedure->location_id] = (int) $procedure->id;
                 $this->stats['procedure_clones_preserved'] = ($this->stats['procedure_clones_preserved'] ?? 0) + 1;
                 continue;
             }
 
-            $locations = $approved[$procedure->id] ?? [self::BARREIRAS];
+            $locations = $approved[$procedure->id] ?? null;
+
+            if ($hasValidLocation) {
+                $currentLocationId = (int) $procedure->location_id;
+                $procedureMap[$procedure->id][$currentLocationId] = (int) $procedure->id;
+
+                foreach ($locations ?? [] as $locationId) {
+                    if ($locationId === $currentLocationId) {
+                        continue;
+                    }
+
+                    $this->assertTenantMatchesLocation('procedures', $procedure->id, $procedure->tenant_id, $locationId);
+                    $procedureMap[$procedure->id][$locationId] = $this->findOrCloneProcedure(
+                        $procedure,
+                        $locationId,
+                        $write
+                    );
+                }
+
+                continue;
+            }
+
+            $locations ??= [self::BARREIRAS];
 
             if (! isset($approved[$procedure->id])) {
                 $this->fallback('procedures', $procedure->id, 'Not listed in approved map; Barreiras fallback.');
@@ -439,6 +477,10 @@ class BackfillLocationData extends Command
         ];
 
         foreach (DB::table('tire_entries')->orderBy('id')->get() as $entry) {
+            if ($this->preserveValidLocation('tire_entries', $entry)) {
+                continue;
+            }
+
             $locationId = $approved[$entry->id] ?? self::BARREIRAS;
 
             if (! isset($approved[$entry->id])) {
@@ -455,6 +497,10 @@ class BackfillLocationData extends Command
         $entries = DB::table('tire_entries')->get()->keyBy('id');
 
         foreach (DB::table('tires')->orderBy('id')->get() as $tire) {
+            if ($this->preserveValidLocation('tires', $tire)) {
+                continue;
+            }
+
             $locationId = $this->activeInstallationLocation($tire);
             $reason = 'active installation';
 
@@ -521,10 +567,55 @@ class BackfillLocationData extends Command
 
     private function plannedTireEntryLocation(object $entry): int
     {
-        return (int) ($entry->location_id ?: match ((int) $entry->id) {
+        return $this->validExistingLocationId($entry) ?? match ((int) $entry->id) {
             3 => self::IMPERATRIZ,
             default => self::BARREIRAS,
-        });
+        };
+    }
+
+    private function preserveValidLocation(string $table, object $record): bool
+    {
+        if (! $record->location_id) {
+            $this->stats["{$table}_null_fill_planned"] =
+                ($this->stats["{$table}_null_fill_planned"] ?? 0) + 1;
+
+            return false;
+        }
+
+        $location = $this->allLocations->get((int) $record->location_id);
+
+        if (! $location) {
+            $this->stats["{$table}_missing_location_repair_planned"] =
+                ($this->stats["{$table}_missing_location_repair_planned"] ?? 0) + 1;
+
+            return false;
+        }
+
+        if ((int) $location->tenant_id !== (int) $record->tenant_id) {
+            $this->stats["{$table}_incompatible_location_repair_planned"] =
+                ($this->stats["{$table}_incompatible_location_repair_planned"] ?? 0) + 1;
+
+            return false;
+        }
+
+        $this->stats["{$table}_preserved"] = ($this->stats["{$table}_preserved"] ?? 0) + 1;
+
+        return true;
+    }
+
+    private function validExistingLocationId(object $record): ?int
+    {
+        if (! $record->location_id) {
+            return null;
+        }
+
+        $location = $this->allLocations->get((int) $record->location_id);
+
+        if (! $location || (int) $location->tenant_id !== (int) $record->tenant_id) {
+            return null;
+        }
+
+        return (int) $location->id;
     }
 
     private function updateLocation(

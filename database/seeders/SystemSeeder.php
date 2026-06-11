@@ -89,7 +89,8 @@ class SystemSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        $oil = StockItem::create([
+        $oil = StockItem::create([
+            'location_id' => $barreiras->id,
 
             'tenant_id' => $tenant->id,
 
@@ -112,7 +113,8 @@ class SystemSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        $procedure = Procedure::create([
+        $procedure = Procedure::create([
+            'location_id' => $barreiras->id,
 
             'tenant_id' => $tenant->id,
 
