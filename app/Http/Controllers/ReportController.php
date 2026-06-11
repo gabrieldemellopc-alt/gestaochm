@@ -10,7 +10,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Models\Division;
 use App\Models\VehicleUpdateLog;
-use App\Exports\MaintenanceReportExport;
+use App\Exports\MaintenanceReportExport;
+use App\Services\ActiveContextService;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
@@ -18,7 +19,15 @@ class ReportController extends Controller
 public function index()
     {
         $divisionId =
-            session('active_division_id');
+            session('active_division_id');
+
+        $context = $this->activeContext();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $divisionId = $context['division']->id;
     
         $last30Days =
             Carbon::now()->subDays(30);
@@ -33,17 +42,25 @@ public function index()
         */
     
         $vehiclesQuery =
-            Vehicle::where(
+            Vehicle::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('location_id', $context['location']->id)
+                ->where(
                 'division_id',
                 $divisionId
             );
     
         $maintenanceBaseQuery =
-            MaintenanceRecord::whereHas(
+            $this->maintenanceQuery($context)
+                ->where('tenant_id', $context['tenant_id'])
+                ->whereHas(
                 'vehicle',
-                function ($query) use ($divisionId) {
+                function ($query) use ($divisionId, $context) {
     
-                    $query->where(
+                    $query
+                    ->where('tenant_id', $context['tenant_id'])
+                    ->where('location_id', $context['location']->id)
+                    ->where(
                         'division_id',
                         $divisionId
                     );
@@ -177,7 +194,10 @@ public function index()
         */
     
         $criticalVehicle =
-            Vehicle::where(
+            Vehicle::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('location_id', $context['location']->id)
+                ->where(
                 'division_id',
                 $divisionId
             )
@@ -197,7 +217,10 @@ public function index()
         */
     
         $stockItems =
-            StockItem::count();
+            StockItem::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('location_id', $context['location']->id)
+                ->count();
     
         return view(
             'reports.index',
@@ -222,10 +245,16 @@ public function index()
             )
         );
     }
-    public function exportMaintenance(Request $request)
+    public function exportMaintenance(Request $request)
     {
-        $divisionId =
-            session('active_division_id');
+        $context = $this->activeContext();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $divisionId =
+            $context['division']->id;
     
         $startDate =
             $request->start_date;
@@ -234,15 +263,18 @@ public function index()
             $request->end_date;
     
         $maintenances =
-            MaintenanceRecord::with([
+            $this->maintenanceQuery($context)->with([
                 'vehicle',
                 'procedure'
             ])
             ->whereHas(
                 'vehicle',
-                function ($query) use ($divisionId) {
+                function ($query) use ($divisionId, $context) {
     
-                    $query->where(
+                    $query
+                    ->where('tenant_id', $context['tenant_id'])
+                    ->where('location_id', $context['location']->id)
+                    ->where(
                         'division_id',
                         $divisionId
                     );
@@ -286,7 +318,7 @@ public function index()
                 )
                 ->count();
         $division =
-        Division::find($divisionId);
+        $context['division'];
         
         $procedureStats =
         $maintenances
@@ -329,7 +361,7 @@ public function index()
                     $item->vehicle->id
             )
             ->map(function ($items, $vehicleId)
-                use ($startDate, $endDate) {
+                use ($startDate, $endDate, $context) {
     
                 $vehicle =
                     $items->first()->vehicle;
@@ -346,7 +378,7 @@ public function index()
                 |--------------------------------------------------------------------------
                 */
                 $kmLogs =
-                    VehicleUpdateLog::where(
+                    $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
                         'vehicle_id',
                         $vehicleId
                     )
@@ -377,7 +409,7 @@ public function index()
                 */
     
                 $hourLogs =
-                    VehicleUpdateLog::where(
+                    $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
                         'vehicle_id',
                         $vehicleId
                     )
@@ -461,7 +493,67 @@ public function index()
         );
     }
     
-    private function buildMaintenanceReportData($request)
+    private function activeContext(): ?array
+    {
+        $user = auth()->user();
+        $divisionId = session('active_division_id');
+
+        if (! $user || ! $divisionId) {
+            return null;
+        }
+
+        $division = Division::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->find($divisionId);
+
+        $location = app(ActiveContextService::class)
+            ->activeLocation($user);
+
+        if (
+            ! $division
+            || ! $location
+            || (int) $location->division_id !== (int) $division->id
+            || (int) $location->tenant_id !== (int) $user->tenant_id
+        ) {
+            return null;
+        }
+
+        return [
+            'user' => $user,
+            'tenant_id' => (int) $user->tenant_id,
+            'division' => $division,
+            'location' => $location,
+        ];
+    }
+
+    private function maintenanceQuery(array $context)
+    {
+        return MaintenanceRecord::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->whereHas('vehicle', function ($query) use ($context) {
+                $query
+                    ->where('tenant_id', $context['tenant_id'])
+                    ->where('division_id', $context['division']->id)
+                    ->where('location_id', $context['location']->id);
+            });
+    }
+
+    private function vehicleUpdateLogsQuery(int $vehicleId, array $context)
+    {
+        return VehicleUpdateLog::query()
+            ->where('vehicle_id', $vehicleId)
+            ->where('division_id', $context['division']->id)
+            ->where('location_id', $context['location']->id);
+    }
+
+    private function missingActiveContextRedirect()
+    {
+        return redirect()
+            ->route('portal')
+            ->with('warning', 'Selecione uma divisão e uma unidade para continuar.');
+    }
+
+    private function buildMaintenanceReportData($request, array $context)
     {
         $startDate =
             Carbon::parse(
@@ -474,7 +566,7 @@ public function index()
             )->endOfDay();
     
         $maintenances =
-            MaintenanceRecord::with([
+            $this->maintenanceQuery($context)->with([
                 'vehicle',
                 'procedure'
             ])
@@ -541,13 +633,13 @@ public function index()
         $vehicleCosts =
             $maintenances
                 ->groupBy('vehicle_id')
-                ->map(function ($items, $vehicleId) use ($startDate, $endDate) {
+                ->map(function ($items, $vehicleId) use ($startDate, $endDate, $context) {
     
                     $vehicle =
                         $items->first()->vehicle;
     
                     $kmLogs =
-                        VehicleUpdateLog::where(
+                        $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
                             'vehicle_id',
                             $vehicleId
                         )
@@ -562,7 +654,7 @@ public function index()
                         ->get();
     
                     $hoursLogs =
-                        VehicleUpdateLog::where(
+                        $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
                             'vehicle_id',
                             $vehicleId
                         )
@@ -666,13 +758,19 @@ public function index()
             'procedureStats' => $procedureStats->toArray(),    
             'vehicleCosts' => $vehicleCosts->toArray(),    
             'division' =>
-                auth()->user()?->division
+                $context['division']
     
         ];
     }
     public function exportMaintenanceExcel(Request $request)
     {
-        $data = $this->buildMaintenanceReportData($request);
+        $context = $this->activeContext();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $data = $this->buildMaintenanceReportData($request, $context);
     
         return Excel::download(
     
