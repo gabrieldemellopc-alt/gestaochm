@@ -1864,8 +1864,228 @@
     border-color: rgba(34, 197, 94, .32);
 }
 
-.chm-switch input:checked + span::before {
+.chm-switch input:checked + span::before {
     transform: translateX(24px);
 
     background: #86efac;
+}
+
+/* Access control corporate visual standard */
+.access-control-page {
+    --ac-surface: #202b40;
+    --ac-panel: #27344b;
+    --ac-raised: #2d3b54;
+    --ac-border: rgba(203, 213, 225, .16);
+    --ac-border-strong: rgba(203, 213, 225, .26);
+    --ac-text: #f1f5f9;
+    --ac-muted: #aeb9ca;
+    --ac-red: #d95a62;
+    --ac-red-hover: #c94c55;
+    color: var(--ac-text);
+}
+
+.access-control-page .page-header {
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding: 18px 20px;
+    border: 1px solid var(--ac-border);
+    border-radius: 10px;
+    background: var(--ac-surface);
+    box-shadow: 0 4px 12px rgba(4, 10, 22, .14);
+}
+
+.access-control-page .page-kicker,
+.access-control-page .chm-modal-kicker { color: #c5cedb; letter-spacing: .08em; }
+.access-control-page .page-title { margin: 3px 0 2px; color: var(--ac-text); font-size: clamp(22px, 2.4vw, 30px); line-height: 1.15; }
+.access-control-page .page-subtitle { max-width: 720px; margin: 0; color: var(--ac-muted); }
+
+.access-control-page .chm-page-add-btn,
+.access-control-page .chm-btn-primary {
+    border: 1px solid rgba(248, 113, 113, .42);
+    border-radius: 8px;
+    color: #fff;
+    background: var(--ac-red);
+    box-shadow: none;
+}
+
+.access-control-page .chm-page-add-btn:hover,
+.access-control-page .chm-btn-primary:hover {
+    background: var(--ac-red-hover);
+    border-color: rgba(248, 113, 113, .56);
+    box-shadow: none;
+    transform: none;
+}
+
+.access-control-page .nf-card,
+.access-control-page .chm-section-card,
+.access-control-page .division-access-card,
+.access-control-page .role-card,
+.access-control-page .access-section {
+    border: 1px solid var(--ac-border);
+    border-radius: 10px;
+    background: var(--ac-panel);
+    box-shadow: 0 4px 12px rgba(4, 10, 22, .12);
+}
+
+.access-control-page .chm-users-card { padding: 0; overflow: hidden; }
+.access-control-page .chm-users-table-head {
+    min-height: 42px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--ac-border);
+    color: #cbd5e1;
+    background: var(--ac-surface);
+}
+
+.access-control-page .chm-user-row {
+    min-width: 0;
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(203, 213, 225, .1);
+    background: transparent;
+}
+
+.access-control-page .chm-user-row:hover { background: rgba(148, 163, 184, .055); }
+.access-control-page .chm-user-main,
+.access-control-page .chm-user-info,
+.access-control-page .chm-user-email { min-width: 0; }
+
+.access-control-page .chm-user-avatar,
+.access-control-page .chm-modal-icon,
+.access-control-page .chm-add-access-icon {
+    border: 1px solid var(--ac-border-strong);
+    border-radius: 8px;
+    color: #e7ebf2;
+    background: var(--ac-raised);
+    box-shadow: none;
+}
+
+.access-control-page .chm-user-access-pill,
+.access-control-page .profile-chip,
+.access-control-page .access-badge,
+.access-control-page .nf-badge {
+    border: 1px solid var(--ac-border-strong);
+    border-radius: 6px;
+    color: #dce3ed;
+    background: var(--ac-raised);
+    box-shadow: none;
+}
+
+.access-control-page .nf-badge.success,
+.access-control-page .access-badge.success { border-color: rgba(74, 222, 128, .3); color: #a7e7bd; background: rgba(34, 197, 94, .12); }
+.access-control-page .nf-badge.danger,
+.access-control-page .access-badge.danger { border-color: rgba(248, 113, 113, .34); color: #f3b3b7; background: rgba(220, 68, 78, .12); }
+
+.access-control-page .chm-edit-access-btn,
+.access-control-page .chm-btn-muted,
+.access-control-page .nf-icon-btn {
+    border: 1px solid var(--ac-border-strong);
+    border-radius: 7px;
+    color: #dce3ed;
+    background: var(--ac-raised);
+    box-shadow: none;
+}
+
+.access-control-page .chm-edit-access-btn:hover,
+.access-control-page .chm-btn-muted:hover,
+.access-control-page .nf-icon-btn:hover {
+    border-color: rgba(226, 232, 240, .36);
+    color: #fff;
+    background: #35455f;
+    box-shadow: none;
+    transform: none;
+}
+
+.access-control-page .nf-modal-backdrop { background: rgba(8, 14, 26, .76); backdrop-filter: blur(2px); }
+.access-control-page .chm-access-modal-content {
+    width: min(1040px, calc(100vw - 28px));
+    max-height: calc(100vh - 28px);
+    border: 1px solid var(--ac-border-strong);
+    border-radius: 11px;
+    background: var(--ac-surface);
+    box-shadow: 0 16px 38px rgba(3, 8, 18, .32);
+    overflow: hidden;
+}
+
+.access-control-page .chm-modal-hero,
+.access-control-page .chm-modal-actions { padding: 16px 18px; border-color: var(--ac-border); background: var(--ac-surface); }
+.access-control-page .chm-modal-body { gap: 14px; padding: 16px 18px; background: #1d283a; }
+.access-control-page .chm-section-card { padding: 15px; }
+.access-control-page .chm-section-step,
+.access-control-page .chm-access-counter { border: 1px solid var(--ac-border-strong); border-radius: 6px; color: #dce3ed; background: var(--ac-raised); }
+
+.access-control-page .nf-input,
+.access-control-page .nf-select,
+.access-control-page .chm-input,
+.access-control-page .chm-select {
+    min-width: 0;
+    border: 1px solid var(--ac-border-strong);
+    border-radius: 7px;
+    color: var(--ac-text);
+    background: #202d42;
+    box-shadow: none;
+}
+
+.access-control-page .nf-input:focus,
+.access-control-page .nf-select:focus,
+.access-control-page .chm-input:focus,
+.access-control-page .chm-select:focus { border-color: rgba(226, 232, 240, .42); box-shadow: 0 0 0 2px rgba(148, 163, 184, .1); }
+
+.access-control-page .chm-access-builder,
+.access-control-page .chm-access-list,
+.access-control-page .access-item,
+.access-control-page .matrix-row {
+    border-color: var(--ac-border);
+    border-radius: 8px;
+    background: var(--ac-surface);
+    box-shadow: none;
+}
+
+.access-control-page .chm-add-access-btn {
+    border: 1px solid var(--ac-border-strong);
+    border-radius: 7px;
+    color: #e5eaf1;
+    background: var(--ac-raised);
+    box-shadow: none;
+}
+
+.access-control-page .chm-add-access-btn:hover { border-color: rgba(248, 113, 113, .38); color: #fff; background: #39475f; box-shadow: none; transform: none; }
+.access-control-page .chm-empty-access,
+.access-control-page .chm-user-access-empty { border-color: var(--ac-border); border-radius: 8px; color: var(--ac-muted); background: rgba(148, 163, 184, .05); }
+
+html[data-chm-theme="corporate-light"] .access-control-page {
+    --ac-surface: #34425b;
+    --ac-panel: #3b4a66;
+    --ac-raised: #435373;
+    --ac-border: rgba(226, 232, 240, .2);
+    --ac-border-strong: rgba(226, 232, 240, .32);
+    --ac-muted: #d0d7e2;
+}
+
+html[data-chm-theme="corporate-light"] .access-control-page .chm-modal-body { background: #303d55; }
+html[data-chm-theme="corporate-light"] .access-control-page .nf-input,
+html[data-chm-theme="corporate-light"] .access-control-page .nf-select,
+html[data-chm-theme="corporate-light"] .access-control-page .chm-input,
+html[data-chm-theme="corporate-light"] .access-control-page .chm-select { background: #465776; }
+
+@media (max-width: 900px) {
+    .access-control-page .page-header,
+    .access-control-page .chm-user-row,
+    .access-control-page .chm-user-grid,
+    .access-control-page .chm-access-builder,
+    .access-control-page .chm-modal-actions { grid-template-columns: 1fr; }
+    .access-control-page .page-header { align-items: stretch; }
+    .access-control-page .chm-page-add-btn,
+    .access-control-page .chm-modal-actions .chm-btn { width: 100%; }
+    .access-control-page .chm-users-table-head { display: none; }
+    .access-control-page .chm-user-row { display: grid; gap: 10px; }
+    .access-control-page .chm-user-actions { justify-content: flex-start; }
+}
+
+@media (max-width: 600px) {
+    .access-control-page .page-header,
+    .access-control-page .chm-modal-hero,
+    .access-control-page .chm-modal-body,
+    .access-control-page .chm-modal-actions { padding: 13px; }
+    .access-control-page .chm-user-main { align-items: flex-start; }
+    .access-control-page .chm-access-modal-content { width: calc(100vw - 16px); max-height: calc(100vh - 16px); }
 }

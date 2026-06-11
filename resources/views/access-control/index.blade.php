@@ -3,13 +3,15 @@
 
 <link
     rel="stylesheet"
-    href="{{ asset('css/access-control.css') }}"
+    href="{{ asset('css/access-control.css') }}?v=2"
 >
 
 @endpush
 @section('content')
 
-<div class="page-header">
+<div class="access-control-page">
+
+<div class="page-header">
 
     <div>
 
@@ -882,7 +884,9 @@
     })->values();
 @endphp
 
-<script>
+</div>
+
+<script>
     window.accessControlUsers = {{ Illuminate\Support\Js::from($accessControlUsers) }};
 </script>
 <script>
