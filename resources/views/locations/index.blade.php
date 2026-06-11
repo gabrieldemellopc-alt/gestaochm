@@ -8,7 +8,7 @@
 @push('styles')
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/locations.css') }}"
+    href="{{ asset('css/pages/locations.css') }}?v=2"
 >
 @endpush
 

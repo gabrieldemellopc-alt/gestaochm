@@ -4,7 +4,7 @@
 
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/reports.css') }}"
+    href="{{ asset('css/pages/reports.css') }}?v=2"
 >
 
 @endpush

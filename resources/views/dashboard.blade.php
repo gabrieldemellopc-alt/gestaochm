@@ -12,7 +12,7 @@
 
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/dashboard.css') }}?v=2"
+    href="{{ asset('css/pages/dashboard.css') }}?v=3"
 >
 
 @endpush

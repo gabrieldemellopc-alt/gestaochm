@@ -1096,3 +1096,346 @@
     background: rgba(34, 197, 94, .15);
     border-color: rgba(34, 197, 94, .38);
 }
+/* Locations corporate visual standard */
+.locations-page,
+.locations-modal-overlay {
+    --locations-surface: #202a40;
+    --locations-surface-soft: #253149;
+    --locations-surface-muted: #1b2437;
+    --locations-border: rgba(203, 213, 225, .14);
+    --locations-border-strong: rgba(203, 213, 225, .22);
+    --locations-text: #f1f5f9;
+    --locations-muted: #a8b1c1;
+    --locations-accent: #e0525b;
+    --locations-positive: #73b58a;
+    --locations-warning: #d2b77a;
+    --locations-danger: #e67880;
+}
+
+.locations-page {
+    width: 100%;
+    max-width: 1680px;
+    margin: 0 auto;
+    gap: 14px;
+    color: var(--locations-text);
+}
+
+.locations-page .locations-hero,
+.locations-page .locations-card,
+.locations-page .locations-summary-card,
+.locations-page .location-unit-card,
+.locations-page .location-unit-section {
+    border: 1px solid var(--locations-border);
+    border-radius: 8px;
+    background: var(--locations-surface);
+    box-shadow: none;
+}
+
+.locations-page .locations-hero {
+    padding: 16px 18px;
+    border-left: 3px solid var(--locations-accent);
+}
+
+.locations-page .locations-hero span {
+    margin-bottom: 5px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--locations-muted);
+    background: transparent;
+}
+
+.locations-page .locations-hero h1 {
+    color: var(--locations-text);
+    font-size: clamp(1.65rem, 3vw, 2.1rem);
+    line-height: 1.15;
+}
+
+.locations-page .locations-hero p,
+.locations-page .locations-card-header p,
+.locations-page .locations-summary-card small,
+.locations-page .location-unit-title span,
+.locations-page .location-metric small,
+.locations-page .location-people-grid small {
+    color: var(--locations-muted);
+}
+
+.locations-page .locations-summary-grid {
+    gap: 10px;
+}
+
+.locations-page .locations-summary-card {
+    min-height: 82px;
+    padding: 13px 14px;
+}
+
+.locations-page .locations-summary-card strong {
+    margin-top: 5px;
+    color: var(--locations-text);
+    font-size: 23px;
+}
+
+.locations-page .locations-summary-card.warning strong {
+    color: var(--locations-warning);
+}
+
+.locations-page .locations-summary-card.danger strong {
+    color: var(--locations-danger);
+}
+
+.locations-page .locations-grid {
+    grid-template-columns: minmax(290px, 350px) minmax(0, 1fr);
+    gap: 12px;
+}
+
+.locations-page .locations-card {
+    min-width: 0;
+    padding: 16px;
+}
+
+.locations-page .locations-card-header {
+    margin-bottom: 14px;
+}
+
+.locations-page .locations-card-header h2,
+.locations-page .location-unit-title strong,
+.locations-page .location-metric strong,
+.locations-page .location-people-grid strong {
+    color: var(--locations-text);
+}
+
+.locations-page .locations-card-header svg,
+.locations-page .location-unit-section-title svg {
+    color: var(--locations-muted);
+}
+
+.locations-page .form-group input {
+    max-width: 100%;
+    height: 40px;
+    border: 1px solid var(--locations-border-strong);
+    border-radius: 6px;
+    color: var(--locations-text);
+    background: var(--locations-surface-muted);
+    box-shadow: none;
+}
+
+.locations-page .locations-submit-btn,
+.locations-page .locations-edit-btn,
+.locations-modal-overlay .locations-modal-save,
+.locations-modal-overlay .locations-modal-cancel,
+.locations-modal-overlay .location-modal-go-vehicle {
+    min-height: 38px;
+    height: auto;
+    padding: 0 13px;
+    border: 1px solid var(--locations-border-strong);
+    border-radius: 6px;
+    box-shadow: none;
+    transform: none;
+}
+
+.locations-page .locations-submit-btn,
+.locations-modal-overlay .locations-modal-save {
+    color: #fff;
+    border-color: #b9434c;
+    background: #b9434c;
+}
+
+.locations-page .locations-submit-btn:hover,
+.locations-modal-overlay .locations-modal-save:hover {
+    color: #fff;
+    border-color: #c94c55;
+    background: #c94c55;
+}
+
+.locations-page .locations-edit-btn,
+.locations-modal-overlay .locations-modal-cancel,
+.locations-modal-overlay .location-modal-go-vehicle {
+    color: var(--locations-muted);
+    background: transparent;
+}
+
+.locations-page .location-unit-card {
+    padding: 14px;
+}
+
+.locations-page .location-unit-header {
+    padding-bottom: 12px;
+    border-bottom-color: var(--locations-border);
+}
+
+.locations-page .location-unit-body {
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.locations-page .location-unit-section {
+    padding: 11px;
+    background: var(--locations-surface-muted);
+}
+
+.locations-page .location-unit-section-clickable:hover {
+    border-color: var(--locations-border-strong);
+    background: var(--locations-surface-soft);
+    transform: none;
+}
+
+.locations-page .location-unit-section-title span {
+    color: var(--locations-muted);
+    border-color: var(--locations-border);
+    background: var(--locations-surface);
+}
+
+.locations-page .location-metric,
+.locations-page .location-people-grid div {
+    min-width: 0;
+    min-height: 58px;
+    padding: 8px;
+    border: 1px solid var(--locations-border);
+    border-radius: 6px;
+    background: var(--locations-surface);
+}
+
+.locations-modal-overlay {
+    padding: 18px;
+    background: rgba(7, 12, 24, .78);
+    backdrop-filter: none;
+}
+
+.locations-modal-overlay .locations-modal,
+.locations-modal-overlay .locations-large-modal {
+    max-width: 100%;
+    border: 1px solid var(--locations-border-strong);
+    border-radius: 10px;
+    color: var(--locations-text);
+    background: var(--locations-surface);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .25);
+}
+
+.locations-modal-overlay .locations-modal-header {
+    padding: 17px 18px;
+    border-bottom: 1px solid var(--locations-border);
+    background: var(--locations-surface-muted);
+}
+
+.locations-modal-overlay .locations-modal-header span {
+    margin-bottom: 5px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--locations-muted);
+    background: transparent;
+}
+
+.locations-modal-overlay .locations-modal-header h2 {
+    color: var(--locations-text);
+    font-size: 19px;
+}
+
+.locations-modal-overlay .locations-modal-header p,
+.locations-modal-overlay .location-modal-vehicle-main span,
+.locations-modal-overlay .location-modal-team-main span,
+.locations-modal-overlay .location-modal-vehicle-kpis small {
+    color: var(--locations-muted);
+}
+
+.locations-modal-overlay .locations-modal-header button {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--locations-border);
+    border-radius: 6px;
+    color: var(--locations-muted);
+    background: var(--locations-surface);
+}
+
+.locations-modal-overlay .locations-modal-form,
+.locations-modal-overlay .locations-large-modal-body {
+    padding: 17px 18px;
+}
+
+.locations-modal-overlay .form-group input {
+    max-width: 100%;
+    border: 1px solid var(--locations-border-strong);
+    border-radius: 6px;
+    color: var(--locations-text);
+    background: var(--locations-surface-muted);
+}
+
+.locations-modal-overlay .location-modal-vehicle-card,
+.locations-modal-overlay .location-modal-team-card,
+.locations-modal-overlay .locations-modal-empty {
+    min-width: 0;
+    border: 1px solid var(--locations-border);
+    border-radius: 7px;
+    color: var(--locations-text);
+    background: var(--locations-surface-muted);
+    box-shadow: none;
+}
+
+.locations-modal-overlay .location-modal-vehicle-icon,
+.locations-modal-overlay .location-modal-team-icon,
+.locations-modal-overlay .location-modal-vehicle-kpis div {
+    border: 1px solid var(--locations-border);
+    border-radius: 6px;
+    color: var(--locations-muted);
+    background: var(--locations-surface);
+}
+
+.locations-modal-overlay .location-modal-alert {
+    border-radius: 6px;
+    color: var(--locations-positive);
+    background: rgba(115, 181, 138, .08);
+    border-color: rgba(115, 181, 138, .22);
+}
+
+.locations-modal-overlay .location-modal-team-badges span,
+.locations-modal-overlay .location-modal-team-badges small {
+    border-radius: 5px;
+    color: var(--locations-muted);
+    background: var(--locations-surface);
+    border-color: var(--locations-border);
+}
+
+html[data-chm-theme="corporate-light"] .locations-page,
+html[data-chm-theme="corporate-light"] .locations-modal-overlay {
+    --locations-surface: var(--chm-theme-card, #3b4a66);
+    --locations-surface-soft: var(--chm-theme-card-elevated, #435373);
+    --locations-surface-muted: var(--chm-theme-surface, #34425b);
+    --locations-border: var(--chm-theme-border, rgba(226, 232, 240, .26));
+    --locations-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .38));
+    --locations-text: var(--chm-theme-text, #f8fafc);
+    --locations-muted: var(--chm-theme-muted, #d0d7e2);
+}
+
+html[data-chm-theme="corporate-light"] .locations-page .form-group input,
+html[data-chm-theme="corporate-light"] .locations-modal-overlay .form-group input {
+    background: var(--chm-theme-input, #4a5c7b);
+}
+
+@media (max-width: 980px) {
+    .locations-page .locations-grid,
+    .locations-page .location-unit-body {
+        grid-template-columns: 1fr;
+    }
+
+    .locations-page .locations-grid > .locations-card:first-child {
+        position: static;
+    }
+}
+
+@media (max-width: 700px) {
+    .locations-page .locations-summary-grid,
+    .locations-page .location-metrics-grid,
+    .locations-page .location-people-grid,
+    .locations-modal-overlay .location-modal-vehicle-kpis {
+        grid-template-columns: 1fr;
+    }
+
+    .locations-modal-overlay .locations-modal-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .locations-modal-overlay .locations-modal-footer button {
+        width: 100%;
+    }
+}
