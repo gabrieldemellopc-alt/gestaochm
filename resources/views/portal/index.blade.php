@@ -1,6 +1,10 @@
-@extends('layouts.app')
-
-@php
+@extends('layouts.app')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/pages/portal.css') }}?v=2">
+@endpush
+
+@php
 
     $pageTitle = 'Portal Corporativo';
 

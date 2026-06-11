@@ -1,0 +1,76 @@
+/* CHM profile corporate visual standard */
+.profile-page,
+.profile-page-title {
+    --profile-surface: #202b40;
+    --profile-panel: #27344b;
+    --profile-raised: #2d3b54;
+    --profile-border: rgba(203, 213, 225, .16);
+    --profile-border-strong: rgba(203, 213, 225, .28);
+    --profile-text: #f1f5f9;
+    --profile-muted: #aeb9ca;
+    --profile-red: #d95a62;
+}
+
+.profile-page-title { color: var(--profile-text); }
+.profile-page { padding-top: 24px; padding-bottom: 24px; color: var(--profile-text); }
+.profile-page .profile-section-card {
+    border: 1px solid var(--profile-border);
+    border-radius: 10px;
+    background: var(--profile-panel);
+    box-shadow: 0 4px 12px rgba(4, 10, 22, .12);
+}
+.profile-page .profile-section-card > div { max-width: 680px; }
+.profile-page section,
+.profile-page form { min-width: 0; }
+.profile-page h2,
+.profile-page .text-gray-900 { color: var(--profile-text); }
+.profile-page p,
+.profile-page .text-gray-600,
+.profile-page .text-gray-800 { color: var(--profile-muted); }
+.profile-page label { color: #dce3ed; }
+.profile-page input {
+    width: 100%;
+    max-width: 100%;
+    border: 1px solid var(--profile-border-strong);
+    border-radius: 7px;
+    color: var(--profile-text);
+    background: var(--profile-surface);
+    box-shadow: none;
+}
+.profile-page input:focus { border-color: rgba(226, 232, 240, .44); box-shadow: 0 0 0 2px rgba(148, 163, 184, .1); }
+.profile-page button { border-radius: 7px; box-shadow: none; }
+.profile-page button.bg-gray-800,
+.profile-page button[type="submit"].bg-gray-800 { border: 1px solid rgba(248, 113, 113, .42); color: #fff; background: var(--profile-red); }
+.profile-page .profile-danger-card { border-color: rgba(248, 113, 113, .22); }
+.profile-page button.bg-red-600 { border: 1px solid rgba(248, 113, 113, .4); color: #fff; background: #b94750; }
+.profile-page button.bg-white { border: 1px solid var(--profile-border-strong); color: #dce3ed; background: var(--profile-raised); }
+.profile-page .fixed.inset-0 > div > div,
+.profile-page .bg-white.rounded-lg {
+    border: 1px solid var(--profile-border-strong);
+    border-radius: 10px;
+    color: var(--profile-text);
+    background: var(--profile-panel);
+    box-shadow: 0 16px 38px rgba(3, 8, 18, .32);
+}
+.profile-page .fixed.inset-0 .bg-gray-500 { background: #08101e; }
+.profile-page .text-red-600,
+.profile-page .text-red-700 { color: #f3b3b7; }
+.profile-page .text-green-600 { color: #a7e7bd; }
+
+html[data-chm-theme="corporate-light"] .profile-page,
+html[data-chm-theme="corporate-light"] .profile-page-title {
+    --profile-surface: #34425b;
+    --profile-panel: #3b4a66;
+    --profile-raised: #435373;
+    --profile-border: rgba(226, 232, 240, .2);
+    --profile-border-strong: rgba(226, 232, 240, .32);
+    --profile-muted: #d0d7e2;
+}
+
+@media (max-width: 640px) {
+    .profile-page { padding: 14px 10px; }
+    .profile-page .profile-section-card { padding: 15px; }
+    .profile-page .flex.items-center.gap-4,
+    .profile-page .mt-6.flex.justify-end { align-items: stretch; flex-direction: column; }
+    .profile-page button { width: 100%; margin-left: 0; }
+}

@@ -1,0 +1,65 @@
+/* CHM authentication corporate visual standard */
+.login-page,
+.auth-guest-page {
+    --auth-bg: #182235;
+    --auth-surface: #202b40;
+    --auth-panel: #27344b;
+    --auth-border: rgba(203, 213, 225, .18);
+    --auth-border-strong: rgba(203, 213, 225, .3);
+    --auth-text: #f1f5f9;
+    --auth-muted: #aeb9ca;
+    --auth-red: #d95a62;
+}
+.login-page { background: var(--auth-bg); }
+.login-page .login-side { border-right: 1px solid var(--auth-border); background: var(--auth-surface); }
+.login-page .login-brand h2 { max-width: 420px; color: var(--auth-text); font-size: clamp(20px, 2.4vw, 30px); line-height: 1.25; }
+.login-page .login-logo { max-width: min(280px, 72vw); filter: none; }
+.login-page .login-panel { background: #1b2639; }
+.login-page .login-card { border: 1px solid var(--auth-border-strong); border-radius: 11px; background: var(--auth-panel); box-shadow: 0 12px 30px rgba(3, 8, 18, .24); }
+.login-page .login-header h1 { color: var(--auth-text); font-size: clamp(24px, 3vw, 34px); }
+.login-page .login-header span,
+.login-page .form-group label { color: var(--auth-muted); }
+.login-page .form-group input,
+.auth-guest-page .auth-guest-card input { width: 100%; max-width: 100%; border: 1px solid var(--auth-border-strong); border-radius: 7px; color: var(--auth-text); background: var(--auth-surface); box-shadow: none; }
+.login-page .form-group input:focus,
+.auth-guest-page .auth-guest-card input:focus { border-color: rgba(226, 232, 240, .44); box-shadow: 0 0 0 2px rgba(148, 163, 184, .1); }
+.login-page .login-button { border: 1px solid rgba(248, 113, 113, .42); border-radius: 8px; color: #fff; background: var(--auth-red); box-shadow: none; }
+.login-page .login-button:hover { background: #c94c55; box-shadow: none; transform: none; }
+.login-page .login-alert-error { border-radius: 8px; box-shadow: none; }
+.auth-guest-page { color: var(--auth-text); background: var(--auth-bg); }
+.auth-guest-page .auth-guest-shell { min-height: 100vh; padding: 24px 14px; background: var(--auth-bg); }
+.auth-guest-page .auth-guest-shell > div:first-child a { display: flex; align-items: center; justify-content: center; width: 62px; height: 62px; border: 1px solid var(--auth-border); border-radius: 9px; color: #e5eaf1; background: var(--auth-surface); }
+.auth-guest-page .auth-guest-shell > div:first-child svg { width: 42px; height: 42px; color: #e5eaf1; }
+.auth-guest-page .auth-guest-card { width: min(100%, 460px); margin-top: 18px; padding: 22px; border: 1px solid var(--auth-border-strong); border-radius: 11px; color: var(--auth-text); background: var(--auth-panel); box-shadow: 0 12px 30px rgba(3, 8, 18, .24); }
+.auth-guest-page .auth-guest-card form { min-width: 0; }
+.auth-guest-page .auth-guest-card label { color: #dce3ed; }
+.auth-guest-page .auth-guest-card p,
+.auth-guest-page .auth-guest-card .text-gray-600,
+.auth-guest-page .auth-guest-card .text-gray-800 { color: var(--auth-muted); }
+.auth-guest-page .auth-guest-card .text-red-600,
+.auth-guest-page .auth-guest-card .text-red-700 { color: #f3b3b7; }
+.auth-guest-page .auth-guest-card .text-green-600 { color: #a7e7bd; }
+.auth-guest-page .auth-guest-card button[type="submit"],
+.auth-guest-page .auth-guest-card a.inline-flex { border: 1px solid rgba(248, 113, 113, .42); border-radius: 7px; color: #fff; background: var(--auth-red); box-shadow: none; }
+.auth-guest-page .auth-guest-card a,
+.auth-guest-page .auth-guest-card button.underline { color: #d4dbe6; }
+html[data-chm-theme="corporate-light"] .login-page,
+html[data-chm-theme="corporate-light"] .auth-guest-page {
+    --auth-bg: #263249;
+    --auth-surface: #34425b;
+    --auth-panel: #3b4a66;
+    --auth-border: rgba(226, 232, 240, .2);
+    --auth-border-strong: rgba(226, 232, 240, .32);
+    --auth-muted: #d0d7e2;
+}
+html[data-chm-theme="corporate-light"] .login-page .login-panel { background: #303d55; }
+@media (max-width: 800px) {
+    .login-page { grid-template-columns: 1fr; }
+    .login-page .login-side { min-height: auto; padding: 24px 16px; border-right: 0; border-bottom: 1px solid var(--auth-border); }
+    .login-page .login-panel { padding: 18px 12px; }
+}
+@media (max-width: 520px) {
+    .auth-guest-page .auth-guest-card { padding: 17px; }
+    .auth-guest-page .auth-guest-card .flex.items-center.justify-end,
+    .auth-guest-page .auth-guest-card .flex.items-center.justify-between { align-items: stretch; flex-direction: column; gap: 10px; }
+}

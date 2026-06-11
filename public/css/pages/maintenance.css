@@ -2472,3 +2472,55 @@ html[data-chm-theme="corporate-light"] .maintenance-index-page .form-input {
     font-weight: 950;
     text-align: right;
 }
+
+/* Maintenance final corporate residual corrections */
+.maintenance-create-page .maintenance-summary-card,
+.maintenance-create-page .maintenance-summary-stock,
+.maintenance-create-page .maintenance-summary-total,
+.maintenance-create-page .maintenance-summary-stock-top,
+.maintenance-create-page .maintenance-summary-stock-details,
+.maintenance-create-page .maintenance-summary-stock-total {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.maintenance-create-page .maintenance-summary-stock,
+.maintenance-create-page .maintenance-summary-total {
+    border-radius: 9px;
+    background: rgba(31, 43, 64, .72);
+    border-color: rgba(203, 213, 225, .16);
+    box-shadow: none;
+}
+
+.maintenance-create-page .maintenance-summary-total { padding: 14px; }
+.maintenance-create-page .maintenance-summary-divider,
+.maintenance-create-page .maintenance-summary-stock-top span,
+.maintenance-create-page .maintenance-summary-stock-total span { color: #cbd5e1; }
+.maintenance-create-page .maintenance-summary-total span,
+.maintenance-create-page .maintenance-summary-total strong,
+.maintenance-create-page .maintenance-summary-stock-total strong { color: #f1f5f9; }
+.maintenance-create-page .maintenance-summary-stock-top span,
+.maintenance-create-page .maintenance-summary-stock-top strong,
+.maintenance-create-page .maintenance-summary-stock-details small,
+.maintenance-create-page .maintenance-summary-stock-details b,
+.maintenance-create-page .maintenance-summary-total span,
+.maintenance-create-page .maintenance-summary-total strong { min-width: 0; overflow-wrap: anywhere; }
+
+html[data-chm-theme="corporate-light"] .maintenance-create-page .maintenance-summary-stock,
+html[data-chm-theme="corporate-light"] .maintenance-create-page .maintenance-summary-total {
+    background: #3b4a66;
+    border-color: rgba(226, 232, 240, .22);
+}
+
+@media (max-width: 620px) {
+    .maintenance-create-page .maintenance-summary-stock-top,
+    .maintenance-create-page .maintenance-summary-stock-details,
+    .maintenance-create-page .maintenance-summary-stock-total,
+    .maintenance-create-page .maintenance-summary-total {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .maintenance-create-page .maintenance-summary-stock-top strong,
+    .maintenance-create-page .maintenance-summary-total strong { text-align: left; }
+}

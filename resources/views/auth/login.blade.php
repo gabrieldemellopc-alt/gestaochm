@@ -1,6 +1,10 @@
-@extends('layouts.app')
-
-@section('content')
+@extends('layouts.app')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/pages/login.css') }}?v=2">
+@endpush
+
+@section('content')
 <style>
     .login-alert-error {
         margin-bottom: 18px;
