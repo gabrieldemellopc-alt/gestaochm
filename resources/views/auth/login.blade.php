@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/pages/login.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('css/pages/login.css') }}?v=3">
 @endpush
 
 @section('content')
@@ -69,7 +69,16 @@
             Plataforma Corporativa de Gestão Operacional
             </h2>
 
-            <div class="login-module-badge" style="display:none">
+            <p class="login-brand-copy">
+                Controle integrado para operações, frota, oficina e gestão das unidades CHM.
+            </p>
+
+            <div class="login-brand-points" aria-label="Recursos da plataforma">
+                <span><i data-lucide="building-2"></i> Gestão por unidade</span>
+                <span><i data-lucide="shield-check"></i> Acesso corporativo seguro</span>
+            </div>
+
+            <div class="login-module-badge" style="display:none">
                 Módulo ativo: Gestão de Frota
             </div>
 
@@ -98,7 +107,11 @@
                 </span>
 
             </div>
-            @if ($errors->any())
+            <p class="login-header-copy">
+                Utilize suas credenciais corporativas para continuar.
+            </p>
+
+            @if ($errors->any())
             
                 <div class="login-alert-error">
             
@@ -150,7 +163,11 @@
                 class="login-button"
             >
                 Entrar no Sistema
-            </button>
+            </button>
+
+            <div class="login-support-note">
+                Problemas para acessar? Procure o administrador responsável pela sua unidade.
+            </div>
 
         </form>
 
