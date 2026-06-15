@@ -1,4 +1,6 @@
-:root {
+@tailwind utilities;
+
+:root {
 
     --bg: #0f1115;
     --bg-soft: #171a21;

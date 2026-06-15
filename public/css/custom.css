@@ -6996,3 +6996,38 @@ html[data-chm-theme="corporate-light"] .topbar .topbar-location-selector {
         max-width: 105px;
     }
 }
+
+/* Explicit desktop logo containment independent of Tailwind */
+.topbar .topbar-brand {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 14px;
+}
+
+.topbar .topbar-brand img {
+    display: block;
+    width: auto;
+    max-width: 40px;
+    height: auto;
+    max-height: 40px;
+    object-fit: contain;
+}
+
+.sidebar .sidebar-logo img {
+    display: block;
+    width: 128px;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.sidebar .sidebar-mobile-brand img {
+    max-width: 84px;
+    height: auto;
+    object-fit: contain;
+}

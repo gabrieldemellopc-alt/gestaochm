@@ -166,3 +166,36 @@ html[data-chm-theme="corporate-light"] .portal-page {
     .portal-page .portal-card { padding: 14px; }
     .portal-page .portal-grid { grid-template-columns: 1fr; }
 }
+
+/* Portal residual containment */
+.portal-layout .portal-content {
+    width: 100%;
+    max-width: 1600px;
+    padding: 24px;
+}
+
+.portal-page .portal-card::before {
+    display: none;
+}
+
+.portal-page .portal-card-top {
+    margin-bottom: 16px;
+}
+
+.portal-page .portal-icon img {
+    display: block;
+    width: auto;
+    max-width: 34px;
+    height: auto;
+    max-height: 34px;
+}
+
+@media (max-width: 700px) {
+    .portal-layout .portal-content {
+        padding: 12px;
+    }
+
+    .portal-page .portal-card-top {
+        margin-bottom: 13px;
+    }
+}
