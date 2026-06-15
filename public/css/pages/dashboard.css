@@ -3934,6 +3934,73 @@
         border-radius: 8px;
     }
 }
+
+/* Dashboard icon and text consistency */
+.dashboard-page {
+    color: var(--dashboard-text, #f1f5f9);
+}
+
+.dashboard-page .kpi-card,
+.dashboard-page .vehicle-card,
+.dashboard-page .operation-panel,
+.dashboard-page .side-widget,
+.dashboard-page .quick-action-card {
+    color: var(--dashboard-text, #f1f5f9);
+}
+
+.dashboard-page svg.lucide,
+.dashboard-page .lucide {
+    stroke: currentColor;
+    fill: none;
+}
+
+.dashboard-page .kpi-icon,
+.dashboard-page .operation-panel-icon,
+.dashboard-page .side-widget-header > i,
+.dashboard-page .side-widget-header > svg,
+.dashboard-page .quick-action-card > i,
+.dashboard-page .quick-action-card > svg,
+.dashboard-page .dashboard-search-input > i,
+.dashboard-page .dashboard-search-input > svg,
+.dashboard-page .vehicle-card-hover-action,
+.dashboard-page .vehicle-operation-action-btn {
+    color: var(--dashboard-subtle, #aeb9c9);
+}
+
+.dashboard-page .kpi-card.compact.warning .kpi-icon {
+    color: var(--dashboard-warning, #d2b77a);
+}
+
+.dashboard-page .kpi-card.compact.danger .kpi-icon {
+    color: #ef8a91;
+}
+
+.dashboard-page .kpi-card.compact.maintenance .kpi-icon {
+    color: var(--dashboard-warning, #d2b77a);
+}
+
+.dashboard-page .kpi-content small,
+.dashboard-page .vehicle-card span,
+.dashboard-page .vehicle-card small,
+.dashboard-page .side-widget span,
+.dashboard-page .side-widget small {
+    color: var(--dashboard-muted, #aeb9c9);
+}
+
+.dashboard-page .kpi-content strong,
+.dashboard-page .vehicle-card h2,
+.dashboard-page .vehicle-card h3,
+.dashboard-page .operation-panel h2,
+.dashboard-page .operation-panel h3,
+.dashboard-page .side-widget h2,
+.dashboard-page .side-widget h3 {
+    color: var(--dashboard-text, #f1f5f9);
+}
+
+.dashboard-page button,
+.dashboard-page a {
+    -webkit-tap-highlight-color: transparent;
+}
 /* Dashboard operation modals corporate correction */
 .dashboard-page .operation-modal-backdrop {
     padding: 18px;
