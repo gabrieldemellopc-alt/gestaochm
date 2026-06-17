@@ -227,12 +227,12 @@ class WorkshopController extends Controller
         $maintenanceVehiclesCount = 0;
 
         if (Schema::hasTable('vehicles')) {
-            if (Schema::hasColumn('vehicles', 'status')) {
+            if (Schema::hasColumn('vehicles', 'operational_status')) {
                 $vehiclesInMaintenance = DB::table('vehicles')
                     ->where('vehicles.tenant_id', $tenantId)
                     ->where('vehicles.location_id', $activeLocation->id)
                     ->where('vehicles.division_id', $activeDivisionId)
-                    ->whereIn('status', ['maintenance', 'inactive', 'stopped'])
+                    ->where('operational_status', 'maintenance')
                     ->latest('updated_at')
                     ->limit(6)
                     ->get();
@@ -241,7 +241,7 @@ class WorkshopController extends Controller
                     ->where('vehicles.tenant_id', $tenantId)
                     ->where('vehicles.location_id', $activeLocation->id)
                     ->where('vehicles.division_id', $activeDivisionId)
-                    ->whereIn('status', ['maintenance', 'inactive', 'stopped'])
+                    ->where('operational_status', 'maintenance')
                     ->count();
             }
 
@@ -255,6 +255,7 @@ class WorkshopController extends Controller
                     ->where('vehicles.tenant_id', $tenantId)
                     ->where('vehicles.location_id', $activeLocation->id)
                     ->where('vehicles.division_id', $activeDivisionId)
+                    ->where('vehicles.operational_status', 'maintenance')
                     ->select(
                         'vehicles.id',
                         'vehicles.name',
@@ -272,6 +273,7 @@ class WorkshopController extends Controller
                     ->where('vehicles.tenant_id', $tenantId)
                     ->where('vehicles.location_id', $activeLocation->id)
                     ->where('vehicles.division_id', $activeDivisionId)
+                    ->where('vehicles.operational_status', 'maintenance')
                     ->distinct('maintenance_records.vehicle_id')
                     ->count('maintenance_records.vehicle_id');
             }

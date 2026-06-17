@@ -12,12 +12,25 @@ class MaintenanceController extends Controller
     public function store(Request $request, Vehicle $vehicle)
     {
         if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Selecione uma unidade para continuar.',
+                ], 422);
+            }
+
             return $redirect;
         }
 
         $data = $request->all();
 
         $result = MaintenanceService::create($data, $vehicle);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Manutenção registrada com sucesso.',
+                'maintenance' => $result['maintenance'],
+            ], 201);
+        }
 
         return redirect()
             ->route('vehicle.maintenance.index', $vehicle->id)

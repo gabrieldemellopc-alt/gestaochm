@@ -389,14 +389,6 @@ Route::middleware('auth')->group(function () {
 
 
 
-    Route::post(
-
-        '/maintenances',
-
-        [MaintenanceController::class, 'store']
-
-    )->name('maintenances.store');
-
     Route::post('/vehicles/{vehicle}/maintenance', [MaintenanceController::class, 'store'])
         ->name('vehicles.maintenance.store');
 

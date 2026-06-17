@@ -1613,7 +1613,7 @@ public function maintenanceCreate(
                     $vehicle
                         ->maintenances
                         ->where('procedure_id', $procedure->id)
-                        ->sortByDesc('created_at')
+                        ->sortByDesc('performed_at')
                         ->first();
 
                 $status = 'ok';
@@ -1622,7 +1622,7 @@ public function maintenanceCreate(
                 if ($procedure->validity_km && $procedure->interval_km > 0) {
 
                     $baseKm =
-                        $lastMaintenance->km ?? 0;
+                        $lastMaintenance->performed_km ?? 0;
 
                     $kmSince =
                         ($vehicle->current_km ?? 0) - $baseKm;
@@ -1639,7 +1639,7 @@ public function maintenanceCreate(
                 if ($procedure->validity_hours && $procedure->interval_hours > 0) {
 
                     $baseHours =
-                        $lastMaintenance->hours ?? 0;
+                        $lastMaintenance->performed_hours ?? 0;
 
                     $hoursSince =
                         ($vehicle->current_hours ?? 0) - $baseHours;
@@ -1655,10 +1655,10 @@ public function maintenanceCreate(
 
                 if ($procedure->validity_period && $procedure->interval_days > 0) {
 
-                    if ($lastMaintenance && $lastMaintenance->created_at) {
+                    if ($lastMaintenance && $lastMaintenance->performed_at) {
 
                         $daysSince =
-                            $lastMaintenance->created_at->diffInDays(now());
+                            $lastMaintenance->performed_at->diffInDays(now());
 
                         if ($daysSince >= $procedure->interval_days) {
                             $status = 'danger';

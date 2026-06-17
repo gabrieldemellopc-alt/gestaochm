@@ -2815,7 +2815,7 @@ function dashboardFleet() {
         
                 const response = await fetch(
 
-    '/maintenances',
+    `/vehicles/${this.vehicle.id}/maintenance`,
 
     {
 

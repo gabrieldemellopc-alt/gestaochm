@@ -76,7 +76,8 @@ class DashboardController extends Controller
         
             session('active_division_id')
         
-        )
+        )
+        ->where('tenant_id', auth()->user()->tenant_id)
         ->where('location_id', $activeLocation->id)
         ->latest()
         ->get();
@@ -162,11 +163,12 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $procedures = Procedure::with(
-
-            'fields.stockCategory'
-
-        )->get();
+        $procedures = Procedure::with(
+            'fields.stockCategory'
+        )
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('location_id', $activeLocation->id)
+            ->get();
 
         /*
         |--------------------------------------------------------------------------
@@ -174,10 +176,10 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $stockItems = StockItem::where(
-            'active',
-            true
-        )->get();
+        $stockItems = StockItem::where('tenant_id', auth()->user()->tenant_id)
+            ->where('location_id', $activeLocation->id)
+            ->where('active', true)
+            ->get();
         
         $lowStockItems = $stockItems
             ->filter(function ($item) {

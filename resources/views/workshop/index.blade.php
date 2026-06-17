@@ -146,7 +146,7 @@
                             </div>
 
                             <div class="workshop-vehicle-status">
-                                {{ $vehicle->status === 'maintenance' ? 'Manutenção' : 'Indisponível' }}
+                                {{ $vehicle->operational_status === 'maintenance' ? 'Manutenção' : 'Indisponível' }}
                             </div>
 
                         </a>
