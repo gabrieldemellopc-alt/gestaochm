@@ -4188,3 +4188,473 @@ html[data-chm-theme="corporate-light"] .dashboard-page .operation-modal-backdrop
         width: 100%;
     }
 }
+
+/* CHM dashboard final refinement - Visual batch 6 */
+.dashboard-page {
+    --dashboard-bg: #111827;
+    --dashboard-surface: #172033;
+    --dashboard-surface-muted: #1d293d;
+    --dashboard-raised: #24324b;
+    --dashboard-input: #111a2b;
+    --dashboard-border: rgba(148, 163, 184, .18);
+    --dashboard-border-strong: rgba(203, 213, 225, .28);
+    --dashboard-text: #f8fafc;
+    --dashboard-muted: #cbd5e1;
+    --dashboard-subtle: #94a3b8;
+    --dashboard-accent: #b91c1c;
+    --dashboard-accent-hover: #dc2626;
+    --dashboard-positive: #86efac;
+    --dashboard-warning: #fde68a;
+    --dashboard-danger: #fecaca;
+    gap: 18px;
+    color: var(--dashboard-text);
+}
+
+.dashboard-page *,
+.dashboard-page *::before,
+.dashboard-page *::after {
+    box-sizing: border-box;
+}
+
+.dashboard-page svg,
+.dashboard-page i,
+.dashboard-page .lucide {
+    color: currentColor;
+    stroke: currentColor;
+    fill: none;
+}
+
+.dashboard-page .kpi-grid {
+    gap: 12px;
+}
+
+.dashboard-page .kpi-card.compact,
+.dashboard-page .kpi-actions-card,
+.dashboard-page .dashboard-filter-bar,
+.dashboard-page .vehicle-card,
+.dashboard-page .operation-panel,
+.dashboard-page .operation-panel.compact,
+.dashboard-page .quick-action-card,
+.dashboard-page .side-widget {
+    color: var(--dashboard-text);
+    background: var(--dashboard-surface);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.dashboard-page .kpi-card.compact {
+    min-width: 0;
+    padding: 15px;
+}
+
+.dashboard-page .kpi-card.clickable:hover,
+.dashboard-page .vehicle-card:hover,
+.dashboard-page .quick-action-card:hover,
+.dashboard-page .operation-task:hover {
+    border-color: var(--dashboard-border-strong);
+    box-shadow: none;
+    transform: translateY(-1px);
+}
+
+.dashboard-page .kpi-card.clickable.active {
+    background: var(--dashboard-surface-muted);
+    border-color: rgba(248, 113, 113, .36);
+    box-shadow: inset 3px 0 0 var(--dashboard-accent);
+}
+
+.dashboard-page .kpi-card.compact .kpi-icon,
+.dashboard-page .operation-panel-icon,
+.dashboard-page .task-icon,
+.dashboard-page .vehicle-type-icon,
+.dashboard-page .vehicle-center-icon,
+.dashboard-page .checklist-option-icon {
+    color: var(--dashboard-muted);
+    background: var(--dashboard-raised);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.dashboard-page .kpi-card.compact.warning .kpi-icon,
+.dashboard-page .kpi-card.compact.maintenance .kpi-icon,
+.dashboard-page .operation-task.warning .task-icon,
+.dashboard-page .operation-task.stock-warning .task-icon {
+    color: var(--dashboard-warning);
+    background: rgba(245, 158, 11, .11);
+    border-color: rgba(245, 158, 11, .24);
+}
+
+.dashboard-page .kpi-card.compact.danger .kpi-icon,
+.dashboard-page .operation-task.danger .task-icon {
+    color: var(--dashboard-danger);
+    background: rgba(239, 68, 68, .12);
+    border-color: rgba(248, 113, 113, .26);
+}
+
+.dashboard-page .operation-task.success .task-icon,
+.dashboard-page .vehicle-operation-pill.operational,
+.dashboard-page .vehicle-operation-pill.in-operation,
+.dashboard-page .vehicle-center-status.operational,
+.dashboard-page .daily-checklist-status.completed {
+    color: var(--dashboard-positive);
+    background: rgba(34, 197, 94, .10);
+    border-color: rgba(34, 197, 94, .20);
+}
+
+.dashboard-page .kpi-content small,
+.dashboard-page .kpi-action-btn small,
+.dashboard-page .dashboard-search-box label,
+.dashboard-page .vehicle-card span,
+.dashboard-page .vehicle-card small,
+.dashboard-page .vehicle-main-info .vehicle-plate,
+.dashboard-page .operation-panel-header small,
+.dashboard-page .operation-task .task-content p,
+.dashboard-page .quick-action-card span,
+.dashboard-page .vehicle-center-meta,
+.dashboard-page .vehicle-center-summary-item span,
+.dashboard-page .vehicle-center-card-header small,
+.dashboard-page .checklist-modal-header p,
+.dashboard-page .daily-checklist-card-header small {
+    color: var(--dashboard-subtle);
+}
+
+.dashboard-page .kpi-content strong,
+.dashboard-page .vehicle-main-info h3,
+.dashboard-page .vehicle-info strong,
+.dashboard-page .operation-panel-header h2,
+.dashboard-page .operation-task .task-content strong,
+.dashboard-page .vehicle-center-title-row h2,
+.dashboard-page .vehicle-center-summary-item strong,
+.dashboard-page .vehicle-center-card-header h3,
+.dashboard-page .checklist-modal-header h2,
+.dashboard-page .daily-checklist-card-header h3 {
+    color: var(--dashboard-text);
+}
+
+.dashboard-page .dashboard-filter-bar {
+    padding: 14px;
+}
+
+.dashboard-page .dashboard-search-input,
+.dashboard-page .dashboard-filter-pills button,
+.dashboard-page .vehicle-info > div,
+.dashboard-page .vehicle-card-bottom-action,
+.dashboard-page .vehicle-card-hover-action,
+.dashboard-page .vehicle-operation-action-btn,
+.dashboard-page .operation-task,
+.dashboard-page .daily-checklist-card,
+.dashboard-page .checklist-option-card,
+.dashboard-page .vehicle-center-card,
+.dashboard-page .vehicle-center-kpi,
+.dashboard-page .vehicle-center-summary-line,
+.dashboard-page .vehicle-center-alert,
+.dashboard-page .vehicle-center-log,
+.dashboard-page .vehicle-center-maintenance {
+    color: var(--dashboard-muted);
+    background: var(--dashboard-surface-muted);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.dashboard-page .dashboard-search-input input,
+.dashboard-page .daily-checklist-field select,
+.dashboard-page .daily-checklist-field textarea,
+.dashboard-page .vehicle-center-input-row input,
+.dashboard-page .vehicle-center-status-form select,
+.dashboard-page .operation-modal-backdrop .form-group input,
+.dashboard-page .operation-modal-backdrop .form-group select,
+.dashboard-page .operation-modal-backdrop .form-group textarea {
+    color: var(--dashboard-text);
+    background: var(--dashboard-input);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 9px;
+    box-shadow: none;
+}
+
+.dashboard-page .dashboard-search-input input::placeholder,
+.dashboard-page .daily-checklist-field textarea::placeholder {
+    color: rgba(203, 213, 225, .56);
+}
+
+.dashboard-page .dashboard-search-input input:focus,
+.dashboard-page .daily-checklist-field select:focus,
+.dashboard-page .daily-checklist-field textarea:focus,
+.dashboard-page .vehicle-center-input-row input:focus,
+.dashboard-page .vehicle-center-status-form select:focus,
+.dashboard-page .operation-modal-backdrop .form-group input:focus,
+.dashboard-page .operation-modal-backdrop .form-group select:focus,
+.dashboard-page .operation-modal-backdrop .form-group textarea:focus {
+    border-color: rgba(203, 213, 225, .45);
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, .12);
+    outline: none;
+}
+
+.dashboard-page .dashboard-filter-pills button.active {
+    color: #fff;
+    background: rgba(185, 28, 28, .92);
+    border-color: rgba(248, 113, 113, .36);
+    box-shadow: none;
+}
+
+.dashboard-page .kpi-action-btn,
+.dashboard-page .vehicle-operation-action-btn,
+.dashboard-page .vehicle-center-action,
+.dashboard-page .vehicle-center-input-row button,
+.dashboard-page .vehicle-center-status-form button,
+.dashboard-page .daily-checklist-btn,
+.dashboard-page .operation-modal-footer .chm-page-button {
+    color: var(--dashboard-muted);
+    background: var(--dashboard-raised);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 9px;
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .kpi-action-btn.primary,
+.dashboard-page .daily-checklist-btn.primary,
+.dashboard-page .operation-modal-footer .chm-page-button.primary,
+.dashboard-page .vehicle-center-input-row button,
+.dashboard-page .vehicle-center-status-form button {
+    color: #fff;
+    background: var(--dashboard-accent);
+    border-color: rgba(248, 113, 113, .34);
+}
+
+.dashboard-page .kpi-action-btn:hover,
+.dashboard-page .vehicle-operation-action-btn:hover,
+.dashboard-page .vehicle-center-action:hover,
+.dashboard-page .daily-checklist-btn:hover,
+.dashboard-page .operation-modal-footer .chm-page-button:hover {
+    color: var(--dashboard-text);
+    background: #2d3b54;
+    border-color: var(--dashboard-border-strong);
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-page .kpi-action-btn.primary:hover,
+.dashboard-page .daily-checklist-btn.primary:hover,
+.dashboard-page .operation-modal-footer .chm-page-button.primary:hover,
+.dashboard-page .vehicle-center-input-row button:hover,
+.dashboard-page .vehicle-center-status-form button:hover {
+    color: #fff;
+    background: var(--dashboard-accent-hover);
+    border-color: rgba(252, 165, 165, .42);
+}
+
+.dashboard-page .vehicle-operation-action-btn.start {
+    color: #fff;
+    background: #1f3a5f;
+    border-color: rgba(96, 165, 250, .28);
+}
+
+.dashboard-page .vehicle-operation-action-btn.close {
+    color: #fecaca;
+    background: rgba(239, 68, 68, .11);
+    border-color: rgba(248, 113, 113, .28);
+}
+
+.dashboard-page .vehicle-card.is-in-operation {
+    box-shadow: inset 3px 0 0 rgba(34, 197, 94, .55);
+}
+
+.dashboard-page .vehicle-card-hover-action,
+.dashboard-page .vehicle-card-bottom-action.is-clean {
+    color: var(--dashboard-muted);
+}
+
+.dashboard-page .vehicle-card:hover .vehicle-card-hover-action,
+.dashboard-page .vehicle-card:hover .vehicle-card-bottom-action.is-clean {
+    color: var(--dashboard-text);
+    background: var(--dashboard-raised);
+    border-color: var(--dashboard-border-strong);
+}
+
+.dashboard-page .vehicle-card-bottom-action.has-alert.danger {
+    color: #fecaca;
+    background: rgba(239, 68, 68, .11);
+    border-color: rgba(248, 113, 113, .28);
+}
+
+.dashboard-page .vehicle-card-bottom-action.has-alert.warning,
+.dashboard-page .vehicle-card-bottom-action.has-alert.maintenance,
+.dashboard-page .vehicle-operation-pill.maintenance {
+    color: var(--dashboard-warning);
+    background: rgba(245, 158, 11, .11);
+    border-color: rgba(245, 158, 11, .24);
+}
+
+.dashboard-page .modal-overlay,
+.dashboard-page .operation-modal-backdrop {
+    padding: 18px;
+    background: rgba(2, 6, 23, .74);
+    backdrop-filter: blur(2px);
+}
+
+.dashboard-page .vehicle-center-modal,
+.dashboard-page .operation-modal-card,
+.dashboard-page .checklist-selector-modal,
+.dashboard-page .daily-checklist-modal,
+.dashboard-page .checklist-modal {
+    color: var(--dashboard-text);
+    background: var(--dashboard-surface);
+    border: 1px solid var(--dashboard-border-strong);
+    border-radius: 12px;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, .34);
+}
+
+.dashboard-page .vehicle-center-header,
+.dashboard-page .operation-modal-header,
+.dashboard-page .checklist-modal-header {
+    background: var(--dashboard-surface-muted);
+    border-bottom: 1px solid var(--dashboard-border);
+}
+
+.dashboard-page .operation-modal-backdrop .operation-modal-card {
+    background: var(--dashboard-surface);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, .34);
+}
+
+.dashboard-page .operation-modal-backdrop .operation-modal-header {
+    background: var(--dashboard-surface-muted);
+}
+
+.dashboard-page .vehicle-center-close,
+.dashboard-page .operation-modal-close,
+.dashboard-page .checklist-modal-close {
+    color: var(--dashboard-muted);
+    background: var(--dashboard-raised);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 9px;
+    box-shadow: none;
+}
+
+.dashboard-page .vehicle-center-close:hover,
+.dashboard-page .operation-modal-close:hover,
+.dashboard-page .checklist-modal-close:hover {
+    color: var(--dashboard-text);
+    background: #2d3b54;
+}
+
+.dashboard-page .daily-checklist-item {
+    color: var(--dashboard-muted);
+    background: var(--dashboard-surface-muted);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 9px;
+}
+
+.dashboard-page .daily-checklist-item input:checked + span {
+    color: var(--dashboard-positive);
+    background: rgba(34, 197, 94, .10);
+    border-color: rgba(34, 197, 94, .20);
+}
+
+.dashboard-page .daily-checklist-item strong {
+    color: var(--dashboard-text);
+}
+
+.dashboard-page .checklist-option-card:hover {
+    background: var(--dashboard-raised);
+    border-color: var(--dashboard-border-strong);
+}
+
+.dashboard-page .checklist-option-card em.completed {
+    color: var(--dashboard-positive);
+    background: rgba(34, 197, 94, .10);
+    border-color: rgba(34, 197, 94, .20);
+}
+
+.dashboard-page .checklist-option-card em.pending,
+.dashboard-page .checklist-option-card em.draft,
+.dashboard-page .daily-checklist-status.draft {
+    color: var(--dashboard-warning);
+    background: rgba(245, 158, 11, .11);
+    border-color: rgba(245, 158, 11, .24);
+}
+
+html[data-chm-theme="corporate-light"] .dashboard-page {
+    --dashboard-bg: #263249;
+    --dashboard-surface: #34425b;
+    --dashboard-surface-muted: #3b4a66;
+    --dashboard-raised: #435373;
+    --dashboard-input: #4a5b7a;
+    --dashboard-border: rgba(226, 232, 240, .24);
+    --dashboard-border-strong: rgba(226, 232, 240, .36);
+    --dashboard-muted: #e2e8f0;
+    --dashboard-subtle: #cbd5e1;
+}
+
+html[data-chm-theme="corporate-light"] .dashboard-page .vehicle-card:hover,
+html[data-chm-theme="corporate-light"] .dashboard-page .operation-task:hover,
+html[data-chm-theme="corporate-light"] .dashboard-page .quick-action-card:hover {
+    background: #435373;
+}
+
+@media (max-width: 1180px) {
+    .dashboard-page .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-page .dashboard-side-column {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 760px) {
+    .dashboard-page {
+        gap: 14px;
+    }
+
+    .dashboard-page .dashboard-filter-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dashboard-page .dashboard-search-box,
+    .dashboard-page .dashboard-search-input,
+    .dashboard-page .dashboard-filter-pills,
+    .dashboard-page .dashboard-filter-pills button,
+    .dashboard-page .vehicle-operation-action-btn {
+        width: 100%;
+    }
+
+    .dashboard-page .vehicles-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-page .vehicle-card,
+    .dashboard-page .operation-panel,
+    .dashboard-page .quick-action-card {
+        border-radius: 11px;
+    }
+
+    .dashboard-page .modal-overlay,
+    .dashboard-page .operation-modal-backdrop {
+        padding: 10px;
+    }
+
+    .dashboard-page .vehicle-center-modal,
+    .dashboard-page .operation-modal-card,
+    .dashboard-page .checklist-selector-modal,
+    .dashboard-page .daily-checklist-modal,
+    .dashboard-page .checklist-modal {
+        width: calc(100vw - 20px);
+        max-height: calc(100dvh - 20px);
+        overflow: auto;
+    }
+
+    .dashboard-page .vehicle-center-summary-line,
+    .dashboard-page .daily-checklist-actions,
+    .dashboard-page .operation-modal-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dashboard-page .daily-checklist-btn,
+    .dashboard-page .operation-modal-footer .chm-page-button {
+        width: 100%;
+    }
+}
