@@ -8,6 +8,7 @@ use App\Models\Procedure;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Models\Vehicle;
+use App\Services\AuditLogService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -105,6 +106,25 @@ class MaintenanceService
             ]);
 
             $maintenance->load('procedure');
+
+            app(AuditLogService::class)->created($maintenance, [
+                'tenant_id' => $vehicle->tenant_id,
+                'division_id' => $vehicle->division_id,
+                'location_id' => $vehicle->location_id,
+                'module' => 'maintenance',
+                'summary' => 'Manutencao registrada para o veiculo ' . $vehicle->plate,
+                'after_data' => [
+                    'maintenance' => $maintenance->toArray(),
+                    'values' => $maintenance->values()->get()->toArray(),
+                    'stock_usage' => $stockUsage->toArray(),
+                    'total_cost' => $totalCost,
+                ],
+                'metadata' => [
+                    'vehicle_id' => $vehicle->id,
+                    'procedure_id' => $procedure->id,
+                    'maintenance_type' => $executionType,
+                ],
+            ]);
 
             return [
                 'maintenance' => $maintenance,

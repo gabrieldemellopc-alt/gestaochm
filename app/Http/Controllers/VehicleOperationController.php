@@ -11,6 +11,7 @@ use App\Models\Vehicle;
 use App\Models\VehicleOperation;
 use App\Models\VehicleUpdateLog;
 use App\Services\ActiveContextService;
+use App\Services\AuditLogService;
 use Carbon\Carbon;
 
 use Illuminate\Http\Request;
@@ -504,7 +505,7 @@ class VehicleOperationController extends Controller
 
 
 
-        VehicleOperation::create([
+        $operation = VehicleOperation::create([
 
             'tenant_id' => auth()->user()->tenant_id ?? null,
 
@@ -557,6 +558,20 @@ class VehicleOperationController extends Controller
             'KM/HR atualizado automaticamente na abertura da operação.'
 
         );
+
+        app(AuditLogService::class)->created($operation, [
+            'tenant_id' => $vehicle->tenant_id,
+            'division_id' => $vehicle->division_id,
+            'location_id' => $vehicle->location_id,
+            'module' => 'operations',
+            'summary' => 'Operacao iniciada para o veiculo ' . $vehicle->plate . '.',
+            'after_data' => $operation->toArray(),
+            'metadata' => [
+                'vehicle_id' => $vehicle->id,
+                'driver_id' => $driverId,
+                'action_context' => 'operation_start',
+            ],
+        ]);
 
 
 
@@ -718,6 +733,8 @@ class VehicleOperationController extends Controller
 
         DB::transaction(function () use ($operation, $validated, $reportedEnd, $systemNow, $endDelayMinutes) {
 
+            $before = $operation->toArray();
+
             $operation->update([
 
                 'status' => 'closed',
@@ -765,6 +782,23 @@ class VehicleOperationController extends Controller
             'KM/HR atualizado automaticamente no encerramento da operação.'
 
         );
+
+            $operationAfter = $operation->fresh();
+
+            app(AuditLogService::class)->updated($operationAfter, [
+                'tenant_id' => $operationAfter->tenant_id,
+                'division_id' => $operationAfter->vehicle?->division_id,
+                'location_id' => $operationAfter->vehicle?->location_id,
+                'module' => 'operations',
+                'summary' => 'Operacao encerrada.',
+                'before_data' => $before,
+                'after_data' => $operationAfter->toArray(),
+                'metadata' => [
+                    'vehicle_id' => $operationAfter->vehicle_id,
+                    'driver_id' => $operationAfter->driver_id,
+                    'action_context' => 'operation_finish',
+                ],
+            ]);
 
         });
     

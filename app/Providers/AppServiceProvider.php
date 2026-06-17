@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Models\UserDivisionAccess;
 use App\Services\ActiveContextService;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,6 +24,39 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('viewAuditLogs', function (User $user) {
+            $divisionId = session('active_division_id');
+            $locationId = session('active_location_id');
+
+            if ($divisionId) {
+                return UserDivisionAccess::query()
+                    ->where('tenant_id', $user->tenant_id)
+                    ->where('user_id', $user->id)
+                    ->where('division_id', $divisionId)
+                    ->where('module', 'fleet')
+                    ->where('profile', 'manager')
+                    ->where('active', true)
+                    ->where(function ($query) use ($locationId) {
+                        if ($locationId) {
+                            $query
+                                ->where('location_id', $locationId)
+                                ->orWhereNull('location_id');
+
+                            return;
+                        }
+
+                        $query->whereNull('location_id');
+                    })
+                    ->exists();
+            }
+
+            return in_array(
+                strtolower($user->profile ?? $user->role ?? $user->type ?? ''),
+                ['manager'],
+                true
+            );
+        });
+
         View::composer('layouts.topbar', function ($view) {
             $user = auth()->user();
             $activeDivision = null;

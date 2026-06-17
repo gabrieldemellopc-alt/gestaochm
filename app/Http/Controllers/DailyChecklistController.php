@@ -10,7 +10,8 @@ use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\ChecklistTemplate;
+use App\Models\ChecklistTemplate;
+use App\Services\AuditLogService;
 
 class DailyChecklistController extends Controller
 {
@@ -177,7 +178,7 @@ class DailyChecklistController extends Controller
             }
         }
     
-        return response()->json([
+        return response()->json([
             'options' =>
                 $options->values(),
     
@@ -406,7 +407,7 @@ class DailyChecklistController extends Controller
                 ],
             ]);
 
-        DB::transaction(function () use ($dailyChecklist, $data) {
+        DB::transaction(function () use ($dailyChecklist, $data) {
 
             $dailyChecklist->update([
 
@@ -539,6 +540,21 @@ class DailyChecklistController extends Controller
             }
         });
 
+        $checklistAfter = $dailyChecklist->fresh('items');
+
+        app(AuditLogService::class)->updated($checklistAfter, [
+            'tenant_id' => $checklistAfter->tenant_id,
+            'division_id' => $checklistAfter->division_id,
+            'location_id' => $checklistAfter->location_id,
+            'module' => 'checklists',
+            'summary' => 'Checklist diario concluido.',
+            'after_data' => $checklistAfter->toArray(),
+            'metadata' => [
+                'template_id' => $checklistAfter->checklist_template_id,
+                'vehicle_id' => $checklistAfter->vehicle_id,
+                'action_context' => 'daily_checklist_complete',
+            ],
+        ]);
         return response()->json([
             'message' =>
                 'Checklist concluído.',

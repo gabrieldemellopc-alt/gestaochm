@@ -6,6 +6,7 @@ use App\Models\StockCategory;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\ActiveContextService;
+use App\Services\AuditLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -202,7 +203,7 @@ class StockController extends Controller
                 return false;
             }
 
-            StockMovement::create([
+            $movement = StockMovement::create([
                 'tenant_id' => $tenantId,
                 'location_id' => $activeLocation->id,
                 'stock_item_id' => $item->id,
@@ -210,6 +211,22 @@ class StockController extends Controller
                 'quantity' => $validated['quantity'],
                 'unit_cost' => $validated['unit_cost'] ?? 0,
                 'description' => $validated['description'] ?? null,
+            ]);
+
+            app(AuditLogService::class)->created($movement, [
+                'tenant_id' => $tenantId,
+                'location_id' => $activeLocation->id,
+                'module' => 'stock',
+                'summary' => 'Movimentacao manual de estoque registrada.',
+                'after_data' => $movement->toArray(),
+                'metadata' => [
+                    'stock_item_id' => $item->id,
+                    'movement_type' => $validated['movement_type'],
+                    'quantity_before' => $item->quantity,
+                    'quantity_after' => $validated['movement_type'] === 'in'
+                        ? (float) $item->quantity + (float) $validated['quantity']
+                        : (float) $item->quantity - (float) $validated['quantity'],
+                ],
             ]);
 
             if ($validated['movement_type'] === 'in') {

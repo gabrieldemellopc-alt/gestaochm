@@ -6,6 +6,7 @@ use App\Models\Tire;
 use App\Models\TireEntry;
 use App\Models\TireEntryItem;
 use App\Services\ActiveContextService;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -628,7 +629,7 @@ class WorkshopTireController extends Controller
                     ->value('new_tread_depth')
                 ?? $lockedTire->initial_tread_depth;
 
-            $lockedTire->retreads()->create([
+            $retread = $lockedTire->retreads()->create([
                 'tenant_id' => $user->tenant_id,
                 'retreaded_at' => $data['retreaded_at'],
                 'new_tread_depth' => $data['new_tread_depth'],
@@ -640,6 +641,19 @@ class WorkshopTireController extends Controller
 
             $lockedTire->update([
                 'status' => 'available',
+            ]);
+
+            app(AuditLogService::class)->created($retread, [
+                'tenant_id' => $user->tenant_id,
+                'location_id' => $activeLocation->id,
+                'module' => 'tires',
+                'summary' => 'Recapagem registrada para o pneu ' . $lockedTire->code . '.',
+                'after_data' => $retread->toArray(),
+                'metadata' => [
+                    'tire_id' => $lockedTire->id,
+                    'tire_code' => $lockedTire->code,
+                    'status_after' => 'available',
+                ],
             ]);
         });
 

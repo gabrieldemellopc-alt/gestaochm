@@ -14,6 +14,7 @@ use Illuminate\Validation\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\TireMeasurement;
 use App\Services\ActiveContextService;
+use App\Services\AuditLogService;
 
 class VehicleTireController extends Controller
 {
@@ -473,7 +474,7 @@ class VehicleTireController extends Controller
             |--------------------------------------------------------------------------
             */
     
-            TireMeasurement::create([
+            $measurement = TireMeasurement::create([
                 'tenant_id' =>
                     $vehicle->tenant_id,
     
@@ -523,7 +524,22 @@ class VehicleTireController extends Controller
     
                 'user_id' =>
                     $authUser->id,
-            ]);
+            ]);
+
+            app(AuditLogService::class)->created($measurement, [
+                'tenant_id' => $vehicle->tenant_id,
+                'division_id' => $vehicle->division_id,
+                'location_id' => $vehicle->location_id,
+                'module' => 'tires',
+                'summary' => 'Medicao de sulco registrada para pneu instalado.',
+                'after_data' => $measurement->toArray(),
+                'metadata' => [
+                    'vehicle_id' => $vehicle->id,
+                    'tire_id' => $data['tire_id'],
+                    'position_code' => $data['position_code'],
+                    'source' => 'manual_tire_measurement',
+                ],
+            ]);
     
             /*
             |--------------------------------------------------------------------------
