@@ -392,6 +392,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/vehicles/{vehicle}/maintenance', [MaintenanceController::class, 'store'])
         ->name('vehicles.maintenance.store');
 
+    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/cancel', [MaintenanceController::class, 'cancel'])
+        ->name('vehicles.maintenance.cancel');
+
     Route::get(
 
         '/vehicle/{vehicle}/maintenance',

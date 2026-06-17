@@ -158,7 +158,9 @@
     
             maintenanceSearch: '',
     
-            maintenanceOrder: 'desc'
+            maintenanceOrder: 'desc',
+
+            cancelMaintenanceId: null
     
         }"
         class="history-tabs-wrapper"
@@ -585,18 +587,102 @@
         
                             </div>
         
-                            <span class="maintenance-badge {{ $maintenance->maintenance_type }}">
+                            @if($maintenance->cancelled_at)
+
+                                <span class="maintenance-badge cancelled">
+
+                                    Cancelada
+
+                                </span>
+
+                            @else
+
+                            <span class="maintenance-badge {{ $maintenance->maintenance_type }}">
         
                                 {{ $maintenance->maintenance_type == 'internal'
                                     ? 'Interna'
                                     : 'Externa'
                                 }}
         
-                            </span>
+                            </span>
+
+                            @can('viewAuditLogs')
+
+                                <button
+                                    type="button"
+                                    class="maintenance-cancel-action"
+                                    @click="cancelMaintenanceId = {{ $maintenance->id }}"
+                                >
+                                    <i data-lucide="ban"></i>
+                                    Cancelar
+                                </button>
+
+                            @endcan
+
+                            @endif
         
                         </div>
         
-                        <div class="maintenance-meta">
+                        @if($maintenance->cancelled_at)
+
+                            <div class="maintenance-cancelled-note">
+                                <i data-lucide="ban"></i>
+                                <span>
+                                    Cancelada em
+                                    {{ $maintenance->cancelled_at->format('d/m/Y H:i') }}
+                                    @if($maintenance->cancel_reason)
+                                        - {{ $maintenance->cancel_reason }}
+                                    @endif
+                                </span>
+                            </div>
+
+                        @else
+
+                            @can('viewAuditLogs')
+
+                                <div
+                                    x-show="cancelMaintenanceId === {{ $maintenance->id }}"
+                                    x-cloak
+                                    class="maintenance-cancel-panel"
+                                >
+                                    <form
+                                        method="POST"
+                                        action="{{ route('vehicles.maintenance.cancel', [$vehicle->id, $maintenance->id]) }}"
+                                    >
+                                        @csrf
+                                        <label>Motivo do cancelamento</label>
+                                        <textarea
+                                            name="reason"
+                                            required
+                                            minlength="5"
+                                            rows="3"
+                                            placeholder="Informe o motivo do cancelamento"
+                                        ></textarea>
+
+                                        <div class="maintenance-cancel-panel-actions">
+                                            <button
+                                                type="button"
+                                                class="maintenance-cancel-secondary"
+                                                @click="cancelMaintenanceId = null"
+                                            >
+                                                Voltar
+                                            </button>
+
+                                            <button
+                                                type="submit"
+                                                class="maintenance-cancel-submit"
+                                            >
+                                                Confirmar cancelamento
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                            @endcan
+
+                        @endif
+
+                        <div class="maintenance-meta">
         
                             <div>
         

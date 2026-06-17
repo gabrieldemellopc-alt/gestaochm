@@ -7,6 +7,7 @@ use App\Models\MaintenanceRecordValue;
 use App\Models\Procedure;
 use App\Models\StockItem;
 use App\Models\StockMovement;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\AuditLogService;
 use Illuminate\Support\Collection;
@@ -15,6 +16,118 @@ use Illuminate\Validation\ValidationException;
 
 class MaintenanceService
 {
+    public static function cancel(
+        MaintenanceRecord $maintenance,
+        string $reason,
+        User $user
+    ): MaintenanceRecord {
+        return DB::transaction(function () use ($maintenance, $reason, $user) {
+            $maintenance = MaintenanceRecord::query()
+                ->with(['vehicle', 'procedure', 'values'])
+                ->whereKey($maintenance->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($maintenance->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'maintenance' => 'Esta manutencao ja foi cancelada.',
+                ]);
+            }
+
+            $vehicle = $maintenance->vehicle;
+
+            if (! $vehicle) {
+                throw ValidationException::withMessages([
+                    'maintenance' => 'Nao foi possivel localizar o veiculo da manutencao.',
+                ]);
+            }
+
+            $before = $maintenance->toArray();
+            $reverseMovements = collect();
+            $stockMovements = self::stockMovementsForMaintenance($maintenance);
+
+            foreach ($stockMovements as $movement) {
+                $stockItem = StockItem::query()
+                    ->where('tenant_id', $movement->tenant_id)
+                    ->where('location_id', $movement->location_id)
+                    ->whereKey($movement->stock_item_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $stockItem) {
+                    throw ValidationException::withMessages([
+                        'maintenance' => 'Nao foi possivel reverter o estoque consumido pela manutencao.',
+                    ]);
+                }
+
+                $reverseMovement = StockMovement::create([
+                    'tenant_id' => $movement->tenant_id,
+                    'location_id' => $movement->location_id,
+                    'stock_item_id' => $movement->stock_item_id,
+                    'movement_type' => 'in',
+                    'quantity' => $movement->quantity,
+                    'unit_cost' => $movement->unit_cost,
+                    'description' => 'Reversao do cancelamento da manutencao #'.$maintenance->id,
+                ]);
+
+                $stockItem->quantity = (float) $stockItem->quantity + (float) $movement->quantity;
+                $stockItem->save();
+
+                $reverseMovements->push($reverseMovement);
+
+                app(AuditLogService::class)->created($reverseMovement, [
+                    'tenant_id' => $movement->tenant_id,
+                    'division_id' => $vehicle->division_id,
+                    'location_id' => $movement->location_id,
+                    'module' => 'stock',
+                    'summary' => 'Movimento reverso criado pelo cancelamento da manutencao #'.$maintenance->id.'.',
+                    'after_data' => $reverseMovement->toArray(),
+                    'metadata' => [
+                        'maintenance_record_id' => $maintenance->id,
+                        'original_stock_movement_id' => $movement->id,
+                        'stock_item_id' => $movement->stock_item_id,
+                        'quantity_reversed' => $movement->quantity,
+                    ],
+                    'reason' => $reason,
+                ]);
+            }
+
+            $maintenance->update([
+                'cancelled_at' => now(),
+                'cancelled_by' => $user->id,
+                'cancel_reason' => $reason,
+            ]);
+
+            $maintenanceAfter = $maintenance->fresh(['vehicle', 'procedure', 'values']);
+
+            app(AuditLogService::class)->cancelled($maintenanceAfter, [
+                'tenant_id' => $vehicle->tenant_id,
+                'division_id' => $vehicle->division_id,
+                'location_id' => $vehicle->location_id,
+                'module' => 'maintenance',
+                'summary' => 'Manutencao cancelada para o veiculo ' . $vehicle->plate . '.',
+                'before_data' => $before,
+                'after_data' => [
+                    'cancelled_at' => $maintenanceAfter->cancelled_at,
+                    'cancelled_by' => $maintenanceAfter->cancelled_by,
+                    'cancel_reason' => $maintenanceAfter->cancel_reason,
+                ],
+                'metadata' => [
+                    'vehicle_id' => $vehicle->id,
+                    'procedure_id' => $maintenanceAfter->procedure_id,
+                    'maintenance_type' => $maintenanceAfter->maintenance_type,
+                    'reverse_stock_movements' => $reverseMovements
+                        ->map(fn ($movement) => $movement->toArray())
+                        ->values()
+                        ->all(),
+                ],
+                'reason' => $reason,
+            ]);
+
+            return $maintenanceAfter;
+        });
+    }
+
     public static function create(array $data, Vehicle $vehicle): array
     {
         return DB::transaction(function () use ($data, $vehicle) {
@@ -241,5 +354,16 @@ class MaintenanceService
         }
 
         return [$nextDueKm, $nextDueHours, $nextDueDate];
+    }
+
+    private static function stockMovementsForMaintenance(
+        MaintenanceRecord $maintenance
+    ): Collection {
+        return StockMovement::query()
+            ->where('tenant_id', $maintenance->tenant_id)
+            ->where('movement_type', 'out')
+            ->where('description', 'like', '%#'.$maintenance->id)
+            ->orderBy('id')
+            ->get();
     }
 }

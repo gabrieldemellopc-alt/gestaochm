@@ -32,13 +32,21 @@ class MaintenanceRecord extends Model
         'extra_cost',
         'reason',
 
-        'notes'
+        'cancelled_at',
+
+        'cancelled_by',
+
+        'cancel_reason',
+
+        'notes'
     ];
     protected $casts = [
     
         'performed_at' => 'date',
     
-        'next_due_date' => 'date'
+        'next_due_date' => 'date',
+
+        'cancelled_at' => 'datetime'
     ];
     public function vehicle()
     {
@@ -53,6 +61,21 @@ class MaintenanceRecord extends Model
     {
         return $this->hasMany(MaintenanceRecordValue::class);
     }
+    public function canceller()
+
+    {
+
+        return $this->belongsTo(User::class, 'cancelled_by');
+
+    }
+
+    public function getIsCancelledAttribute(): bool
+
+    {
+
+        return $this->cancelled_at !== null;
+
+    }
     public function getKmRemainingAttribute()
     {
         if (

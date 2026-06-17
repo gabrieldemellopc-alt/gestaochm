@@ -242,6 +242,137 @@
 
     color: #fff;
 }
+
+/* Maintenance cancellation controls */
+.vehicle-history-wrapper .maintenance-badge.cancelled {
+    color: #f4c8cc;
+    border-color: rgba(224, 82, 91, .42);
+    background: rgba(224, 82, 91, .14);
+}
+
+.vehicle-history-wrapper .maintenance-cancelled-note,
+.vehicle-history-wrapper .maintenance-cancel-panel {
+    width: 100%;
+    margin-top: 12px;
+    border: 1px solid rgba(224, 82, 91, .24);
+    border-radius: 10px;
+    background: rgba(224, 82, 91, .08);
+}
+
+.vehicle-history-wrapper .maintenance-cancelled-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    color: #f4c8cc;
+    font-size: .86rem;
+    line-height: 1.45;
+}
+
+.vehicle-history-wrapper .maintenance-cancelled-note svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 9px 12px;
+    border: 1px solid rgba(224, 82, 91, .38);
+    border-radius: 8px;
+    color: #f4c8cc;
+    background: rgba(224, 82, 91, .1);
+    font-size: .84rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-action:hover {
+    border-color: rgba(224, 82, 91, .55);
+    background: rgba(224, 82, 91, .16);
+}
+
+.vehicle-history-wrapper .maintenance-cancel-action svg {
+    width: 15px;
+    height: 15px;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-panel {
+    padding: 14px;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-panel form,
+.vehicle-history-wrapper .maintenance-cancel-panel label {
+    display: grid;
+    gap: 8px;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-panel label {
+    color: var(--history-text, #f8fafc);
+    font-size: .82rem;
+    font-weight: 800;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-panel textarea {
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    border: 1px solid rgba(226, 232, 240, .18);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--history-text, #f8fafc);
+    background: rgba(15, 23, 42, .42);
+}
+
+.vehicle-history-wrapper .maintenance-cancel-panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-secondary,
+.vehicle-history-wrapper .maintenance-cancel-submit {
+    min-height: 38px;
+    border-radius: 8px;
+    padding: 0 13px;
+    font-size: .83rem;
+    font-weight: 800;
+}
+
+.vehicle-history-wrapper .maintenance-cancel-secondary {
+    border: 1px solid rgba(226, 232, 240, .18);
+    color: var(--history-muted, #cbd5e1);
+    background: rgba(30, 41, 59, .7);
+}
+
+.vehicle-history-wrapper .maintenance-cancel-submit {
+    border: 1px solid rgba(224, 82, 91, .5);
+    color: #fff;
+    background: #d65760;
+}
+
+html[data-chm-theme="corporate-light"] .vehicle-history-wrapper .maintenance-cancel-panel textarea {
+    background: #465776;
+    border-color: rgba(226, 232, 240, .28);
+}
+
+@media (max-width: 620px) {
+    .vehicle-history-wrapper .maintenance-cancel-action,
+    .vehicle-history-wrapper .maintenance-cancel-secondary,
+    .vehicle-history-wrapper .maintenance-cancel-submit {
+        width: 100%;
+    }
+
+    .vehicle-history-wrapper .maintenance-cancel-panel-actions {
+        flex-direction: column;
+    }
+}
 /* CHM corporate visual layer */
 .vehicle-history-wrapper {
     --history-surface: #202a40;
