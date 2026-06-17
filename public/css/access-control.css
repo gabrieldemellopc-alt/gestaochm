@@ -2089,3 +2089,522 @@ html[data-chm-theme="corporate-light"] .access-control-page .chm-select { backgr
     .access-control-page .chm-user-main { align-items: flex-start; }
     .access-control-page .chm-access-modal-content { width: calc(100vw - 16px); max-height: calc(100vh - 16px); }
 }
+
+/* CHM access control final refinement - Visual batch 5 */
+.access-control-page {
+    --ac-bg: #111827;
+    --ac-surface: #172033;
+    --ac-panel: #1d293d;
+    --ac-raised: #24324b;
+    --ac-input: #111a2b;
+    --ac-border: rgba(148, 163, 184, .18);
+    --ac-border-strong: rgba(203, 213, 225, .28);
+    --ac-text: #f8fafc;
+    --ac-muted: #cbd5e1;
+    --ac-soft: #94a3b8;
+    --ac-red: #b91c1c;
+    --ac-red-hover: #dc2626;
+    --ac-positive: #86efac;
+    color: var(--ac-text);
+}
+
+.access-control-page *,
+.access-control-page *::before,
+.access-control-page *::after {
+    box-sizing: border-box;
+}
+
+.access-control-page svg,
+.access-control-page i {
+    color: currentColor;
+    stroke: currentColor;
+}
+
+.access-control-page .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 20px;
+    background: var(--ac-surface);
+    border: 1px solid var(--ac-border);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.access-control-page .page-kicker {
+    color: #fecaca;
+    font-size: 11px;
+    letter-spacing: .12em;
+}
+
+.access-control-page .page-title {
+    margin: 4px 0;
+    color: var(--ac-text);
+    font-size: clamp(24px, 2.7vw, 32px);
+    line-height: 1.1;
+    letter-spacing: -.03em;
+}
+
+.access-control-page .page-subtitle {
+    color: var(--ac-soft);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.access-control-page .nf-card,
+.access-control-page .chm-users-card,
+.access-control-page .chm-section-card,
+.access-control-page .chm-access-builder,
+.access-control-page .chm-access-list,
+.access-control-page .access-item,
+.access-control-page .chm-empty-access {
+    background: var(--ac-panel);
+    border: 1px solid var(--ac-border);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.access-control-page .chm-users-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.access-control-page .chm-users-table {
+    min-width: 0;
+}
+
+.access-control-page .chm-users-table-head {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.4fr) minmax(210px, .9fr) minmax(110px, .45fr) minmax(120px, .45fr);
+    gap: 14px;
+    min-height: 46px;
+    padding: 0 18px;
+    align-items: center;
+    color: var(--ac-muted);
+    background: var(--ac-surface);
+    border-bottom: 1px solid var(--ac-border);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+}
+
+.access-control-page .chm-user-row {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.4fr) minmax(210px, .9fr) minmax(110px, .45fr) minmax(120px, .45fr);
+    gap: 14px;
+    align-items: center;
+    min-width: 0;
+    padding: 15px 18px;
+    background: var(--ac-panel);
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+}
+
+.access-control-page .chm-user-row:last-child {
+    border-bottom: 0;
+}
+
+.access-control-page .chm-user-row:hover {
+    background: #223049;
+}
+
+.access-control-page .chm-user-main,
+.access-control-page .chm-user-info,
+.access-control-page .chm-user-email,
+.access-control-page .chm-user-access-list {
+    min-width: 0;
+}
+
+.access-control-page .chm-user-info strong {
+    color: var(--ac-text);
+    font-size: 14px;
+}
+
+.access-control-page .chm-user-info span,
+.access-control-page .chm-user-email,
+.access-control-page .chm-user-access-empty {
+    color: var(--ac-soft);
+}
+
+.access-control-page .chm-user-email {
+    overflow-wrap: anywhere;
+}
+
+.access-control-page .chm-user-avatar,
+.access-control-page .chm-modal-icon {
+    color: var(--ac-text);
+    background: var(--ac-raised);
+    border: 1px solid var(--ac-border);
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.access-control-page .chm-user-access-pill,
+.access-control-page .access-badge,
+.access-control-page .nf-badge,
+.access-control-page .chm-section-step,
+.access-control-page .chm-access-counter {
+    color: var(--ac-muted);
+    background: var(--ac-raised);
+    border: 1px solid var(--ac-border);
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.access-control-page .chm-user-access-pill small {
+    color: var(--ac-soft);
+}
+
+.access-control-page .nf-badge.success {
+    color: var(--ac-positive);
+    background: rgba(34, 197, 94, .10);
+    border-color: rgba(34, 197, 94, .22);
+}
+
+.access-control-page .nf-badge.danger {
+    color: #fecaca;
+    background: rgba(239, 68, 68, .12);
+    border-color: rgba(248, 113, 113, .28);
+}
+
+.access-control-page .chm-page-add-btn,
+.access-control-page .chm-btn-primary {
+    min-height: 40px;
+    color: #fff;
+    background: var(--ac-red);
+    border: 1px solid rgba(248, 113, 113, .34);
+    border-radius: 9px;
+    box-shadow: none;
+}
+
+.access-control-page .chm-page-add-btn:hover,
+.access-control-page .chm-btn-primary:hover {
+    background: var(--ac-red-hover);
+    border-color: rgba(252, 165, 165, .42);
+    box-shadow: none;
+    transform: none;
+}
+
+.access-control-page .chm-edit-access-btn,
+.access-control-page .chm-btn-muted,
+.access-control-page .nf-icon-btn,
+.access-control-page .chm-add-access-btn,
+.access-control-page .access-item button {
+    min-height: 38px;
+    color: var(--ac-muted);
+    background: var(--ac-raised);
+    border: 1px solid var(--ac-border);
+    border-radius: 9px;
+    box-shadow: none;
+}
+
+.access-control-page .chm-edit-access-btn:hover,
+.access-control-page .chm-btn-muted:hover,
+.access-control-page .nf-icon-btn:hover,
+.access-control-page .chm-add-access-btn:hover {
+    color: var(--ac-text);
+    background: #2d3b54;
+    border-color: var(--ac-border-strong);
+    box-shadow: none;
+    transform: none;
+}
+
+.access-control-page .access-item button {
+    color: #fecaca;
+    background: rgba(239, 68, 68, .10);
+    border-color: rgba(248, 113, 113, .28);
+}
+
+.access-control-page .access-item button:hover {
+    background: rgba(239, 68, 68, .16);
+    border-color: rgba(252, 165, 165, .36);
+}
+
+.access-control-page .nf-modal {
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+}
+
+.access-control-page .nf-modal-backdrop {
+    background: rgba(2, 6, 23, .72);
+    backdrop-filter: blur(2px);
+}
+
+.access-control-page .chm-access-modal-content {
+    width: min(1040px, calc(100vw - 28px));
+    max-height: calc(100dvh - 28px);
+    color: var(--ac-text);
+    background: var(--ac-surface);
+    border: 1px solid var(--ac-border-strong);
+    border-radius: 12px;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, .34);
+    overflow: auto;
+}
+
+.access-control-page .chm-modal-hero {
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: var(--ac-surface);
+    border-bottom: 1px solid var(--ac-border);
+}
+
+.access-control-page .chm-modal-hero-left {
+    min-width: 0;
+}
+
+.access-control-page .chm-modal-kicker {
+    color: #fecaca;
+}
+
+.access-control-page .chm-modal-hero h2,
+.access-control-page .chm-section-header h3 {
+    color: var(--ac-text);
+}
+
+.access-control-page .chm-modal-hero p,
+.access-control-page .chm-section-header p,
+.access-control-page .chm-access-field small {
+    color: var(--ac-soft);
+}
+
+.access-control-page .chm-modal-close {
+    color: var(--ac-muted);
+    background: var(--ac-raised);
+    border: 1px solid var(--ac-border);
+    border-radius: 9px;
+}
+
+.access-control-page .chm-modal-close:hover {
+    color: var(--ac-text);
+    background: #2d3b54;
+}
+
+.access-control-page .chm-modal-body {
+    display: grid;
+    gap: 14px;
+    padding: 16px 18px;
+    background: #162033;
+}
+
+.access-control-page .chm-section-card {
+    padding: 15px;
+}
+
+.access-control-page .chm-section-header {
+    gap: 12px;
+}
+
+.access-control-page .chm-user-grid,
+.access-control-page .chm-access-builder {
+    gap: 12px;
+}
+
+.access-control-page .chm-field,
+.access-control-page .chm-access-field {
+    min-width: 0;
+}
+
+.access-control-page .chm-field label,
+.access-control-page .chm-access-field label {
+    color: var(--ac-muted);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.access-control-page .nf-input,
+.access-control-page .nf-select,
+.access-control-page .chm-input,
+.access-control-page .chm-select {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    color: var(--ac-text);
+    background: var(--ac-input);
+    border: 1px solid var(--ac-border);
+    border-radius: 9px;
+    box-shadow: none;
+}
+
+.access-control-page .nf-input::placeholder,
+.access-control-page .chm-input::placeholder {
+    color: rgba(203, 213, 225, .55);
+}
+
+.access-control-page .nf-input:focus,
+.access-control-page .nf-select:focus,
+.access-control-page .chm-input:focus,
+.access-control-page .chm-select:focus {
+    border-color: rgba(203, 213, 225, .45) !important;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, .12) !important;
+    outline: none;
+}
+
+.access-control-page .chm-add-access-btn {
+    align-self: end;
+}
+
+.access-control-page .chm-access-list {
+    min-height: 96px;
+    padding: 10px;
+}
+
+.access-control-page .access-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    padding: 10px;
+}
+
+.access-control-page .chm-empty-access {
+    padding: 18px;
+    color: var(--ac-soft);
+    background: rgba(148, 163, 184, .06);
+    border-style: dashed;
+}
+
+.access-control-page .chm-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 18px;
+    background: var(--ac-surface);
+    border-top: 1px solid var(--ac-border);
+}
+
+.access-control-page .chm-switch input + span {
+    background: var(--ac-raised);
+    border: 1px solid var(--ac-border);
+}
+
+.access-control-page .chm-switch input + span::before {
+    background: #cbd5e1;
+}
+
+.access-control-page .chm-switch input:checked + span {
+    background: rgba(34, 197, 94, .12);
+    border-color: rgba(34, 197, 94, .26);
+}
+
+.access-control-page .chm-switch input:checked + span::before {
+    background: var(--ac-positive);
+}
+
+html[data-chm-theme="corporate-light"] .access-control-page {
+    --ac-bg: #263249;
+    --ac-surface: #34425b;
+    --ac-panel: #3b4a66;
+    --ac-raised: #435373;
+    --ac-input: #4a5b7a;
+    --ac-border: rgba(226, 232, 240, .24);
+    --ac-border-strong: rgba(226, 232, 240, .36);
+    --ac-muted: #e2e8f0;
+    --ac-soft: #cbd5e1;
+}
+
+html[data-chm-theme="corporate-light"] .access-control-page .chm-modal-body {
+    background: #303d55;
+}
+
+html[data-chm-theme="corporate-light"] .access-control-page .chm-user-row:hover {
+    background: #435373;
+}
+
+@media (max-width: 1040px) {
+    .access-control-page .chm-users-table-head,
+    .access-control-page .chm-user-row {
+        grid-template-columns: minmax(230px, 1.3fr) minmax(180px, .9fr) minmax(100px, .5fr) minmax(110px, .5fr);
+        gap: 10px;
+    }
+
+    .access-control-page .chm-access-builder {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .access-control-page .chm-add-access-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 760px) {
+    .access-control-page .page-header {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .access-control-page .chm-page-add-btn {
+        width: 100%;
+    }
+
+    .access-control-page .chm-users-table-head {
+        display: none;
+    }
+
+    .access-control-page .chm-user-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .access-control-page .chm-user-actions,
+    .access-control-page .chm-edit-access-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .access-control-page .chm-access-modal-content {
+        width: calc(100vw - 16px);
+        max-height: calc(100dvh - 16px);
+    }
+
+    .access-control-page .chm-modal-hero {
+        align-items: flex-start;
+    }
+
+    .access-control-page .chm-modal-body,
+    .access-control-page .chm-modal-hero,
+    .access-control-page .chm-modal-actions {
+        padding: 14px;
+    }
+
+    .access-control-page .chm-user-grid,
+    .access-control-page .chm-access-builder {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .access-control-page .chm-modal-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .access-control-page .chm-modal-actions .chm-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .access-control-page .page-title {
+        font-size: 23px;
+    }
+
+    .access-control-page .chm-user-main,
+    .access-control-page .chm-modal-hero-left {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .access-control-page .access-item {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .access-control-page .access-item button {
+        width: 100%;
+    }
+}
