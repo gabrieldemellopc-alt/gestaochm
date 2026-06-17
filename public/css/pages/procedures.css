@@ -1281,3 +1281,410 @@ html[data-chm-theme="corporate-light"] .procedures-form-page .form-input {
         width: 100%;
     }
 }
+
+/* CHM corporate refinement - Visual batch 3 */
+.procedures-page,
+.procedures-form-page {
+    --procedure-bg: #111827;
+    --procedure-surface: #172033;
+    --procedure-surface-2: #1d293d;
+    --procedure-surface-3: #223049;
+    --procedure-border: rgba(148, 163, 184, .18);
+    --procedure-border-strong: rgba(203, 213, 225, .26);
+    --procedure-text: #f8fafc;
+    --procedure-muted: #cbd5e1;
+    --procedure-soft: #94a3b8;
+    --procedure-brand: #ef4444;
+    --procedure-brand-soft: rgba(239, 68, 68, .12);
+    --procedure-blue-soft: rgba(96, 165, 250, .12);
+    --procedure-warning-soft: rgba(245, 158, 11, .12);
+    --procedure-ok-soft: rgba(34, 197, 94, .10);
+}
+
+.procedures-page *,
+.procedures-form-page * {
+    box-sizing: border-box;
+}
+
+.procedures-page {
+    gap: 18px;
+}
+
+.procedures-page .procedures-header,
+.procedures-form-page .procedures-form-header {
+    padding: 22px;
+    border-radius: 14px;
+    background: var(--procedure-surface);
+    border: 1px solid var(--procedure-border);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .16);
+}
+
+.procedures-page .procedures-kicker {
+    margin-bottom: 10px;
+    color: #fecaca;
+    background: var(--procedure-brand-soft);
+    border-color: rgba(239, 68, 68, .22);
+}
+
+.procedures-page .procedures-header h1,
+.procedures-form-page .procedures-form-header h1 {
+    color: var(--procedure-text);
+    font-size: clamp(24px, 2.3vw, 30px);
+    letter-spacing: -.035em;
+}
+
+.procedures-page .procedures-header p,
+.procedures-form-page .procedures-form-header p {
+    max-width: 760px;
+    color: var(--procedure-muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.procedures-page .procedures-summary-grid {
+    gap: 12px;
+}
+
+.procedures-page .procedures-summary-card,
+.procedures-page .procedure-card,
+.procedures-page .procedures-empty,
+.procedures-form-page .procedure-main-card,
+.procedures-form-page .procedure-side-card,
+.procedures-form-page .procedure-section,
+.procedures-form-page .validity-card,
+.procedures-form-page .procedure-field-row,
+.procedures-form-page .procedure-fields-empty,
+.procedures-form-page .summary-empty {
+    color: var(--procedure-text);
+    background: var(--procedure-surface);
+    border: 1px solid var(--procedure-border);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.procedures-page .procedures-summary-card,
+.procedures-page .procedure-card {
+    padding: 16px;
+}
+
+.procedures-page .procedure-card:hover {
+    border-color: var(--procedure-border-strong);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, .14);
+    transform: translateY(-1px);
+}
+
+.procedures-page .procedures-summary-icon,
+.procedures-page .procedure-icon,
+.procedures-page .procedures-empty-icon {
+    color: #e5e7eb;
+    background: var(--procedure-surface-2);
+    border: 1px solid var(--procedure-border);
+}
+
+.procedures-page .procedures-summary-card strong,
+.procedures-page .procedure-title-block h3,
+.procedures-page .procedures-section-header h2,
+.procedures-form-page .procedure-section-header h3,
+.procedures-form-page .procedure-side-card h3 {
+    color: var(--procedure-text);
+}
+
+.procedures-page .procedures-summary-card span,
+.procedures-page .procedures-summary-card p,
+.procedures-page .procedures-section-header p,
+.procedures-page .procedure-fields-header span,
+.procedures-page .procedures-empty p,
+.procedures-form-page .procedure-section-header p,
+.procedures-form-page .validity-helper,
+.procedures-form-page .summary-empty {
+    color: var(--procedure-soft);
+}
+
+.procedures-page .procedure-fields-wrapper {
+    padding: 13px;
+    border-radius: 10px;
+    background: var(--procedure-surface-2);
+    border-color: var(--procedure-border);
+}
+
+.procedures-page .procedure-fields-header strong {
+    color: #e5e7eb;
+    background: var(--procedure-surface-3);
+    border-color: var(--procedure-border);
+}
+
+.procedures-page .procedure-rule-badge,
+.procedures-page .field-pill,
+.procedures-page .procedure-empty-fields {
+    color: var(--procedure-muted);
+    background: var(--procedure-surface-3);
+    border-color: var(--procedure-border);
+    border-radius: 8px;
+}
+
+.procedures-page .procedure-rule-badge.km {
+    color: #bfdbfe;
+    background: var(--procedure-blue-soft);
+    border-color: rgba(96, 165, 250, .25);
+}
+
+.procedures-page .procedure-rule-badge.hours {
+    color: #fde68a;
+    background: var(--procedure-warning-soft);
+    border-color: rgba(245, 158, 11, .25);
+}
+
+.procedures-page .procedure-rule-badge.days {
+    color: #fecaca;
+    background: var(--procedure-brand-soft);
+    border-color: rgba(239, 68, 68, .22);
+}
+
+.procedures-page .procedure-edit-btn,
+.procedures-page .chm-page-button,
+.procedures-form-page .procedure-back-button,
+.procedures-form-page .procedure-add-field-btn,
+.procedures-form-page .procedure-cancel-btn,
+.procedures-form-page .chm-page-button {
+    min-height: 38px;
+    color: var(--procedure-muted);
+    background: var(--procedure-surface-2);
+    border: 1px solid var(--procedure-border);
+    border-radius: 9px;
+    box-shadow: none;
+    text-decoration: none;
+}
+
+.procedures-page .procedure-edit-btn:hover,
+.procedures-page .chm-page-button.secondary:hover,
+.procedures-form-page .procedure-back-button:hover,
+.procedures-form-page .procedure-add-field-btn:hover,
+.procedures-form-page .procedure-cancel-btn:hover {
+    color: var(--procedure-text);
+    background: var(--procedure-surface-3);
+    border-color: var(--procedure-border-strong);
+    transform: none;
+}
+
+.procedures-page .chm-page-button.primary,
+.procedures-form-page .chm-page-button.primary,
+.procedures-form-page .procedure-side-actions .chm-page-button.primary {
+    color: #fff;
+    background: #b91c1c;
+    border-color: rgba(248, 113, 113, .35);
+    box-shadow: none;
+}
+
+.procedures-page .chm-page-button.primary:hover,
+.procedures-form-page .chm-page-button.primary:hover,
+.procedures-form-page .procedure-side-actions .chm-page-button.primary:hover {
+    background: #dc2626;
+    border-color: rgba(252, 165, 165, .48);
+    transform: none;
+}
+
+.procedures-form-page .procedure-form-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    gap: 16px;
+    align-items: start;
+}
+
+.procedures-form-page .procedure-main-card,
+.procedures-form-page .procedure-side-card {
+    padding: 16px;
+}
+
+.procedures-form-page .procedure-section {
+    padding: 15px;
+    background: var(--procedure-surface-2);
+}
+
+.procedures-form-page .procedure-two-cols,
+.procedures-form-page .procedure-validity-grid,
+.procedures-form-page .procedure-field-main-row,
+.procedures-form-page .procedure-field-stock-row {
+    gap: 10px;
+}
+
+.procedures-form-page .form-group label,
+.procedures-form-page .validity-check,
+.procedures-form-page .procedure-option-check {
+    color: var(--procedure-muted);
+}
+
+.procedures-form-page .form-input {
+    width: 100%;
+    min-width: 0;
+    color: var(--procedure-text);
+    background: #111a2b;
+    border: 1px solid var(--procedure-border);
+    border-radius: 9px;
+}
+
+.procedures-form-page .form-input:focus {
+    border-color: rgba(148, 163, 184, .46);
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, .12);
+    outline: none;
+}
+
+.procedures-form-page .validity-card,
+.procedures-form-page .procedure-field-row {
+    padding: 12px;
+    background: var(--procedure-surface);
+}
+
+.procedures-form-page .validity-card {
+    gap: 10px;
+}
+
+.procedures-form-page .procedure-field-main-row {
+    grid-template-columns: minmax(170px, 1fr) minmax(140px, .65fr) minmax(120px, auto) 40px;
+}
+
+.procedures-form-page .procedure-field-stock-row {
+    grid-template-columns: minmax(170px, 1fr) minmax(140px, .65fr);
+}
+
+.procedures-form-page .procedure-field-main-row > *,
+.procedures-form-page .procedure-field-stock-row > *,
+.procedures-form-page .procedure-field-options,
+.procedures-form-page .procedure-option-check {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.procedures-form-page .procedure-option-check {
+    background: var(--procedure-surface-2);
+    border-color: var(--procedure-border);
+    border-radius: 8px;
+}
+
+.procedures-form-page .field-remove-btn {
+    color: #fecaca;
+    background: rgba(239, 68, 68, .10);
+    border-color: rgba(239, 68, 68, .24);
+    border-radius: 9px;
+}
+
+.procedures-form-page .field-remove-btn:hover {
+    background: rgba(239, 68, 68, .16);
+    border-color: rgba(248, 113, 113, .35);
+}
+
+.procedures-form-page .procedure-summary-list .summary-item,
+.procedures-form-page .procedure-summary-list > li {
+    min-width: 0;
+    padding: 10px 0;
+    color: var(--procedure-muted);
+    border-color: var(--procedure-border);
+}
+
+.procedures-form-page .procedure-summary-list .summary-item > *,
+.procedures-form-page .procedure-summary-list > li > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.procedures-form-page .procedure-side-actions {
+    gap: 8px;
+}
+
+.procedures-form-page .procedure-side-actions > * {
+    width: 100%;
+}
+
+html[data-chm-theme="corporate-light"] .procedures-page,
+html[data-chm-theme="corporate-light"] .procedures-form-page {
+    --procedure-bg: #263249;
+    --procedure-surface: #34425b;
+    --procedure-surface-2: #3b4a66;
+    --procedure-surface-3: #435373;
+    --procedure-border: rgba(203, 213, 225, .24);
+    --procedure-border-strong: rgba(226, 232, 240, .36);
+    --procedure-text: #f8fafc;
+    --procedure-muted: #e2e8f0;
+    --procedure-soft: #cbd5e1;
+}
+
+html[data-chm-theme="corporate-light"] .procedures-form-page .form-input {
+    background: #4a5b7a;
+    border-color: rgba(226, 232, 240, .28);
+}
+
+html[data-chm-theme="corporate-light"] .procedures-page .procedures-summary-icon,
+html[data-chm-theme="corporate-light"] .procedures-page .procedure-icon,
+html[data-chm-theme="corporate-light"] .procedures-page .procedures-empty-icon {
+    background: #435373;
+}
+
+@media (max-width: 1180px) {
+    .procedures-page .procedures-header,
+    .procedures-form-page .procedures-form-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .procedures-page .procedures-header-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .procedures-form-page .procedure-form-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .procedures-form-page .procedure-side-card {
+        position: static;
+    }
+}
+
+@media (max-width: 760px) {
+    .procedures-page,
+    .procedures-form-page {
+        gap: 14px;
+    }
+
+    .procedures-page .procedures-header,
+    .procedures-form-page .procedures-form-header,
+    .procedures-page .procedures-summary-card,
+    .procedures-page .procedure-card,
+    .procedures-form-page .procedure-main-card,
+    .procedures-form-page .procedure-side-card,
+    .procedures-form-page .procedure-section {
+        padding: 14px;
+        border-radius: 11px;
+    }
+
+    .procedures-page .procedures-header h1,
+    .procedures-form-page .procedures-form-header h1 {
+        font-size: 23px;
+    }
+
+    .procedures-page .procedures-header-actions,
+    .procedures-page .chm-page-button,
+    .procedures-page .procedure-edit-btn,
+    .procedures-form-page .procedure-back-button,
+    .procedures-form-page .procedure-add-field-btn,
+    .procedures-form-page .procedure-cancel-btn,
+    .procedures-form-page .chm-page-button {
+        width: 100%;
+    }
+
+    .procedures-form-page .procedure-two-cols,
+    .procedures-form-page .procedure-validity-grid,
+    .procedures-form-page .procedure-field-main-row,
+    .procedures-form-page .procedure-field-stock-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .procedures-form-page .procedure-section-header.with-action {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .procedures-form-page .procedure-field-options,
+    .procedures-form-page .procedure-option-check,
+    .procedures-form-page .field-remove-btn {
+        width: 100%;
+    }
+}
