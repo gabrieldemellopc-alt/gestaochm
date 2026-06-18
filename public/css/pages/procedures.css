@@ -1,576 +1,1149 @@
-.procedures-page {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-/* HEADER */
-
-.procedures-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 24px;
-    padding: 28px;
-    border-radius: 28px;
-    background: #111827;
-    border: 1px solid rgba(148, 163, 184, .14);
-    box-shadow: 0 18px 42px rgba(0, 0, 0, .18);
-}
-
-.procedures-kicker {
-    width: fit-content;
-    display: inline-flex;
-    align-items: center;
-    padding: 7px 13px;
-    margin-bottom: 14px;
-    border-radius: 999px;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .18);
-    color: #86efac;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-}
-
-.procedures-header h1 {
-    margin: 0;
-    color: #f8fafc;
-    font-size: 34px;
-    font-weight: 900;
-    letter-spacing: -.05em;
-}
-
-.procedures-header p {
-    max-width: 720px;
-    margin: 10px 0 0;
-    color: #94a3b8;
-    font-size: 14px;
-    line-height: 1.65;
-    font-weight: 600;
-}
-
-.procedures-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-}
-
-/* BOTÕES */
-
-.chm-page-button {
-    min-height: 42px;
-    padding: 0 15px;
-    border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, .14);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 850;
-    cursor: pointer;
-    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
-}
-
-.chm-page-button svg {
-    width: 17px;
-    height: 17px;
-}
-
-.chm-page-button.primary {
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border-color: rgba(34, 197, 94, .22);
-}
-
-.chm-page-button.primary:hover {
-    color: #bbf7d0;
-    background: rgba(34, 197, 94, .15);
-    border-color: rgba(34, 197, 94, .34);
-    transform: translateY(-1px);
-}
-
-.chm-page-button.secondary {
-    color: #cbd5e1;
-    background: rgba(148, 163, 184, .07);
-    border-color: rgba(148, 163, 184, .14);
-}
-
-.chm-page-button.secondary:hover {
-    color: #f8fafc;
-    background: rgba(148, 163, 184, .11);
-    border-color: rgba(148, 163, 184, .24);
-    transform: translateY(-1px);
-}
-
-/* SUMMARY */
-
-.procedures-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.procedures-summary-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 18px;
-    border-radius: 22px;
-    background: #111827;
-    border: 1px solid rgba(148, 163, 184, .14);
-    box-shadow: 0 14px 32px rgba(0, 0, 0, .12);
-}
-
-.procedures-summary-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .18);
-    flex-shrink: 0;
-}
-
-.procedures-summary-icon svg {
-    width: 22px;
-    height: 22px;
-}
-
-.procedures-summary-card span {
-    display: block;
-    color: #94a3b8;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.procedures-summary-card strong {
-    display: block;
-    margin-top: 2px;
-    color: #f8fafc;
-    font-size: 25px;
-    font-weight: 900;
-    letter-spacing: -.04em;
-}
-
-.procedures-summary-card p {
-    margin: 2px 0 0;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 650;
-}
-
-/* SECTION HEADER */
-
-.procedures-section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 24px;
-    padding: 0 2px;
-}
-
-.procedures-section-header span {
-    display: block;
-    margin-bottom: 6px;
-    color: #86efac;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-}
-
-.procedures-section-header h2 {
-    margin: 0;
-    color: #f8fafc;
-    font-size: 22px;
-    font-weight: 900;
-    letter-spacing: -.04em;
-}
-
-.procedures-section-header p {
-    max-width: 520px;
-    margin: 0;
-    color: #94a3b8;
-    font-size: 13px;
-    line-height: 1.5;
-    font-weight: 600;
-    text-align: right;
-}
-
-/* GRID */
-
-.procedures-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-}
-
-/* CARD */
-
-.procedure-card {
-    min-height: 290px;
-    display: flex;
-    flex-direction: column;
-    padding: 22px;
-    border-radius: 24px;
-    background: #111827;
-    border: 1px solid rgba(148, 163, 184, .14);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, .14);
-    transition: border-color .18s ease, transform .18s ease, background .18s ease;
-}
-
-.procedure-card:hover {
-    background: #131d2f;
-    border-color: rgba(134, 239, 172, .22);
-    transform: translateY(-2px);
-}
-
-.procedure-card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 20px;
-}
-
-.procedure-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 13px;
-    min-width: 0;
-}
-
-.procedure-color {
-    width: 5px;
-    min-height: 52px;
-    border-radius: 999px;
-    flex-shrink: 0;
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, .03);
-}
-
-.procedure-title-block {
-    min-width: 0;
-}
-
-.procedure-title-block h3 {
-    margin: 0;
-    color: #f8fafc;
-    font-size: 18px;
-    font-weight: 900;
-    letter-spacing: -.03em;
-    line-height: 1.25;
-}
-
-.procedure-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .18);
-    flex-shrink: 0;
-}
-
-.procedure-icon svg {
-    width: 22px;
-    height: 22px;
-}
-
-/* BADGES */
-
-.procedure-rules {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 12px;
-}
-
-.procedure-rule-badge {
-    min-height: 28px;
-    padding: 0 9px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 850;
-    color: #cbd5e1;
-    background: rgba(148, 163, 184, .08);
-    border: 1px solid rgba(148, 163, 184, .14);
-}
-
-.procedure-rule-badge svg {
-    width: 13px;
-    height: 13px;
-}
-
-.procedure-rule-badge.km {
-    color: #93c5fd;
-    background: rgba(59, 130, 246, .10);
-    border-color: rgba(59, 130, 246, .20);
-}
-
-.procedure-rule-badge.hours {
-    color: #fde68a;
-    background: rgba(245, 158, 11, .10);
-    border-color: rgba(245, 158, 11, .20);
-}
-
-.procedure-rule-badge.days {
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border-color: rgba(34, 197, 94, .20);
-}
-
-.procedure-rule-badge.muted {
-    color: #94a3b8;
-    background: rgba(148, 163, 184, .07);
-    border-color: rgba(148, 163, 184, .13);
-}
-
-/* FIELDS */
-
-.procedure-fields-wrapper {
-    margin-top: auto;
-    padding: 16px;
-    border-radius: 18px;
-    background: #0f172a;
-    border: 1px solid rgba(148, 163, 184, .11);
-}
-
-.procedure-fields-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.procedure-fields-header span {
-    color: #94a3b8;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: .10em;
-    text-transform: uppercase;
-}
-
-.procedure-fields-header strong {
-    min-width: 26px;
-    height: 26px;
-    padding: 0 8px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .16);
-    font-size: 12px;
-    font-weight: 900;
-}
-
-.procedure-fields {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.field-pill {
-    min-height: 30px;
-    padding: 0 10px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #cbd5e1;
-    background: rgba(148, 163, 184, .07);
-    border: 1px solid rgba(148, 163, 184, .12);
-    font-size: 12px;
-    font-weight: 750;
-}
-
-.field-pill svg {
-    width: 13px;
-    height: 13px;
-    color: #94a3b8;
-}
-
-.procedure-empty-fields {
-    width: 100%;
-    min-height: 38px;
-    padding: 0 12px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #94a3b8;
-    background: rgba(148, 163, 184, .05);
-    border: 1px dashed rgba(148, 163, 184, .16);
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.procedure-empty-fields svg {
-    width: 14px;
-    height: 14px;
-}
-
-/* FOOTER */
-
-.procedure-footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 16px;
-}
-
-.procedure-edit-btn {
-    min-height: 38px;
-    padding: 0 13px;
-    border-radius: 13px;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .18);
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 850;
-    transition: background .18s ease, border-color .18s ease, transform .18s ease;
-}
-
-.procedure-edit-btn:hover {
-    color: #bbf7d0;
-    background: rgba(34, 197, 94, .14);
-    border-color: rgba(34, 197, 94, .30);
-    transform: translateY(-1px);
-}
-
-.procedure-edit-btn svg {
-    width: 14px;
-    height: 14px;
-}
-
-/* EMPTY */
-
-.procedures-empty {
-    grid-column: 1 / -1;
-    min-height: 320px;
-    padding: 34px;
-    border-radius: 26px;
-    background: #111827;
-    border: 1px dashed rgba(148, 163, 184, .20);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #94a3b8;
-    text-align: center;
-}
-
-.procedures-empty-icon {
-    width: 62px;
-    height: 62px;
-    margin-bottom: 16px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .18);
-}
-
-.procedures-empty-icon svg {
-    width: 30px;
-    height: 30px;
-}
-
-.procedures-empty strong {
-    color: #f8fafc;
-    font-size: 18px;
-    font-weight: 900;
-}
-
-.procedures-empty p {
-    max-width: 460px;
-    margin: 8px 0 20px;
-    color: #94a3b8;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-/* RESPONSIVO */
-
-@media (max-width: 1200px) {
-    .procedures-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .procedures-summary-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 760px) {
-    .procedures-header {
-        flex-direction: column;
-        padding: 22px;
-        border-radius: 24px;
-    }
-
-    .procedures-header h1 {
-        font-size: 28px;
-    }
-
-    .procedures-header-actions {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .chm-page-button {
-        width: 100%;
-    }
-
-    .procedures-summary-grid,
-    .procedures-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .procedures-section-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .procedures-section-header p {
-        text-align: left;
-    }
-
-    .procedure-card {
-        padding: 18px;
-        border-radius: 22px;
-    }
-
-    .procedure-card-header {
-        align-items: flex-start;
-    }
-
-    .procedure-icon {
-        width: 42px;
-        height: 42px;
-    }
+.procedures-page {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 24px;
+
+}
+
+
+
+/* HEADER */
+
+
+
+.procedures-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 24px;
+
+    padding: 28px;
+
+    border-radius: 28px;
+
+    background: #111827;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+
+    box-shadow: 0 18px 42px rgba(0, 0, 0, .18);
+
+}
+
+
+
+.procedures-kicker {
+
+    width: fit-content;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 7px 13px;
+
+    margin-bottom: 14px;
+
+    border-radius: 999px;
+
+    background: rgba(34, 197, 94, .10);
+
+    border: 1px solid rgba(34, 197, 94, .18);
+
+    color: #86efac;
+
+    font-size: 11px;
+
+    font-weight: 900;
+
+    letter-spacing: .14em;
+
+    text-transform: uppercase;
+
+}
+
+
+
+.procedures-header h1 {
+
+    margin: 0;
+
+    color: #f8fafc;
+
+    font-size: 34px;
+
+    font-weight: 900;
+
+    letter-spacing: -.05em;
+
+}
+
+
+
+.procedures-header p {
+
+    max-width: 720px;
+
+    margin: 10px 0 0;
+
+    color: #94a3b8;
+
+    font-size: 14px;
+
+    line-height: 1.65;
+
+    font-weight: 600;
+
+}
+
+
+
+.procedures-header-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    flex-shrink: 0;
+
+}
+
+
+
+/* BOTÕES */
+
+
+
+.chm-page-button {
+
+    min-height: 42px;
+
+    padding: 0 15px;
+
+    border-radius: 14px;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 850;
+
+    cursor: pointer;
+
+    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+
+}
+
+
+
+.chm-page-button svg {
+
+    width: 17px;
+
+    height: 17px;
+
+}
+
+
+
+.chm-page-button.primary {
+
+    color: #86efac;
+
+    background: rgba(34, 197, 94, .10);
+
+    border-color: rgba(34, 197, 94, .22);
+
+}
+
+
+
+.chm-page-button.primary:hover {
+
+    color: #bbf7d0;
+
+    background: rgba(34, 197, 94, .15);
+
+    border-color: rgba(34, 197, 94, .34);
+
+    transform: translateY(-1px);
+
+}
+
+
+
+.chm-page-button.secondary {
+
+    color: #cbd5e1;
+
+    background: rgba(148, 163, 184, .07);
+
+    border-color: rgba(148, 163, 184, .14);
+
+}
+
+
+
+.chm-page-button.secondary:hover {
+
+    color: #f8fafc;
+
+    background: rgba(148, 163, 184, .11);
+
+    border-color: rgba(148, 163, 184, .24);
+
+    transform: translateY(-1px);
+
+}
+
+
+
+/* SUMMARY */
+
+
+
+.procedures-summary-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 16px;
+
+}
+
+
+
+.procedures-summary-card {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 18px;
+
+    border-radius: 22px;
+
+    background: #111827;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+
+    box-shadow: 0 14px 32px rgba(0, 0, 0, .12);
+
+}
+
+
+
+.procedures-summary-icon {
+
+    width: 46px;
+
+    height: 46px;
+
+    border-radius: 16px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #86efac;
+
+    background: rgba(34, 197, 94, .10);
+
+    border: 1px solid rgba(34, 197, 94, .18);
+
+    flex-shrink: 0;
+
+}
+
+
+
+.procedures-summary-icon svg {
+
+    width: 22px;
+
+    height: 22px;
+
+}
+
+
+
+.procedures-summary-card span {
+
+    display: block;
+
+    color: #94a3b8;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+}
+
+
+
+.procedures-summary-card strong {
+
+    display: block;
+
+    margin-top: 2px;
+
+    color: #f8fafc;
+
+    font-size: 25px;
+
+    font-weight: 900;
+
+    letter-spacing: -.04em;
+
+}
+
+
+
+.procedures-summary-card p {
+
+    margin: 2px 0 0;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+    font-weight: 650;
+
+}
+
+
+
+/* SECTION HEADER */
+
+
+
+.procedures-section-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-end;
+
+    gap: 24px;
+
+    padding: 0 2px;
+
+}
+
+
+
+.procedures-section-header span {
+
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #86efac;
+
+    font-size: 11px;
+
+    font-weight: 900;
+
+    letter-spacing: .12em;
+
+    text-transform: uppercase;
+
+}
+
+
+
+.procedures-section-header h2 {
+
+    margin: 0;
+
+    color: #f8fafc;
+
+    font-size: 22px;
+
+    font-weight: 900;
+
+    letter-spacing: -.04em;
+
+}
+
+
+
+.procedures-section-header p {
+
+    max-width: 520px;
+
+    margin: 0;
+
+    color: #94a3b8;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+
+    font-weight: 600;
+
+    text-align: right;
+
+}
+
+
+
+/* GRID */
+
+
+
+.procedures-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 18px;
+
+}
+
+
+
+/* CARD */
+
+
+
+.procedure-card {
+
+    min-height: 290px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    padding: 22px;
+
+    border-radius: 24px;
+
+    background: #111827;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+
+    box-shadow: 0 16px 36px rgba(0, 0, 0, .14);
+
+    transition: border-color .18s ease, transform .18s ease, background .18s ease;
+
+}
+
+
+
+.procedure-card:hover {
+
+    background: #131d2f;
+
+    border-color: rgba(134, 239, 172, .22);
+
+    transform: translateY(-2px);
+
+}
+
+
+
+.procedure-card-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+.procedure-main {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 13px;
+
+    min-width: 0;
+
+}
+
+
+
+.procedure-color {
+
+    width: 5px;
+
+    min-height: 52px;
+
+    border-radius: 999px;
+
+    flex-shrink: 0;
+
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, .03);
+
+}
+
+
+
+.procedure-title-block {
+
+    min-width: 0;
+
+}
+
+
+
+.procedure-title-block h3 {
+
+    margin: 0;
+
+    color: #f8fafc;
+
+    font-size: 18px;
+
+    font-weight: 900;
+
+    letter-spacing: -.03em;
+
+    line-height: 1.25;
+
+}
+
+
+
+.procedure-icon {
+
+    width: 46px;
+
+    height: 46px;
+
+    border-radius: 16px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #86efac;
+
+    background: rgba(34, 197, 94, .10);
+
+    border: 1px solid rgba(34, 197, 94, .18);
+
+    flex-shrink: 0;
+
+}
+
+
+
+.procedure-icon svg {
+
+    width: 22px;
+
+    height: 22px;
+
+}
+
+
+
+/* BADGES */
+
+
+
+.procedure-rules {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    margin-top: 12px;
+
+}
+
+
+
+.procedure-rule-badge {
+
+    min-height: 28px;
+
+    padding: 0 9px;
+
+    border-radius: 999px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 11px;
+
+    font-weight: 850;
+
+    color: #cbd5e1;
+
+    background: rgba(148, 163, 184, .08);
+
+    border: 1px solid rgba(148, 163, 184, .14);
+
+}
+
+
+
+.procedure-rule-badge svg {
+
+    width: 13px;
+
+    height: 13px;
+
+}
+
+
+
+.procedure-rule-badge.km {
+
+    color: #93c5fd;
+
+    background: rgba(59, 130, 246, .10);
+
+    border-color: rgba(59, 130, 246, .20);
+
+}
+
+
+
+.procedure-rule-badge.hours {
+
+    color: #fde68a;
+
+    background: rgba(245, 158, 11, .10);
+
+    border-color: rgba(245, 158, 11, .20);
+
+}
+
+
+
+.procedure-rule-badge.days {
+
+    color: #86efac;
+
+    background: rgba(34, 197, 94, .10);
+
+    border-color: rgba(34, 197, 94, .20);
+
+}
+
+
+
+.procedure-rule-badge.muted {
+
+    color: #94a3b8;
+
+    background: rgba(148, 163, 184, .07);
+
+    border-color: rgba(148, 163, 184, .13);
+
+}
+
+
+
+/* FIELDS */
+
+
+
+.procedure-fields-wrapper {
+
+    margin-top: auto;
+
+    padding: 16px;
+
+    border-radius: 18px;
+
+    background: #0f172a;
+
+    border: 1px solid rgba(148, 163, 184, .11);
+
+}
+
+
+
+.procedure-fields-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 12px;
+
+}
+
+
+
+.procedure-fields-header span {
+
+    color: #94a3b8;
+
+    font-size: 11px;
+
+    font-weight: 900;
+
+    letter-spacing: .10em;
+
+    text-transform: uppercase;
+
+}
+
+
+
+.procedure-fields-header strong {
+
+    min-width: 26px;
+
+    height: 26px;
+
+    padding: 0 8px;
+
+    border-radius: 999px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #86efac;
+
+    background: rgba(34, 197, 94, .10);
+
+    border: 1px solid rgba(34, 197, 94, .16);
+
+    font-size: 12px;
+
+    font-weight: 900;
+
+}
+
+
+
+.procedure-fields {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+}
+
+
+
+.field-pill {
+
+    min-height: 30px;
+
+    padding: 0 10px;
+
+    border-radius: 999px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: #cbd5e1;
+
+    background: rgba(148, 163, 184, .07);
+
+    border: 1px solid rgba(148, 163, 184, .12);
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+}
+
+
+
+.field-pill svg {
+
+    width: 13px;
+
+    height: 13px;
+
+    color: #94a3b8;
+
+}
+
+
+
+.procedure-empty-fields {
+
+    width: 100%;
+
+    min-height: 38px;
+
+    padding: 0 12px;
+
+    border-radius: 14px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: #94a3b8;
+
+    background: rgba(148, 163, 184, .05);
+
+    border: 1px dashed rgba(148, 163, 184, .16);
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+}
+
+
+
+.procedure-empty-fields svg {
+
+    width: 14px;
+
+    height: 14px;
+
+}
+
+
+
+/* FOOTER */
+
+
+
+.procedure-footer {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    margin-top: 16px;
+
+}
+
+
+
+.procedure-edit-btn {
+
+    min-height: 38px;
+
+    padding: 0 13px;
+
+    border-radius: 13px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    color: #86efac;
+
+    background: rgba(34, 197, 94, .10);
+
+    border: 1px solid rgba(34, 197, 94, .18);
+
+    text-decoration: none;
+
+    font-size: 12px;
+
+    font-weight: 850;
+
+    transition: background .18s ease, border-color .18s ease, transform .18s ease;
+
+}
+
+
+
+.procedure-edit-btn:hover {
+
+    color: #bbf7d0;
+
+    background: rgba(34, 197, 94, .14);
+
+    border-color: rgba(34, 197, 94, .30);
+
+    transform: translateY(-1px);
+
+}
+
+
+
+.procedure-edit-btn svg {
+
+    width: 14px;
+
+    height: 14px;
+
+}
+
+
+
+/* EMPTY */
+
+
+
+.procedures-empty {
+
+    grid-column: 1 / -1;
+
+    min-height: 320px;
+
+    padding: 34px;
+
+    border-radius: 26px;
+
+    background: #111827;
+
+    border: 1px dashed rgba(148, 163, 184, .20);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #94a3b8;
+
+    text-align: center;
+
+}
+
+
+
+.procedures-empty-icon {
+
+    width: 62px;
+
+    height: 62px;
+
+    margin-bottom: 16px;
+
+    border-radius: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #86efac;
+
+    background: rgba(34, 197, 94, .10);
+
+    border: 1px solid rgba(34, 197, 94, .18);
+
+}
+
+
+
+.procedures-empty-icon svg {
+
+    width: 30px;
+
+    height: 30px;
+
+}
+
+
+
+.procedures-empty strong {
+
+    color: #f8fafc;
+
+    font-size: 18px;
+
+    font-weight: 900;
+
+}
+
+
+
+.procedures-empty p {
+
+    max-width: 460px;
+
+    margin: 8px 0 20px;
+
+    color: #94a3b8;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+}
+
+
+
+/* RESPONSIVO */
+
+
+
+@media (max-width: 1200px) {
+
+    .procedures-grid {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
+
+
+    .procedures-summary-grid {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
+}
+
+
+
+@media (max-width: 760px) {
+
+    .procedures-header {
+
+        flex-direction: column;
+
+        padding: 22px;
+
+        border-radius: 24px;
+
+    }
+
+
+
+    .procedures-header h1 {
+
+        font-size: 28px;
+
+    }
+
+
+
+    .procedures-header-actions {
+
+        width: 100%;
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+    }
+
+
+
+    .chm-page-button {
+
+        width: 100%;
+
+    }
+
+
+
+    .procedures-summary-grid,
+
+    .procedures-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+
+    .procedures-section-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+
+
+    .procedures-section-header p {
+
+        text-align: left;
+
+    }
+
+
+
+    .procedure-card {
+
+        padding: 18px;
+
+        border-radius: 22px;
+
+    }
+
+
+
+    .procedure-card-header {
+
+        align-items: flex-start;
+
+    }
+
+
+
+    .procedure-icon {
+
+        width: 42px;
+
+        height: 42px;
+
+    }
+
 }
 
 /* CHM corporate visual layer */
@@ -897,7 +1470,7 @@
 html[data-chm-theme="corporate-light"] .procedures-page,
 html[data-chm-theme="corporate-light"] .procedures-form-page {
     --procedures-surface: var(--chm-theme-card, #3b4a66);
-    --procedures-surface-soft: var(--chm-theme-card-elevated, #435373);
+    --procedures#b9434ce-soft: var(--chm-theme-card-elevated, #435373);
     --procedures-surface-muted: var(--chm-theme-surface, #34425b);
     --procedures-border: var(--chm-theme-border, rgba(226, 232, 240, .26));
     --procedures-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .38));
@@ -1478,7 +2051,7 @@ html[data-chm-theme="corporate-light"] .procedures-form-page .form-input {
 .procedures-page .chm-page-button.primary:hover,
 .procedures-form-page .chm-page-button.primary:hover,
 .procedures-form-page .procedure-side-actions .chm-page-button.primary:hover {
-    background: #dc2626;
+    background: #c94c55;
     border-color: rgba(252, 165, 165, .48);
     transform: none;
 }

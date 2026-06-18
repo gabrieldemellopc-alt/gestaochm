@@ -534,8 +534,8 @@ html[data-chm-theme="corporate-light"] .login-page .login-panel { background: #3
     --auth-text: #f8fafc;
     --auth-muted: #cbd5e1;
     --auth-soft: #94a3b8;
-    --auth-red: #b91c1c;
-    --auth-red-hover: #dc2626;
+    --auth-red: #b9434c;
+    --auth-red-hover: #c94c55;
 }
 
 .auth-guest-page .auth-guest-shell {

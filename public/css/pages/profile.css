@@ -88,8 +88,8 @@ html[data-chm-theme="corporate-light"] .profile-page-title {
     --profile-text: #f8fafc;
     --profile-muted: #cbd5e1;
     --profile-soft: #94a3b8;
-    --profile-red: #b91c1c;
-    --profile-red-hover: #dc2626;
+    --profile-red: #b9434c;
+    --profile-red-hover: #c94c55;
 }
 
 .profile-page *,
@@ -215,7 +215,7 @@ html[data-chm-theme="corporate-light"] .profile-page-title {
 }
 
 .profile-page button.bg-red-600:hover {
-    background: #b91c1c;
+    background: #b9434c;
 }
 
 .profile-page button.bg-white {
