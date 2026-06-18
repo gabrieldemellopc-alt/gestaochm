@@ -4962,3 +4962,101 @@ html[data-chm-theme="corporate-light"] .stock-modal-overlay .stock-edit-content 
         width: 100%;
     }
 }
+
+/* Movement cancellation/reversal readability */
+.stock-modal-overlay .stock-movement-history-list .movement-row {
+    position: relative;
+}
+
+.stock-modal-overlay .stock-movement-history-list .movement-row.is-cancelled {
+    background: rgba(223, 116, 124, .10);
+    border-color: rgba(223, 116, 124, .30);
+}
+
+.stock-modal-overlay .stock-movement-history-list .movement-row.is-reversal {
+    background: rgba(189, 150, 76, .10);
+    border-color: rgba(189, 150, 76, .28);
+}
+
+.stock-modal-overlay .stock-movement-history-list .movement-row.is-maintenance {
+    background: rgba(120, 146, 184, .10);
+    border-color: rgba(120, 146, 184, .30);
+}
+
+.stock-modal-overlay .stock-movement-badges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.stock-modal-overlay .stock-status-badge.info {
+    color: #d8e3f5;
+    background: rgba(120, 146, 184, .18);
+    border-color: rgba(120, 146, 184, .36);
+}
+
+.stock-modal-overlay .stock-status-badge.muted {
+    color: #c4ccdc;
+    background: rgba(148, 163, 184, .14);
+    border-color: rgba(148, 163, 184, .30);
+}
+
+.stock-modal-overlay .stock-movement-lock {
+    display: block;
+    margin-top: 6px;
+    color: #aeb9dc;
+}
+
+.stock-modal-overlay .stock-movement-cancel-form {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--stock-border);
+}
+
+.stock-modal-overlay .stock-movement-cancel-form textarea {
+    min-height: 68px;
+    resize: vertical;
+    color: var(--stock-text);
+    background: var(--stock-input);
+    border: 1px solid var(--stock-border);
+    border-radius: 10px;
+    padding: 9px 10px;
+}
+
+.stock-modal-overlay .stock-movement-cancel-form .stock-modal-cancel {
+    justify-self: start;
+    color: #f5c1c5;
+    background: rgba(223, 116, 124, .14);
+    border-color: rgba(223, 116, 124, .34);
+}
+
+html[data-chm-theme="corporate-light"] .stock-modal-overlay .stock-movement-history-list .movement-row.is-cancelled {
+    background: rgba(196, 86, 95, .16);
+}
+
+html[data-chm-theme="corporate-light"] .stock-modal-overlay .stock-movement-history-list .movement-row.is-reversal {
+    background: rgba(166, 125, 45, .15);
+}
+
+html[data-chm-theme="corporate-light"] .stock-modal-overlay .stock-movement-history-list .movement-row.is-maintenance {
+    background: rgba(92, 116, 150, .18);
+}
+
+@media (max-width: 700px) {
+    .stock-modal-overlay .stock-movement-history-list .movement-top {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .stock-modal-overlay .stock-movement-badges {
+        margin: 6px 0 0;
+    }
+
+    .stock-modal-overlay .stock-movement-cancel-form .stock-modal-cancel {
+        width: 100%;
+    }
+}

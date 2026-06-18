@@ -1388,15 +1388,36 @@ async function openEditItemModal(id)
             const isCancelled = Boolean(movement.cancelled_at);
             const isReversal = Boolean(movement.reversed_from_movement_id);
             const isMaintenance = Boolean(movement.maintenance_record_id);
+            const isReverted = Boolean(movement.reversal_movement_id);
             const canCancelMovement = canCancelStockMovements
                 && !isCancelled
                 && !isReversal
                 && !isMaintenance;
-            const statusLabel = isCancelled
-                ? '<span class="stock-status-badge danger">Cancelada</span>'
-                : (isReversal ? '<span class="stock-status-badge warning">Reverso</span>' : '');
+            const rowClasses = [
+                isCancelled ? 'is-cancelled' : '',
+                isReversal ? 'is-reversal' : '',
+                isMaintenance ? 'is-maintenance' : '',
+            ].filter(Boolean).join(' ');
+            const movementBadges = [
+                isCancelled ? '<span class="stock-status-badge danger">Cancelada</span>' : '',
+                isReversal ? '<span class="stock-status-badge warning">Reversao</span>' : '',
+                isMaintenance ? '<span class="stock-status-badge info">Manutencao</span>' : '',
+                isReverted && !isCancelled ? '<span class="stock-status-badge muted">Revertida</span>' : '',
+            ].filter(Boolean).join('');
             const auditDetails = canViewStockAuditDetails && isCancelled && movement.cancel_reason
                 ? `<small>Motivo: ${movement.cancel_reason}</small>`
+                : '';
+            const lockReason = !canCancelMovement
+                ? (isCancelled
+                    ? 'Movimento ja cancelado.'
+                    : (isReversal
+                        ? 'Movimento reverso nao pode ser cancelado direto.'
+                        : (isMaintenance
+                            ? 'Vinculado a manutencao; cancele pela manutencao.'
+                            : 'Movimento nao cancelavel.')))
+                : '';
+            const lockNotice = lockReason
+                ? `<small class="stock-movement-lock">${lockReason}</small>`
                 : '';
             const cancelForm = canCancelMovement
                 ? `
@@ -1409,7 +1430,7 @@ async function openEditItemModal(id)
                 : '';
     
             html += `
-                <div class="movement-row">
+                <div class="movement-row ${rowClasses}">
     
                     <div class="movement-top">
     
@@ -1417,7 +1438,7 @@ async function openEditItemModal(id)
                             ${movement.movement_type === 'in'
                                 ? 'Entrada'
                                 : 'Saída'}
-                            ${statusLabel}
+                            <span class="stock-movement-badges">${movementBadges}</span>
                         </strong>
     
                         <span>
@@ -1431,6 +1452,8 @@ async function openEditItemModal(id)
                     </small>
 
                     ${auditDetails}
+
+                    ${lockNotice}
 
                     ${cancelForm}
     
