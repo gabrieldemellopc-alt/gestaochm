@@ -149,6 +149,7 @@ class WorkshopController extends Controller
                 })
                 ->where('tires.tenant_id', $tenantId)
                 ->where('tires.location_id', $activeLocation->id)
+                ->whereNull('tires.cancelled_at')
                 ->where(function ($query) use ($currentTreadSql) {
                     $query
                         ->whereRaw("{$currentTreadSql} <= tires.warning_tread_depth")
@@ -188,6 +189,7 @@ class WorkshopController extends Controller
             $latestTireEntries = DB::table('tire_entries')
                 ->where('tenant_id', $tenantId)
                 ->where('location_id', $activeLocation->id)
+                ->whereNull('cancelled_at')
                 ->latest('created_at')
                 ->limit(5)
                 ->get();

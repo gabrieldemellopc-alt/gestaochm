@@ -324,8 +324,36 @@
 
                         <small>
                             {{ $entry->invoice_number ?? 'Sem NF' }}
-                        </small>
-
+                        </small>
+
+                        @if($entry->is_cancelled)
+                            <span class="workshop-entry-status cancelled">Cancelada</span>
+                            @can('viewAuditLogs')
+                                @if($entry->cancel_reason)
+                                    <span class="workshop-entry-cancel-reason">{{ $entry->cancel_reason }}</span>
+                                @endif
+                            @endcan
+                        @else
+                            @can('cancelTireRecords')
+                                <form
+                                    method="POST"
+                                    action="{{ route('workshop.tires.entries.cancel', $entry) }}"
+                                    class="workshop-entry-cancel-form"
+                                >
+                                    @csrf
+                                    <textarea
+                                        name="reason"
+                                        rows="2"
+                                        minlength="5"
+                                        maxlength="2000"
+                                        required
+                                        placeholder="Motivo do cancelamento"
+                                    ></textarea>
+                                    <button type="submit">Cancelar</button>
+                                </form>
+                            @endcan
+                        @endif
+
                     </div>
 
                 @empty

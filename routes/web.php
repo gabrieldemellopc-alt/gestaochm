@@ -645,6 +645,11 @@ Route::middleware('auth')->group(function () {
 
         )->name('tires.entries.store');
 
+        Route::post(
+            '/tires/entries/{entry}/cancel',
+            [WorkshopTireController::class, 'cancelEntry']
+        )->name('tires.entries.cancel');
+
 
 
         Route::post(

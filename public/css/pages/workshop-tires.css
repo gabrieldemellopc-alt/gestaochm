@@ -1840,3 +1840,64 @@ html[data-chm-theme="corporate-light"] .workshop-tire-history-page .tire-history
     background: rgba(67, 83, 115, 0.9);
     border-color: rgba(203, 213, 225, 0.28);
 }
+
+/* Tire entry cancellation */
+.workshop-tires-page .workshop-entry-item.cancelled {
+    border-color: rgba(239, 68, 68, 0.26);
+    opacity: 0.82;
+}
+
+.workshop-tires-page .workshop-entry-status.cancelled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(239, 68, 68, 0.32);
+    border-radius: 999px;
+    background: rgba(127, 29, 29, 0.18);
+    color: #fecaca;
+    padding: 0.22rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.workshop-tires-page .workshop-entry-cancel-reason {
+    grid-column: 1 / -1;
+    color: #fca5a5;
+    font-size: 0.78rem;
+}
+
+.workshop-tires-page .workshop-entry-cancel-form {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 0.45rem;
+}
+
+.workshop-tires-page .workshop-entry-cancel-form textarea {
+    width: 100%;
+    min-height: 58px;
+    resize: vertical;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.62);
+    color: #f8fafc;
+    padding: 0.58rem 0.68rem;
+    font: inherit;
+}
+
+.workshop-tires-page .workshop-entry-cancel-form button {
+    justify-self: flex-start;
+    border: 1px solid rgba(239, 68, 68, 0.34);
+    border-radius: 10px;
+    background: rgba(153, 27, 27, 0.72);
+    color: #fee2e2;
+    padding: 0.48rem 0.78rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+html[data-chm-theme="corporate-light"] .workshop-tires-page .workshop-entry-cancel-form textarea {
+    background: rgba(67, 83, 115, 0.86);
+    border-color: rgba(203, 213, 225, 0.3);
+}

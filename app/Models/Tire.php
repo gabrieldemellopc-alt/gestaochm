@@ -21,6 +21,9 @@ class Tire extends Model
         'warning_tread_depth',
         'critical_tread_depth',
         'notes',
+        'cancelled_at',
+        'cancelled_by',
+        'cancel_reason',
     ];
 
     protected $casts = [
@@ -28,7 +31,13 @@ class Tire extends Model
         'initial_tread_depth' => 'decimal:2',
         'warning_tread_depth' => 'decimal:2',
         'critical_tread_depth' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
+
+    public function scopeNotCancelled($query)
+    {
+        return $query->whereNull('cancelled_at');
+    }
 
     public function entry()
     {
@@ -43,6 +52,16 @@ class Tire extends Model
     public function location()
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function canceller()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function getIsCancelledAttribute(): bool
+    {
+        return $this->cancelled_at !== null;
     }
 
     public function installations()

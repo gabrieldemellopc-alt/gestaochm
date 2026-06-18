@@ -1,69 +1,77 @@
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-
-class TireEntry extends Model
-{
-    protected $fillable = [
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class TireEntry extends Model
+{
+    protected $fillable = [
         'tenant_id',
-
         'location_id',
-        'entry_date',
-        'supplier_name',
-        'invoice_number',
-        'quantity',
-        'unit_cost',
-        'total_cost',
-        'brand',
-        'model',
-        'size',
-        'initial_tread_depth',
-        'code_prefix',
-        'notes',
-        'created_by',
-    ];
-
-    protected $casts = [
-        'entry_date' => 'date',
-        'unit_cost' => 'decimal:2',
-        'total_cost' => 'decimal:2',
-        'initial_tread_depth' => 'decimal:2',
-    ];
-
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
-    }
-
-    public function location()
+        'entry_date',
+        'supplier_name',
+        'invoice_number',
+        'quantity',
+        'unit_cost',
+        'total_cost',
+        'brand',
+        'model',
+        'size',
+        'initial_tread_depth',
+        'code_prefix',
+        'notes',
+        'cancelled_at',
+        'cancelled_by',
+        'cancel_reason',
+        'created_by',
+    ];
 
+    protected $casts = [
+        'entry_date' => 'date',
+        'unit_cost' => 'decimal:2',
+        'total_cost' => 'decimal:2',
+        'initial_tread_depth' => 'decimal:2',
+        'cancelled_at' => 'datetime',
+    ];
+
+    public function tenant()
     {
-
-        return $this->belongsTo(Location::class);
-
+        return $this->belongsTo(Tenant::class);
     }
 
-
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
 
     public function items()
-    {
-        return $this->hasMany(TireEntryItem::class);
-    }
-
-    public function tires()
-    {
-        return $this->belongsToMany(
-            Tire::class,
-            'tire_entry_items',
-            'tire_entry_id',
-            'tire_id'
-        );
-    }
-
-    public function creator()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
+    {
+        return $this->hasMany(TireEntryItem::class);
+    }
+
+    public function tires()
+    {
+        return $this->belongsToMany(
+            Tire::class,
+            'tire_entry_items',
+            'tire_entry_id',
+            'tire_id'
+        );
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function canceller()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function getIsCancelledAttribute(): bool
+    {
+        return $this->cancelled_at !== null;
+    }
 }

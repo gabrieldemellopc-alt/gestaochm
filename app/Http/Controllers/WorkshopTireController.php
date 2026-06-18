@@ -43,6 +43,7 @@ class WorkshopTireController extends Controller
             Tire::query()
                 ->where('tenant_id', $user->tenant_id)
                 ->where('location_id', $activeLocation->id)
+                ->notCancelled()
                 ->withCurrentTreadContext()
 
                 ->with([
@@ -127,29 +128,34 @@ class WorkshopTireController extends Controller
             'total' =>
                 Tire::where('tenant_id', $user->tenant_id)
                     ->where('location_id', $activeLocation->id)
+                    ->notCancelled()
                     ->count(),
     
             'available' =>
                 Tire::where('tenant_id', $user->tenant_id)
                     ->where('location_id', $activeLocation->id)
+                    ->notCancelled()
                     ->where('status', 'available')
                     ->count(),
     
             'installed' =>
                 Tire::where('tenant_id', $user->tenant_id)
                     ->where('location_id', $activeLocation->id)
+                    ->notCancelled()
                     ->where('status', 'installed')
                     ->count(),
     
             'maintenance' =>
                 Tire::where('tenant_id', $user->tenant_id)
                     ->where('location_id', $activeLocation->id)
+                    ->notCancelled()
                     ->where('status', 'maintenance')
                     ->count(),
     
             'discarded' =>
                 Tire::where('tenant_id', $user->tenant_id)
                     ->where('location_id', $activeLocation->id)
+                    ->notCancelled()
                     ->where('status', 'discarded')
                     ->count(),
         ];
@@ -432,6 +438,146 @@ class WorkshopTireController extends Controller
         );
     }
     
+    public function cancelEntry(Request $request, TireEntry $entry)
+    {
+        if (Gate::denies('cancelTireRecords')) {
+            abort(403);
+        }
+
+        $user = auth()->user();
+        $activeLocation = $this->activeLocation();
+
+        if (! $activeLocation) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+
+        DB::transaction(function () use ($entry, $user, $activeLocation, $data) {
+            $lockedEntry = TireEntry::query()
+                ->where('id', $entry->id)
+                ->where('tenant_id', $user->tenant_id)
+                ->where('location_id', $activeLocation->id)
+                ->lockForUpdate()
+                ->first();
+
+            abort_unless($lockedEntry, 403);
+
+            if ($lockedEntry->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'reason' => 'Esta entrada de pneus ja esta cancelada.',
+                ]);
+            }
+
+            $items = TireEntryItem::query()
+                ->where('tire_entry_id', $lockedEntry->id)
+                ->with('tire')
+                ->get();
+
+            $tireIds = $items
+                ->pluck('tire_id')
+                ->filter()
+                ->values();
+
+            $tires = Tire::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->where('location_id', $activeLocation->id)
+                ->whereIn('id', $tireIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($items as $item) {
+                $tire = $tires->get($item->tire_id);
+
+                if (! $tire || (int) $tire->entry_id !== (int) $lockedEntry->id) {
+                    throw ValidationException::withMessages([
+                        'reason' => 'Nao foi possivel validar todos os pneus desta entrada.',
+                    ]);
+                }
+
+                if ($tire->cancelled_at || $item->cancelled_at) {
+                    throw ValidationException::withMessages([
+                        'reason' => 'Esta entrada possui pneu ou item ja cancelado.',
+                    ]);
+                }
+
+                if ($tire->status !== 'available') {
+                    throw ValidationException::withMessages([
+                        'reason' => 'Nao e seguro cancelar: o pneu ' . $tire->code . ' nao esta disponivel.',
+                    ]);
+                }
+
+                if (
+                    $tire->installations()->exists()
+                    || $tire->allMeasurements()->exists()
+                    || $tire->allRetreads()->exists()
+                ) {
+                    throw ValidationException::withMessages([
+                        'reason' => 'Nao e seguro cancelar: o pneu ' . $tire->code . ' possui movimentacao posterior.',
+                    ]);
+                }
+            }
+
+            $before = [
+                'entry' => $lockedEntry->toArray(),
+                'items' => $items->toArray(),
+                'tires' => $tires->values()->toArray(),
+            ];
+
+            $cancelData = [
+                'cancelled_at' => now(),
+                'cancelled_by' => $user->id,
+                'cancel_reason' => $data['reason'],
+            ];
+
+            TireEntryItem::query()
+                ->where('tire_entry_id', $lockedEntry->id)
+                ->update($cancelData);
+
+            Tire::query()
+                ->whereIn('id', $tireIds)
+                ->update($cancelData);
+
+            $lockedEntry->update($cancelData);
+
+            $afterEntry = $lockedEntry->fresh();
+            $afterTires = Tire::query()
+                ->whereIn('id', $tireIds)
+                ->get(['id', 'code', 'status', 'cancelled_at', 'cancelled_by', 'cancel_reason']);
+
+            app(AuditLogService::class)->cancelled($afterEntry, [
+                'tenant_id' => $user->tenant_id,
+                'location_id' => $activeLocation->id,
+                'module' => 'tires',
+                'summary' => 'Entrada de pneus cancelada.',
+                'before_data' => $before,
+                'after_data' => [
+                    'entry' => $afterEntry->toArray(),
+                    'tires' => $afterTires->toArray(),
+                ],
+                'metadata' => [
+                    'entry_id' => $lockedEntry->id,
+                    'invoice_number' => $lockedEntry->invoice_number,
+                    'cancelled_tire_ids' => $tireIds->all(),
+                    'cancelled_tire_codes' => $afterTires->pluck('code')->all(),
+                ],
+                'reason' => $data['reason'],
+            ]);
+        });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Entrada de pneus cancelada.',
+            ]);
+        }
+
+        return back()->with('success', 'Entrada de pneus cancelada.');
+    }
+
     public function history(Tire $tire)
     {
         if ($redirect = $this->ensureTireInActiveContext($tire)) {
@@ -459,7 +605,9 @@ class WorkshopTireController extends Controller
 
             $timeline->push([
                 'type' => 'entry',
-                'title' => 'Entrada no estoque',
+                'title' => $entry->is_cancelled
+                    ? 'Entrada no estoque cancelada'
+                    : 'Entrada no estoque',
                 'date' => $entry->entry_date,
                 'sort_key' => $this->tireHistorySortKey($entry->entry_date, 10, $entry->id),
                 'details' => [
@@ -470,6 +618,10 @@ class WorkshopTireController extends Controller
                         : null,
                 ],
                 'notes' => $entry->notes,
+                'record' => $entry,
+                'is_cancelled' => $entry->is_cancelled,
+                'cancelled_at' => $entry->cancelled_at,
+                'cancel_reason' => $entry->cancel_reason,
             ]);
         }
 
