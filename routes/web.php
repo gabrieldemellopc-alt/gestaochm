@@ -756,6 +756,14 @@ Route::middleware('auth')->group(function () {
 
             )->name('movements.store');
 
+            Route::post(
+
+                '/movements/{movement}/cancel',
+
+                'cancelMovement'
+
+            )->name('movements.cancel');
+
 
 
         });

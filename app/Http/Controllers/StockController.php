@@ -10,6 +10,8 @@ use App\Services\AuditLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
 {
@@ -56,13 +58,21 @@ class StockController extends Controller
         $item->load([
             'category',
             'movements' => function ($query) use ($tenantId, $locationId) {
-                $query
-                    ->where('tenant_id', $tenantId)
-                    ->where('location_id', $locationId)
-                    ->latest()
-                    ->limit(3);
+                    $query
+                        ->where('tenant_id', $tenantId)
+                        ->where('location_id', $locationId)
+                        ->with(['reversalMovement', 'reversedFromMovement'])
+                        ->latest()
+                        ->limit(10);
             },
         ]);
+
+        if (Gate::denies('viewAuditLogs')) {
+            $item->movements->each->makeHidden([
+                'cancel_reason',
+                'cancelled_by',
+            ]);
+        }
 
         return response()->json($item);
     }
@@ -247,6 +257,38 @@ class StockController extends Controller
         return redirect()->back();
     }
 
+    public function cancelMovement(Request $request, StockMovement $movement)
+    {
+        if (Gate::denies('cancelStockMovements')) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+
+        try {
+            $this->cancelManualMovement($movement, $validated['reason']);
+        } catch (ValidationException $exception) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $exception->getMessage(),
+                    'errors' => $exception->errors(),
+                ], 422);
+            }
+
+            return back()->withErrors($exception->errors());
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Movimentacao cancelada com sucesso.',
+            ]);
+        }
+
+        return back()->with('success', 'Movimentacao cancelada com sucesso.');
+    }
+
     private function activeLocation()
     {
         return app(ActiveContextService::class)
@@ -269,6 +311,131 @@ class StockController extends Controller
         }
 
         return null;
+    }
+
+    private function cancelManualMovement(
+        StockMovement $movement,
+        string $reason
+    ): StockMovement {
+        $activeLocation = $this->activeLocation();
+
+        if (! $activeLocation) {
+            throw ValidationException::withMessages([
+                'movement' => 'Selecione uma unidade para continuar.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($movement, $reason, $activeLocation) {
+            $movement = StockMovement::query()
+                ->where('tenant_id', auth()->user()->tenant_id)
+                ->where('location_id', $activeLocation->id)
+                ->whereKey($movement->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($movement->cancelled_at || $movement->reversal_movement_id) {
+                throw ValidationException::withMessages([
+                    'movement' => 'Esta movimentacao ja foi cancelada.',
+                ]);
+            }
+
+            if ($movement->reversed_from_movement_id) {
+                throw ValidationException::withMessages([
+                    'movement' => 'Um movimento reverso nao pode ser cancelado diretamente.',
+                ]);
+            }
+
+            if ($movement->maintenance_record_id) {
+                throw ValidationException::withMessages([
+                    'movement' => 'Movimentos vinculados a manutencao devem ser revertidos pelo cancelamento da manutencao.',
+                ]);
+            }
+
+            $item = StockItem::query()
+                ->where('tenant_id', $movement->tenant_id)
+                ->where('location_id', $movement->location_id)
+                ->whereKey($movement->stock_item_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $item) {
+                throw ValidationException::withMessages([
+                    'movement' => 'Nao foi possivel localizar o item de estoque.',
+                ]);
+            }
+
+            $beforeMovement = $movement->toArray();
+            $beforeQuantity = (float) $item->quantity;
+            $reverseType = $movement->movement_type === 'in' ? 'out' : 'in';
+            $quantity = (float) $movement->quantity;
+
+            if ($reverseType === 'out' && $quantity > $beforeQuantity) {
+                throw ValidationException::withMessages([
+                    'movement' => 'Saldo insuficiente para reverter esta entrada.',
+                ]);
+            }
+
+            $reverseMovement = StockMovement::create([
+                'tenant_id' => $movement->tenant_id,
+                'location_id' => $movement->location_id,
+                'stock_item_id' => $movement->stock_item_id,
+                'movement_type' => $reverseType,
+                'quantity' => $movement->quantity,
+                'unit_cost' => $movement->unit_cost,
+                'description' => 'Reversao do cancelamento da movimentacao #'.$movement->id,
+                'reversed_from_movement_id' => $movement->id,
+            ]);
+
+            if ($reverseType === 'in') {
+                $item->quantity = $beforeQuantity + $quantity;
+            } else {
+                $item->quantity = $beforeQuantity - $quantity;
+            }
+
+            $item->save();
+
+            $movement->update([
+                'cancelled_at' => now(),
+                'cancelled_by' => auth()->id(),
+                'cancel_reason' => $reason,
+                'reversal_movement_id' => $reverseMovement->id,
+            ]);
+
+            $movementAfter = $movement->fresh(['reversalMovement']);
+
+            app(AuditLogService::class)->created($reverseMovement, [
+                'tenant_id' => $movement->tenant_id,
+                'location_id' => $movement->location_id,
+                'module' => 'stock',
+                'summary' => 'Movimento reverso criado para cancelamento de movimentacao manual.',
+                'after_data' => $reverseMovement->toArray(),
+                'metadata' => [
+                    'stock_item_id' => $movement->stock_item_id,
+                    'original_stock_movement_id' => $movement->id,
+                    'quantity_before' => $beforeQuantity,
+                    'quantity_after' => $item->quantity,
+                ],
+                'reason' => $reason,
+            ]);
+
+            app(AuditLogService::class)->cancelled($movementAfter, [
+                'tenant_id' => $movement->tenant_id,
+                'location_id' => $movement->location_id,
+                'module' => 'stock',
+                'summary' => 'Movimentacao manual de estoque cancelada.',
+                'before_data' => $beforeMovement,
+                'after_data' => $movementAfter->toArray(),
+                'metadata' => [
+                    'stock_item_id' => $movement->stock_item_id,
+                    'reversal_movement_id' => $reverseMovement->id,
+                    'quantity_before' => $beforeQuantity,
+                    'quantity_after' => $item->quantity,
+                ],
+                'reason' => $reason,
+            ]);
+
+            return $movementAfter;
+        });
     }
 
     private function missingActiveLocationRedirect()

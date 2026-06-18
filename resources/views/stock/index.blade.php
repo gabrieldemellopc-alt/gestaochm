@@ -1105,7 +1105,9 @@
     </div>
 
 </div>
-<script>
+<script>
+const canCancelStockMovements = @can('cancelStockMovements') true @else false @endcan;
+const canViewStockAuditDetails = @can('viewAuditLogs') true @else false @endcan;
 let lastOpenedItemId = null;
 
 function openMovementModal(type)
@@ -1382,7 +1384,29 @@ async function openEditItemModal(id)
     
     } else {
     
-        item.movements.forEach(movement => {
+        item.movements.forEach(movement => {
+            const isCancelled = Boolean(movement.cancelled_at);
+            const isReversal = Boolean(movement.reversed_from_movement_id);
+            const isMaintenance = Boolean(movement.maintenance_record_id);
+            const canCancelMovement = canCancelStockMovements
+                && !isCancelled
+                && !isReversal
+                && !isMaintenance;
+            const statusLabel = isCancelled
+                ? '<span class="stock-status-badge danger">Cancelada</span>'
+                : (isReversal ? '<span class="stock-status-badge warning">Reverso</span>' : '');
+            const auditDetails = canViewStockAuditDetails && isCancelled && movement.cancel_reason
+                ? `<small>Motivo: ${movement.cancel_reason}</small>`
+                : '';
+            const cancelForm = canCancelMovement
+                ? `
+                    <form method="POST" action="/stock/movements/${movement.id}/cancel" class="stock-movement-cancel-form">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <textarea name="reason" rows="2" required minlength="5" placeholder="Motivo do cancelamento"></textarea>
+                        <button type="submit" class="stock-modal-cancel">Cancelar movimentação</button>
+                    </form>
+                `
+                : '';
     
             html += `
                 <div class="movement-row">
@@ -1393,7 +1417,8 @@ async function openEditItemModal(id)
                             ${movement.movement_type === 'in'
                                 ? 'Entrada'
                                 : 'Saída'}
-                        </strong>
+                            ${statusLabel}
+                        </strong>
     
                         <span>
                             ${movement.quantity}
@@ -1403,7 +1428,11 @@ async function openEditItemModal(id)
     
                     <small>
                         ${movement.description ?? ''}
-                    </small>
+                    </small>
+
+                    ${auditDetails}
+
+                    ${cancelForm}
     
                 </div>
             `;
