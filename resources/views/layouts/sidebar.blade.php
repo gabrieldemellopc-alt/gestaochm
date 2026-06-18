@@ -274,6 +274,40 @@
         
         </a>
         
+        @can('viewAuditLogs')
+
+            {{-- AUDITORIA --}}
+
+            <a
+
+                href="{{ route('audit.index') }}"
+
+                class="sidebar-link {{
+
+                    request()->routeIs('audit.*')
+
+                    ? 'active'
+
+                    : ''
+
+                }}"
+
+            >
+
+                <span class="sidebar-icon">
+
+                    <i data-lucide="fingerprint"></i>
+
+                </span>
+
+                Auditoria
+
+            </a>
+
+        @endcan
+
+
+
         {{-- CHECKLISTs --}}
         <a
             href="{{ route('checklists.index') }}"

@@ -10,6 +10,8 @@ use App\Http\Controllers\AccessControlController;
 
 use App\Http\Controllers\ActiveLocationController;
 
+use App\Http\Controllers\AuditLogController;
+
 use App\Http\Controllers\ChecklistController;
 
 use App\Http\Controllers\ChecklistExecutionController;
@@ -121,6 +123,19 @@ Route::middleware('auth')->group(function () {
         [ProfileController::class, 'destroy']
 
     )->name('profile.destroy');
+
+
+    Route::get(
+
+        '/audit',
+
+        [AuditLogController::class, 'index']
+
+    )
+
+        ->middleware('can:viewAuditLogs')
+
+        ->name('audit.index');
 
 
 
