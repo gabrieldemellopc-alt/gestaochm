@@ -606,7 +606,7 @@
         
                             </span>
 
-                            @can('viewAuditLogs')
+                            @can('cancelMaintenanceRecords')
 
                                 <button
                                     type="button"
@@ -630,15 +630,17 @@
                                 <span>
                                     Cancelada em
                                     {{ $maintenance->cancelled_at->format('d/m/Y H:i') }}
+                                    @can('viewAuditLogs')
                                     @if($maintenance->cancel_reason)
                                         - {{ $maintenance->cancel_reason }}
                                     @endif
+                                    @endcan
                                 </span>
                             </div>
 
                         @else
 
-                            @can('viewAuditLogs')
+                            @can('cancelMaintenanceRecords')
 
                                 <div
                                     x-show="cancelMaintenanceId === {{ $maintenance->id }}"

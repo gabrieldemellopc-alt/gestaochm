@@ -10,6 +10,7 @@ class StockMovement extends Model
         'tenant_id',
         'location_id',
         'stock_item_id',
+        'maintenance_record_id',
         'movement_type',
         'quantity',
         'unit_cost',
@@ -19,5 +20,10 @@ class StockMovement extends Model
     public function location()
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function maintenanceRecord()
+    {
+        return $this->belongsTo(MaintenanceRecord::class);
     }
 }

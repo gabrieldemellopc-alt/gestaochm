@@ -64,6 +64,7 @@ class MaintenanceService
                     'tenant_id' => $movement->tenant_id,
                     'location_id' => $movement->location_id,
                     'stock_item_id' => $movement->stock_item_id,
+                    'maintenance_record_id' => $maintenance->id,
                     'movement_type' => 'in',
                     'quantity' => $movement->quantity,
                     'unit_cost' => $movement->unit_cost,
@@ -199,6 +200,7 @@ class MaintenanceService
                     'tenant_id' => $vehicle->tenant_id,
                     'location_id' => $vehicle->location_id,
                     'stock_item_id' => $stockItem->id,
+                    'maintenance_record_id' => $maintenance->id,
                     'movement_type' => 'out',
                     'quantity' => $quantity,
                     'unit_cost' => $stockItem->unit_cost,
@@ -362,7 +364,15 @@ class MaintenanceService
         return StockMovement::query()
             ->where('tenant_id', $maintenance->tenant_id)
             ->where('movement_type', 'out')
-            ->where('description', 'like', '%#'.$maintenance->id)
+            ->where(function ($query) use ($maintenance) {
+                $query
+                    ->where('maintenance_record_id', $maintenance->id)
+                    ->orWhere(function ($query) use ($maintenance) {
+                        $query
+                            ->whereNull('maintenance_record_id')
+                            ->where('description', 'like', '%#'.$maintenance->id);
+                    });
+            })
             ->orderBy('id')
             ->get();
     }

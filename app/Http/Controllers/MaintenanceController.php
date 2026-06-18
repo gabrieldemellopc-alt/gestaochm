@@ -118,7 +118,7 @@ class MaintenanceController extends Controller
             ->where('user_id', auth()->id())
             ->where('division_id', $vehicle->division_id)
             ->where('module', 'fleet')
-            ->where('profile', 'manager')
+            ->whereIn('profile', ['supervisor', 'manager', 'admin'])
             ->where('active', true)
             ->where(function ($query) use ($vehicle) {
                 $query

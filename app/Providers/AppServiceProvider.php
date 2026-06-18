@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
                     ->where('user_id', $user->id)
                     ->where('division_id', $divisionId)
                     ->where('module', 'fleet')
-                    ->where('profile', 'manager')
+                    ->whereIn('profile', ['manager', 'admin'])
                     ->where('active', true)
                     ->where(function ($query) use ($locationId) {
                         if ($locationId) {
@@ -52,7 +52,40 @@ class AppServiceProvider extends ServiceProvider
 
             return in_array(
                 strtolower($user->profile ?? $user->role ?? $user->type ?? ''),
-                ['manager'],
+                ['manager', 'admin'],
+                true
+            );
+        });
+
+        Gate::define('cancelMaintenanceRecords', function (User $user) {
+            $divisionId = session('active_division_id');
+            $locationId = session('active_location_id');
+
+            if ($divisionId) {
+                return UserDivisionAccess::query()
+                    ->where('tenant_id', $user->tenant_id)
+                    ->where('user_id', $user->id)
+                    ->where('division_id', $divisionId)
+                    ->where('module', 'fleet')
+                    ->whereIn('profile', ['supervisor', 'manager', 'admin'])
+                    ->where('active', true)
+                    ->where(function ($query) use ($locationId) {
+                        if ($locationId) {
+                            $query
+                                ->where('location_id', $locationId)
+                                ->orWhereNull('location_id');
+
+                            return;
+                        }
+
+                        $query->whereNull('location_id');
+                    })
+                    ->exists();
+            }
+
+            return in_array(
+                strtolower($user->profile ?? $user->role ?? $user->type ?? ''),
+                ['supervisor', 'manager', 'admin'],
                 true
             );
         });
