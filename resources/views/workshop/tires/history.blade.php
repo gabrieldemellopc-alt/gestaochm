@@ -117,7 +117,7 @@
                         };
                     @endphp
 
-                    <article class="tire-history-event {{ $event['type'] }}">
+                    <article class="tire-history-event {{ $event['type'] }} {{ ($event['is_cancelled'] ?? false) ? 'cancelled' : '' }}">
                         <div class="tire-history-marker">
                             @switch($event['type'])
                                 @case('entry')
@@ -149,6 +149,17 @@
                                     {{ optional($event['date'])->format('d/m/Y') ?? 'Data não informada' }}
                                 </time>
                             </div>
+                            @if($event['is_cancelled'] ?? false)
+                                <div class="tire-history-cancelled">
+                                    <strong>Cancelado em {{ optional($event['cancelled_at'])->format('d/m/Y H:i') ?? '--' }}</strong>
+                                    @can('viewAuditLogs')
+                                        @if($event['cancel_reason'] ?? null)
+                                            <span>Motivo: {{ $event['cancel_reason'] }}</span>
+                                        @endif
+                                    @endcan
+                                </div>
+                            @endif
+
 
                             <div class="tire-history-event-details">
                                 @foreach($event['details'] as $label => $value)
@@ -166,6 +177,35 @@
                                     {{ $event['notes'] }}
                                 </p>
                             @endif
+
+                            @can('cancelTireRecords')
+                                @if(! ($event['is_cancelled'] ?? false) && in_array($event['type'], ['measurement', 'retread'], true))
+                                    <form
+                                        method="POST"
+                                        action="{{ $event['type'] === 'measurement'
+                                            ? route('workshop.tires.measurements.cancel', [$tire, $event['record']])
+                                            : route('workshop.tires.retreads.cancel', [$tire, $event['record']]) }}"
+                                        class="tire-history-cancel-form"
+                                    >
+                                        @csrf
+                                        <label>
+                                            Motivo do cancelamento
+                                            <textarea
+                                                name="reason"
+                                                rows="2"
+                                                minlength="5"
+                                                maxlength="2000"
+                                                required
+                                                placeholder="Informe o motivo para manter a trilha de auditoria"
+                                            ></textarea>
+                                        </label>
+
+                                        <button type="submit">
+                                            Cancelar lancamento
+                                        </button>
+                                    </form>
+                                @endif
+                            @endcan
                         </div>
                     </article>
                 @endforeach

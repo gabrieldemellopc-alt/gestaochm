@@ -84,7 +84,9 @@ class VehicleTireController extends Controller
                                 ->where('tire_id', $installation->tire_id)
                                 ->where('vehicle_id', $vehicle->id)
                                 ->where('position_code', $position->code)
-                                ->latest('measured_at')
+                                ->whereNull('cancelled_at')
+
+                                ->latest('measured_at')
                                 ->latest('id')
                                 ->first()
                             : null;
@@ -1040,7 +1042,9 @@ class VehicleTireController extends Controller
                                 ->where('vehicle_id', $vehicle->id)
                                 ->where('tire_id', $installation->tire_id)
                                 ->where('position_code', $position->code)
-                                ->latest('measured_at')
+                                ->whereNull('cancelled_at')
+
+                                ->latest('measured_at')
                                 ->latest('id')
                                 ->first()
                             : null;
@@ -1076,7 +1080,9 @@ class VehicleTireController extends Controller
                 ])
                 ->where('tenant_id', $vehicle->tenant_id)
                 ->where('vehicle_id', $vehicle->id)
-                ->latest('measured_at')
+                ->whereNull('cancelled_at')
+
+                ->latest('measured_at')
                 ->latest('id')
                 ->limit(100)
                 ->get();

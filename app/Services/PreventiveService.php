@@ -479,7 +479,9 @@ class PreventiveService
                     ->where('vehicle_id', $vehicle->id)
                     ->where('tire_id', $tire->id)
                     ->where('position_code', $installation->position_code)
-                    ->latest('measured_at')
+                    ->whereNull('cancelled_at')
+
+                    ->latest('measured_at')
                     ->latest('id')
                     ->first();
         

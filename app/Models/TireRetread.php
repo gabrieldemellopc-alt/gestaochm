@@ -14,6 +14,9 @@ class TireRetread extends Model
         'previous_tread_reference',
         'provider_name',
         'notes',
+        'cancelled_at',
+        'cancelled_by',
+        'cancel_reason',
         'created_by',
     ];
 
@@ -21,6 +24,7 @@ class TireRetread extends Model
         'retreaded_at' => 'date',
         'new_tread_depth' => 'decimal:2',
         'previous_tread_reference' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
 
     public function tenant()
@@ -36,5 +40,15 @@ class TireRetread extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function canceller()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function getIsCancelledAttribute(): bool
+    {
+        return $this->cancelled_at !== null;
     }
 }

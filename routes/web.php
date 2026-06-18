@@ -637,6 +637,16 @@ Route::middleware('auth')->group(function () {
             [WorkshopTireController::class, 'storeRetread']
         )->name('tires.retreads.store');
 
+        Route::post(
+            '/tires/{tire}/measurements/{measurement}/cancel',
+            [WorkshopTireController::class, 'cancelMeasurement']
+        )->name('tires.measurements.cancel');
+
+        Route::post(
+            '/tires/{tire}/retreads/{retread}/cancel',
+            [WorkshopTireController::class, 'cancelRetread']
+        )->name('tires.retreads.cancel');
+
 
 
         Route::put(

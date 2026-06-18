@@ -85,12 +85,14 @@ class WorkshopController extends Controller
             $latestMeasurementSubquery = DB::table('tire_measurements as measurement')
                 ->select('measurement.*')
                 ->where('measurement.tenant_id', $tenantId)
+                ->whereNull('measurement.cancelled_at')
                 ->whereNotExists(function ($query) {
                     $query
                         ->select(DB::raw(1))
                         ->from('tire_measurements as newer_measurement')
                         ->whereColumn('newer_measurement.tenant_id', 'measurement.tenant_id')
                         ->whereColumn('newer_measurement.tire_id', 'measurement.tire_id')
+                        ->whereNull('newer_measurement.cancelled_at')
                         ->where(function ($query) {
                             $query
                                 ->whereColumn('newer_measurement.measured_at', '>', 'measurement.measured_at')
@@ -105,12 +107,14 @@ class WorkshopController extends Controller
             $latestRetreadSubquery = DB::table('tire_retreads as retread')
                 ->select('retread.*')
                 ->where('retread.tenant_id', $tenantId)
+                ->whereNull('retread.cancelled_at')
                 ->whereNotExists(function ($query) {
                     $query
                         ->select(DB::raw(1))
                         ->from('tire_retreads as newer_retread')
                         ->whereColumn('newer_retread.tenant_id', 'retread.tenant_id')
                         ->whereColumn('newer_retread.tire_id', 'retread.tire_id')
+                        ->whereNull('newer_retread.cancelled_at')
                         ->where(function ($query) {
                             $query
                                 ->whereColumn('newer_retread.retreaded_at', '>', 'retread.retreaded_at')

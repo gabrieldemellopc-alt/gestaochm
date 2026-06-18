@@ -58,12 +58,19 @@ class Tire extends Model
 
     public function measurements()
     {
+        return $this->hasMany(TireMeasurement::class)
+            ->whereNull('cancelled_at');
+    }
+
+    public function allMeasurements()
+    {
         return $this->hasMany(TireMeasurement::class);
     }
 
     public function latestMeasurement()
     {
         return $this->hasOne(TireMeasurement::class)
+            ->whereNull('cancelled_at')
             ->ofMany([
                 'measured_at' => 'max',
                 'id' => 'max',
@@ -72,12 +79,19 @@ class Tire extends Model
 
     public function retreads()
     {
+        return $this->hasMany(TireRetread::class)
+            ->whereNull('cancelled_at');
+    }
+
+    public function allRetreads()
+    {
         return $this->hasMany(TireRetread::class);
     }
 
     public function latestRetread()
     {
         return $this->hasOne(TireRetread::class)
+            ->whereNull('cancelled_at')
             ->ofMany([
                 'retreaded_at' => 'max',
                 'id' => 'max',

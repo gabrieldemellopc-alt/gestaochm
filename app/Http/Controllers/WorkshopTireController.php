@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Tire;
 use App\Models\TireEntry;
 use App\Models\TireEntryItem;
+use App\Models\TireMeasurement;
+use App\Models\TireRetread;
 use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class WorkshopTireController extends Controller
@@ -438,8 +441,9 @@ class WorkshopTireController extends Controller
         $tire->load([
             'entry.items',
             'installations.vehicle',
-            'measurements.vehicle',
-            'retreads',
+            'allMeasurements.vehicle',
+            'allMeasurements.canceller',
+            'allRetreads.canceller',
             'latestMeasurement',
             'latestRetread',
         ])->loadCount('retreads');
@@ -513,7 +517,7 @@ class WorkshopTireController extends Controller
             }
         }
 
-        foreach ($tire->measurements as $measurement) {
+        foreach ($tire->allMeasurements as $measurement) {
             $vehicle = $measurement->vehicle;
             $vehicleLabel = $vehicle
                 ? trim(($vehicle->name ?? '') . ($vehicle->plate ? ' · ' . $vehicle->plate : ''))
@@ -521,7 +525,9 @@ class WorkshopTireController extends Controller
 
             $timeline->push([
                 'type' => 'measurement',
-                'title' => 'Medição de sulco',
+                'title' => $measurement->is_cancelled
+                    ? 'Medicao de sulco cancelada'
+                    : 'Medicao de sulco',
                 'date' => $measurement->measured_at,
                 'sort_key' => $this->tireHistorySortKey($measurement->measured_at, 40, $measurement->id),
                 'details' => [
@@ -535,31 +541,51 @@ class WorkshopTireController extends Controller
                         : null,
                 ],
                 'notes' => $measurement->notes,
+                'record' => $measurement,
+                'is_cancelled' => $measurement->is_cancelled,
+                'cancelled_at' => $measurement->cancelled_at,
+                'cancel_reason' => $measurement->cancel_reason,
             ]);
         }
 
-        $tire->retreads
+        $activeRetreadNumbers = $tire->allRetreads
+            ->whereNull('cancelled_at')
             ->sortBy([
                 ['retreaded_at', 'asc'],
                 ['id', 'asc'],
             ])
             ->values()
-            ->each(function ($retread, $index) use ($timeline) {
-                $retreadNumber = $index + 1;
+            ->mapWithKeys(fn ($retread, $index) => [$retread->id => $index + 1]);
+
+        $tire->allRetreads
+            ->sortBy([
+                ['retreaded_at', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values()
+            ->each(function ($retread) use ($timeline, $activeRetreadNumbers) {
+                $retreadNumber = $activeRetreadNumbers->get($retread->id);
 
                 $timeline->push([
                     'type' => 'retread',
-                    'title' => 'Recapagem R' . $retreadNumber,
+                    'title' => $retread->is_cancelled
+                        ? 'Recapagem cancelada'
+                        : 'Recapagem R' . $retreadNumber,
                     'date' => $retread->retreaded_at,
                     'sort_key' => $this->tireHistorySortKey($retread->retreaded_at, 50, $retread->id),
                     'details' => [
+                        'Identificacao' => $retreadNumber ? 'R' . $retreadNumber : null,
                         'Novo sulco' => number_format((float) $retread->new_tread_depth, 2, ',', '.') . ' mm',
-                        'Referência anterior' => $retread->previous_tread_reference !== null
+                        'Referencia anterior' => $retread->previous_tread_reference !== null
                             ? number_format((float) $retread->previous_tread_reference, 2, ',', '.') . ' mm'
                             : null,
                         'Fornecedor' => $retread->provider_name,
                     ],
                     'notes' => $retread->notes,
+                    'record' => $retread,
+                    'is_cancelled' => $retread->is_cancelled,
+                    'cancelled_at' => $retread->cancelled_at,
+                    'cancel_reason' => $retread->cancel_reason,
                 ]);
             });
 
@@ -663,8 +689,206 @@ class WorkshopTireController extends Controller
         );
     }
 
+    public function cancelMeasurement(Request $request, Tire $tire, TireMeasurement $measurement)
+    {
+        if (Gate::denies('cancelTireRecords')) {
+            abort(403);
+        }
+
+        if ($redirect = $this->ensureTireInActiveContext($tire)) {
+            return $redirect;
+        }
+
+        $user = auth()->user();
+        $activeLocation = $this->activeLocation();
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+
+        DB::transaction(function () use ($measurement, $tire, $user, $activeLocation, $data) {
+            $lockedMeasurement = TireMeasurement::query()
+                ->where('id', $measurement->id)
+                ->where('tenant_id', $user->tenant_id)
+                ->where('tire_id', $tire->id)
+                ->lockForUpdate()
+                ->first();
+
+            abort_unless($lockedMeasurement, 403);
+
+            if ($lockedMeasurement->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'reason' => 'Esta medicao de sulco ja esta cancelada.',
+                ]);
+            }
+
+            $before = $lockedMeasurement->toArray();
+
+            $lockedMeasurement->update([
+                'cancelled_at' => now(),
+                'cancelled_by' => $user->id,
+                'cancel_reason' => $data['reason'],
+            ]);
+
+            $after = $lockedMeasurement->fresh();
+
+            app(AuditLogService::class)->cancelled($after, [
+                'tenant_id' => $user->tenant_id,
+                'location_id' => $activeLocation?->id,
+                'module' => 'tires',
+                'summary' => 'Medicao de sulco cancelada para o pneu ' . $tire->code . '.',
+                'before_data' => $before,
+                'after_data' => $after->toArray(),
+                'metadata' => [
+                    'tire_id' => $tire->id,
+                    'tire_code' => $tire->code,
+                    'vehicle_id' => $lockedMeasurement->vehicle_id,
+                    'position_code' => $lockedMeasurement->position_code,
+                ],
+                'reason' => $data['reason'],
+            ]);
+        });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Medicao de sulco cancelada.',
+            ]);
+        }
+
+        return back()->with('success', 'Medicao de sulco cancelada.');
+    }
+
+    public function cancelRetread(Request $request, Tire $tire, TireRetread $retread)
+    {
+        if (Gate::denies('cancelTireRecords')) {
+            abort(403);
+        }
+
+        if ($redirect = $this->ensureTireInActiveContext($tire)) {
+            return $redirect;
+        }
+
+        $user = auth()->user();
+        $activeLocation = $this->activeLocation();
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+
+        DB::transaction(function () use ($retread, $tire, $user, $activeLocation, $data) {
+            $lockedTire = Tire::query()
+                ->where('id', $tire->id)
+                ->where('tenant_id', $user->tenant_id)
+                ->where('location_id', $activeLocation?->id)
+                ->lockForUpdate()
+                ->first();
+
+            abort_unless($lockedTire, 403);
+
+            $lockedRetread = TireRetread::query()
+                ->where('id', $retread->id)
+                ->where('tenant_id', $user->tenant_id)
+                ->where('tire_id', $lockedTire->id)
+                ->lockForUpdate()
+                ->first();
+
+            abort_unless($lockedRetread, 403);
+
+            if ($lockedRetread->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'reason' => 'Esta recapagem ja esta cancelada.',
+                ]);
+            }
+
+            if ($lockedTire->status !== 'available' || $lockedTire->activeInstallation()->exists()) {
+                throw ValidationException::withMessages([
+                    'reason' => 'A recapagem so pode ser cancelada enquanto o pneu estiver disponivel e sem instalacao ativa.',
+                ]);
+            }
+
+            $hasLaterRetread = TireRetread::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->where('tire_id', $lockedTire->id)
+                ->whereNull('cancelled_at')
+                ->where('id', '<>', $lockedRetread->id)
+                ->where(function ($query) use ($lockedRetread) {
+                    $query
+                        ->where('retreaded_at', '>', $lockedRetread->retreaded_at)
+                        ->orWhere(function ($query) use ($lockedRetread) {
+                            $query
+                                ->where('retreaded_at', $lockedRetread->retreaded_at)
+                                ->where('id', '>', $lockedRetread->id);
+                        });
+                })
+                ->exists();
+
+            if ($hasLaterRetread) {
+                throw ValidationException::withMessages([
+                    'reason' => 'Nao e seguro cancelar esta recapagem porque existe recapagem posterior.',
+                ]);
+            }
+
+            $hasLaterMeasurement = TireMeasurement::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->where('tire_id', $lockedTire->id)
+                ->whereNull('cancelled_at')
+                ->where('measured_at', '>', $lockedRetread->retreaded_at)
+                ->exists();
+
+            if ($hasLaterMeasurement) {
+                throw ValidationException::withMessages([
+                    'reason' => 'Nao e seguro cancelar esta recapagem porque existe medicao posterior.',
+                ]);
+            }
+
+            $hasLaterInstallation = $lockedTire->installations()
+                ->where('installed_at', '>=', $lockedRetread->retreaded_at)
+                ->exists();
+
+            if ($hasLaterInstallation) {
+                throw ValidationException::withMessages([
+                    'reason' => 'Nao e seguro cancelar esta recapagem porque existe instalacao posterior do pneu.',
+                ]);
+            }
+
+            $before = $lockedRetread->toArray();
+
+            $lockedRetread->update([
+                'cancelled_at' => now(),
+                'cancelled_by' => $user->id,
+                'cancel_reason' => $data['reason'],
+            ]);
+
+            $after = $lockedRetread->fresh();
+
+            app(AuditLogService::class)->cancelled($after, [
+                'tenant_id' => $user->tenant_id,
+                'location_id' => $activeLocation?->id,
+                'module' => 'tires',
+                'summary' => 'Recapagem cancelada para o pneu ' . $lockedTire->code . '.',
+                'before_data' => $before,
+                'after_data' => $after->toArray(),
+                'metadata' => [
+                    'tire_id' => $lockedTire->id,
+                    'tire_code' => $lockedTire->code,
+                ],
+                'reason' => $data['reason'],
+            ]);
+        });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Recapagem cancelada.',
+            ]);
+        }
+
+        return back()->with('success', 'Recapagem cancelada.');
+    }
+
     public function update(Request $request, Tire $tire)
-    {
+    {
         if ($redirect = $this->ensureTireInActiveContext($tire)) {
             return $redirect;
         }
