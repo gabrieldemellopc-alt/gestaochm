@@ -62,7 +62,16 @@ class Vehicle extends Model
     {
         return $this->hasMany(MaintenanceRecord::class);
     }
-    public function currentAllocation()
+    public function validMaintenances()
+
+    {
+
+        return $this->hasMany(MaintenanceRecord::class)
+            ->whereNull('cancelled_at');
+
+    }
+
+    public function currentAllocation()
     {
         return $this->hasOne(
             VehicleAllocation::class
@@ -73,7 +82,9 @@ class Vehicle extends Model
         return $this->hasMany(
             MaintenanceRecord::class
         )
-        ->latest();
+        ->whereNull('cancelled_at')
+
+        ->latest();
     }
     public function division()
     {

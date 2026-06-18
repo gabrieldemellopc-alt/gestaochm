@@ -19,8 +19,8 @@ class PreventiveService
         foreach ($procedures as $procedure) {
 
             $latest =
-                $vehicle->maintenances()
-                ->where('procedure_id', $procedure->id)
+                $vehicle->validMaintenances()
+                ->where('procedure_id', $procedure->id)
                 ->latest('performed_at')
                 ->first();
 

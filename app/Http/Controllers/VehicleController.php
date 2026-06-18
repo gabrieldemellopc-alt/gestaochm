@@ -73,10 +73,11 @@ class VehicleController extends Controller
                 })
                 ->first();
     
-            $vehicle->last_maintenance =
-                $vehicle->maintenances
-                ->sortByDesc('performed_at')
-                ->first();
+            $vehicle->last_maintenance =
+                $vehicle->maintenances
+                ->whereNull('cancelled_at')
+                ->sortByDesc('performed_at')
+                ->first();
         }
     
         return view(
@@ -1609,10 +1610,11 @@ public function maintenanceCreate(
         $procedures
             ->map(function ($procedure) use ($vehicle) {
 
-                $lastMaintenance =
-                    $vehicle
-                        ->maintenances
-                        ->where('procedure_id', $procedure->id)
+                $lastMaintenance =
+                    $vehicle
+                        ->maintenances
+                        ->whereNull('cancelled_at')
+                        ->where('procedure_id', $procedure->id)
                         ->sortByDesc('performed_at')
                         ->first();
 

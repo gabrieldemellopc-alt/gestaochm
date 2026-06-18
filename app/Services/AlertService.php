@@ -7,8 +7,9 @@ class AlertService
     public static function getVehicleStatus($vehicle)
     {
         $latest =
-            $vehicle->maintenances
-            ->sortByDesc('performed_at')
+            $vehicle->maintenances
+            ->whereNull('cancelled_at')
+            ->sortByDesc('performed_at')
             ->first();
 
         if (!$latest) {

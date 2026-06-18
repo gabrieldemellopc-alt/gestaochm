@@ -108,10 +108,11 @@ class DashboardController extends Controller
                 })
                 ->first();
         
-            $vehicle->last_maintenance =
-                $vehicle->maintenances
-                ->sortByDesc('performed_at')
-                ->first();
+            $vehicle->last_maintenance =
+                $vehicle->maintenances
+                ->whereNull('cancelled_at')
+                ->sortByDesc('performed_at')
+                ->first();
         
             /*
             |--------------------------------------------------------------------------

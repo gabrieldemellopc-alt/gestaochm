@@ -530,6 +530,7 @@ public function index()
     {
         return MaintenanceRecord::query()
             ->where('tenant_id', $context['tenant_id'])
+            ->whereNull('cancelled_at')
             ->whereHas('vehicle', function ($query) use ($context) {
                 $query
                     ->where('tenant_id', $context['tenant_id'])
