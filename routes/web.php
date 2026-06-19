@@ -20,6 +20,8 @@ use App\Http\Controllers\DailyChecklistController;
 
 use App\Http\Controllers\DashboardController;
 
+use App\Http\Controllers\FuelTankController;
+
 use App\Http\Controllers\MaintenanceController;
 
 use App\Http\Controllers\PortalController;
@@ -793,6 +795,62 @@ Route::middleware('auth')->group(function () {
                 'cancelMovement'
 
             )->name('movements.cancel');
+
+
+
+        });
+
+
+
+    /*
+
+    |--------------------------------------------------------------------------
+
+    | FUEL
+
+    |--------------------------------------------------------------------------
+
+    */
+
+
+
+    Route::prefix('fuel')
+
+        ->name('fuel.')
+
+        ->controller(FuelTankController::class)
+
+        ->group(function () {
+
+
+
+            Route::get(
+
+                '/',
+
+                'index'
+
+            )->name('tanks.index');
+
+
+
+            Route::post(
+
+                '/tanks',
+
+                'store'
+
+            )->name('tanks.store');
+
+
+
+            Route::put(
+
+                '/tanks/{tank}',
+
+                'update'
+
+            )->name('tanks.update');
 
 
 

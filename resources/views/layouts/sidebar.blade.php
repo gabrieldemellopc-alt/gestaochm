@@ -99,7 +99,40 @@
             Operações
         </a>
 
-        {{-- PROCEDIMENTOS --}}
+
+        @if(userHasProfile('supervisor') || userHasProfile('manager') || userHasProfile('admin'))
+
+        {{-- ABASTECIMENTOS --}}
+
+        <a
+
+            href="{{ route('fuel.tanks.index') }}"
+
+            class="sidebar-link {{
+
+                request()->routeIs('fuel.*')
+
+                ? 'active'
+
+                : ''
+
+            }}"
+
+        >
+
+            <span class="sidebar-icon">
+
+                <i data-lucide="fuel"></i>
+
+            </span>
+
+            Abastecimentos
+
+        </a>
+
+        @endif
+
+        {{-- PROCEDIMENTOS --}}
         <a
             href="{{ route('procedures.index') }}"
             class="sidebar-link {{
