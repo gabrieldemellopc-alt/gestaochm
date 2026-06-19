@@ -67,6 +67,66 @@
                             <dd>{{ number_format((float) $tank->balance_percentage, 1, ',', '.') }}%</dd>
                         </div>
                     </dl>
+
+                    @if($tank->active)
+                        <details class="fuel-receipt-details">
+                            <summary>
+                                <i data-lucide="plus-circle"></i>
+                                Registrar recebimento
+                            </summary>
+
+                            <form method="POST" action="{{ route('fuel.receipts.store') }}" class="fuel-receipt-form">
+                                @csrf
+                                <input type="hidden" name="fuel_tank_id" value="{{ $tank->id }}">
+                                <input type="hidden" name="fuel_product_id" value="{{ $tank->fuel_product_id }}">
+
+                                <label>
+                                    Data do recebimento
+                                    <input
+                                        type="datetime-local"
+                                        name="received_at"
+                                        value="{{ old('received_at', now()->format('Y-m-d\TH:i')) }}"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    Quantidade em litros
+                                    <input type="number" name="quantity_liters" min="0.001" step="0.001" required>
+                                </label>
+
+                                <label>
+                                    Custo unitário
+                                    <input type="number" name="unit_cost" min="0" step="0.0001">
+                                </label>
+
+                                <label>
+                                    Custo total
+                                    <input type="number" name="total_cost" min="0" step="0.01">
+                                </label>
+
+                                <label>
+                                    Fornecedor
+                                    <input type="text" name="supplier_name" maxlength="255">
+                                </label>
+
+                                <label>
+                                    Nota fiscal
+                                    <input type="text" name="invoice_number" maxlength="255">
+                                </label>
+
+                                <label class="fuel-receipt-notes">
+                                    Observação
+                                    <textarea name="notes" rows="3"></textarea>
+                                </label>
+
+                                <button type="submit" class="fuel-primary-action">
+                                    <i data-lucide="save"></i>
+                                    Registrar entrada
+                                </button>
+                            </form>
+                        </details>
+                    @endif
                 </article>
             @empty
                 <article class="fuel-empty-card">
@@ -162,6 +222,50 @@
                     </button>
                 </div>
             </form>
+        </section>
+
+        <section class="fuel-panel">
+            <div class="fuel-panel-header">
+                <div>
+                    <span class="fuel-kicker">Recebimentos</span>
+                    <h2>Últimas entradas</h2>
+                </div>
+                <p>Registros recentes de Diesel e ARLA na unidade ativa.</p>
+            </div>
+
+            <div class="fuel-receipt-list">
+                @forelse($latestReceipts as $receipt)
+                    <article class="fuel-receipt-item">
+                        <div>
+                            <strong>{{ $receipt->tank?->name ?? 'Tanque' }}</strong>
+                            <span>
+                                {{ $receipt->product?->name ?? $receipt->tank?->product?->name ?? 'Produto' }}
+                                · {{ $receipt->received_at?->format('d/m/Y H:i') }}
+                            </span>
+                        </div>
+
+                        <div>
+                            <strong>{{ number_format((float) $receipt->quantity_liters, 3, ',', '.') }} L</strong>
+                            <span>
+                                @if($receipt->total_cost !== null)
+                                    R$ {{ number_format((float) $receipt->total_cost, 2, ',', '.') }}
+                                @else
+                                    Sem custo informado
+                                @endif
+                            </span>
+                        </div>
+
+                        <div>
+                            <span>{{ $receipt->supplier_name ?: 'Fornecedor não informado' }}</span>
+                            <small>{{ $receipt->responsible?->name ?: 'Responsável automático' }}</small>
+                        </div>
+                    </article>
+                @empty
+                    <div class="fuel-table-empty">
+                        Nenhum recebimento registrado nesta unidade.
+                    </div>
+                @endforelse
+            </div>
         </section>
 
         <section class="fuel-panel">

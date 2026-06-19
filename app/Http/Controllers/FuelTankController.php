@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\FuelProduct;
+use App\Models\FuelReceipt;
 use App\Models\FuelTank;
 use App\Models\UserDivisionAccess;
 use App\Services\ActiveContextService;
+use App\Services\FuelService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -45,9 +47,10 @@ class FuelTankController extends Controller
         return view('fuel.tanks.index', [
             'activeDivision' => $context['division'],
             'activeLocation' => $context['location'],
-            'products' => $products,
-            'tanks' => $tanks,
-        ]);
+                'products' => $products,
+                'tanks' => $tanks,
+                'latestReceipts' => $this->latestReceipts($context),
+            ]);
     }
 
     public function store(Request $request)
@@ -103,6 +106,33 @@ class FuelTankController extends Controller
         return redirect()
             ->route('fuel.tanks.index')
             ->with('success', 'Tanque atualizado com sucesso.');
+    }
+
+    public function storeReceipt(Request $request, FuelService $fuelService)
+    {
+        $context = $this->activeContext();
+
+        if (! $context) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $this->authorizeFuelManagement($context);
+
+        $fuelService->receiveFuel($request->only([
+            'fuel_tank_id',
+            'fuel_product_id',
+            'received_at',
+            'quantity_liters',
+            'unit_cost',
+            'total_cost',
+            'supplier_name',
+            'invoice_number',
+            'notes',
+        ]));
+
+        return redirect()
+            ->route('fuel.tanks.index')
+            ->with('success', 'Recebimento registrado com sucesso.');
     }
 
     private function activeContext(): ?array
@@ -200,6 +230,18 @@ class FuelTankController extends Controller
         }
 
         return min(100, round(((float) $tank->current_balance_liters / $capacity) * 100, 1));
+    }
+
+    private function latestReceipts(array $context)
+    {
+        return FuelReceipt::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->with(['tank.product', 'product', 'responsible'])
+            ->latest('received_at')
+            ->limit(8)
+            ->get();
     }
 
     private function missingActiveLocationRedirect()

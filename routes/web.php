@@ -844,6 +844,16 @@ Route::middleware('auth')->group(function () {
 
 
 
+            Route::post(
+
+                '/receipts',
+
+                'storeReceipt'
+
+            )->name('receipts.store');
+
+
+
             Route::put(
 
                 '/tanks/{tank}',

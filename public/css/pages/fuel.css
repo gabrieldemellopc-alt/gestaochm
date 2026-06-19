@@ -380,6 +380,119 @@
     grid-column: 1 / -1;
 }
 
+.fuel-receipt-details {
+    margin-top: 16px;
+}
+
+.fuel-receipt-details summary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid rgba(203, 213, 225, 0.18);
+    border-radius: 10px;
+    background: #344158;
+    color: #e5edf8;
+    font-size: 0.84rem;
+    font-weight: 800;
+    list-style: none;
+    cursor: pointer;
+}
+
+.fuel-receipt-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.fuel-receipt-details summary svg {
+    width: 16px;
+    height: 16px;
+}
+
+.fuel-receipt-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 13px;
+    padding: 14px;
+    border: 1px solid rgba(203, 213, 225, 0.12);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.22);
+}
+
+.fuel-receipt-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #dbe6f3;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.fuel-receipt-form input,
+.fuel-receipt-form textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgba(203, 213, 225, 0.16);
+    background: #1f2a3d;
+    color: #ffffff;
+    padding: 10px 12px;
+    outline: none;
+}
+
+.fuel-receipt-form input {
+    min-height: 40px;
+}
+
+.fuel-receipt-form textarea {
+    resize: vertical;
+}
+
+.fuel-receipt-form input:focus,
+.fuel-receipt-form textarea:focus {
+    border-color: rgba(248, 113, 113, 0.5);
+}
+
+.fuel-receipt-notes,
+.fuel-receipt-form .fuel-primary-action {
+    grid-column: 1 / -1;
+}
+
+.fuel-receipt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.fuel-receipt-item {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.4fr) minmax(150px, 0.8fr) minmax(180px, 1fr);
+    gap: 14px;
+    align-items: center;
+    padding: 13px 14px;
+    border: 1px solid rgba(203, 213, 225, 0.12);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.22);
+}
+
+.fuel-receipt-item strong,
+.fuel-receipt-item span,
+.fuel-receipt-item small {
+    display: block;
+}
+
+.fuel-receipt-item strong {
+    color: #ffffff;
+}
+
+.fuel-receipt-item span,
+.fuel-receipt-item small {
+    margin-top: 3px;
+    color: #b7c3d5;
+}
+
 html[data-chm-theme="corporate-light"] .fuel-page {
     color: #f8fafc;
 }
@@ -409,6 +522,18 @@ html[data-chm-theme="corporate-light"] .fuel-tank-meta div {
     background: rgba(30, 41, 59, 0.28);
 }
 
+html[data-chm-theme="corporate-light"] .fuel-receipt-form,
+html[data-chm-theme="corporate-light"] .fuel-receipt-item {
+    background: rgba(30, 41, 59, 0.24);
+    border-color: rgba(226, 232, 240, 0.18);
+}
+
+html[data-chm-theme="corporate-light"] .fuel-receipt-form input,
+html[data-chm-theme="corporate-light"] .fuel-receipt-form textarea {
+    background: #435373;
+    border-color: rgba(226, 232, 240, 0.24);
+}
+
 @media (max-width: 900px) {
     .fuel-header,
     .fuel-panel-header {
@@ -416,7 +541,9 @@ html[data-chm-theme="corporate-light"] .fuel-tank-meta div {
     }
 
     .fuel-form-grid,
-    .fuel-edit-form {
+    .fuel-edit-form,
+    .fuel-receipt-form,
+    .fuel-receipt-item {
         grid-template-columns: 1fr;
     }
 

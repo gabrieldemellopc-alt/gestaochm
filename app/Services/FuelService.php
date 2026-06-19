@@ -49,6 +49,12 @@ class FuelService
             $balanceAfter = $this->decimal($balanceBefore + $quantity, 3);
             $responsibleUserId = $validated['responsible_user_id'] ?? $context['user']->id;
 
+            if ($balanceAfter > (float) $tank->capacity_liters) {
+                throw ValidationException::withMessages([
+                    'quantity_liters' => 'O recebimento ultrapassa a capacidade do tanque.',
+                ]);
+            }
+
             $receipt = FuelReceipt::query()->create([
                 'tenant_id' => $context['tenant_id'],
                 'division_id' => $context['division_id'],
