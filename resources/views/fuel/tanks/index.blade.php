@@ -16,10 +16,17 @@
                 </p>
             </div>
 
-            <a href="#fuel-tank-create" class="fuel-primary-action">
-                <i data-lucide="plus"></i>
-                Novo tanque
-            </a>
+            <div class="fuel-header-actions">
+                <a href="#fuel-filling-create" class="fuel-secondary-action">
+                    <i data-lucide="truck"></i>
+                    Registrar abastecimento
+                </a>
+
+                <a href="#fuel-tank-create" class="fuel-primary-action">
+                    <i data-lucide="plus"></i>
+                    Novo tanque
+                </a>
+            </div>
         </header>
 
         <section class="fuel-summary-grid" aria-label="Resumo dos tanques">
@@ -224,6 +231,132 @@
             </form>
         </section>
 
+        <section class="fuel-panel" id="fuel-filling-create">
+            <div class="fuel-panel-header">
+                <div>
+                    <span class="fuel-kicker">Saída</span>
+                    <h2>Registrar abastecimento</h2>
+                </div>
+                <p>O saldo será baixado do tanque selecionado. KM/HR são apenas validados nesta etapa.</p>
+            </div>
+
+            <form method="POST" action="{{ route('fuel.fillings.store') }}" class="fuel-form fuel-filling-form">
+                @csrf
+
+                <div class="fuel-form-grid">
+                    <label>
+                        Veículo
+                        <select name="vehicle_id" required>
+                            <option value="">Selecione</option>
+                            @foreach($vehicles as $vehicle)
+                                <option value="{{ $vehicle->id }}" @selected(old('vehicle_id') == $vehicle->id)>
+                                    {{ $vehicle->name }} @if($vehicle->plate) · {{ $vehicle->plate }} @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('vehicle_id')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        Tanque/produto
+                        <select name="fuel_tank_id" required>
+                            <option value="">Selecione</option>
+                            @foreach($tanks->where('active', true) as $tank)
+                                <option value="{{ $tank->id }}" @selected(old('fuel_tank_id') == $tank->id)>
+                                    {{ $tank->name }} · {{ $tank->product?->name }} · {{ number_format((float) $tank->current_balance_liters, 3, ',', '.') }} L
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('fuel_tank_id')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        Motorista
+                        <select name="driver_id">
+                            <option value="">Não informado</option>
+                            @foreach($drivers as $driver)
+                                <option value="{{ $driver->id }}" @selected(old('driver_id') == $driver->id)>
+                                    {{ $driver->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('driver_id')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        Data/hora
+                        <input
+                            type="datetime-local"
+                            name="filled_at"
+                            value="{{ old('filled_at', now()->format('Y-m-d\TH:i')) }}"
+                            required
+                        >
+                        @error('filled_at')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        Litros
+                        <input type="number" name="quantity_liters" min="0.001" step="0.001" required>
+                        @error('quantity_liters')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        KM informado
+                        <input type="number" name="vehicle_km" min="0" step="0.01">
+                        @error('vehicle_km')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        Horas informadas
+                        <input type="number" name="vehicle_hours" min="0" step="0.01">
+                        @error('vehicle_hours')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        Custo unitário
+                        <input type="number" name="unit_cost" min="0" step="0.0001">
+                        @error('unit_cost')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label>
+                        Custo total
+                        <input type="number" name="total_cost" min="0" step="0.01">
+                        @error('total_cost')
+                            <small>{{ $message }}</small>
+                        @enderror
+                    </label>
+
+                    <label class="fuel-form-wide">
+                        Observação
+                        <textarea name="notes" rows="3"></textarea>
+                    </label>
+                </div>
+
+                <div class="fuel-form-actions">
+                    <button type="submit" class="fuel-primary-action">
+                        <i data-lucide="save"></i>
+                        Salvar abastecimento
+                    </button>
+                </div>
+            </form>
+        </section>
+
         <section class="fuel-panel">
             <div class="fuel-panel-header">
                 <div>
@@ -263,6 +396,53 @@
                 @empty
                     <div class="fuel-table-empty">
                         Nenhum recebimento registrado nesta unidade.
+                    </div>
+                @endforelse
+            </div>
+        </section>
+
+        <section class="fuel-panel">
+            <div class="fuel-panel-header">
+                <div>
+                    <span class="fuel-kicker">Abastecimentos</span>
+                    <h2>Últimas saídas</h2>
+                </div>
+                <p>Registros recentes de abastecimento da unidade ativa.</p>
+            </div>
+
+            <div class="fuel-receipt-list">
+                @forelse($latestFillings as $filling)
+                    <article class="fuel-receipt-item">
+                        <div>
+                            <strong>{{ $filling->vehicle?->name ?? 'Veículo' }}</strong>
+                            <span>
+                                {{ $filling->vehicle?->plate ?: 'Sem placa' }}
+                                · {{ $filling->filled_at?->format('d/m/Y H:i') }}
+                            </span>
+                        </div>
+
+                        <div>
+                            <strong>{{ number_format((float) $filling->quantity_liters, 3, ',', '.') }} L</strong>
+                            <span>
+                                {{ $filling->tank?->name ?? 'Tanque' }}
+                                · {{ $filling->product?->name ?? $filling->tank?->product?->name ?? 'Produto' }}
+                            </span>
+                        </div>
+
+                        <div>
+                            <span>
+                                @if($filling->total_cost !== null)
+                                    R$ {{ number_format((float) $filling->total_cost, 2, ',', '.') }}
+                                @else
+                                    Sem custo informado
+                                @endif
+                            </span>
+                            <small>{{ $filling->driver?->name ?: 'Motorista não informado' }}</small>
+                        </div>
+                    </article>
+                @empty
+                    <div class="fuel-table-empty">
+                        Nenhum abastecimento registrado nesta unidade.
                     </div>
                 @endforelse
             </div>

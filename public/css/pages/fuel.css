@@ -88,6 +88,13 @@
     border-color: rgba(248, 113, 113, 0.55);
 }
 
+.fuel-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
 .fuel-secondary-action,
 .fuel-edit-details summary {
     border-color: rgba(203, 213, 225, 0.18);
@@ -268,6 +275,7 @@
 
 .fuel-form input,
 .fuel-form select,
+.fuel-form textarea,
 .fuel-edit-form input,
 .fuel-edit-form select {
     width: 100%;
@@ -282,13 +290,22 @@
 
 .fuel-form input:focus,
 .fuel-form select:focus,
+.fuel-form textarea:focus,
 .fuel-edit-form input:focus,
 .fuel-edit-form select:focus {
     border-color: rgba(248, 113, 113, 0.5);
 }
 
+.fuel-form textarea {
+    resize: vertical;
+}
+
 .fuel-form small {
     color: #fca5a5;
+}
+
+.fuel-form-wide {
+    grid-column: 1 / -1;
 }
 
 .fuel-check {
@@ -507,6 +524,7 @@ html[data-chm-theme="corporate-light"] .fuel-empty-card {
 
 html[data-chm-theme="corporate-light"] .fuel-form input,
 html[data-chm-theme="corporate-light"] .fuel-form select,
+html[data-chm-theme="corporate-light"] .fuel-form textarea,
 html[data-chm-theme="corporate-light"] .fuel-edit-form input,
 html[data-chm-theme="corporate-light"] .fuel-edit-form select {
     background: #435373;

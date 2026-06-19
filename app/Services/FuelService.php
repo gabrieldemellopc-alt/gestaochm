@@ -7,6 +7,7 @@ use App\Models\FuelMovement;
 use App\Models\FuelReceipt;
 use App\Models\FuelTank;
 use App\Models\User;
+use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -128,6 +129,7 @@ class FuelService
         return DB::transaction(function () use ($context, $validated) {
             $vehicle = $this->vehicleForContext((int) $validated['vehicle_id'], $context);
             $this->validateVehicleCounters($vehicle, $validated);
+            $this->validateDriverForContext($validated['driver_id'] ?? null, $context);
 
             $tank = $this->lockTankForContext((int) $validated['fuel_tank_id'], $context);
             $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
@@ -285,6 +287,33 @@ class FuelService
         ) {
             throw ValidationException::withMessages([
                 'vehicle_hours' => 'As horas informadas não podem ser menores que as horas atuais do veículo.',
+            ]);
+        }
+    }
+
+    private function validateDriverForContext(mixed $driverId, array $context): void
+    {
+        if ($driverId === null || $driverId === '') {
+            return;
+        }
+
+        $exists = UserDivisionAccess::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('user_id', (int) $driverId)
+            ->where('division_id', $context['division_id'])
+            ->where('module', 'fleet')
+            ->whereIn('profile', ['driver', 'motorista'])
+            ->where('active', true)
+            ->where(function ($query) use ($context) {
+                $query
+                    ->where('location_id', $context['location_id'])
+                    ->orWhereNull('location_id');
+            })
+            ->exists();
+
+        if (! $exists) {
+            throw ValidationException::withMessages([
+                'driver_id' => 'O motorista informado não está disponível para a unidade ativa.',
             ]);
         }
     }

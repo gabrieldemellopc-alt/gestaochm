@@ -854,6 +854,16 @@ Route::middleware('auth')->group(function () {
 
 
 
+            Route::post(
+
+                '/fillings',
+
+                'storeFilling'
+
+            )->name('fillings.store');
+
+
+
             Route::put(
 
                 '/tanks/{tank}',

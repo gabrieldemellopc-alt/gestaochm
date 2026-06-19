@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FuelFilling;
 use App\Models\FuelProduct;
 use App\Models\FuelReceipt;
 use App\Models\FuelTank;
 use App\Models\UserDivisionAccess;
+use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use App\Services\FuelService;
 use Illuminate\Http\Request;
@@ -47,10 +49,13 @@ class FuelTankController extends Controller
         return view('fuel.tanks.index', [
             'activeDivision' => $context['division'],
             'activeLocation' => $context['location'],
-                'products' => $products,
-                'tanks' => $tanks,
-                'latestReceipts' => $this->latestReceipts($context),
-            ]);
+            'products' => $products,
+            'tanks' => $tanks,
+            'vehicles' => $this->vehiclesForContext($context),
+            'drivers' => $this->driversForContext($context),
+            'latestReceipts' => $this->latestReceipts($context),
+            'latestFillings' => $this->latestFillings($context),
+        ]);
     }
 
     public function store(Request $request)
@@ -133,6 +138,35 @@ class FuelTankController extends Controller
         return redirect()
             ->route('fuel.tanks.index')
             ->with('success', 'Recebimento registrado com sucesso.');
+    }
+
+    public function storeFilling(Request $request, FuelService $fuelService)
+    {
+        $context = $this->activeContext();
+
+        if (! $context) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $this->authorizeFuelManagement($context);
+
+        $fuelService->registerFilling($request->only([
+            'fuel_tank_id',
+            'fuel_product_id',
+            'vehicle_id',
+            'driver_id',
+            'filled_at',
+            'vehicle_km',
+            'vehicle_hours',
+            'quantity_liters',
+            'unit_cost',
+            'total_cost',
+            'notes',
+        ]));
+
+        return redirect()
+            ->route('fuel.tanks.index')
+            ->with('success', 'Abastecimento registrado com sucesso.');
     }
 
     private function activeContext(): ?array
@@ -242,6 +276,50 @@ class FuelTankController extends Controller
             ->latest('received_at')
             ->limit(8)
             ->get();
+    }
+
+    private function latestFillings(array $context)
+    {
+        return FuelFilling::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->with(['tank.product', 'product', 'vehicle', 'driver', 'responsible'])
+            ->latest('filled_at')
+            ->limit(8)
+            ->get();
+    }
+
+    private function vehiclesForContext(array $context)
+    {
+        return Vehicle::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'plate', 'current_km', 'current_hours']);
+    }
+
+    private function driversForContext(array $context)
+    {
+        return UserDivisionAccess::query()
+            ->with('user')
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('module', 'fleet')
+            ->whereIn('profile', ['driver', 'motorista'])
+            ->where('active', true)
+            ->where(function ($query) use ($context) {
+                $query
+                    ->where('location_id', $context['location_id'])
+                    ->orWhereNull('location_id');
+            })
+            ->get()
+            ->filter(fn ($access) => $access->user)
+            ->map(fn ($access) => $access->user)
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
     }
 
     private function missingActiveLocationRedirect()
