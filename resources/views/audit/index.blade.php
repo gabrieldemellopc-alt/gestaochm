@@ -25,13 +25,13 @@
             <h1>Auditoria</h1>
             <p>
                 Consulta somente leitura dos eventos registrados para
-                {{ $activeLocation?->name ?? 'a unidade ativa' }}.
+                {{ $auditScopeLabel }}.
             </p>
         </div>
 
         <div class="audit-context">
             <span>{{ $activeDivision?->name ?? 'Divisao nao definida' }}</span>
-            <strong>{{ $activeLocation?->name ?? 'Unidade nao definida' }}</strong>
+            <strong>{{ $auditScopeLabel }}</strong>
         </div>
     </header>
 
@@ -67,6 +67,18 @@
                 @foreach($auditUsers as $auditUser)
                     <option value="{{ $auditUser->id }}" @selected((string) ($filters['user_id'] ?? '') === (string) $auditUser->id)>
                         {{ $auditUser->name }}{{ $auditUser->email ? ' - ' . $auditUser->email : '' }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label for="auditLocation">Unidade</label>
+            <select id="auditLocation" name="location_id">
+                <option value="">Todas permitidas</option>
+                @foreach($auditLocations as $location)
+                    <option value="{{ $location->id }}" @selected((string) ($filters['location_id'] ?? '') === (string) $location->id)>
+                        {{ $location->name }}
                     </option>
                 @endforeach
             </select>

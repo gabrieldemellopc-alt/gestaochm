@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Location;
 use App\Models\SystemAuditLog;
 use App\Models\User;
+use App\Models\UserDivisionAccess;
 use App\Services\ActiveContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,7 +19,28 @@ class AuditLogController extends Controller
         $user = $request->user();
         $activeContext = app(ActiveContextService::class);
         $activeDivision = $activeContext->activeDivision($user);
-        $activeLocation = $activeContext->activeLocation($user);
+
+        if (! $activeDivision) {
+            return redirect()
+                ->route('portal')
+                ->with('warning', 'Selecione uma divisao para consultar a auditoria.');
+        }
+
+        $auditLocations = $this->auditLocationsFor($user, $activeDivision->id);
+        $selectedLocationId = $request->filled('location_id')
+            ? $request->integer('location_id')
+            : null;
+
+        if (
+            $selectedLocationId
+            && ! $auditLocations->contains('id', $selectedLocationId)
+        ) {
+            abort(403);
+        }
+
+        $auditScopeLabel = $selectedLocationId
+            ? $auditLocations->firstWhere('id', $selectedLocationId)?->name
+            : 'Todas as unidades permitidas';
 
         $logsQuery = SystemAuditLog::query()
             ->with([
@@ -27,8 +50,12 @@ class AuditLogController extends Controller
                 'user:id,name,email',
             ])
             ->where('tenant_id', $user->tenant_id)
-            ->when($activeDivision, fn ($query) => $query->where('division_id', $activeDivision->id))
-            ->when($activeLocation, fn ($query) => $query->where('location_id', $activeLocation->id));
+            ->where('division_id', $activeDivision->id)
+            ->when(
+                $selectedLocationId,
+                fn ($query) => $query->where('location_id', $selectedLocationId),
+                fn ($query) => $this->applyAuditLocationScope($query, $auditLocations)
+            );
 
         $logsQuery
             ->when($request->filled('module'), fn ($query) => $query->where('module', $request->input('module')))
@@ -56,8 +83,12 @@ class AuditLogController extends Controller
 
         $baseOptionsQuery = SystemAuditLog::query()
             ->where('tenant_id', $user->tenant_id)
-            ->when($activeDivision, fn ($query) => $query->where('division_id', $activeDivision->id))
-            ->when($activeLocation, fn ($query) => $query->where('location_id', $activeLocation->id));
+            ->where('division_id', $activeDivision->id)
+            ->when(
+                $selectedLocationId,
+                fn ($query) => $query->where('location_id', $selectedLocationId),
+                fn ($query) => $this->applyAuditLocationScope($query, $auditLocations)
+            );
 
         $modules = (clone $baseOptionsQuery)
             ->whereNotNull('module')
@@ -88,15 +119,61 @@ class AuditLogController extends Controller
             'actions' => $actions,
             'auditUsers' => $auditUsers,
             'activeDivision' => $activeDivision,
-            'activeLocation' => $activeLocation,
+            'auditLocations' => $auditLocations,
+            'selectedLocationId' => $selectedLocationId,
+            'auditScopeLabel' => $auditScopeLabel,
             'filters' => $request->only([
                 'module',
                 'action',
                 'user_id',
+                'location_id',
                 'date_from',
                 'date_to',
                 'search',
             ]),
         ]);
+    }
+
+    private function auditLocationsFor(User $user, int $divisionId)
+    {
+        $accesses = UserDivisionAccess::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('user_id', $user->id)
+            ->where('division_id', $divisionId)
+            ->where('module', 'fleet')
+            ->whereIn('profile', ['manager', 'admin'])
+            ->where('active', true)
+            ->get(['location_id']);
+
+        if ($accesses->contains(fn ($access) => $access->location_id === null)) {
+            return Location::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->where('division_id', $divisionId)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        return Location::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('division_id', $divisionId)
+            ->whereIn(
+                'id',
+                $accesses->pluck('location_id')->filter()->unique()->values()
+            )
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    private function applyAuditLocationScope($query, $auditLocations): void
+    {
+        $locationIds = $auditLocations->pluck('id')->values();
+
+        $query->where(function ($query) use ($locationIds) {
+            $query->whereNull('location_id');
+
+            if ($locationIds->isNotEmpty()) {
+                $query->orWhereIn('location_id', $locationIds);
+            }
+        });
     }
 }

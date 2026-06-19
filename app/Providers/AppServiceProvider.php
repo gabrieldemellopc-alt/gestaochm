@@ -26,7 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::define('viewAuditLogs', function (User $user) {
             $divisionId = session('active_division_id');
-            $locationId = session('active_location_id');
 
             if ($divisionId) {
                 return UserDivisionAccess::query()
@@ -36,17 +35,6 @@ class AppServiceProvider extends ServiceProvider
                     ->where('module', 'fleet')
                     ->whereIn('profile', ['manager', 'admin'])
                     ->where('active', true)
-                    ->where(function ($query) use ($locationId) {
-                        if ($locationId) {
-                            $query
-                                ->where('location_id', $locationId)
-                                ->orWhereNull('location_id');
-
-                            return;
-                        }
-
-                        $query->whereNull('location_id');
-                    })
                     ->exists();
             }
 
