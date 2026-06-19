@@ -6,7 +6,11 @@
 
     $pageSubtitle = 'Controle de Frota';
 
-@endphp
+    $operationsEnabled = (bool) config('chm.features.operations_enabled', false);
+
+    $fuelEnabled = (bool) config('chm.features.fuel_enabled', true);
+
+@endphp
 
 @push('styles')
 
@@ -389,7 +393,7 @@
                 
                     @else
                 
-                        @if(!$cannotStartOperation)
+                        @if($operationsEnabled && !$cannotStartOperation)
                 
                             <button
                                 type="button"
@@ -407,7 +411,20 @@
                                 Iniciar operação
                             </button>
                 
-                        @endif
+                        @endif
+
+                        @if($fuelEnabled)
+
+                            <a
+                                href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}"
+                                class="vehicle-operation-action-btn fuel"
+                                onclick="event.stopPropagation();"
+                            >
+                                <i data-lucide="fuel"></i>
+                                Abastecer veiculo
+                            </a>
+
+                        @endif
                 
                     @endif
                 

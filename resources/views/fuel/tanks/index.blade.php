@@ -1,10 +1,15 @@
 @extends('layouts.app')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/pages/fuel.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/pages/fuel.css') }}?v=2">
 @endpush
 
 @section('content')
+    @php
+        $openFuelModal = $openFuelModal ?? null;
+        $selectedFuelVehicleId = $selectedFuelVehicleId ?? null;
+    @endphp
+
     <div class="fuel-page">
         <header class="fuel-header">
             <div>
@@ -12,20 +17,20 @@
                 <h1>Tanques da unidade</h1>
                 <p>
                     Controle as bases de combustível de {{ $activeLocation->name ?? 'unidade ativa' }}.
-                    O saldo inicial é sempre zero e será movimentado por recebimentos.
+                    Recebimentos aumentam o saldo e abastecimentos reduzem o tanque selecionado.
                 </p>
             </div>
 
             <div class="fuel-header-actions">
-                <a href="#fuel-filling-create" class="fuel-secondary-action">
+                <button type="button" class="fuel-secondary-action" onclick="openFuelModal('filling')">
                     <i data-lucide="truck"></i>
                     Registrar abastecimento
-                </a>
+                </button>
 
-                <a href="#fuel-tank-create" class="fuel-primary-action">
+                <button type="button" class="fuel-primary-action" onclick="openFuelModal('tank')">
                     <i data-lucide="plus"></i>
                     Novo tanque
-                </a>
+                </button>
             </div>
         </header>
 
@@ -34,9 +39,7 @@
                 <article class="fuel-tank-card {{ $tank->balance_status }}">
                     <div class="fuel-tank-card-top">
                         <div>
-                            <span class="fuel-product-label">
-                                {{ $tank->product?->name ?? 'Produto' }}
-                            </span>
+                            <span class="fuel-product-label">{{ $tank->product?->name ?? 'Produto' }}</span>
                             <h2>{{ $tank->name }}</h2>
                         </div>
 
@@ -52,12 +55,8 @@
                     </div>
 
                     <div class="fuel-balance-row">
-                        <strong>
-                            {{ number_format((float) $tank->current_balance_liters, 3, ',', '.') }} L
-                        </strong>
-                        <span>
-                            de {{ number_format((float) $tank->capacity_liters, 3, ',', '.') }} L
-                        </span>
+                        <strong>{{ number_format((float) $tank->current_balance_liters, 3, ',', '.') }} L</strong>
+                        <span>de {{ number_format((float) $tank->capacity_liters, 3, ',', '.') }} L</span>
                     </div>
 
                     <div class="fuel-progress-track">
@@ -75,65 +74,19 @@
                         </div>
                     </dl>
 
-                    @if($tank->active)
-                        <details class="fuel-receipt-details">
-                            <summary>
+                    <div class="fuel-card-actions">
+                        @if($tank->active)
+                            <button type="button" class="fuel-secondary-action" onclick="openFuelModal('receipt-{{ $tank->id }}')">
                                 <i data-lucide="plus-circle"></i>
-                                Registrar recebimento
-                            </summary>
+                                Recebimento
+                            </button>
+                        @endif
 
-                            <form method="POST" action="{{ route('fuel.receipts.store') }}" class="fuel-receipt-form">
-                                @csrf
-                                <input type="hidden" name="fuel_tank_id" value="{{ $tank->id }}">
-                                <input type="hidden" name="fuel_product_id" value="{{ $tank->fuel_product_id }}">
-
-                                <label>
-                                    Data do recebimento
-                                    <input
-                                        type="datetime-local"
-                                        name="received_at"
-                                        value="{{ old('received_at', now()->format('Y-m-d\TH:i')) }}"
-                                        required
-                                    >
-                                </label>
-
-                                <label>
-                                    Quantidade em litros
-                                    <input type="number" name="quantity_liters" min="0.001" step="0.001" required>
-                                </label>
-
-                                <label>
-                                    Custo unitário
-                                    <input type="number" name="unit_cost" min="0" step="0.0001">
-                                </label>
-
-                                <label>
-                                    Custo total
-                                    <input type="number" name="total_cost" min="0" step="0.01">
-                                </label>
-
-                                <label>
-                                    Fornecedor
-                                    <input type="text" name="supplier_name" maxlength="255">
-                                </label>
-
-                                <label>
-                                    Nota fiscal
-                                    <input type="text" name="invoice_number" maxlength="255">
-                                </label>
-
-                                <label class="fuel-receipt-notes">
-                                    Observação
-                                    <textarea name="notes" rows="3"></textarea>
-                                </label>
-
-                                <button type="submit" class="fuel-primary-action">
-                                    <i data-lucide="save"></i>
-                                    Registrar entrada
-                                </button>
-                            </form>
-                        </details>
-                    @endif
+                        <button type="button" class="fuel-secondary-action" onclick="openFuelModal('edit-{{ $tank->id }}')">
+                            <i data-lucide="pencil"></i>
+                            Editar
+                        </button>
+                    </div>
                 </article>
             @empty
                 <article class="fuel-empty-card">
@@ -142,219 +95,6 @@
                     <p>Cadastre o primeiro tanque da unidade para iniciar o controle de abastecimentos.</p>
                 </article>
             @endforelse
-        </section>
-
-        <section class="fuel-panel" id="fuel-tank-create">
-            <div class="fuel-panel-header">
-                <div>
-                    <span class="fuel-kicker">Cadastro</span>
-                    <h2>Novo tanque</h2>
-                </div>
-                <p>O saldo será iniciado em zero. Recebimentos entram em uma etapa futura.</p>
-            </div>
-
-            <form method="POST" action="{{ route('fuel.tanks.store') }}" class="fuel-form">
-                @csrf
-
-                <div class="fuel-form-grid">
-                    <label>
-                        Produto
-                        <select name="fuel_product_id" required>
-                            <option value="">Selecione</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->id }}" @selected(old('fuel_product_id') == $product->id)>
-                                    {{ $product->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('fuel_product_id')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Nome do tanque
-                        <input
-                            type="text"
-                            name="name"
-                            value="{{ old('name') }}"
-                            required
-                            maxlength="255"
-                            placeholder="Ex.: Tanque Diesel 01"
-                        >
-                        @error('name')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Capacidade em litros
-                        <input
-                            type="number"
-                            name="capacity_liters"
-                            value="{{ old('capacity_liters') }}"
-                            min="0.001"
-                            step="0.001"
-                            required
-                        >
-                        @error('capacity_liters')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Saldo mínimo
-                        <input
-                            type="number"
-                            name="minimum_balance_liters"
-                            value="{{ old('minimum_balance_liters', 0) }}"
-                            min="0"
-                            step="0.001"
-                        >
-                        @error('minimum_balance_liters')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-                </div>
-
-                <label class="fuel-check">
-                    <input type="checkbox" name="active" value="1" checked>
-                    Tanque ativo
-                </label>
-
-                <div class="fuel-form-actions">
-                    <button type="submit" class="fuel-primary-action">
-                        <i data-lucide="save"></i>
-                        Salvar tanque
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <section class="fuel-panel" id="fuel-filling-create">
-            <div class="fuel-panel-header">
-                <div>
-                    <span class="fuel-kicker">Saída</span>
-                    <h2>Registrar abastecimento</h2>
-                </div>
-                <p>O saldo será baixado do tanque selecionado. KM/HR são apenas validados nesta etapa.</p>
-            </div>
-
-            <form method="POST" action="{{ route('fuel.fillings.store') }}" class="fuel-form fuel-filling-form">
-                @csrf
-
-                <div class="fuel-form-grid">
-                    <label>
-                        Veículo
-                        <select name="vehicle_id" required>
-                            <option value="">Selecione</option>
-                            @foreach($vehicles as $vehicle)
-                                <option value="{{ $vehicle->id }}" @selected(old('vehicle_id') == $vehicle->id)>
-                                    {{ $vehicle->name }} @if($vehicle->plate) · {{ $vehicle->plate }} @endif
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('vehicle_id')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Tanque/produto
-                        <select name="fuel_tank_id" required>
-                            <option value="">Selecione</option>
-                            @foreach($tanks->where('active', true) as $tank)
-                                <option value="{{ $tank->id }}" @selected(old('fuel_tank_id') == $tank->id)>
-                                    {{ $tank->name }} · {{ $tank->product?->name }} · {{ number_format((float) $tank->current_balance_liters, 3, ',', '.') }} L
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('fuel_tank_id')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Motorista
-                        <select name="driver_id">
-                            <option value="">Não informado</option>
-                            @foreach($drivers as $driver)
-                                <option value="{{ $driver->id }}" @selected(old('driver_id') == $driver->id)>
-                                    {{ $driver->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('driver_id')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Data/hora
-                        <input
-                            type="datetime-local"
-                            name="filled_at"
-                            value="{{ old('filled_at', now()->format('Y-m-d\TH:i')) }}"
-                            required
-                        >
-                        @error('filled_at')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Litros
-                        <input type="number" name="quantity_liters" min="0.001" step="0.001" required>
-                        @error('quantity_liters')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        KM informado
-                        <input type="number" name="vehicle_km" min="0" step="0.01">
-                        @error('vehicle_km')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Horas informadas
-                        <input type="number" name="vehicle_hours" min="0" step="0.01">
-                        @error('vehicle_hours')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Custo unitário
-                        <input type="number" name="unit_cost" min="0" step="0.0001">
-                        @error('unit_cost')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label>
-                        Custo total
-                        <input type="number" name="total_cost" min="0" step="0.01">
-                        @error('total_cost')
-                            <small>{{ $message }}</small>
-                        @enderror
-                    </label>
-
-                    <label class="fuel-form-wide">
-                        Observação
-                        <textarea name="notes" rows="3"></textarea>
-                    </label>
-                </div>
-
-                <div class="fuel-form-actions">
-                    <button type="submit" class="fuel-primary-action">
-                        <i data-lucide="save"></i>
-                        Salvar abastecimento
-                    </button>
-                </div>
-            </form>
         </section>
 
         <section class="fuel-panel">
@@ -371,10 +111,7 @@
                     <article class="fuel-receipt-item">
                         <div>
                             <strong>{{ $receipt->tank?->name ?? 'Tanque' }}</strong>
-                            <span>
-                                {{ $receipt->product?->name ?? $receipt->tank?->product?->name ?? 'Produto' }}
-                                · {{ $receipt->received_at?->format('d/m/Y H:i') }}
-                            </span>
+                            <span>{{ $receipt->product?->name ?? $receipt->tank?->product?->name ?? 'Produto' }} · {{ $receipt->received_at?->format('d/m/Y H:i') }}</span>
                         </div>
 
                         <div>
@@ -394,9 +131,7 @@
                         </div>
                     </article>
                 @empty
-                    <div class="fuel-table-empty">
-                        Nenhum recebimento registrado nesta unidade.
-                    </div>
+                    <div class="fuel-table-empty">Nenhum recebimento registrado nesta unidade.</div>
                 @endforelse
             </div>
         </section>
@@ -415,18 +150,12 @@
                     <article class="fuel-receipt-item">
                         <div>
                             <strong>{{ $filling->vehicle?->name ?? 'Veículo' }}</strong>
-                            <span>
-                                {{ $filling->vehicle?->plate ?: 'Sem placa' }}
-                                · {{ $filling->filled_at?->format('d/m/Y H:i') }}
-                            </span>
+                            <span>{{ $filling->vehicle?->plate ?: 'Sem placa' }} · {{ $filling->filled_at?->format('d/m/Y H:i') }}</span>
                         </div>
 
                         <div>
                             <strong>{{ number_format((float) $filling->quantity_liters, 3, ',', '.') }} L</strong>
-                            <span>
-                                {{ $filling->tank?->name ?? 'Tanque' }}
-                                · {{ $filling->product?->name ?? $filling->tank?->product?->name ?? 'Produto' }}
-                            </span>
+                            <span>{{ $filling->tank?->name ?? 'Tanque' }} · {{ $filling->product?->name ?? $filling->tank?->product?->name ?? 'Produto' }}</span>
                         </div>
 
                         <div>
@@ -441,9 +170,7 @@
                         </div>
                     </article>
                 @empty
-                    <div class="fuel-table-empty">
-                        Nenhum abastecimento registrado nesta unidade.
-                    </div>
+                    <div class="fuel-table-empty">Nenhum abastecimento registrado nesta unidade.</div>
                 @endforelse
             </div>
         </section>
@@ -467,7 +194,7 @@
                             <th>Saldo atual</th>
                             <th>Saldo mínimo</th>
                             <th>Status</th>
-                            <th>Editar</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -493,60 +220,317 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <details class="fuel-edit-details">
-                                        <summary>Editar</summary>
-                                        <form method="POST" action="{{ route('fuel.tanks.update', $tank) }}" class="fuel-edit-form">
-                                            @csrf
-                                            @method('PUT')
-
-                                            <label>
-                                                Produto
-                                                <select name="fuel_product_id" required>
-                                                    @foreach($products as $product)
-                                                        <option value="{{ $product->id }}" @selected((int) $tank->fuel_product_id === (int) $product->id)>
-                                                            {{ $product->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </label>
-
-                                            <label>
-                                                Nome
-                                                <input type="text" name="name" value="{{ $tank->name }}" required maxlength="255">
-                                            </label>
-
-                                            <label>
-                                                Capacidade
-                                                <input type="number" name="capacity_liters" value="{{ $tank->capacity_liters }}" min="0.001" step="0.001" required>
-                                            </label>
-
-                                            <label>
-                                                Saldo mínimo
-                                                <input type="number" name="minimum_balance_liters" value="{{ $tank->minimum_balance_liters }}" min="0" step="0.001">
-                                            </label>
-
-                                            <label class="fuel-check">
-                                                <input type="checkbox" name="active" value="1" @checked($tank->active)>
-                                                Ativo
-                                            </label>
-
-                                            <button type="submit" class="fuel-secondary-action">
-                                                Atualizar
-                                            </button>
-                                        </form>
-                                    </details>
+                                    <button type="button" class="fuel-secondary-action" onclick="openFuelModal('edit-{{ $tank->id }}')">
+                                        Editar
+                                    </button>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="fuel-table-empty">
-                                    Nenhum tanque cadastrado para esta unidade.
-                                </td>
+                                <td colspan="7" class="fuel-table-empty">Nenhum tanque cadastrado para esta unidade.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </section>
+
+        <div id="fuel-modal-tank" class="fuel-modal-overlay {{ $errors->fuelTank->any() || $openFuelModal === 'tank' ? 'is-open' : '' }}">
+            <div class="fuel-modal-card">
+                <div class="fuel-modal-header">
+                    <div>
+                        <span class="fuel-kicker">Cadastro</span>
+                        <h2>Novo tanque</h2>
+                    </div>
+                    <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+
+                @if($errors->fuelTank->any())
+                    <div class="fuel-form-error">
+                        @foreach($errors->fuelTank->all() as $message)
+                            <span>{{ $message }}</span>
+                        @endforeach
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('fuel.tanks.store') }}" class="fuel-form">
+                    @csrf
+                    <div class="fuel-form-grid">
+                        <label>
+                            Produto
+                            <select name="fuel_product_id" required>
+                                <option value="">Selecione</option>
+                                @foreach($products as $product)
+                                    <option value="{{ $product->id }}" @selected(old('fuel_product_id') == $product->id)>{{ $product->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label>
+                            Nome do tanque
+                            <input type="text" name="name" value="{{ old('name') }}" required maxlength="255" placeholder="Ex.: Tanque Diesel 01">
+                        </label>
+                        <label>
+                            Capacidade em litros
+                            <input type="number" name="capacity_liters" value="{{ old('capacity_liters') }}" min="0.001" step="0.001" required>
+                        </label>
+                        <label>
+                            Saldo mínimo
+                            <input type="number" name="minimum_balance_liters" value="{{ old('minimum_balance_liters', 0) }}" min="0" step="0.001">
+                        </label>
+                    </div>
+                    <label class="fuel-check">
+                        <input type="checkbox" name="active" value="1" checked>
+                        Tanque ativo
+                    </label>
+                    <div class="fuel-form-actions">
+                        <button type="button" class="fuel-secondary-action" onclick="closeFuelModals()">Cancelar</button>
+                        <button type="submit" class="fuel-primary-action">Salvar tanque</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="fuel-modal-filling" class="fuel-modal-overlay {{ $errors->fuelFilling->any() || $openFuelModal === 'filling' ? 'is-open' : '' }}">
+            <div class="fuel-modal-card wide">
+                <div class="fuel-modal-header">
+                    <div>
+                        <span class="fuel-kicker">Saída</span>
+                        <h2>Registrar abastecimento</h2>
+                    </div>
+                    <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+
+                @if($errors->fuelFilling->any())
+                    <div class="fuel-form-error">
+                        @foreach($errors->fuelFilling->all() as $message)
+                            <span>{{ $message }}</span>
+                        @endforeach
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('fuel.fillings.store') }}" class="fuel-form fuel-filling-form">
+                    @csrf
+                    <div class="fuel-form-grid">
+                        <label>
+                            Veículo
+                            <select name="vehicle_id" required>
+                                <option value="">Selecione</option>
+                                @foreach($vehicles as $vehicle)
+                                    <option value="{{ $vehicle->id }}" @selected((string) old('vehicle_id', $selectedFuelVehicleId) === (string) $vehicle->id)>
+                                        {{ $vehicle->name }} @if($vehicle->plate) · {{ $vehicle->plate }} @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label>
+                            Tanque/produto
+                            <select name="fuel_tank_id" required>
+                                <option value="">Selecione</option>
+                                @foreach($tanks->where('active', true) as $tank)
+                                    <option value="{{ $tank->id }}" @selected(old('fuel_tank_id') == $tank->id)>
+                                        {{ $tank->name }} · {{ $tank->product?->name }} · {{ number_format((float) $tank->current_balance_liters, 3, ',', '.') }} L
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label>
+                            Motorista
+                            <select name="driver_id">
+                                <option value="">Não informado</option>
+                                @foreach($drivers as $driver)
+                                    <option value="{{ $driver->id }}" @selected(old('driver_id') == $driver->id)>{{ $driver->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label>
+                            Data/hora
+                            <input type="datetime-local" name="filled_at" value="{{ old('filled_at', now()->format('Y-m-d\TH:i')) }}" required>
+                        </label>
+                        <label>
+                            Litros
+                            <input type="number" name="quantity_liters" min="0.001" step="0.001" required>
+                        </label>
+                        <label>
+                            KM informado
+                            <input type="number" name="vehicle_km" min="0" step="0.01">
+                        </label>
+                        <label>
+                            Horas informadas
+                            <input type="number" name="vehicle_hours" min="0" step="0.01">
+                        </label>
+                        <label>
+                            Custo unitário
+                            <input type="number" name="unit_cost" min="0" step="0.0001">
+                        </label>
+                        <label>
+                            Custo total
+                            <input type="number" name="total_cost" min="0" step="0.01">
+                        </label>
+                        <label class="fuel-form-wide">
+                            Observação
+                            <textarea name="notes" rows="3"></textarea>
+                        </label>
+                    </div>
+                    <div class="fuel-form-actions">
+                        <button type="button" class="fuel-secondary-action" onclick="closeFuelModals()">Cancelar</button>
+                        <button type="submit" class="fuel-primary-action">Salvar abastecimento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @foreach($tanks as $tank)
+            <div id="fuel-modal-receipt-{{ $tank->id }}" class="fuel-modal-overlay {{ $errors->fuelReceipt->any() && $openFuelModal === 'receipt-'.$tank->id ? 'is-open' : '' }}">
+                <div class="fuel-modal-card wide">
+                    <div class="fuel-modal-header">
+                        <div>
+                            <span class="fuel-kicker">Entrada</span>
+                            <h2>Recebimento em {{ $tank->name }}</h2>
+                        </div>
+                        <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+
+                    @if($errors->fuelReceipt->any() && $openFuelModal === 'receipt-'.$tank->id)
+                        <div class="fuel-form-error">
+                            @foreach($errors->fuelReceipt->all() as $message)
+                                <span>{{ $message }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('fuel.receipts.store') }}" class="fuel-form">
+                        @csrf
+                        <input type="hidden" name="fuel_tank_id" value="{{ $tank->id }}">
+                        <input type="hidden" name="fuel_product_id" value="{{ $tank->fuel_product_id }}">
+                        <div class="fuel-form-grid">
+                            <label>
+                                Data do recebimento
+                                <input type="datetime-local" name="received_at" value="{{ old('received_at', now()->format('Y-m-d\TH:i')) }}" required>
+                            </label>
+                            <label>
+                                Quantidade em litros
+                                <input type="number" name="quantity_liters" min="0.001" step="0.001" required>
+                            </label>
+                            <label>
+                                Custo unitário
+                                <input type="number" name="unit_cost" min="0" step="0.0001">
+                            </label>
+                            <label>
+                                Custo total
+                                <input type="number" name="total_cost" min="0" step="0.01">
+                            </label>
+                            <label>
+                                Fornecedor
+                                <input type="text" name="supplier_name" maxlength="255">
+                            </label>
+                            <label>
+                                Nota fiscal
+                                <input type="text" name="invoice_number" maxlength="255">
+                            </label>
+                            <label class="fuel-form-wide">
+                                Observação
+                                <textarea name="notes" rows="3"></textarea>
+                            </label>
+                        </div>
+                        <div class="fuel-form-actions">
+                            <button type="button" class="fuel-secondary-action" onclick="closeFuelModals()">Cancelar</button>
+                            <button type="submit" class="fuel-primary-action">Registrar entrada</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="fuel-modal-edit-{{ $tank->id }}" class="fuel-modal-overlay {{ $errors->{'fuelTankEdit'.$tank->id}->any() ? 'is-open' : '' }}">
+                <div class="fuel-modal-card">
+                    <div class="fuel-modal-header">
+                        <div>
+                            <span class="fuel-kicker">Edição</span>
+                            <h2>Editar {{ $tank->name }}</h2>
+                        </div>
+                        <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+
+                    @if($errors->{'fuelTankEdit'.$tank->id}->any())
+                        <div class="fuel-form-error">
+                            @foreach($errors->{'fuelTankEdit'.$tank->id}->all() as $message)
+                                <span>{{ $message }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('fuel.tanks.update', $tank) }}" class="fuel-form">
+                        @csrf
+                        @method('PUT')
+                        <div class="fuel-form-grid">
+                            <label>
+                                Produto
+                                <select name="fuel_product_id" required>
+                                    @foreach($products as $product)
+                                        <option value="{{ $product->id }}" @selected((int) $tank->fuel_product_id === (int) $product->id)>{{ $product->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label>
+                                Nome
+                                <input type="text" name="name" value="{{ $tank->name }}" required maxlength="255">
+                            </label>
+                            <label>
+                                Capacidade
+                                <input type="number" name="capacity_liters" value="{{ $tank->capacity_liters }}" min="0.001" step="0.001" required>
+                            </label>
+                            <label>
+                                Saldo mínimo
+                                <input type="number" name="minimum_balance_liters" value="{{ $tank->minimum_balance_liters }}" min="0" step="0.001">
+                            </label>
+                        </div>
+                        <label class="fuel-check">
+                            <input type="checkbox" name="active" value="1" @checked($tank->active)>
+                            Ativo
+                        </label>
+                        <div class="fuel-form-actions">
+                            <button type="button" class="fuel-secondary-action" onclick="closeFuelModals()">Cancelar</button>
+                            <button type="submit" class="fuel-primary-action">Atualizar tanque</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endforeach
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        function openFuelModal(id) {
+            closeFuelModals();
+
+            const modal = document.getElementById(`fuel-modal-${id}`);
+
+            if (modal) {
+                modal.classList.add('is-open');
+                document.body.classList.add('fuel-modal-open');
+            }
+        }
+
+        function closeFuelModals() {
+            document
+                .querySelectorAll('.fuel-modal-overlay')
+                .forEach((modal) => modal.classList.remove('is-open'));
+
+            document.body.classList.remove('fuel-modal-open');
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeFuelModals();
+            }
+        });
+    </script>
+@endpush

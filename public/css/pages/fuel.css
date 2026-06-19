@@ -95,6 +95,13 @@
     gap: 10px;
 }
 
+.fuel-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
 .fuel-secondary-action,
 .fuel-edit-details summary {
     border-color: rgba(203, 213, 225, 0.18);
@@ -510,6 +517,87 @@
     color: #b7c3d5;
 }
 
+.fuel-form-error {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border: 1px solid rgba(248, 113, 113, 0.36);
+    border-radius: 12px;
+    background: rgba(127, 29, 29, 0.24);
+    color: #fecaca;
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.fuel-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(8, 13, 24, 0.72);
+    backdrop-filter: blur(6px);
+}
+
+.fuel-modal-overlay.is-open {
+    display: flex;
+}
+
+.fuel-modal-card {
+    width: min(620px, 100%);
+    max-height: min(84vh, 760px);
+    overflow-y: auto;
+    border: 1px solid rgba(203, 213, 225, 0.16);
+    border-radius: 16px;
+    background: #243047;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+    padding: 18px;
+}
+
+.fuel-modal-card.wide {
+    width: min(860px, 100%);
+}
+
+.fuel-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.fuel-modal-header h2 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.fuel-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(203, 213, 225, 0.18);
+    border-radius: 10px;
+    background: #344158;
+    color: #e5edf8;
+    cursor: pointer;
+}
+
+.fuel-modal-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+body.fuel-modal-open {
+    overflow: hidden;
+}
+
 html[data-chm-theme="corporate-light"] .fuel-page {
     color: #f8fafc;
 }
@@ -550,6 +638,19 @@ html[data-chm-theme="corporate-light"] .fuel-receipt-form input,
 html[data-chm-theme="corporate-light"] .fuel-receipt-form textarea {
     background: #435373;
     border-color: rgba(226, 232, 240, 0.24);
+}
+
+html[data-chm-theme="corporate-light"] .fuel-modal-overlay {
+    background: rgba(26, 36, 56, 0.68);
+}
+
+html[data-chm-theme="corporate-light"] .fuel-modal-card {
+    background: #34425b;
+    border-color: rgba(226, 232, 240, 0.22);
+}
+
+html[data-chm-theme="corporate-light"] .fuel-modal-close {
+    background: #435373;
 }
 
 @media (max-width: 900px) {

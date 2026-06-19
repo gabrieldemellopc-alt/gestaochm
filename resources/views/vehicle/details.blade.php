@@ -3,7 +3,11 @@
 @php
     $pageTitle = 'Veículo';
     $pageSubtitle = $vehicle->plate . ' · ' . $vehicle->name;
-@endphp
+    $operationsEnabled = (bool) config('chm.features.operations_enabled', false);
+
+    $fuelEnabled = (bool) config('chm.features.fuel_enabled', true);
+
+@endphp
 
 @push('styles')
 <link
@@ -232,17 +236,29 @@
                                 ->first();
                         @endphp
                         
-                        @if($openOperation)
+                        @if($operationsEnabled && $openOperation)
                             <a href="{{ route('operations.close', $openOperation->id) }}" class="vehicle-center-action-card">
                                 <i data-lucide="square"></i>
                                 <span>Encerrar operação</span>
                             </a>
-                        @else
-                            <a href="{{ route('vehicles.operations.start', $vehicle->id) }}" class="vehicle-center-action-card">
+                        @elseif($operationsEnabled)
+                            <a href="{{ route('vehicles.operations.start', $vehicle->id) }}" class="vehicle-center-action-card">
                                 <i data-lucide="play"></i>
                                 <span>Iniciar operação</span>
                             </a>
-                        @endif
+                        @endif
+
+                        @if($fuelEnabled)
+
+                            <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}" class="vehicle-center-action-card">
+
+                                <i data-lucide="fuel"></i>
+
+                                <span>Abastecer veiculo</span>
+
+                            </a>
+
+                        @endif
                     
                     </div>
     

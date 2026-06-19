@@ -12,6 +12,7 @@ use App\Services\ActiveContextService;
 use App\Services\FuelService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class FuelTankController extends Controller
 {
@@ -55,6 +56,8 @@ class FuelTankController extends Controller
             'drivers' => $this->driversForContext($context),
             'latestReceipts' => $this->latestReceipts($context),
             'latestFillings' => $this->latestFillings($context),
+            'openFuelModal' => request('fuel_modal') ?: session('fuel_modal'),
+            'selectedFuelVehicleId' => request('fuel_vehicle_id') ?: old('vehicle_id'),
         ]);
     }
 
@@ -68,7 +71,7 @@ class FuelTankController extends Controller
 
         $this->authorizeFuelManagement($context);
 
-        $validated = $this->validatedData($request, $context);
+        $validated = $this->validatedData($request, $context, 'fuelTank');
 
         FuelTank::query()->create([
             'tenant_id' => $context['tenant_id'],
@@ -98,7 +101,7 @@ class FuelTankController extends Controller
         $this->authorizeFuelManagement($context);
         $this->ensureTankInActiveContext($tank, $context);
 
-        $validated = $this->validatedData($request, $context);
+        $validated = $this->validatedData($request, $context, 'fuelTankEdit'.$tank->id);
 
         $tank->update([
             'fuel_product_id' => $validated['fuel_product_id'],
@@ -123,17 +126,24 @@ class FuelTankController extends Controller
 
         $this->authorizeFuelManagement($context);
 
-        $fuelService->receiveFuel($request->only([
-            'fuel_tank_id',
-            'fuel_product_id',
-            'received_at',
-            'quantity_liters',
-            'unit_cost',
-            'total_cost',
-            'supplier_name',
-            'invoice_number',
-            'notes',
-        ]));
+        try {
+            $fuelService->receiveFuel($request->only([
+                'fuel_tank_id',
+                'fuel_product_id',
+                'received_at',
+                'quantity_liters',
+                'unit_cost',
+                'total_cost',
+                'supplier_name',
+                'invoice_number',
+                'notes',
+            ]));
+        } catch (ValidationException $exception) {
+            return back()
+                ->withErrors($exception->errors(), 'fuelReceipt')
+                ->withInput()
+                ->with('fuel_modal', 'receipt-'.$request->input('fuel_tank_id'));
+        }
 
         return redirect()
             ->route('fuel.tanks.index')
@@ -150,19 +160,26 @@ class FuelTankController extends Controller
 
         $this->authorizeFuelManagement($context);
 
-        $fuelService->registerFilling($request->only([
-            'fuel_tank_id',
-            'fuel_product_id',
-            'vehicle_id',
-            'driver_id',
-            'filled_at',
-            'vehicle_km',
-            'vehicle_hours',
-            'quantity_liters',
-            'unit_cost',
-            'total_cost',
-            'notes',
-        ]));
+        try {
+            $fuelService->registerFilling($request->only([
+                'fuel_tank_id',
+                'fuel_product_id',
+                'vehicle_id',
+                'driver_id',
+                'filled_at',
+                'vehicle_km',
+                'vehicle_hours',
+                'quantity_liters',
+                'unit_cost',
+                'total_cost',
+                'notes',
+            ]));
+        } catch (ValidationException $exception) {
+            return back()
+                ->withErrors($exception->errors(), 'fuelFilling')
+                ->withInput()
+                ->with('fuel_modal', 'filling');
+        }
 
         return redirect()
             ->route('fuel.tanks.index')
@@ -195,9 +212,9 @@ class FuelTankController extends Controller
         ];
     }
 
-    private function validatedData(Request $request, array $context): array
+    private function validatedData(Request $request, array $context, string $errorBag): array
     {
-        return $request->validate([
+        return $request->validateWithBag($errorBag, [
             'fuel_product_id' => [
                 'required',
                 'integer',
