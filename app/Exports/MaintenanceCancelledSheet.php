@@ -19,6 +19,8 @@ class MaintenanceCancelledSheet implements FromArray, WithTitle
             'Veículo',
             'Placa',
             'Procedimento',
+            'Valor original',
+            'Considerado no custo?',
             'Cancelada por',
             'Motivo',
         ]];
@@ -29,6 +31,8 @@ class MaintenanceCancelledSheet implements FromArray, WithTitle
                 $maintenance['vehicle'],
                 $maintenance['plate'],
                 $maintenance['procedure'],
+                $maintenance['total_cost'] ?? 0,
+                'Não',
                 $maintenance['cancelled_by'],
                 $maintenance['reason'],
             ];

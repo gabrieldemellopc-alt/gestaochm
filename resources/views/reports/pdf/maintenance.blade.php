@@ -778,7 +778,57 @@
         </tbody>
 
     </table>
-    <div class="report-footer">
+    @if(($canViewCancelled ?? false) && isset($cancelledMaintenancesRaw) && $cancelledMaintenancesRaw->count() > 0)
+
+        <div class="section-title">
+
+            Registros cancelados
+
+        </div>
+
+        <p style="font-size: 11px; color: #64748b; margin-bottom: 12px;">
+            Estes registros são exibidos apenas para conferência e não compõem custos, rankings ou indicadores operacionais.
+        </p>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Data</th>
+                    <th>Veículo</th>
+                    <th>Placa</th>
+                    <th>Procedimento</th>
+                    <th>Valor original</th>
+                    <th>Cancelada por</th>
+                    <th>Motivo</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach($cancelledMaintenancesRaw as $maintenance)
+
+                    <tr>
+                        <td>{{ optional($maintenance->cancelled_at)->format('d/m/Y H:i') }}</td>
+                        <td>{{ $maintenance->vehicle->name ?? '-' }}</td>
+                        <td>{{ $maintenance->vehicle->plate ?? '-' }}</td>
+                        <td>{{ $maintenance->procedure->name ?? '-' }}</td>
+                        <td>R$ {{ number_format($maintenance->total_cost ?? 0, 2, ',', '.') }}</td>
+                        <td>{{ $maintenance->canceller?->name ?? '-' }}</td>
+                        <td>{{ $maintenance->cancel_reason ?? '-' }}</td>
+                    </tr>
+
+                @endforeach
+
+            </tbody>
+
+        </table>
+
+    @endif
+
+    <div class="report-footer">
     
         Relatório gerado automaticamente pelo CHM —
         {{ now()->format('d/m/Y H:i') }}

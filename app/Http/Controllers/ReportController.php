@@ -134,7 +134,10 @@ class ReportController extends Controller
         $data = $this->buildMaintenanceReportData($request, $context);
 
         $pdfData = $data;
-        $pdfData['maintenances'] = $data['maintenances_raw'];
+        $pdfData['maintenances'] = $data['operational_maintenances_raw'];
+        $pdfData['cancelledMaintenancesRaw'] = $data['maintenances_raw']
+            ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at !== null)
+            ->values();
 
         $pdf = Pdf::loadView('reports.pdf.maintenance', $pdfData);
 
@@ -172,24 +175,28 @@ class ReportController extends Controller
             $maintenanceQuery->limit(10);
         }
 
-        $maintenances = $maintenanceQuery->get();
+        $displayMaintenances = $maintenanceQuery->get();
 
-        $maintenanceIds = $maintenances->pluck('id');
+        $operationalMaintenances = $displayMaintenances
+            ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at === null)
+            ->values();
+
+        $maintenanceIds = $operationalMaintenances->pluck('id');
 
         $stockConsumed = $this->stockConsumedQuery($context, $maintenanceIds)
             ->with(['stockItem', 'maintenanceRecord.vehicle'])
             ->get();
 
-        $cancelledMaintenances = $maintenances
+        $cancelledMaintenances = $displayMaintenances
             ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at !== null)
             ->values();
 
-        $internalCount = $maintenances->where('maintenance_type', 'internal')->count();
-        $externalCount = $maintenances->where('maintenance_type', 'external')->count();
-        $totalCost = $maintenances->sum('total_cost');
-        $averageCost = $maintenances->count() > 0 ? $totalCost / $maintenances->count() : 0;
+        $internalCount = $operationalMaintenances->where('maintenance_type', 'internal')->count();
+        $externalCount = $operationalMaintenances->where('maintenance_type', 'external')->count();
+        $totalCost = $operationalMaintenances->sum('total_cost');
+        $averageCost = $operationalMaintenances->count() > 0 ? $totalCost / $operationalMaintenances->count() : 0;
 
-        $procedureStats = $maintenances
+        $procedureStats = $operationalMaintenances
             ->groupBy(fn ($maintenance) => $maintenance->procedure->name ?? 'Sem procedimento')
             ->map(function ($items, $procedure) {
                 $total = $items->sum('total_cost');
@@ -205,7 +212,7 @@ class ReportController extends Controller
             ->sortByDesc('count')
             ->values();
 
-        $vehicleCosts = $maintenances
+        $vehicleCosts = $operationalMaintenances
             ->groupBy('vehicle_id')
             ->map(function ($items, $vehicleId) use ($filters, $context, $stockConsumed) {
                 $vehicle = $items->first()->vehicle;
@@ -238,8 +245,9 @@ class ReportController extends Controller
             'division' => $context['division'],
             'location' => $context['location'],
             'canViewCancelled' => $context['can_view_cancelled'],
-            'maintenances_raw' => $maintenances,
-            'maintenances' => $maintenances
+            'maintenances_raw' => $displayMaintenances,
+            'operational_maintenances_raw' => $operationalMaintenances,
+            'maintenances' => $displayMaintenances
                 ->map(fn (MaintenanceRecord $maintenance) => [
                     'created_at' => $maintenance->performed_at ?? $maintenance->created_at,
                     'performed_at' => $maintenance->performed_at,
@@ -251,11 +259,15 @@ class ReportController extends Controller
                     'total_cost' => $maintenance->total_cost,
                     'cancelled_at' => $maintenance->cancelled_at,
                     'cancel_reason' => $context['can_view_cancelled'] ? $maintenance->cancel_reason : null,
+                    'cancelled_by' => $context['can_view_cancelled'] ? $maintenance->canceller?->name : null,
+                    'considered_in_totals' => $maintenance->cancelled_at === null,
                 ])
                 ->toArray(),
             'internalCount' => $internalCount,
             'externalCount' => $externalCount,
-            'maintenanceCount' => $maintenances->count(),
+            'maintenanceCount' => $operationalMaintenances->count(),
+            'displayMaintenanceCount' => $displayMaintenances->count(),
+            'cancelledCount' => $cancelledMaintenances->count(),
             'totalCost' => $totalCost,
             'averageCost' => $averageCost,
             'procedureStats' => $procedureStats->toArray(),
@@ -278,6 +290,7 @@ class ReportController extends Controller
                     'vehicle' => $maintenance->vehicle->name ?? '-',
                     'plate' => $maintenance->vehicle->plate ?? '-',
                     'procedure' => $maintenance->procedure->name ?? '-',
+                    'total_cost' => $maintenance->total_cost,
                     'reason' => $maintenance->cancel_reason,
                     'cancelled_by' => $maintenance->canceller?->name,
                 ])->toArray()

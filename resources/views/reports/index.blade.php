@@ -219,6 +219,11 @@
                 registros no período padrão •
                 R$
                 {{ number_format($maintenancePreview['totalCost'] ?? 0, 2, ',', '.') }}
+                operacionais
+
+                @if(($maintenancePreview['cancelledCount'] ?? 0) > 0)
+                    • {{ $maintenancePreview['cancelledCount'] }} cancelada(s) fora dos totais
+                @endif
 
             </div>
 
