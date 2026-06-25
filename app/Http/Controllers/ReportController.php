@@ -8,6 +8,7 @@ use App\Models\Procedure;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\Reports\ReportContextService;
+use App\Services\Reports\TireReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -158,6 +159,17 @@ class ReportController extends Controller
             new MaintenanceReportExport($data),
             'relatorio-manutencoes.xlsx'
         );
+    }
+
+    public function tires(Request $request, TireReportService $tireReport)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        return view('reports.tires', $tireReport->build($context, $request));
     }
 
     private function buildMaintenanceReportData(Request $request, array $context, bool $full = true): array

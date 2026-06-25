@@ -244,7 +244,80 @@
 
         </div>
 
-        {{-- OPERACIONAL --}}
+        {{-- PNEUS --}}
+
+        <div class="report-module-card">
+
+
+
+            <div class="report-module-icon">
+
+
+
+                <i data-lucide="circle-dot"></i>
+
+
+
+            </div>
+
+
+
+            <h3>
+
+                Relatorio de Pneus
+
+            </h3>
+
+
+
+            <p>
+
+                Acompanhe pneus por unidade, veiculo, recapagens,
+                sulco atual e alertas criticos.
+
+            </p>
+
+
+
+            <div class="reports-kpi-description">
+
+                Inventario atual, eventos por periodo e pontos de atencao
+
+            </div>
+
+
+
+            <div class="report-module-actions">
+
+
+
+                <a
+
+                    href="{{ route('reports.tires.index') }}"
+
+                    class="report-module-button"
+
+                >
+
+
+
+                    Abrir relatorio
+
+
+
+                </a>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+        {{-- OPERACIONAL --}}
         <div class="report-module-card">
 
             <div class="report-module-icon">

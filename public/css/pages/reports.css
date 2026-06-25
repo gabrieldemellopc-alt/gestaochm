@@ -523,6 +523,305 @@
 
     line-height: 1.6;
 }
+
+/* Tire report - CHM corporate layer */
+.reports-tires-page {
+    --tire-panel: rgba(15, 23, 42, .88);
+    --tire-panel-soft: rgba(30, 41, 59, .72);
+    --tire-border: rgba(148, 163, 184, .22);
+    --tire-text: #f8fafc;
+    --tire-muted: #94a3b8;
+    --tire-red: #c2413b;
+    --tire-yellow: #d4a72c;
+    --tire-green: #2f9e71;
+}
+
+.reports-tires-page .reports-tires-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.reports-tires-page .tire-report-filters,
+.reports-tires-page .tire-report-section {
+    background: var(--tire-panel);
+    border: 1px solid var(--tire-border);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .18);
+}
+
+.reports-tires-page .tire-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.reports-tires-page .tire-filter-grid label,
+.reports-tires-page .tire-filter-checks label {
+    color: var(--tire-muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.reports-tires-page .tire-filter-grid input,
+.reports-tires-page .tire-filter-grid select {
+    width: 100%;
+    margin-top: 7px;
+    border: 1px solid var(--tire-border);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .92);
+    color: var(--tire-text);
+    padding: 11px 12px;
+}
+
+.reports-tires-page .tire-filter-checks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.reports-tires-page .tire-summary-grid,
+.reports-tires-page .retread-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    gap: 14px;
+}
+
+.reports-tires-page .tire-summary-card,
+.reports-tires-page .retread-summary-grid > div {
+    background: var(--tire-panel-soft);
+    border: 1px solid var(--tire-border);
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.reports-tires-page .tire-summary-card span,
+.reports-tires-page .retread-summary-grid span,
+.reports-tires-page .vehicle-tire-card span,
+.reports-tires-page .tire-event-item span {
+    display: block;
+    color: var(--tire-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.reports-tires-page .tire-summary-card strong,
+.reports-tires-page .retread-summary-grid strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--tire-text);
+    font-size: 28px;
+    line-height: 1;
+}
+
+.reports-tires-page .tire-summary-card.warning strong {
+    color: var(--tire-yellow);
+}
+
+.reports-tires-page .tire-summary-card.danger strong {
+    color: #fca5a5;
+}
+
+.reports-tires-page .tire-section-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.reports-tires-page .tire-section-header h2 {
+    margin: 0 0 4px;
+    color: var(--tire-text);
+    font-size: 19px;
+}
+
+.reports-tires-page .tire-section-header p {
+    margin: 0;
+    color: var(--tire-muted);
+    font-size: 13px;
+}
+
+.reports-tires-page .tire-report-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.reports-tires-page .tire-report-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 880px;
+}
+
+.reports-tires-page .tire-report-table th,
+.reports-tires-page .tire-report-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--tire-border);
+    color: var(--tire-text);
+    text-align: left;
+    vertical-align: top;
+}
+
+.reports-tires-page .tire-report-table th {
+    color: var(--tire-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.reports-tires-page .tire-report-table small {
+    display: block;
+    margin-top: 3px;
+    color: var(--tire-muted);
+}
+
+.reports-tires-page .tire-report-table tr.is-critical td {
+    background: rgba(194, 65, 59, .08);
+}
+
+.reports-tires-page .tire-r-badge,
+.reports-tires-page .tire-status-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid var(--tire-border);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--tire-text);
+    background: rgba(148, 163, 184, .12);
+}
+
+.reports-tires-page .tire-r-badge {
+    margin-left: 6px;
+    color: #bfdbfe;
+    border-color: rgba(96, 165, 250, .35);
+}
+
+.reports-tires-page .status-available {
+    color: #bbf7d0;
+    border-color: rgba(47, 158, 113, .45);
+}
+
+.reports-tires-page .status-maintenance,
+.reports-tires-page .status-warning {
+    color: #fde68a;
+    border-color: rgba(212, 167, 44, .45);
+}
+
+.reports-tires-page .status-discarded,
+.reports-tires-page .status-critical,
+.reports-tires-page .status-cancelled {
+    color: #fecaca;
+    border-color: rgba(194, 65, 59, .45);
+}
+
+.reports-tires-page .tire-report-columns,
+.reports-tires-page .tire-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.reports-tires-page .tire-compact-list,
+.reports-tires-page .vehicle-tire-groups,
+.reports-tires-page .tire-event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.reports-tires-page .tire-compact-item,
+.reports-tires-page .vehicle-tire-group,
+.reports-tires-page .vehicle-tire-card,
+.reports-tires-page .tire-event-item,
+.reports-tires-page .empty-state {
+    background: rgba(15, 23, 42, .55);
+    border: 1px solid var(--tire-border);
+    border-radius: 14px;
+    padding: 13px 14px;
+    color: var(--tire-text);
+}
+
+.reports-tires-page .vehicle-tire-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.reports-tires-page .tire-compact-item span,
+.reports-tires-page .vehicle-tire-group span,
+.reports-tires-page .vehicle-tire-card small,
+.reports-tires-page .vehicle-tire-card p,
+.reports-tires-page .tire-event-item p,
+.reports-tires-page .empty-state {
+    margin: 4px 0 0;
+    color: var(--tire-muted);
+    font-size: 13px;
+}
+
+.reports-tires-page .tire-compact-item.danger {
+    border-color: rgba(194, 65, 59, .36);
+}
+
+.reports-tires-page .tire-event-item.status-cancelled,
+.reports-tires-page .cancelled-section {
+    border-color: rgba(194, 65, 59, .36);
+}
+
+html[data-chm-theme="corporate-light"] .reports-tires-page {
+    --tire-panel: #ffffff;
+    --tire-panel-soft: #f8fafc;
+    --tire-border: rgba(15, 23, 42, .14);
+    --tire-text: #0f172a;
+    --tire-muted: #64748b;
+}
+
+html[data-chm-theme="corporate-light"] .reports-tires-page .tire-filter-grid input,
+html[data-chm-theme="corporate-light"] .reports-tires-page .tire-filter-grid select,
+html[data-chm-theme="corporate-light"] .reports-tires-page .tire-compact-item,
+html[data-chm-theme="corporate-light"] .reports-tires-page .vehicle-tire-group,
+html[data-chm-theme="corporate-light"] .reports-tires-page .vehicle-tire-card,
+html[data-chm-theme="corporate-light"] .reports-tires-page .tire-event-item,
+html[data-chm-theme="corporate-light"] .reports-tires-page .empty-state {
+    background: #ffffff;
+}
+
+@media (max-width: 1180px) {
+    .reports-tires-page .tire-filter-grid,
+    .reports-tires-page .tire-summary-grid,
+    .reports-tires-page .retread-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .reports-tires-page .reports-tires-hero,
+    .reports-tires-page .vehicle-tire-group {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .reports-tires-page .tire-filter-grid,
+    .reports-tires-page .tire-summary-grid,
+    .reports-tires-page .retread-summary-grid,
+    .reports-tires-page .tire-report-columns,
+    .reports-tires-page .tire-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reports-tires-page .tire-filter-checks .report-module-button,
+    .reports-tires-page .reports-tires-hero .report-module-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
 /* Reports corporate visual standard */
 .reports-page,
 .report-modal-overlay {

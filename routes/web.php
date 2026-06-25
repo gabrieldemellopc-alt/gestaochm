@@ -1040,6 +1040,16 @@ Route::middleware('auth')->group(function () {
 
 
 
+            Route::get(
+
+                '/tires',
+
+                'tires'
+
+            )->name('tires.index');
+
+
+
             Route::post(
 
                 '/maintenance/export',
