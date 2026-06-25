@@ -1,550 +1,366 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Models\Vehicle;
-use App\Models\MaintenanceRecord;
-use App\Models\StockItem;
-use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
-use App\Models\Division;
-use App\Models\VehicleUpdateLog;
+<?php
+
+namespace App\Http\Controllers;
+
 use App\Exports\MaintenanceReportExport;
-use App\Services\ActiveContextService;
-use Maatwebsite\Excel\Facades\Excel;
-
-class ReportController extends Controller
-{
-public function index()
-    {
-        $divisionId =
-            session('active_division_id');
+use App\Models\MaintenanceRecord;
+use App\Models\Procedure;
+use App\Models\StockItem;
+use App\Models\StockMovement;
+use App\Services\Reports\ReportContextService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
-        $context = $this->activeContext();
+class ReportController extends Controller
+{
+    public function __construct(
+        private readonly ReportContextService $reportContext
+    ) {
+    }
 
-        if (! $context) {
-            return $this->missingActiveContextRedirect();
-        }
-
-        $divisionId = $context['division']->id;
-    
-        $last30Days =
-            Carbon::now()->subDays(30);
-    
-        $last6Months =
-            Carbon::now()->subMonths(6);
-    
-        /*
-        |--------------------------------------------------------------------------
-        | BASE QUERIES
-        |--------------------------------------------------------------------------
-        */
-    
-        $vehiclesQuery =
-            Vehicle::query()
-                ->where('tenant_id', $context['tenant_id'])
-                ->where('location_id', $context['location']->id)
-                ->where(
-                'division_id',
-                $divisionId
-            );
-    
-        $maintenanceBaseQuery =
-            $this->maintenanceQuery($context)
-                ->where('tenant_id', $context['tenant_id'])
-                ->whereHas(
-                'vehicle',
-                function ($query) use ($divisionId, $context) {
-    
-                    $query
-                    ->where('tenant_id', $context['tenant_id'])
-                    ->where('location_id', $context['location']->id)
-                    ->where(
-                        'division_id',
-                        $divisionId
-                    );
-    
-                }
-            );
-    
-        /*
-        |--------------------------------------------------------------------------
-        | KPIs GERAIS
-        |--------------------------------------------------------------------------
-        */
-    
-        $vehicles =
-            (clone $vehiclesQuery)->count();
-    
-        /*
-        |--------------------------------------------------------------------------
-        | MANUTENÇÕES — 30 DIAS
-        |--------------------------------------------------------------------------
-        */
-    
-        $maintenance30Query =
-            (clone $maintenanceBaseQuery)
-                ->where(
-                    'created_at',
-                    '>=',
-                    $last30Days
-                );
-    
-        $maintenanceCount30 =
-            (clone $maintenance30Query)->count();
-    
-        $internalMaintenances30 =
-            (clone $maintenance30Query)
-                ->where(
-                    'maintenance_type',
-                    'internal'
-                )
-                ->count();
-    
-        $externalMaintenances30 =
-            (clone $maintenance30Query)
-                ->where(
-                    'maintenance_type',
-                    'external'
-                )
-                ->count();
-    
-        $maintenanceCost30 =
-            (clone $maintenance30Query)
-                ->sum('total_cost');
-    
-        /*
-        |--------------------------------------------------------------------------
-        | MÉDIAS DOS ÚLTIMOS 6 MESES
-        |--------------------------------------------------------------------------
-        */
-    
-        $maintenance6MonthsCount =
-            (clone $maintenanceBaseQuery)
-                ->where(
-                    'created_at',
-                    '>=',
-                    $last6Months
-                )
-                ->count();
-    
-        $maintenance6MonthsCost =
-            (clone $maintenanceBaseQuery)
-                ->where(
-                    'created_at',
-                    '>=',
-                    $last6Months
-                )
-                ->sum('total_cost');
-    
-        $maintenanceMonthlyAverage =
-            $maintenance6MonthsCount / 6;
-    
-        $costMonthlyAverage =
-            $maintenance6MonthsCost / 6;
-    
-        /*
-        |--------------------------------------------------------------------------
-        | VARIAÇÕES %
-        |--------------------------------------------------------------------------
-        */
-    
-        $maintenanceVariation =
-            $maintenanceMonthlyAverage > 0
-                ? (
-                    (
-                        $maintenanceCount30
-                        -
-                        $maintenanceMonthlyAverage
-                    )
-                    /
-                    $maintenanceMonthlyAverage
-                ) * 100
-                : 0;
-    
-        $costVariation =
-            $costMonthlyAverage > 0
-                ? (
-                    (
-                        $maintenanceCost30
-                        -
-                        $costMonthlyAverage
-                    )
-                    /
-                    $costMonthlyAverage
-                ) * 100
-                : 0;
-    
-        /*
-        |--------------------------------------------------------------------------
-        | CUSTO MÉDIO POR MANUTENÇÃO
-        |--------------------------------------------------------------------------
-        */
-    
-        $averageMaintenanceCost =
-            $maintenanceCount30 > 0
-                ? $maintenanceCost30 / $maintenanceCount30
-                : 0;
-    
-        /*
-        |--------------------------------------------------------------------------
-        | VEÍCULO MAIS CARO
-        |--------------------------------------------------------------------------
-        */
-    
-        $criticalVehicle =
-            Vehicle::query()
-                ->where('tenant_id', $context['tenant_id'])
-                ->where('location_id', $context['location']->id)
-                ->where(
-                'division_id',
-                $divisionId
-            )
-            ->withSum(
-                'maintenances',
-                'total_cost'
-            )
-            ->orderByDesc(
-                'maintenances_sum_total_cost'
-            )
-            ->first();
-    
-        /*
-        |--------------------------------------------------------------------------
-        | ESTOQUE
-        |--------------------------------------------------------------------------
-        */
-    
-        $stockItems =
-            StockItem::query()
-                ->where('tenant_id', $context['tenant_id'])
-                ->where('location_id', $context['location']->id)
-                ->count();
-    
-        return view(
-            'reports.index',
-            compact(
-    
-                'vehicles',
-    
-                'maintenanceCount30',
-                'internalMaintenances30',
-                'externalMaintenances30',
-    
-                'maintenanceCost30',
-    
-                'maintenanceVariation',
-                'costVariation',
-    
-                'averageMaintenanceCost',
-    
-                'criticalVehicle',
-    
-                'stockItems'
-            )
-        );
-    }
-    public function exportMaintenance(Request $request)
-    {
-        $context = $this->activeContext();
-
-        if (! $context) {
-            return $this->missingActiveContextRedirect();
-        }
-
-        $divisionId =
-            $context['division']->id;
-    
-        $startDate =
-            $request->start_date;
-    
-        $endDate =
-            $request->end_date;
-    
-        $maintenances =
-            $this->maintenanceQuery($context)->with([
-                'vehicle',
-                'procedure'
-            ])
-            ->whereHas(
-                'vehicle',
-                function ($query) use ($divisionId, $context) {
-    
-                    $query
-                    ->where('tenant_id', $context['tenant_id'])
-                    ->where('location_id', $context['location']->id)
-                    ->where(
-                        'division_id',
-                        $divisionId
-                    );
-    
-                }
-            )
-            ->whereBetween(
-                'performed_at',
-                [
-                    $startDate,
-                    $endDate
-                ]
-            )
-            ->latest('performed_at')
-            ->get();
-    
-        /*
-        |--------------------------------------------------------------------------
-        | KPIs
-        |--------------------------------------------------------------------------
-        */
-    
-        $totalCost =
-            $maintenances->sum(
-                'total_cost'
-            );
-    
-        $internalCount =
-            $maintenances
-                ->where(
-                    'maintenance_type',
-                    'internal'
-                )
-                ->count();
-    
-        $externalCount =
-            $maintenances
-                ->where(
-                    'maintenance_type',
-                    'external'
-                )
-                ->count();
-        $division =
-        $context['division'];
-        
-        $procedureStats =
-        $maintenances
-            ->groupBy(
-                fn($item) =>
-                    $item->procedure->name
-                    ?? 'Procedimento'
-            )
-            ->map(function ($items, $procedure) {
-    
-                $total =
-                    $items->sum(
-                        'total_cost'
-                    );
-    
-                $count =
-                    $items->count();
-    
-                return [
-    
-                    'procedure' => $procedure,
-    
-                    'count' => $count,
-    
-                    'total' => $total,
-    
-                    'average' =>
-                        $count > 0
-                            ? $total / $count
-                            : 0
-                ];
-    
-            })
-            ->sortByDesc('count');
-            
-        $vehicleCosts =
-        $maintenances
-            ->groupBy(
-                fn($item) =>
-                    $item->vehicle->id
-            )
-            ->map(function ($items, $vehicleId)
-                use ($startDate, $endDate, $context) {
-    
-                $vehicle =
-                    $items->first()->vehicle;
-                $startDate =
-                    Carbon::parse($startDate)
-                        ->startOfDay();
-                
-                $endDate =
-                    Carbon::parse($endDate)
-                        ->endOfDay();
-                /*
-                |--------------------------------------------------------------------------
-                | KM RODADOS
-                |--------------------------------------------------------------------------
-                */
-                $kmLogs =
-                    $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
-                        'vehicle_id',
-                        $vehicleId
-                    )
-                    ->where(
-                        'type',
-                        'km'
-                    )
-                    ->whereBetween(
-                        'created_at',
-                        [
-                            $startDate,
-                            $endDate
-                        ]
-                    )
-                    ->get();
-                
-                $kmDriven = 0;
-                
-                foreach($kmLogs as $log)
-                {
-                    $kmDriven += (float) $log->new_value - (float) $log->old_value;
-                }
-    
-                /*
-                |--------------------------------------------------------------------------
-                | HORAS RODADAS
-                |--------------------------------------------------------------------------
-                */
-    
-                $hourLogs =
-                    $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
-                        'vehicle_id',
-                        $vehicleId
-                    )
-                    ->where(
-                        'type',
-                        'hours'
-                    )
-                    ->whereBetween(
-                        'created_at',
-                        [
-                            $startDate,
-                            $endDate
-                        ]
-                    )
-                    ->get();
-                
-                $hoursDriven = 0;
-                
-                foreach($hourLogs as $log)
-                {
-                    $hoursDriven += max(
-                        0,
-                        (
-                            (float) $log->new_value
-                            -
-                            (float) $log->old_value
-                        )
-                    );
-                }
-    
-                return [
-    
-                    'vehicle' =>
-                        $vehicle->name
-                        ?? 'Veículo',
-    
-                    'plate' =>
-                        $vehicle->plate
-                        ?? '-',
-    
-                    'km_driven' =>
-                        $kmDriven,
-    
-                    'hours_driven' =>
-                        $hoursDriven,
-    
-                    'total' =>
-                        $items->sum(
-                            'total_cost'
-                        )
-    
-                ];
-    
-            })
-            ->sortByDesc('total');
-            
-        /*
-        |--------------------------------------------------------------------------
-        | PDF
-        |--------------------------------------------------------------------------
-        */
-        
-        $pdf =
-            Pdf::loadView(
-                'reports.pdf.maintenance',
-                compact(
-                    'maintenances',
-                    'totalCost',
-                    'internalCount',
-                    'externalCount',
-                    'startDate',
-                    'endDate',
-                    'division',
-                    'procedureStats',
-                    'vehicleCosts'
-                )
-            );
-    
-        return $pdf->download(
-            'relatorio-manutencoes.pdf'
-        );
-    }
-    
-    private function activeContext(): ?array
+    public function index(Request $request)
     {
-        $user = auth()->user();
-        $divisionId = session('active_division_id');
+        $context = $this->reportContext->resolve();
 
-        if (! $user || ! $divisionId) {
-            return null;
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
         }
 
-        $division = Division::query()
-            ->where('tenant_id', $user->tenant_id)
-            ->find($divisionId);
+        $last30Days = Carbon::now()->subDays(30);
+        $last6Months = Carbon::now()->subMonths(6);
 
-        $location = app(ActiveContextService::class)
-            ->activeLocation($user);
+        $vehiclesQuery = $this->reportContext->vehicleQuery($context);
+        $maintenanceBaseQuery = $this->reportContext->maintenanceQuery($context);
 
-        if (
-            ! $division
-            || ! $location
-            || (int) $location->division_id !== (int) $division->id
-            || (int) $location->tenant_id !== (int) $user->tenant_id
-        ) {
-            return null;
+        $vehicles = (clone $vehiclesQuery)->count();
+
+        $maintenance30Query = (clone $maintenanceBaseQuery)
+            ->where('performed_at', '>=', $last30Days);
+
+        $maintenanceCount30 = (clone $maintenance30Query)->count();
+        $internalMaintenances30 = (clone $maintenance30Query)
+            ->where('maintenance_type', 'internal')
+            ->count();
+        $externalMaintenances30 = (clone $maintenance30Query)
+            ->where('maintenance_type', 'external')
+            ->count();
+        $maintenanceCost30 = (clone $maintenance30Query)->sum('total_cost');
+
+        $maintenance6MonthsCount = (clone $maintenanceBaseQuery)
+            ->where('performed_at', '>=', $last6Months)
+            ->count();
+        $maintenance6MonthsCost = (clone $maintenanceBaseQuery)
+            ->where('performed_at', '>=', $last6Months)
+            ->sum('total_cost');
+
+        $maintenanceMonthlyAverage = $maintenance6MonthsCount / 6;
+        $costMonthlyAverage = $maintenance6MonthsCost / 6;
+
+        $maintenanceVariation = $maintenanceMonthlyAverage > 0
+            ? (($maintenanceCount30 - $maintenanceMonthlyAverage) / $maintenanceMonthlyAverage) * 100
+            : 0;
+
+        $costVariation = $costMonthlyAverage > 0
+            ? (($maintenanceCost30 - $costMonthlyAverage) / $costMonthlyAverage) * 100
+            : 0;
+
+        $averageMaintenanceCost = $maintenanceCount30 > 0
+            ? $maintenanceCost30 / $maintenanceCount30
+            : 0;
+
+        $criticalVehicle = (clone $vehiclesQuery)
+            ->withSum([
+                'validMaintenances as maintenances_sum_total_cost',
+            ], 'total_cost')
+            ->orderByDesc('maintenances_sum_total_cost')
+            ->first();
+
+        $stockItems = StockItem::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('location_id', $context['location']->id)
+            ->count();
+
+        $filters = $this->maintenanceFilters($request, $context);
+        $maintenancePreview = $this->buildMaintenanceReportData($request, $context, false);
+
+        $reportVehicles = (clone $vehiclesQuery)
+            ->orderBy('name')
+            ->get(['id', 'name', 'plate']);
+
+        $procedures = Procedure::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('location_id', $context['location']->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $providers = $this->reportContext->maintenanceQuery($context, true)
+            ->whereNotNull('provider_name')
+            ->where('provider_name', '<>', '')
+            ->distinct()
+            ->orderBy('provider_name')
+            ->pluck('provider_name');
+
+        return view('reports.index', compact(
+            'vehicles',
+            'maintenanceCount30',
+            'internalMaintenances30',
+            'externalMaintenances30',
+            'maintenanceCost30',
+            'maintenanceVariation',
+            'costVariation',
+            'averageMaintenanceCost',
+            'criticalVehicle',
+            'stockItems',
+            'context',
+            'filters',
+            'maintenancePreview',
+            'reportVehicles',
+            'procedures',
+            'providers'
+        ));
+    }
+
+    public function exportMaintenance(Request $request)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
         }
+
+        $data = $this->buildMaintenanceReportData($request, $context);
+
+        $pdf = Pdf::loadView('reports.pdf.maintenance', $data);
+
+        return $pdf->download('relatorio-manutencoes.pdf');
+    }
+
+    public function exportMaintenanceExcel(Request $request)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $data = $this->buildMaintenanceReportData($request, $context);
+
+        return Excel::download(
+            new MaintenanceReportExport($data),
+            'relatorio-manutencoes.xlsx'
+        );
+    }
+
+    private function buildMaintenanceReportData(Request $request, array $context, bool $full = true): array
+    {
+        $filters = $this->maintenanceFilters($request, $context);
+
+        $maintenanceQuery = $this->applyMaintenanceFilters(
+            $this->reportContext->maintenanceQuery($context, $filters['query_includes_cancelled'])
+                ->with(['vehicle', 'procedure', 'canceller']),
+            $filters
+        )
+            ->orderBy('performed_at', 'desc');
+
+        if (! $full) {
+            $maintenanceQuery->limit(10);
+        }
+
+        $maintenances = $maintenanceQuery->get();
+
+        $maintenanceIds = $maintenances->pluck('id');
+
+        $stockConsumed = $this->stockConsumedQuery($context, $maintenanceIds)
+            ->with(['stockItem', 'maintenanceRecord.vehicle'])
+            ->get();
+
+        $cancelledMaintenances = $maintenances
+            ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at !== null)
+            ->values();
+
+        $internalCount = $maintenances->where('maintenance_type', 'internal')->count();
+        $externalCount = $maintenances->where('maintenance_type', 'external')->count();
+        $totalCost = $maintenances->sum('total_cost');
+        $averageCost = $maintenances->count() > 0 ? $totalCost / $maintenances->count() : 0;
+
+        $procedureStats = $maintenances
+            ->groupBy(fn ($maintenance) => $maintenance->procedure->name ?? 'Sem procedimento')
+            ->map(function ($items, $procedure) {
+                $total = $items->sum('total_cost');
+                $count = $items->count();
+
+                return [
+                    'procedure' => $procedure,
+                    'count' => $count,
+                    'total' => $total,
+                    'average' => $count > 0 ? $total / $count : 0,
+                ];
+            })
+            ->sortByDesc('count')
+            ->values();
+
+        $vehicleCosts = $maintenances
+            ->groupBy('vehicle_id')
+            ->map(function ($items, $vehicleId) use ($filters, $context, $stockConsumed) {
+                $vehicle = $items->first()->vehicle;
+                $maintenanceIdsForVehicle = $items
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+
+                $stockTotal = $stockConsumed
+                    ->filter(fn ($movement) => in_array((int) $movement->maintenance_record_id, $maintenanceIdsForVehicle, true))
+                    ->sum(fn ($movement) => (float) $movement->quantity * (float) $movement->unit_cost);
+
+                return [
+                    'vehicle' => $vehicle->name ?? '-',
+                    'plate' => $vehicle->plate ?? '-',
+                    'km_driven' => $this->sumVehicleLogDelta((int) $vehicleId, $context, $filters, 'km'),
+                    'hours_driven' => $this->sumVehicleLogDelta((int) $vehicleId, $context, $filters, 'hours'),
+                    'maintenance_total' => $items->sum('total_cost'),
+                    'stock_total' => $stockTotal,
+                    'total' => $items->sum('total_cost'),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
 
         return [
-            'user' => $user,
-            'tenant_id' => (int) $user->tenant_id,
-            'division' => $division,
-            'location' => $location,
+            'filters' => $filters,
+            'startDate' => $filters['start_date'],
+            'endDate' => $filters['end_date'],
+            'division' => $context['division'],
+            'location' => $context['location'],
+            'canViewCancelled' => $context['can_view_cancelled'],
+            'maintenances_raw' => $maintenances,
+            'maintenances' => $maintenances
+                ->map(fn (MaintenanceRecord $maintenance) => [
+                    'created_at' => $maintenance->performed_at ?? $maintenance->created_at,
+                    'performed_at' => $maintenance->performed_at,
+                    'vehicle_name' => $maintenance->vehicle->name ?? '-',
+                    'vehicle_plate' => $maintenance->vehicle->plate ?? '-',
+                    'procedure_name' => $maintenance->procedure->name ?? '-',
+                    'provider_name' => $maintenance->provider_name,
+                    'maintenance_type' => $maintenance->maintenance_type,
+                    'total_cost' => $maintenance->total_cost,
+                    'cancelled_at' => $maintenance->cancelled_at,
+                    'cancel_reason' => $context['can_view_cancelled'] ? $maintenance->cancel_reason : null,
+                ])
+                ->toArray(),
+            'internalCount' => $internalCount,
+            'externalCount' => $externalCount,
+            'maintenanceCount' => $maintenances->count(),
+            'totalCost' => $totalCost,
+            'averageCost' => $averageCost,
+            'procedureStats' => $procedureStats->toArray(),
+            'vehicleCosts' => $vehicleCosts->toArray(),
+            'stockConsumed' => $stockConsumed
+                ->map(fn (StockMovement $movement) => [
+                    'date' => $movement->created_at,
+                    'maintenance_id' => $movement->maintenance_record_id,
+                    'vehicle' => $movement->maintenanceRecord?->vehicle?->name ?? '-',
+                    'plate' => $movement->maintenanceRecord?->vehicle?->plate ?? '-',
+                    'item' => $movement->stockItem?->name ?? '-',
+                    'quantity' => $movement->quantity,
+                    'unit_cost' => $movement->unit_cost,
+                    'total' => (float) $movement->quantity * (float) $movement->unit_cost,
+                ])
+                ->toArray(),
+            'cancelledMaintenances' => $context['can_view_cancelled']
+                ? $cancelledMaintenances->map(fn (MaintenanceRecord $maintenance) => [
+                    'date' => $maintenance->cancelled_at,
+                    'vehicle' => $maintenance->vehicle->name ?? '-',
+                    'plate' => $maintenance->vehicle->plate ?? '-',
+                    'procedure' => $maintenance->procedure->name ?? '-',
+                    'reason' => $maintenance->cancel_reason,
+                    'cancelled_by' => $maintenance->canceller?->name,
+                ])->toArray()
+                : [],
         ];
     }
 
-    private function maintenanceQuery(array $context)
+    private function maintenanceFilters(Request $request, array $context): array
     {
-        return MaintenanceRecord::query()
-            ->where('tenant_id', $context['tenant_id'])
-            ->whereNull('cancelled_at')
-            ->whereHas('vehicle', function ($query) use ($context) {
-                $query
-                    ->where('tenant_id', $context['tenant_id'])
-                    ->where('division_id', $context['division']->id)
-                    ->where('location_id', $context['location']->id);
-            });
+        $startDate = $request->filled('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : Carbon::now()->subDays(30)->startOfDay();
+
+        $endDate = $request->filled('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : Carbon::now()->endOfDay();
+
+        $status = $request->input('status', 'active');
+
+        if (! in_array($status, ['active', 'cancelled', 'all'], true)) {
+            $status = 'active';
+        }
+
+        $includeCancelled = $context['can_view_cancelled']
+            && ($request->boolean('include_cancelled') || in_array($status, ['cancelled', 'all'], true));
+
+        return [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'vehicle_id' => $request->integer('vehicle_id') ?: null,
+            'maintenance_type' => in_array($request->input('maintenance_type'), ['internal', 'external'], true)
+                ? $request->input('maintenance_type')
+                : null,
+            'procedure_id' => $request->integer('procedure_id') ?: null,
+            'provider_name' => trim((string) $request->input('provider_name')) ?: null,
+            'status' => $status,
+            'include_cancelled' => $includeCancelled,
+            'query_includes_cancelled' => $includeCancelled,
+        ];
     }
 
-    private function vehicleUpdateLogsQuery(int $vehicleId, array $context)
+    private function applyMaintenanceFilters(Builder $query, array $filters): Builder
     {
-        return VehicleUpdateLog::query()
-            ->where('vehicle_id', $vehicleId)
-            ->where('division_id', $context['division']->id)
-            ->where('location_id', $context['location']->id);
+        $query->whereBetween('performed_at', [$filters['start_date'], $filters['end_date']]);
+
+        if ($filters['vehicle_id']) {
+            $query->where('vehicle_id', $filters['vehicle_id']);
+        }
+
+        if ($filters['maintenance_type']) {
+            $query->where('maintenance_type', $filters['maintenance_type']);
+        }
+
+        if ($filters['procedure_id']) {
+            $query->where('procedure_id', $filters['procedure_id']);
+        }
+
+        if ($filters['provider_name']) {
+            $query->where('provider_name', 'like', '%' . $filters['provider_name'] . '%');
+        }
+
+        if ($filters['status'] === 'cancelled') {
+            $query->whereNotNull('cancelled_at');
+        } elseif ($filters['status'] === 'active') {
+            $query->whereNull('cancelled_at');
+        }
+
+        return $query;
+    }
+
+    private function stockConsumedQuery(array $context, $maintenanceIds): Builder
+    {
+        return $this->reportContext->stockMovementQuery($context)
+            ->whereIn('maintenance_record_id', $maintenanceIds)
+            ->where('movement_type', 'out')
+            ->whereNull('cancelled_at')
+            ->whereNull('reversed_from_movement_id');
+    }
+
+    private function sumVehicleLogDelta(int $vehicleId, array $context, array $filters, string $type): float
+    {
+        return $this->reportContext->vehicleUpdateLogsQuery($context, $vehicleId)
+            ->where('type', $type)
+            ->whereBetween('created_at', [$filters['start_date'], $filters['end_date']])
+            ->get()
+            ->sum(fn ($log) => max(0, (float) $log->new_value - (float) $log->old_value));
     }
 
     private function missingActiveContextRedirect()
@@ -553,231 +369,4 @@ public function index()
             ->route('portal')
             ->with('warning', 'Selecione uma divisão e uma unidade para continuar.');
     }
-
-    private function buildMaintenanceReportData($request, array $context)
-    {
-        $startDate =
-            Carbon::parse(
-                $request->start_date
-            )->startOfDay();
-    
-        $endDate =
-            Carbon::parse(
-                $request->end_date
-            )->endOfDay();
-    
-        $maintenances =
-            $this->maintenanceQuery($context)->with([
-                'vehicle',
-                'procedure'
-            ])
-            ->whereBetween(
-                'performed_at',
-                [$startDate, $endDate]
-            )
-            ->orderBy(
-                'performed_at',
-                'desc'
-            )
-            ->get();
-    
-        $internalCount =
-            $maintenances
-                ->where(
-                    'maintenance_type',
-                    'internal'
-                )
-                ->count();
-    
-        $externalCount =
-            $maintenances
-                ->where(
-                    'maintenance_type',
-                    'external'
-                )
-                ->count();
-    
-        $totalCost =
-            $maintenances->sum(
-                'total_cost'
-            );
-    
-        $procedureStats =
-            $maintenances
-                ->groupBy(
-                    fn($maintenance) =>
-                        $maintenance->procedure->name ?? 'Sem procedimento'
-                )
-                ->map(function ($items, $procedure) {
-    
-                    return [
-    
-                        'procedure' => $procedure,
-    
-                        'count' =>
-                            $items->count(),
-    
-                        'total' =>
-                            $items->sum('total_cost'),
-    
-                        'average' =>
-                            $items->count() > 0
-                                ? $items->sum('total_cost') / $items->count()
-                                : 0
-    
-                    ];
-    
-                })
-                ->sortByDesc('count')
-                ->values();
-    
-        $vehicleCosts =
-            $maintenances
-                ->groupBy('vehicle_id')
-                ->map(function ($items, $vehicleId) use ($startDate, $endDate, $context) {
-    
-                    $vehicle =
-                        $items->first()->vehicle;
-    
-                    $kmLogs =
-                        $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
-                            'vehicle_id',
-                            $vehicleId
-                        )
-                        ->where(
-                            'type',
-                            'km'
-                        )
-                        ->whereBetween(
-                            'created_at',
-                            [$startDate, $endDate]
-                        )
-                        ->get();
-    
-                    $hoursLogs =
-                        $this->vehicleUpdateLogsQuery($vehicleId, $context)->where(
-                            'vehicle_id',
-                            $vehicleId
-                        )
-                        ->where(
-                            'type',
-                            'hours'
-                        )
-                        ->whereBetween(
-                            'created_at',
-                            [$startDate, $endDate]
-                        )
-                        ->get();
-    
-                    return [
-    
-                        'vehicle' =>
-                            $vehicle->name ?? '-',
-    
-                        'plate' =>
-                            $vehicle->plate ?? '-',
-    
-                        'km_driven' =>
-                            $kmLogs->sum(function ($log) {
-    
-                                return
-                                    max(
-                                        0,
-                                        ($log->new_value ?? 0)
-                                        -
-                                        ($log->old_value ?? 0)
-                                    );
-    
-                            }),
-    
-                        'hours_driven' =>
-                            $hoursLogs->sum(function ($log) {
-    
-                                return
-                                    max(
-                                        0,
-                                        ($log->new_value ?? 0)
-                                        -
-                                        ($log->old_value ?? 0)
-                                    );
-    
-                            }),
-    
-                        'total' =>
-                            $items->sum('total_cost')
-    
-                    ];
-    
-                })
-                ->sortByDesc('total')
-                ->values();
-    
-        return [
-    
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-    
-            'maintenances_raw' =>
-                $maintenances,
-            
-            'maintenances' =>
-                $maintenances
-                    ->map(function ($m) {
-            
-                        return [
-            
-                            'created_at' =>
-                                $m->created_at,
-            
-                            'vehicle_name' =>
-                                $m->vehicle->name
-                                ?? '-',
-            
-                            'vehicle_plate' =>
-                                $m->vehicle->plate
-                                ?? '-',
-            
-                            'procedure_name' =>
-                                $m->procedure->name
-                                ?? '-',
-            
-                            'maintenance_type' =>
-                                $m->maintenance_type,
-            
-                            'total_cost' =>
-                                $m->total_cost,
-            
-                        ];
-            
-                    })
-                    ->toArray(),
-            'internalCount' => $internalCount,
-            'externalCount' => $externalCount,
-    
-            'totalCost' => $totalCost,
-    
-            'procedureStats' => $procedureStats->toArray(),    
-            'vehicleCosts' => $vehicleCosts->toArray(),    
-            'division' =>
-                $context['division']
-    
-        ];
-    }
-    public function exportMaintenanceExcel(Request $request)
-    {
-        $context = $this->activeContext();
-
-        if (! $context) {
-            return $this->missingActiveContextRedirect();
-        }
-
-        $data = $this->buildMaintenanceReportData($request, $context);
-    
-        return Excel::download(
-    
-            new MaintenanceReportExport($data),
-    
-            'relatorio-manutencoes.xlsx'
-        );
-    }
 }

@@ -213,7 +213,16 @@
                 custos, procedimentos e oficinas.
             </p>
 
-            <div class="report-module-actions">
+            <div class="reports-kpi-description">
+
+                {{ $maintenancePreview['maintenanceCount'] ?? 0 }}
+                registros no período padrão •
+                R$
+                {{ number_format($maintenancePreview['totalCost'] ?? 0, 2, ',', '.') }}
+
+            </div>
+
+            <div class="report-module-actions">
 
                 <button
                     class="report-module-button"
@@ -427,7 +436,69 @@
 
             </div>
 
-            {{-- EXPORTAÇÃO --}}
+            {{-- FILTROS --}}
+
+            <div class="report-form-group">
+
+                <label>
+
+                    Filtros
+
+                </label>
+
+                <div class="report-date-grid">
+
+                    <select class="nf-input" id="reportVehicleId">
+                        <option value="">Todos os veículos</option>
+                        @foreach($reportVehicles as $vehicle)
+                            <option value="{{ $vehicle->id }}">
+                                {{ $vehicle->plate }} - {{ $vehicle->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <select class="nf-input" id="reportMaintenanceType">
+                        <option value="">Internas e externas</option>
+                        <option value="internal">Somente internas</option>
+                        <option value="external">Somente externas</option>
+                    </select>
+
+                    <select class="nf-input" id="reportProcedureId">
+                        <option value="">Todos os procedimentos</option>
+                        @foreach($procedures as $procedure)
+                            <option value="{{ $procedure->id }}">
+                                {{ $procedure->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <input
+                        type="text"
+                        class="nf-input"
+                        id="reportProviderName"
+                        list="reportProviderOptions"
+                        placeholder="Fornecedor/oficina"
+                    >
+
+                    <datalist id="reportProviderOptions">
+                        @foreach($providers as $provider)
+                            <option value="{{ $provider }}"></option>
+                        @endforeach
+                    </datalist>
+
+                    <select class="nf-input" id="reportMaintenanceStatus">
+                        <option value="active">Somente ativas</option>
+                        @if($context['can_view_cancelled'])
+                            <option value="all">Ativas e canceladas</option>
+                            <option value="cancelled">Somente canceladas</option>
+                        @endif
+                    </select>
+
+                </div>
+
+            </div>
+
+            {{-- EXPORTAÇÃO --}}
             <div class="report-form-group">
 
                 <label>
@@ -501,8 +572,20 @@
                 <input
                     type="hidden"
                     name="end_date"
-                    id="reportFormEndDate"
-                >
+                    id="reportFormEndDate"
+                >
+
+                <input type="hidden" name="vehicle_id" id="reportFormVehicleId">
+
+                <input type="hidden" name="maintenance_type" id="reportFormMaintenanceType">
+
+                <input type="hidden" name="procedure_id" id="reportFormProcedureId">
+
+                <input type="hidden" name="provider_name" id="reportFormProviderName">
+
+                <input type="hidden" name="status" id="reportFormMaintenanceStatus" value="active">
+
+                <input type="hidden" name="include_cancelled" id="reportFormIncludeCancelled" value="0">
             
                 <button
                     type="submit"
@@ -604,7 +687,28 @@
                 'reportEndDate'
             ).value;
     
-        const form =
+        document.getElementById('reportFormVehicleId').value =
+            document.getElementById('reportVehicleId').value;
+
+        document.getElementById('reportFormMaintenanceType').value =
+            document.getElementById('reportMaintenanceType').value;
+
+        document.getElementById('reportFormProcedureId').value =
+            document.getElementById('reportProcedureId').value;
+
+        document.getElementById('reportFormProviderName').value =
+            document.getElementById('reportProviderName').value;
+
+        const statusValue =
+            document.getElementById('reportMaintenanceStatus').value;
+
+        document.getElementById('reportFormMaintenanceStatus').value =
+            statusValue;
+
+        document.getElementById('reportFormIncludeCancelled').value =
+            statusValue === 'all' || statusValue === 'cancelled' ? '1' : '0';
+
+        const form =
             document.getElementById(
                 'reportExportForm'
             );
