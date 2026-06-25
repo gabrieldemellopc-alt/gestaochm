@@ -133,7 +133,10 @@ class ReportController extends Controller
 
         $data = $this->buildMaintenanceReportData($request, $context);
 
-        $pdf = Pdf::loadView('reports.pdf.maintenance', $data);
+        $pdfData = $data;
+        $pdfData['maintenances'] = $data['maintenances_raw'];
+
+        $pdf = Pdf::loadView('reports.pdf.maintenance', $pdfData);
 
         return $pdf->download('relatorio-manutencoes.pdf');
     }
