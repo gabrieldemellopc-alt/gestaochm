@@ -317,6 +317,79 @@
 
 
 
+        {{-- ABASTECIMENTOS --}}
+
+        <div class="report-module-card">
+
+
+
+            <div class="report-module-icon">
+
+
+
+                <i data-lucide="fuel"></i>
+
+
+
+            </div>
+
+
+
+            <h3>
+
+                Relatorio de Abastecimentos
+
+            </h3>
+
+
+
+            <p>
+
+                Acompanhe saldos de tanques, recebimentos, abastecimentos
+                e consumo por veiculo.
+
+            </p>
+
+
+
+            <div class="reports-kpi-description">
+
+                Diesel, ARLA, custos, alertas e movimentacoes por periodo
+
+            </div>
+
+
+
+            <div class="report-module-actions">
+
+
+
+                <a
+
+                    href="{{ route('reports.fuel.index') }}"
+
+                    class="report-module-button"
+
+                >
+
+
+
+                    Abrir painel
+
+
+
+                </a>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
         {{-- OPERACIONAL --}}
         <div class="report-module-card">
 

@@ -4,6 +4,7 @@ namespace App\Services\Reports;
 
 use App\Models\FuelFilling;
 use App\Models\FuelMovement;
+use App\Models\FuelProduct;
 use App\Models\FuelReceipt;
 use App\Models\FuelTank;
 use App\Models\Vehicle;
@@ -37,10 +38,20 @@ class FuelReportService
         $movements = $this->movementsPeriod($context, $filters);
         $consumptionByVehicle = $this->consumptionByVehicle($fillings);
 
+        if ($filters['only_vehicles_with_consumption']) {
+            $consumptionByVehicle = $consumptionByVehicle
+                ->filter(fn (array $row) => $row['status'] === 'calculado')
+                ->values();
+        }
+
         return [
             'context' => $context,
             'applied_filters' => $filters,
+            'vehicles' => $this->vehicles($context),
+            'products' => $this->products($context),
+            'tanks' => $this->tanks($context),
             'tank_summary' => $tankSummary,
+            'product_balances' => $this->productBalances($tankSummary),
             'low_tanks' => $tankSummary
                 ->filter(fn (array $tank) => $tank['status'] === 'low')
                 ->values(),
@@ -138,6 +149,57 @@ class FuelReportService
             ->when($filters['only_low_tanks'], fn (Collection $items) => $items
                 ->filter(fn (array $item) => $item['status'] === 'low')
                 ->values());
+    }
+
+    private function productBalances(Collection $tankSummary): Collection
+    {
+        return $tankSummary
+            ->groupBy(fn (array $tank) => $tank['product']?->slug ?: mb_strtolower((string) $tank['product']?->name))
+            ->map(function (Collection $items) {
+                $first = $items->first();
+
+                return [
+                    'product' => $first['product'],
+                    'name' => $first['product']?->name ?? 'Produto',
+                    'slug' => $first['product']?->slug,
+                    'balance_liters' => round($items->sum('current_balance_liters'), 3),
+                    'capacity_liters' => round($items->sum('capacity_liters'), 3),
+                    'minimum_balance_liters' => round($items->sum('minimum_balance_liters'), 3),
+                    'tanks_count' => $items->count(),
+                ];
+            })
+            ->values();
+    }
+
+    private function vehicles(array $context): Collection
+    {
+        return Vehicle::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division']->id)
+            ->where('location_id', $context['location']->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'plate']);
+    }
+
+    private function products(array $context): Collection
+    {
+        return FuelProduct::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
+    }
+
+    private function tanks(array $context): Collection
+    {
+        return FuelTank::query()
+            ->with('product')
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division']->id)
+            ->where('location_id', $context['location']->id)
+            ->orderByDesc('active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'fuel_product_id', 'active']);
     }
 
     private function receiptsPeriod(array $context, array $filters): Collection

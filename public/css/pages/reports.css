@@ -1452,3 +1452,39 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-tires-page .tire-ev
 html[data-chm-theme="corporate-light"] .reports-page.reports-tires-page .empty-state {
     background: var(--tire-panel-muted);
 }
+
+/* Fuel report panel */
+.reports-page.reports-fuel-page .fuel-summary-grid {
+    grid-template-columns: repeat(5, minmax(130px, 1fr));
+}
+
+.reports-page.reports-fuel-page .fuel-panel-columns {
+    align-items: stretch;
+}
+
+.reports-page.reports-fuel-page .report-module-button:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+    color: var(--tire-muted);
+    background: var(--tire-panel-soft);
+    border-color: var(--tire-border);
+}
+
+.reports-page.reports-fuel-page .report-module-button:disabled:hover {
+    transform: none;
+    color: var(--tire-muted);
+    background: var(--tire-panel-soft);
+    border-color: var(--tire-border);
+}
+
+@media (max-width: 1180px) {
+    .reports-page.reports-fuel-page .fuel-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .reports-page.reports-fuel-page .fuel-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}

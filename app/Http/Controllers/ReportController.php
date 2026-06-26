@@ -8,6 +8,7 @@ use App\Models\MaintenanceRecord;
 use App\Models\Procedure;
 use App\Models\StockItem;
 use App\Models\StockMovement;
+use App\Services\Reports\FuelReportService;
 use App\Services\Reports\ReportContextService;
 use App\Services\Reports\TireReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -171,6 +172,17 @@ class ReportController extends Controller
         }
 
         return view('reports.tires', $tireReport->build($context, $request));
+    }
+
+    public function fuel(Request $request, FuelReportService $fuelReport)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        return view('reports.fuel', $fuelReport->build($request->query(), $context));
     }
 
     public function tiresFull(Request $request, TireReportService $tireReport)
