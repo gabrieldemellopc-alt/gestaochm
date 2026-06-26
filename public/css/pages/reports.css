@@ -585,6 +585,23 @@
     margin-top: 16px;
 }
 
+.reports-tires-page .tire-filter-note,
+.reports-tires-page .tire-report-alert {
+    margin-top: 14px;
+    border: 1px solid var(--tire-border);
+    border-radius: 12px;
+    padding: 11px 12px;
+    color: var(--tire-muted);
+    background: rgba(15, 23, 42, .42);
+    font-size: 13px;
+}
+
+.reports-tires-page .tire-report-alert {
+    border-color: rgba(194, 65, 59, .42);
+    color: #fecaca;
+    background: rgba(194, 65, 59, .12);
+}
+
 .reports-tires-page .tire-summary-grid,
 .reports-tires-page .retread-summary-grid {
     display: grid;
@@ -642,6 +659,21 @@
     font-size: 19px;
 }
 
+.reports-tires-page .tire-section-kicker,
+.reports-tires-page .tire-subtitle {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--tire-muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.reports-tires-page .tire-subtitle {
+    margin: 0 0 12px;
+}
+
 .reports-tires-page .tire-section-header p {
     margin: 0;
     color: var(--tire-muted);
@@ -657,6 +689,10 @@
     width: 100%;
     border-collapse: collapse;
     min-width: 880px;
+}
+
+.reports-tires-page .compact-table .tire-report-table {
+    min-width: 620px;
 }
 
 .reports-tires-page .tire-report-table th,
@@ -775,6 +811,30 @@
     border-color: rgba(194, 65, 59, .36);
 }
 
+.reports-tires-page .retread-summary-grid.compact,
+.reports-tires-page .event-summary-grid {
+    margin-top: 16px;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+}
+
+.reports-tires-page .event-summary-grid {
+    grid-template-columns: repeat(6, minmax(105px, 1fr));
+    margin-bottom: 16px;
+}
+
+.reports-tires-page .tire-inline-action {
+    display: inline-flex;
+    margin-top: 12px;
+    color: #bfdbfe;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.reports-tires-page .tire-inline-action:hover {
+    text-decoration: underline;
+}
+
 html[data-chm-theme="corporate-light"] .reports-tires-page {
     --tire-panel: #ffffff;
     --tire-panel-soft: #f8fafc;
@@ -785,6 +845,7 @@ html[data-chm-theme="corporate-light"] .reports-tires-page {
 
 html[data-chm-theme="corporate-light"] .reports-tires-page .tire-filter-grid input,
 html[data-chm-theme="corporate-light"] .reports-tires-page .tire-filter-grid select,
+html[data-chm-theme="corporate-light"] .reports-tires-page .tire-filter-note,
 html[data-chm-theme="corporate-light"] .reports-tires-page .tire-compact-item,
 html[data-chm-theme="corporate-light"] .reports-tires-page .vehicle-tire-group,
 html[data-chm-theme="corporate-light"] .reports-tires-page .vehicle-tire-card,
@@ -796,7 +857,8 @@ html[data-chm-theme="corporate-light"] .reports-tires-page .empty-state {
 @media (max-width: 1180px) {
     .reports-tires-page .tire-filter-grid,
     .reports-tires-page .tire-summary-grid,
-    .reports-tires-page .retread-summary-grid {
+    .reports-tires-page .retread-summary-grid,
+    .reports-tires-page .event-summary-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -811,6 +873,7 @@ html[data-chm-theme="corporate-light"] .reports-tires-page .empty-state {
     .reports-tires-page .tire-filter-grid,
     .reports-tires-page .tire-summary-grid,
     .reports-tires-page .retread-summary-grid,
+    .reports-tires-page .event-summary-grid,
     .reports-tires-page .tire-report-columns,
     .reports-tires-page .tire-card-grid {
         grid-template-columns: 1fr;

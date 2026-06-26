@@ -41,12 +41,16 @@ class TireReportService
             'retreadSummary' => $this->retreadSummary($inventory),
             'tires' => $filteredTires,
             'criticalTires' => $criticalTires->take(20),
-            'noRecentMeasurements' => $noRecentMeasurements->take(20),
+            'noRecentMeasurements' => $filters['show_all_no_recent']
+                ? $noRecentMeasurements
+                : $noRecentMeasurements->take(10),
+            'noRecentMeasurementsTotal' => $noRecentMeasurements->count(),
             'tiresByVehicle' => $this->tiresByVehicle($context),
             'vehicleInstalledTires' => $filters['vehicle_id']
                 ? $this->vehicleInstalledTires($context, (int) $filters['vehicle_id'])
                 : collect(),
-            'events' => $this->events($context, $filters),
+            'events' => $events = $this->events($context, $filters),
+            'eventSummary' => $this->eventSummary($events),
             'cancelledRecords' => $this->cancelledRecords($context, $filters),
         ];
     }
@@ -60,6 +64,8 @@ class TireReportService
         $endDate = $request->filled('end_date')
             ? Carbon::parse($request->input('end_date'))->endOfDay()
             : Carbon::now()->endOfDay();
+
+        $periodIsValid = $startDate->lte($endDate);
 
         $status = $request->input('status', 'all');
         if (! in_array($status, ['all', 'available', 'installed', 'maintenance', 'discarded'], true)) {
@@ -85,6 +91,11 @@ class TireReportService
             'only_critical' => $request->boolean('only_critical'),
             'retreads' => $retreads,
             'include_cancelled' => $context['can_view_cancelled'] && $request->boolean('include_cancelled'),
+            'show_all_no_recent' => $request->boolean('show_all_no_recent'),
+            'period_is_valid' => $periodIsValid,
+            'period_error' => $periodIsValid
+                ? null
+                : 'A data inicial nao pode ser maior que a data final. Ajuste o periodo para consultar eventos.',
         ];
     }
 
@@ -217,6 +228,10 @@ class TireReportService
 
     private function events(array $context, array $filters): Collection
     {
+        if (! $filters['period_is_valid']) {
+            return collect();
+        }
+
         return collect()
             ->merge($this->entryEvents($context, $filters))
             ->merge($this->installationEvents($context, $filters))
@@ -226,6 +241,18 @@ class TireReportService
             ->sortByDesc('date')
             ->take(80)
             ->values();
+    }
+
+    private function eventSummary(Collection $events): array
+    {
+        return [
+            'entries' => $events->where('type', 'Entrada')->count(),
+            'installations' => $events->where('type', 'Instalacao')->count(),
+            'removals' => $events->where('type', 'Retirada')->count(),
+            'measurements' => $events->where('type', 'Medicao')->count(),
+            'retreads' => $events->where('type', 'Recapagem')->count(),
+            'discards' => $events->where('type', 'Descarte')->count(),
+        ];
     }
 
     private function entryEvents(array $context, array $filters): Collection
@@ -388,7 +415,7 @@ class TireReportService
 
     private function cancelledRecords(array $context, array $filters): Collection
     {
-        if (! $filters['include_cancelled']) {
+        if (! $filters['include_cancelled'] || ! $filters['period_is_valid']) {
             return collect();
         }
 
