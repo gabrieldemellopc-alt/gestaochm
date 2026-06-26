@@ -1488,3 +1488,128 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-tires-page .empty-s
         grid-template-columns: 1fr;
     }
 }
+
+/* Fuel full report */
+.reports-page.reports-fuel-page .fuel-report-context {
+    margin-bottom: 16px;
+}
+
+.reports-page.reports-fuel-page .fuel-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.reports-page.reports-fuel-page .fuel-meta-grid > div,
+.reports-page.reports-fuel-page .fuel-filter-chip-list span {
+    background: var(--tire-panel-muted);
+    border: 1px solid var(--tire-border);
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.reports-page.reports-fuel-page .fuel-meta-grid > div {
+    padding: 12px;
+}
+
+.reports-page.reports-fuel-page .fuel-meta-grid span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--tire-subtle);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.reports-page.reports-fuel-page .fuel-meta-grid strong {
+    color: var(--tire-text);
+    font-size: 14px;
+}
+
+.reports-page.reports-fuel-page .fuel-filter-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.reports-page.reports-fuel-page .fuel-filter-chip-list span {
+    padding: 7px 10px;
+    color: var(--tire-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.reports-page.reports-fuel-page .fuel-detail-table {
+    min-width: 980px;
+}
+
+.reports-page.reports-fuel-page .fuel-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 3px 9px;
+    border: 1px solid var(--tire-border);
+    border-radius: 999px;
+    background: var(--tire-panel-soft);
+    color: var(--tire-text);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.reports-page.reports-fuel-page .fuel-status-badge.status-low {
+    border-color: rgba(250, 204, 21, .42);
+    color: #fde68a;
+    background: rgba(217, 119, 6, .16);
+}
+
+.reports-page.reports-fuel-page .fuel-status-badge.status-inactive {
+    border-color: rgba(248, 113, 113, .42);
+    color: #fca5a5;
+    background: rgba(185, 28, 28, .16);
+}
+
+.reports-page.reports-fuel-page .fuel-tank-row.fuel-tank-low td,
+.reports-page.reports-fuel-page .fuel-warning-row td {
+    background: rgba(217, 119, 6, .08);
+}
+
+.reports-page.reports-fuel-page .fuel-tank-row.fuel-tank-inactive td {
+    color: var(--tire-subtle);
+    background: rgba(15, 23, 42, .20);
+}
+
+.reports-page.reports-fuel-page .tire-compact-item.warning strong {
+    color: #fde68a;
+}
+
+.reports-page.reports-fuel-page .fuel-alert-table {
+    margin-top: 16px;
+}
+
+html[data-chm-theme="corporate-light"] .reports-page.reports-fuel-page .fuel-meta-grid > div,
+html[data-chm-theme="corporate-light"] .reports-page.reports-fuel-page .fuel-filter-chip-list span {
+    background: var(--tire-panel-muted);
+}
+
+@media (max-width: 1024px) {
+    .reports-page.reports-fuel-page .fuel-meta-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .reports-page.reports-fuel-page .fuel-meta-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reports-page.reports-fuel-page .fuel-filter-chip-list {
+        flex-direction: column;
+    }
+}

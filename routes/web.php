@@ -1062,6 +1062,16 @@ Route::middleware('auth')->group(function () {
 
             Route::get(
 
+                '/fuel/full',
+
+                'fuelFull'
+
+            )->name('fuel.full');
+
+
+
+            Route::get(
+
                 '/tires/full',
 
                 'tiresFull'

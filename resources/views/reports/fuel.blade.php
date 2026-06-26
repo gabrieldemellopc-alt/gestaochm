@@ -26,9 +26,9 @@
         </div>
 
         <div class="tire-action-row">
-            <button type="button" class="report-module-button" disabled>
+            <a href="{{ route('reports.fuel.full', request()->query()) }}" class="report-module-button">
                 Visualizar relatorio completo
-            </button>
+            </a>
             <button type="button" class="report-module-button secondary" disabled>
                 Exportar PDF
             </button>
