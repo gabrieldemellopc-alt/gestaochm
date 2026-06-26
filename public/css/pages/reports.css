@@ -543,6 +543,14 @@
     gap: 20px;
 }
 
+.reports-tires-page .tire-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
 .reports-tires-page .tire-report-filters,
 .reports-tires-page .tire-report-section {
     background: var(--tire-panel);
@@ -550,6 +558,10 @@
     border-radius: 18px;
     padding: 20px;
     box-shadow: 0 14px 34px rgba(0, 0, 0, .18);
+}
+
+.reports-tires-page.tire-summary-dashboard .tire-report-section {
+    padding: 18px;
 }
 
 .reports-tires-page .tire-filter-grid {
@@ -609,6 +621,10 @@
     gap: 14px;
 }
 
+.reports-tires-page.tire-summary-dashboard .tire-summary-grid {
+    grid-template-columns: repeat(6, minmax(110px, 1fr));
+}
+
 .reports-tires-page .tire-summary-card,
 .reports-tires-page .retread-summary-grid > div {
     background: var(--tire-panel-soft);
@@ -636,6 +652,10 @@
     color: var(--tire-text);
     font-size: 28px;
     line-height: 1;
+}
+
+.reports-tires-page.tire-summary-dashboard .tire-summary-card strong {
+    font-size: 24px;
 }
 
 .reports-tires-page .tire-summary-card.warning strong {
@@ -811,6 +831,11 @@
     border-color: rgba(194, 65, 59, .36);
 }
 
+.reports-tires-page .compact-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .reports-tires-page .retread-summary-grid.compact,
 .reports-tires-page .event-summary-grid {
     margin-top: 16px;
@@ -865,6 +890,7 @@ html[data-chm-theme="corporate-light"] .reports-tires-page .empty-state {
 
 @media (max-width: 720px) {
     .reports-tires-page .reports-tires-hero,
+    .reports-tires-page .tire-action-row,
     .reports-tires-page .vehicle-tire-group {
         align-items: stretch;
         flex-direction: column;
@@ -875,12 +901,14 @@ html[data-chm-theme="corporate-light"] .reports-tires-page .empty-state {
     .reports-tires-page .retread-summary-grid,
     .reports-tires-page .event-summary-grid,
     .reports-tires-page .tire-report-columns,
-    .reports-tires-page .tire-card-grid {
+    .reports-tires-page .tire-card-grid,
+    .reports-tires-page .compact-groups {
         grid-template-columns: 1fr;
     }
 
     .reports-tires-page .tire-filter-checks .report-module-button,
-    .reports-tires-page .reports-tires-hero .report-module-button {
+    .reports-tires-page .reports-tires-hero .report-module-button,
+    .reports-tires-page .tire-action-row .report-module-button {
         width: 100%;
         justify-content: center;
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\MaintenanceReportExport;
+use App\Exports\TireReportExport;
 use App\Models\MaintenanceRecord;
 use App\Models\Procedure;
 use App\Models\StockItem;
@@ -170,6 +171,51 @@ class ReportController extends Controller
         }
 
         return view('reports.tires', $tireReport->build($context, $request));
+    }
+
+    public function tiresFull(Request $request, TireReportService $tireReport)
+    {
+        $request->merge(['full_report' => true]);
+
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        return view('reports.tires-full', $tireReport->build($context, $request));
+    }
+
+    public function exportTiresPdf(Request $request, TireReportService $tireReport)
+    {
+        $request->merge(['full_report' => true]);
+
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $pdf = Pdf::loadView('reports.pdf.tires', $tireReport->build($context, $request))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('relatorio-pneus.pdf');
+    }
+
+    public function exportTiresExcel(Request $request, TireReportService $tireReport)
+    {
+        $request->merge(['full_report' => true]);
+
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        return Excel::download(
+            new TireReportExport($tireReport->build($context, $request)),
+            'relatorio-pneus.xlsx'
+        );
     }
 
     private function buildMaintenanceReportData(Request $request, array $context, bool $full = true): array

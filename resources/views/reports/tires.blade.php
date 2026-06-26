@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/pages/reports.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('css/pages/reports.css') }}?v=5">
 @endpush
 
 @section('content')
@@ -15,23 +15,31 @@
 
     $formatDate = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y') : '-';
     $formatDepth = fn ($value) => $value !== null ? number_format((float) $value, 1, ',', '.') . ' mm' : '-';
-    $queryWithoutExpand = request()->except('show_all_no_recent');
+    $currentQuery = request()->query();
 @endphp
 
-<div class="reports-page reports-tires-page">
+<div class="reports-page reports-tires-page tire-summary-dashboard">
     <div class="reports-hero reports-tires-hero">
         <div>
             <div class="reports-hero-badge">Central de Pneus</div>
-            <h1>Pneus da unidade</h1>
+            <h1>Painel de Pneus</h1>
             <p>
-                Inventario atual, eventos do periodo e alertas operacionais de
-                {{ $context['location']->name ?? 'unidade ativa' }}.
+                Resumo operacional da unidade {{ $context['location']->name ?? '-' }}.
+                Use as ações para abrir o relatório completo ou exportar.
             </p>
         </div>
 
-        <a href="{{ route('reports.index') }}" class="report-module-button secondary">
-            Voltar para relatorios
-        </a>
+        <div class="tire-action-row">
+            <a href="{{ route('reports.tires.full', $currentQuery) }}" class="report-module-button">
+                Visualizar relatorio completo
+            </a>
+            <a href="{{ route('reports.tires.export.pdf', $currentQuery) }}" class="report-module-button secondary">
+                Exportar PDF
+            </a>
+            <a href="{{ route('reports.tires.export.excel', $currentQuery) }}" class="report-module-button secondary">
+                Exportar Excel
+            </a>
+        </div>
     </div>
 
     <form method="GET" action="{{ route('reports.tires.index') }}" class="tire-report-filters">
@@ -94,7 +102,7 @@
             @if($context['can_view_cancelled'])
                 <label>
                     <input type="checkbox" name="include_cancelled" value="1" @checked($filters['include_cancelled'])>
-                    Mostrar cancelados em secao separada
+                    Cancelados no relatorio completo
                 </label>
             @endif
 
@@ -102,23 +110,20 @@
         </div>
 
         <div class="tire-filter-note">
-            <strong>Como ler:</strong> status, veiculo, recapagem, instalados e criticos filtram o inventario atual.
-            O periodo filtra somente eventos, historico e cancelamentos.
+            O painel mostra somente resumo. Inventario completo, eventos e cancelamentos ficam na visão detalhada/PDF/Excel.
         </div>
     </form>
 
     @if($filters['period_error'])
-        <div class="tire-report-alert">
-            {{ $filters['period_error'] }}
-        </div>
+        <div class="tire-report-alert">{{ $filters['period_error'] }}</div>
     @endif
 
     <section class="tire-report-section">
         <div class="tire-section-header">
             <div>
-                <span class="tire-section-kicker">A. Estado atual</span>
-                <h2>Inventario atual da unidade</h2>
-                <p>Dados de estoque e instalacao atuais. Estes numeros nao dependem do periodo selecionado.</p>
+                <span class="tire-section-kicker">Resumo atual</span>
+                <h2>Inventario da unidade</h2>
+                <p>Estado atual dos pneus, independente do periodo selecionado.</p>
             </div>
         </div>
 
@@ -127,8 +132,8 @@
             <div class="tire-summary-card"><span>Instalados</span><strong>{{ $summary['installed'] }}</strong></div>
             <div class="tire-summary-card"><span>Disponiveis</span><strong>{{ $summary['available'] }}</strong></div>
             <div class="tire-summary-card warning"><span>Manutencao</span><strong>{{ $summary['maintenance'] }}</strong></div>
+            <div class="tire-summary-card danger"><span>Criticos</span><strong>{{ $summary['critical'] }}</strong></div>
             <div class="tire-summary-card danger"><span>Descartados</span><strong>{{ $summary['discarded'] }}</strong></div>
-            <div class="tire-summary-card danger"><span>Sulco critico</span><strong>{{ $summary['critical'] }}</strong></div>
         </div>
 
         <div class="retread-summary-grid compact">
@@ -139,248 +144,74 @@
         </div>
     </section>
 
-    <section class="tire-report-section">
-        <div class="tire-section-header">
-            <div>
-                <h2>Inventario atual filtrado</h2>
-                <p>
-                    {{ $tires->count() }} pneu(s) encontrados. O periodo nao altera esta tabela.
-                </p>
-            </div>
-        </div>
-
-        <div class="tire-report-table-wrap">
-            <table class="tire-report-table">
-                <thead>
-                    <tr>
-                        <th>Codigo</th>
-                        <th>Status</th>
-                        <th>Veiculo atual</th>
-                        <th>Marca / Modelo</th>
-                        <th>Recapagens</th>
-                        <th>Sulco atual</th>
-                        <th>Referencia</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($tires as $tire)
-                        <tr @class(['is-critical' => ($tire->current_tread_depth !== null && (float) $tire->current_tread_depth <= (float) ($tire->critical_tread_depth ?: 3))])>
-                            <td>
-                                <strong>{{ $tire->code }}</strong>
-                                @if((int) $tire->retreads_count > 0)
-                                    <span class="tire-r-badge">R{{ $tire->retreads_count }}</span>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="tire-status-badge status-{{ $tire->status }}">
-                                    {{ $statusLabels[$tire->status] ?? $tire->status }}
-                                </span>
-                            </td>
-                            <td>
-                                {{ $tire->activeInstallation?->vehicle?->name ?? '-' }}
-                                @if($tire->activeInstallation?->vehicle?->plate)
-                                    <small>{{ $tire->activeInstallation->vehicle->plate }}</small>
-                                @endif
-                            </td>
-                            <td>{{ trim(($tire->brand ?: '-') . ' / ' . ($tire->model ?: '-')) }}</td>
-                            <td>{{ (int) $tire->retreads_count > 0 ? 'R' . $tire->retreads_count : 'Nenhuma' }}</td>
-                            <td>{{ $formatDepth($tire->current_tread_depth) }}</td>
-                            <td>
-                                @if($tire->current_tread_source === 'retread')
-                                    Recapagem em {{ $formatDate($tire->current_tread_date) }}
-                                @elseif($tire->current_tread_source === 'measurement')
-                                    Ultima medicao em {{ $formatDate($tire->current_tread_date) }}
-                                @else
-                                    Sulco inicial
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="empty-state">
-                                Nenhum pneu do inventario atual atende aos filtros de veiculo, status, recapagem,
-                                instalados ou criticos. O periodo selecionado nao interfere neste resultado.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="tire-report-section">
-        <div class="tire-section-header">
-            <div>
-                <span class="tire-section-kicker">B. Movimento no periodo</span>
-                <h2>Eventos do periodo selecionado</h2>
-                <p>Instalacoes, retiradas, medicoes, recapagens, descartes e cancelamentos separados.</p>
-            </div>
-        </div>
-
-        <div class="retread-summary-grid compact event-summary-grid">
-            <div><span>Instalacoes</span><strong>{{ $eventSummary['installations'] }}</strong></div>
-            <div><span>Retiradas</span><strong>{{ $eventSummary['removals'] }}</strong></div>
-            <div><span>Medicoes</span><strong>{{ $eventSummary['measurements'] }}</strong></div>
-            <div><span>Recapagens</span><strong>{{ $eventSummary['retreads'] }}</strong></div>
-            <div><span>Entradas</span><strong>{{ $eventSummary['entries'] }}</strong></div>
-            <div><span>Descartes</span><strong>{{ $eventSummary['discards'] }}</strong></div>
-        </div>
-
-        @if($filters['period_error'])
-            <div class="empty-state">Eventos nao foram calculados porque o periodo esta invertido.</div>
-        @else
-            <div class="tire-event-list">
-                @forelse($events as $event)
-                    <div class="tire-event-item status-{{ $event['status'] }}">
-                        <span>{{ $formatDate($event['date']) }}</span>
-                        <strong>{{ $event['type'] }} - {{ $event['title'] }}</strong>
-                        <p>{{ $event['description'] }}</p>
-                    </div>
-                @empty
-                    <div class="empty-state">Nenhum evento de pneus encontrado no periodo selecionado.</div>
-                @endforelse
-            </div>
-        @endif
-    </section>
-
-    @if($context['can_view_cancelled'] && $filters['include_cancelled'])
-        <section class="tire-report-section cancelled-section">
-            <div class="tire-section-header">
-                <div>
-                    <h2>Cancelamentos no periodo</h2>
-                    <p>Exibidos apenas para manager/admin. Nao entram em totais, alertas ou sulco atual.</p>
-                </div>
-            </div>
-
-            <div class="tire-event-list">
-                @forelse($cancelledRecords as $record)
-                    <div class="tire-event-item status-cancelled">
-                        <span>{{ $formatDate($record['date']) }}</span>
-                        <strong>{{ $record['type'] }} - {{ $record['title'] }}</strong>
-                        <p>{{ $record['reason'] ?: 'Sem motivo registrado' }} @if($record['user']) - {{ $record['user'] }} @endif</p>
-                    </div>
-                @empty
-                    <div class="empty-state">Nenhum registro cancelado no periodo selecionado.</div>
-                @endforelse
-            </div>
-        </section>
-    @endif
-
-    <section class="tire-report-section">
-        <div class="tire-section-header">
-            <div>
-                <span class="tire-section-kicker">C. Alertas atuais</span>
-                <h2>Alertas operacionais atuais</h2>
-                <p>Pontos de atencao do inventario atual. Estes alertas nao dependem do periodo.</p>
-            </div>
-        </div>
-
-        <div class="tire-report-columns">
-            <div>
-                <h3 class="tire-subtitle">Pneus criticos</h3>
-                <div class="tire-compact-list">
-                    @forelse($criticalTires as $tire)
-                        <div class="tire-compact-item danger">
-                            <strong>{{ $tire->code }}</strong>
-                            <span>{{ $formatDepth($tire->current_tread_depth) }} / limite {{ $formatDepth($tire->critical_tread_depth ?: 3) }}</span>
-                        </div>
-                    @empty
-                        <div class="empty-state">Nenhum pneu critico na unidade ativa.</div>
-                    @endforelse
-                </div>
-            </div>
-
-            <div>
-                <h3 class="tire-subtitle">Sem medicao recente</h3>
-                <div class="tire-report-table-wrap compact-table">
-                    <table class="tire-report-table">
-                        <thead>
-                            <tr>
-                                <th>Codigo</th>
-                                <th>Veiculo</th>
-                                <th>Ultima medicao</th>
-                                <th>Dias</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($noRecentMeasurements as $tire)
-                                @php
-                                    $lastMeasurement = $tire->latestMeasurement?->measured_at;
-                                    $daysWithoutMeasurement = $lastMeasurement
-                                        ? \Carbon\Carbon::parse($lastMeasurement)->diffInDays(now())
-                                        : null;
-                                @endphp
-                                <tr>
-                                    <td><strong>{{ $tire->code }}</strong></td>
-                                    <td>{{ $tire->activeInstallation?->vehicle?->plate ?? '-' }}</td>
-                                    <td>{{ $formatDate($lastMeasurement) }}</td>
-                                    <td>{{ $daysWithoutMeasurement !== null ? $daysWithoutMeasurement : 'Sem registro' }}</td>
-                                    <td>{{ $statusLabels[$tire->status] ?? $tire->status }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="empty-state">Todos os pneus possuem medicao recente.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                @if($noRecentMeasurementsTotal > 10 && ! $filters['show_all_no_recent'])
-                    <a
-                        class="tire-inline-action"
-                        href="{{ route('reports.tires.index', array_merge(request()->query(), ['show_all_no_recent' => 1])) }}"
-                    >
-                        Ver todos os {{ $noRecentMeasurementsTotal }} pneus sem medicao recente
-                    </a>
-                @elseif($filters['show_all_no_recent'])
-                    <a
-                        class="tire-inline-action"
-                        href="{{ route('reports.tires.index', $queryWithoutExpand) }}"
-                    >
-                        Mostrar apenas os 10 mais relevantes
-                    </a>
-                @endif
-            </div>
-        </div>
-    </section>
-
-    @if($filters['vehicle_id'])
+    <div class="tire-report-columns">
         <section class="tire-report-section">
             <div class="tire-section-header">
                 <div>
-                    <h2>Veiculo selecionado</h2>
-                    <p>Pneus atualmente instalados no veiculo filtrado.</p>
+                    <h2>Top 5 pneus criticos</h2>
+                    <p>Sulco atual abaixo ou igual ao limite critico.</p>
                 </div>
             </div>
 
-            <div class="tire-card-grid">
-                @forelse($vehicleInstalledTires as $installation)
-                    <div class="vehicle-tire-card">
-                        <span>Posicao {{ $installation->position_code }}</span>
-                        <strong>{{ $installation->tire?->code ?? '-' }}</strong>
-                        <small>{{ $installation->tire?->brand ?? '-' }} / {{ $installation->tire?->model ?? '-' }}</small>
-                        <p>Sulco atual: {{ $formatDepth($installation->tire?->current_tread_depth) }}</p>
-                        <p>Instalado em: {{ $formatDate($installation->installed_at) }}</p>
+            <div class="tire-compact-list">
+                @forelse($criticalTires as $tire)
+                    <div class="tire-compact-item danger">
+                        <strong>{{ $tire->code }}</strong>
+                        <span>{{ $formatDepth($tire->current_tread_depth) }} / limite {{ $formatDepth($tire->critical_tread_depth ?: 3) }}</span>
                     </div>
                 @empty
-                    <div class="empty-state">Nenhum pneu instalado no veiculo selecionado.</div>
+                    <div class="empty-state">Nenhum pneu critico na unidade ativa.</div>
                 @endforelse
             </div>
         </section>
-    @endif
+
+        <section class="tire-report-section">
+            <div class="tire-section-header">
+                <div>
+                    <h2>Sem medicao recente</h2>
+                    <p>Top 5 pneus com medicao mais antiga ou sem registro.</p>
+                </div>
+            </div>
+
+            <div class="tire-report-table-wrap compact-table">
+                <table class="tire-report-table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Veiculo</th>
+                            <th>Ultima medicao</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($noRecentMeasurements as $tire)
+                            <tr>
+                                <td><strong>{{ $tire->code }}</strong></td>
+                                <td>{{ $tire->activeInstallation?->vehicle?->plate ?? '-' }}</td>
+                                <td>{{ $formatDate($tire->latestMeasurement?->measured_at) }}</td>
+                                <td>{{ $statusLabels[$tire->status] ?? $tire->status }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="empty-state">Todos os pneus possuem medicao recente.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
 
     <section class="tire-report-section">
         <div class="tire-section-header">
             <div>
-                <h2>Pneus por veiculo</h2>
-                <p>Distribuicao atual dos pneus instalados na unidade.</p>
+                <h2>Resumo por veiculo</h2>
+                <p>Primeiros veiculos com pneus atualmente instalados. A lista completa fica no relatorio detalhado.</p>
             </div>
         </div>
 
-        <div class="vehicle-tire-groups">
-            @forelse($tiresByVehicle as $group)
+        <div class="vehicle-tire-groups compact-groups">
+            @forelse($tiresByVehicle->take(5) as $group)
                 <div class="vehicle-tire-group">
                     <div>
                         <strong>{{ $group['vehicle']?->name ?? '-' }}</strong>

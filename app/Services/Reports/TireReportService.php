@@ -40,10 +40,13 @@ class TireReportService
             'summary' => $this->summary($inventory, $criticalTires, $noRecentMeasurements),
             'retreadSummary' => $this->retreadSummary($inventory),
             'tires' => $filteredTires,
-            'criticalTires' => $criticalTires->take(20),
+            'criticalTires' => $filters['full_report']
+                ? $criticalTires
+                : $criticalTires->take(5),
             'noRecentMeasurements' => $filters['show_all_no_recent']
+                || $filters['full_report']
                 ? $noRecentMeasurements
-                : $noRecentMeasurements->take(10),
+                : $noRecentMeasurements->take(5),
             'noRecentMeasurementsTotal' => $noRecentMeasurements->count(),
             'tiresByVehicle' => $this->tiresByVehicle($context),
             'vehicleInstalledTires' => $filters['vehicle_id']
@@ -92,6 +95,7 @@ class TireReportService
             'retreads' => $retreads,
             'include_cancelled' => $context['can_view_cancelled'] && $request->boolean('include_cancelled'),
             'show_all_no_recent' => $request->boolean('show_all_no_recent'),
+            'full_report' => $request->boolean('full_report'),
             'period_is_valid' => $periodIsValid,
             'period_error' => $periodIsValid
                 ? null

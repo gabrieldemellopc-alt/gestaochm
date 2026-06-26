@@ -1050,6 +1050,36 @@ Route::middleware('auth')->group(function () {
 
 
 
+            Route::get(
+
+                '/tires/full',
+
+                'tiresFull'
+
+            )->name('tires.full');
+
+
+
+            Route::get(
+
+                '/tires/export-pdf',
+
+                'exportTiresPdf'
+
+            )->name('tires.export.pdf');
+
+
+
+            Route::get(
+
+                '/tires/export-excel',
+
+                'exportTiresExcel'
+
+            )->name('tires.export.excel');
+
+
+
             Route::post(
 
                 '/maintenance/export',
