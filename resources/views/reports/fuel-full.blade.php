@@ -68,7 +68,9 @@
             <a href="{{ route('reports.fuel.export-pdf', request()->query()) }}" class="report-module-button secondary">
                 Exportar PDF
             </a>
-            <button type="button" class="report-module-button secondary" disabled>Exportar Excel</button>
+            <a href="{{ route('reports.fuel.export-excel', request()->query()) }}" class="report-module-button secondary">
+                Exportar Excel
+            </a>
         </div>
     </div>
 
