@@ -1072,6 +1072,16 @@ Route::middleware('auth')->group(function () {
 
             Route::get(
 
+                '/fuel/export-pdf',
+
+                'exportFuelPdf'
+
+            )->name('fuel.export-pdf');
+
+
+
+            Route::get(
+
                 '/tires/full',
 
                 'tiresFull'

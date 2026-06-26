@@ -29,9 +29,9 @@
             <a href="{{ route('reports.fuel.full', request()->query()) }}" class="report-module-button">
                 Visualizar relatorio completo
             </a>
-            <button type="button" class="report-module-button secondary" disabled>
+            <a href="{{ route('reports.fuel.export-pdf', request()->query()) }}" class="report-module-button secondary">
                 Exportar PDF
-            </button>
+            </a>
             <button type="button" class="report-module-button secondary" disabled>
                 Exportar Excel
             </button>

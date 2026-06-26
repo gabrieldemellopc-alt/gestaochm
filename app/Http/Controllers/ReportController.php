@@ -196,6 +196,20 @@ class ReportController extends Controller
         return view('reports.fuel-full', $fuelReport->build($request->query(), $context));
     }
 
+    public function exportFuelPdf(Request $request, FuelReportService $fuelReport)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $pdf = Pdf::loadView('reports.pdf.fuel', $fuelReport->build($request->query(), $context))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('relatorio-abastecimentos.pdf');
+    }
+
     public function tiresFull(Request $request, TireReportService $tireReport)
     {
         $request->merge(['full_report' => true]);
