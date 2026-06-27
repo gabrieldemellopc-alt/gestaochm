@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\MaintenanceReportExport;
 use App\Exports\TireReportExport;
 use App\Exports\FuelReportExport;
+use App\Exports\StockReportExport;
 use App\Models\MaintenanceRecord;
 use App\Models\Procedure;
 use App\Models\StockItem;
@@ -221,6 +222,20 @@ class ReportController extends Controller
             ->setPaper('a4', 'landscape');
 
         return $pdf->download('relatorio-estoque.pdf');
+    }
+
+    public function exportStockExcel(Request $request, StockReportService $stockReport)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        return Excel::download(
+            new StockReportExport($stockReport->build($request->query(), $context)),
+            'relatorio-estoque.xlsx'
+        );
     }
 
     public function fuelFull(Request $request, FuelReportService $fuelReport)

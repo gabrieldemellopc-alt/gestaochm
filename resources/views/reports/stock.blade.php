@@ -40,9 +40,9 @@
             <a href="{{ route('reports.stock.export-pdf', request()->query()) }}" class="report-module-button secondary">
                 Exportar PDF
             </a>
-            <button type="button" class="report-module-button secondary" disabled>
+            <a href="{{ route('reports.stock.export-excel', request()->query()) }}" class="report-module-button secondary">
                 Exportar Excel
-            </button>
+            </a>
         </div>
     </div>
 
