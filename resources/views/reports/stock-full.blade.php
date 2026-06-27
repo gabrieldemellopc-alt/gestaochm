@@ -54,9 +54,9 @@
             <a href="{{ route('reports.stock.index', request()->query()) }}" class="report-module-button secondary">
                 Voltar ao painel
             </a>
-            <button type="button" class="report-module-button secondary" disabled>
+            <a href="{{ route('reports.stock.export-pdf', request()->query()) }}" class="report-module-button secondary">
                 Exportar PDF
-            </button>
+            </a>
             <button type="button" class="report-module-button secondary" disabled>
                 Exportar Excel
             </button>

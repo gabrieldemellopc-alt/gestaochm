@@ -209,6 +209,20 @@ class ReportController extends Controller
         return view('reports.stock-full', $stockReport->build($request->query(), $context));
     }
 
+    public function exportStockPdf(Request $request, StockReportService $stockReport)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $pdf = Pdf::loadView('reports.pdf.stock', $stockReport->build($request->query(), $context))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('relatorio-estoque.pdf');
+    }
+
     public function fuelFull(Request $request, FuelReportService $fuelReport)
     {
         $context = $this->reportContext->resolve();

@@ -1082,6 +1082,16 @@ Route::middleware('auth')->group(function () {
 
             Route::get(
 
+                '/stock/export-pdf',
+
+                'exportStockPdf'
+
+            )->name('stock.export-pdf');
+
+
+
+            Route::get(
+
                 '/fuel/full',
 
                 'fuelFull'
