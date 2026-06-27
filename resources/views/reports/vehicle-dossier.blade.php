@@ -16,7 +16,18 @@
     $statusLabel = fn ($value) => $value ?: '-';
     $maintenancesList = collect($maintenances);
     $stockConsumptionList = collect($stock_consumption);
+    $fuelFillingsList = collect($fuel_fillings);
+    $fuelConsumptionList = collect($fuel_consumption ?? []);
+    $fuelByProductList = collect($summary['fuel_by_product'] ?? []);
     $cancelledList = collect($cancelled_records);
+    $consumptionStatusLabel = fn ($status) => match ($status) {
+        'calculado' => 'Calculado',
+        'dados_insuficientes' => 'Dados insuficientes',
+        'km_invalido' => 'KM invalido',
+        'horas_invalidas' => 'Horas invalidas',
+        'sem_km_hr' => 'Sem KM/HR',
+        default => $status ?: '-',
+    };
 @endphp
 
 <div class="reports-page reports-tires-page reports-vehicle-dossier-page tire-summary-dashboard">
@@ -165,14 +176,42 @@
                 <div class="tire-summary-card"><span>Manutencoes</span><strong>{{ $summary['maintenance_count'] }}</strong><small>Validas no periodo</small></div>
                 <div class="tire-summary-card"><span>Custo manutencao</span><strong>{{ $money($summary['maintenance_cost_registered']) }}</strong><small>Custo registrado</small></div>
                 <div class="tire-summary-card"><span>Pecas consumidas</span><strong>{{ $money($summary['stock_consumed_cost']) }}</strong><small>{{ $summary['stock_consumed_cost_estimated'] > 0 ? 'Contem estimativas' : 'Estoque vinculado' }}</small></div>
-                <div class="tire-summary-card"><span>Litros abastecidos</span><strong>{{ $summary['fuel_liters'] > 0 ? $number($summary['fuel_liters'], 2) : 'Em preparacao' }}</strong><small>Sem calculo km/L</small></div>
-                <div class="tire-summary-card"><span>Custo abastecimento</span><strong>{{ $summary['fuel_cost'] > 0 ? $money($summary['fuel_cost']) : 'Em preparacao' }}</strong><small>Nao consolidado</small></div>
+                <div class="tire-summary-card"><span>Abastecimentos</span><strong>{{ $summary['fuel_fillings_count'] }}</strong><small>Validos no periodo</small></div>
+                <div class="tire-summary-card"><span>Litros abastecidos</span><strong>{{ $number($summary['fuel_liters'], 3) }}</strong><small>Diesel/ARLA separados abaixo</small></div>
+                <div class="tire-summary-card"><span>Custo abastecimento</span><strong>{{ $money($summary['fuel_cost']) }}</strong><small>Custo registrado</small></div>
+                <div class="tire-summary-card warning"><span>Sem KM/HR</span><strong>{{ $summary['fuel_fillings_without_km_hr'] }}</strong><small>Diagnostico de leitura</small></div>
                 <div class="tire-summary-card"><span>Pneus instalados</span><strong>{{ $summary['installed_tires_count'] }}</strong><small>Em preparacao</small></div>
                 <div class="tire-summary-card"><span>Medicoes de pneus</span><strong>{{ $summary['tire_measurements_count'] }}</strong><small>Em preparacao</small></div>
                 <div class="tire-summary-card"><span>Operacoes</span><strong>{{ $summary['operations_count'] }}</strong><small>Em preparacao</small></div>
                 <div class="tire-summary-card"><span>Checklists concluidos</span><strong>{{ $summary['checklists_completed_count'] }}</strong><small>Em preparacao</small></div>
                 <div class="tire-summary-card warning"><span>Alertas</span><strong>{{ $summary['alerts_count'] }}</strong><small>Em preparacao</small></div>
                 <div class="tire-summary-card danger"><span>Total operacional</span><strong>Em preparacao</strong><small>Nao definitivo</small></div>
+            </div>
+        </section>
+
+        <section class="tire-report-section dossier-data-section">
+            <div class="tire-section-header">
+                <div>
+                    <span class="tire-section-kicker">Abastecimentos</span>
+                    <h2>Resumo por produto</h2>
+                    <p>Diesel e ARLA separados. Cancelados nao entram em litros, custos ou consumo.</p>
+                </div>
+            </div>
+
+            <div class="dossier-product-grid">
+                @forelse($fuelByProductList as $product)
+                    <div class="dossier-product-card">
+                        <span>{{ $product['product_name'] }}</span>
+                        <strong>{{ $number($product['liters'], 3) }} L</strong>
+                        <small>{{ $product['fillings_count'] }} abastecimento(s) | {{ $money($product['total_cost']) }}</small>
+                    </div>
+                @empty
+                    <div class="dossier-product-card is-empty">
+                        <span>Sem abastecimentos</span>
+                        <strong>0,000 L</strong>
+                        <small>Nenhum registro valido no periodo.</small>
+                    </div>
+                @endforelse
             </div>
         </section>
 
@@ -283,13 +322,130 @@
             </div>
         </section>
 
+        <section class="tire-report-section dossier-data-section">
+            <div class="tire-section-header">
+                <div>
+                    <span class="tire-section-kicker">Abastecimentos</span>
+                    <h2>Abastecimentos no periodo</h2>
+                    <p>Registros validos do veiculo na unidade ativa, com leituras e custos informados no lancamento.</p>
+                </div>
+            </div>
+
+            <div class="dossier-table-wrap">
+                <table class="dossier-table">
+                    <thead>
+                        <tr>
+                            <th>Data/hora</th>
+                            <th>Produto</th>
+                            <th>Tanque</th>
+                            <th>Motorista</th>
+                            <th>KM/HR</th>
+                            <th>Litros</th>
+                            <th>Custo unit.</th>
+                            <th>Custo total</th>
+                            <th>Responsavel</th>
+                            <th>Observacao</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($fuelFillingsList as $filling)
+                            <tr @class(['has-warning' => $filling['vehicle_km'] === null && $filling['vehicle_hours'] === null])>
+                                <td>{{ $filling['date'] ? \Carbon\Carbon::parse($filling['date'])->format('d/m/Y H:i') : '-' }}</td>
+                                <td><strong>{{ $filling['product_name'] }}</strong></td>
+                                <td>{{ $filling['tank_name'] }}</td>
+                                <td>{{ $filling['driver_name'] }}</td>
+                                <td>
+                                    KM {{ $filling['vehicle_km'] !== null ? $number($filling['vehicle_km']) : '-' }}
+                                    <br>
+                                    HR {{ $filling['vehicle_hours'] !== null ? $number($filling['vehicle_hours'], 1) : '-' }}
+                                    @if($filling['vehicle_km'] === null && $filling['vehicle_hours'] === null)
+                                        <span class="dossier-badge warning">Sem KM/HR</span>
+                                    @endif
+                                </td>
+                                <td>{{ $number($filling['quantity_liters'], 3) }} L</td>
+                                <td>{{ $filling['unit_cost'] !== null ? $money($filling['unit_cost']) : '-' }}</td>
+                                <td>{{ $money($filling['total_cost']) }}</td>
+                                <td>{{ $filling['responsible_name'] }}</td>
+                                <td>{{ $filling['notes'] ?: '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="10" class="dossier-empty-cell">Nenhum abastecimento valido encontrado para o periodo.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tire-report-section dossier-data-section">
+            <div class="tire-section-header">
+                <div>
+                    <span class="tire-section-kicker">Consumo</span>
+                    <h2>Consumo e leitura operacional</h2>
+                    <p>Calculo conservador: exige pelo menos duas leituras crescentes por produto. Medias nao confiaveis nao sao exibidas.</p>
+                </div>
+            </div>
+
+            <div class="dossier-table-wrap">
+                <table class="dossier-table dossier-consumption-table">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Registros</th>
+                            <th>Litros</th>
+                            <th>Custo</th>
+                            <th>KM inicial/final</th>
+                            <th>km/L</th>
+                            <th>HR inicial/final</th>
+                            <th>L/h</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($fuelConsumptionList as $consumption)
+                            <tr @class(['has-warning' => $consumption['status'] !== 'calculado'])>
+                                <td><strong>{{ $consumption['product_name'] }}</strong></td>
+                                <td>{{ $consumption['fillings_count'] }}</td>
+                                <td>{{ $number($consumption['total_liters'], 3) }} L</td>
+                                <td>{{ $money($consumption['total_cost']) }}</td>
+                                <td>
+                                    {{ $consumption['km_consumption']['initial'] !== null ? $number($consumption['km_consumption']['initial']) : '-' }}
+                                    /
+                                    {{ $consumption['km_consumption']['final'] !== null ? $number($consumption['km_consumption']['final']) : '-' }}
+                                </td>
+                                <td>
+                                    {{ $consumption['km_consumption']['value'] !== null ? $number($consumption['km_consumption']['value'], 3) : '-' }}
+                                    <div class="dossier-muted-line">{{ $consumptionStatusLabel($consumption['km_consumption']['status']) }}</div>
+                                </td>
+                                <td>
+                                    {{ $consumption['hours_consumption']['initial'] !== null ? $number($consumption['hours_consumption']['initial'], 1) : '-' }}
+                                    /
+                                    {{ $consumption['hours_consumption']['final'] !== null ? $number($consumption['hours_consumption']['final'], 1) : '-' }}
+                                </td>
+                                <td>
+                                    {{ $consumption['hours_consumption']['value'] !== null ? $number($consumption['hours_consumption']['value'], 3) : '-' }}
+                                    <div class="dossier-muted-line">{{ $consumptionStatusLabel($consumption['hours_consumption']['status']) }}</div>
+                                </td>
+                                <td><span @class(['dossier-badge', 'warning' => $consumption['status'] !== 'calculado'])>{{ $consumptionStatusLabel($consumption['status']) }}</span></td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="dossier-empty-cell">Sem base de abastecimento para diagnostico de consumo no periodo.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
         @if($cancelledList->isNotEmpty())
             <section class="tire-report-section dossier-data-section dossier-cancelled-section">
                 <div class="tire-section-header">
                     <div>
                         <span class="tire-section-kicker">Canceladas</span>
-                        <h2>Manutencoes canceladas</h2>
-                        <p>Registros exibidos separadamente. Nao entram em contagem, custo ou resumo operacional.</p>
+                        <h2>Registros cancelados</h2>
+                        <p>Manutencoes e abastecimentos cancelados exibidos separadamente. Nao entram em contagem, litros, custo ou resumo operacional.</p>
                     </div>
                 </div>
 
@@ -297,9 +453,10 @@
                     <table class="dossier-table">
                         <thead>
                             <tr>
+                                <th>Tipo</th>
                                 <th>Data</th>
-                                <th>Procedimento</th>
-                                <th>Custo registrado</th>
+                                <th>Registro</th>
+                                <th>Qtd./Valor</th>
                                 <th>Cancelada em</th>
                                 <th>Responsavel</th>
                                 <th>Motivo</th>
@@ -308,9 +465,16 @@
                         <tbody>
                             @foreach($cancelledList as $cancelled)
                                 <tr class="is-muted">
+                                    <td>{{ $cancelled['record_type'] ?? 'Registro cancelado' }}</td>
                                     <td>{{ $formatDate($cancelled['date']) }}</td>
-                                    <td>{{ $cancelled['procedure_name'] }}</td>
-                                    <td>{{ $money($cancelled['total_cost']) }}</td>
+                                    <td>{{ $cancelled['record_label'] ?? $cancelled['procedure_name'] ?? '-' }}</td>
+                                    <td>
+                                        @if(($cancelled['quantity_liters'] ?? null) !== null)
+                                            {{ $number($cancelled['quantity_liters'], 3) }} L
+                                            <br>
+                                        @endif
+                                        {{ $money($cancelled['total_cost'] ?? 0) }}
+                                    </td>
                                     <td>{{ $cancelled['cancelled_at'] ? \Carbon\Carbon::parse($cancelled['cancelled_at'])->format('d/m/Y H:i') : '-' }}</td>
                                     <td>{{ $cancelled['cancelled_by'] ?: '-' }}</td>
                                     <td>{{ $cancelled['cancel_reason'] ?: '-' }}</td>

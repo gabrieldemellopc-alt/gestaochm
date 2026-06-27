@@ -4,6 +4,7 @@ namespace App\Services\Reports;
 
 use App\Models\MaintenanceRecord;
 use App\Models\StockMovement;
+use App\Models\FuelFilling;
 use App\Models\Vehicle;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,6 +47,8 @@ class VehicleDossierReportService
 
         $maintenances = $this->maintenances($context, $vehicle, $appliedFilters);
         $stockConsumption = $this->stockConsumption($context, $vehicle, $maintenances);
+        $fuelFillings = $this->fuelFillings($context, $vehicle, $appliedFilters);
+        $fuelConsumption = $this->fuelConsumption($fuelFillings);
         $cancelledRecords = $this->cancelledRecords($context, $vehicle, $appliedFilters);
 
         return [
@@ -56,11 +59,12 @@ class VehicleDossierReportService
                 'errors' => [],
             ],
             'vehicle' => $this->vehiclePayload($vehicle),
-            'executive_summary' => $this->executiveSummary($maintenances, $stockConsumption),
+            'executive_summary' => $this->executiveSummary($maintenances, $stockConsumption, $fuelFillings, $fuelConsumption),
             'cost_policy' => $this->costPolicy(),
             'maintenances' => $maintenances,
             'stock_consumption' => $stockConsumption,
-            'fuel_fillings' => collect(),
+            'fuel_fillings' => $fuelFillings,
+            'fuel_consumption' => $fuelConsumption,
             'tires_current' => collect(),
             'tire_events' => collect(),
             'operations' => collect(),
@@ -161,6 +165,7 @@ class VehicleDossierReportService
             'maintenances' => collect(),
             'stock_consumption' => collect(),
             'fuel_fillings' => collect(),
+            'fuel_consumption' => collect(),
             'tires_current' => collect(),
             'tire_events' => collect(),
             'operations' => collect(),
@@ -218,6 +223,11 @@ class VehicleDossierReportService
             'stock_consumed_cost_estimated' => 0.0,
             'fuel_liters' => 0.0,
             'fuel_cost' => 0.0,
+            'fuel_fillings_count' => 0,
+            'fuel_by_product' => collect(),
+            'fuel_consumption_by_product' => collect(),
+            'fuel_fillings_without_km_hr' => 0,
+            'fuel_invalid_readings_count' => 0,
             'installed_tires_count' => 0,
             'tire_measurements_count' => 0,
             'operations_count' => 0,
@@ -235,7 +245,12 @@ class VehicleDossierReportService
         ];
     }
 
-    private function executiveSummary(Collection $maintenances, Collection $stockConsumption): array
+    private function executiveSummary(
+        Collection $maintenances,
+        Collection $stockConsumption,
+        Collection $fuelFillings,
+        Collection $fuelConsumption
+    ): array
     {
         $registeredMaintenanceCost = round($maintenances->sum('total_cost'), 2);
         $stockConsumedCost = round($stockConsumption->sum('total_cost'), 2);
@@ -245,6 +260,20 @@ class VehicleDossierReportService
                 ->sum('total_cost'),
             2
         );
+        $fuelByProduct = $fuelFillings
+            ->groupBy('product_name')
+            ->map(fn (Collection $items, string $productName) => [
+                'product_name' => $productName,
+                'fillings_count' => $items->count(),
+                'liters' => round($items->sum('quantity_liters'), 3),
+                'total_cost' => round($items->sum('total_cost'), 2),
+            ])
+            ->values();
+        $fuelInvalidReadings = $fuelConsumption
+            ->filter(fn (array $row) => in_array($row['status'], ['km_invalido', 'horas_invalidas'], true))
+            ->count();
+        $fuelHasUncalculatedConsumption = $fuelConsumption
+            ->contains(fn (array $row) => $row['status'] !== 'calculado');
 
         return [
             ...$this->emptyExecutiveSummary(),
@@ -253,10 +282,20 @@ class VehicleDossierReportService
             'maintenance_cost' => $registeredMaintenanceCost,
             'stock_consumed_cost' => $stockConsumedCost,
             'stock_consumed_cost_estimated' => $estimatedStockCost,
+            'fuel_liters' => round($fuelFillings->sum('quantity_liters'), 3),
+            'fuel_cost' => round($fuelFillings->sum('total_cost'), 2),
+            'fuel_fillings_count' => $fuelFillings->count(),
+            'fuel_by_product' => $fuelByProduct,
+            'fuel_consumption_by_product' => $fuelConsumption,
+            'fuel_fillings_without_km_hr' => $fuelFillings
+                ->filter(fn (array $filling) => $filling['vehicle_km'] === null && $filling['vehicle_hours'] === null)
+                ->count(),
+            'fuel_invalid_readings_count' => $fuelInvalidReadings,
+            'alerts_count' => $fuelInvalidReadings,
             'cost_flags' => [
                 'operational_total_is_final' => false,
                 'contains_estimated_stock_cost' => $estimatedStockCost > 0,
-                'contains_uncalculated_fuel_consumption' => false,
+                'contains_uncalculated_fuel_consumption' => $fuelHasUncalculatedConsumption,
             ],
         ];
     }
@@ -346,11 +385,16 @@ class VehicleDossierReportService
             ->get()
             ->map(fn (MaintenanceRecord $maintenance) => [
                 ...$this->maintenanceRow($maintenance),
+                'module' => 'maintenance',
+                'record_type' => 'Manutencao cancelada',
+                'record_label' => $maintenance->procedure?->name ?? 'Manutencao rapida',
                 'cancelled_at' => $maintenance->cancelled_at,
                 'cancel_reason' => $maintenance->cancel_reason,
                 'cancelled_by' => $maintenance->canceller?->name,
                 'considered_in_operational_indicators' => false,
             ])
+            ->merge($this->cancelledFuelFillings($context, $vehicle, $filters))
+            ->sortByDesc('cancelled_at')
             ->values();
     }
 
@@ -458,5 +502,195 @@ class VehicleDossierReportService
             'description' => $movement->description,
             'responsible' => null,
         ];
+    }
+
+    private function fuelFillings(array $context, Vehicle $vehicle, array $filters): Collection
+    {
+        return FuelFilling::query()
+            ->with(['tank.product', 'product', 'driver', 'responsible'])
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division']->id)
+            ->where('location_id', $context['location']->id)
+            ->where('vehicle_id', $vehicle->id)
+            ->whereNull('cancelled_at')
+            ->whereBetween('filled_at', [$filters['start_date'], $filters['end_date']])
+            ->orderByDesc('filled_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (FuelFilling $filling) => $this->fuelFillingRow($filling))
+            ->values();
+    }
+
+    private function fuelFillingRow(FuelFilling $filling): array
+    {
+        return [
+            'model' => $filling,
+            'id' => $filling->id,
+            'date' => $filling->filled_at,
+            'product' => $filling->product,
+            'product_name' => $filling->product?->name ?? $filling->tank?->product?->name ?? '-',
+            'tank' => $filling->tank,
+            'tank_name' => $filling->tank?->name ?? '-',
+            'driver' => $filling->driver,
+            'driver_name' => $filling->driver?->name ?? '-',
+            'vehicle_km' => $filling->vehicle_km !== null ? (float) $filling->vehicle_km : null,
+            'vehicle_hours' => $filling->vehicle_hours !== null ? (float) $filling->vehicle_hours : null,
+            'quantity_liters' => (float) $filling->quantity_liters,
+            'unit_cost' => $filling->unit_cost !== null ? (float) $filling->unit_cost : null,
+            'total_cost' => $filling->total_cost !== null ? (float) $filling->total_cost : 0.0,
+            'responsible' => $filling->responsible,
+            'responsible_name' => $filling->responsible?->name ?? '-',
+            'notes' => $filling->notes,
+            'is_cancelled' => $filling->cancelled_at !== null,
+        ];
+    }
+
+    private function fuelConsumption(Collection $fuelFillings): Collection
+    {
+        return $fuelFillings
+            ->groupBy('product_name')
+            ->map(function (Collection $items, string $productName) {
+                $ordered = $items
+                    ->sortBy([
+                        ['date', 'asc'],
+                        ['id', 'asc'],
+                    ])
+                    ->values();
+                $km = $this->counterConsumption($ordered, 'vehicle_km');
+                $hours = $this->counterConsumption($ordered, 'vehicle_hours');
+
+                return [
+                    'product_name' => $productName,
+                    'fillings_count' => $ordered->count(),
+                    'total_liters' => round($ordered->sum('quantity_liters'), 3),
+                    'total_cost' => round($ordered->sum('total_cost'), 2),
+                    'km_consumption' => $km,
+                    'hours_consumption' => $hours,
+                    'status' => $this->combinedFuelConsumptionStatus($ordered, $km, $hours),
+                ];
+            })
+            ->values();
+    }
+
+    private function counterConsumption(Collection $items, string $counterField): array
+    {
+        $valid = $items
+            ->filter(fn (array $filling) => $filling[$counterField] !== null)
+            ->values();
+
+        if ($valid->count() < 2) {
+            return [
+                'status' => $items->every(fn (array $filling) => $filling['vehicle_km'] === null && $filling['vehicle_hours'] === null)
+                    ? 'sem_km_hr'
+                    : 'dados_insuficientes',
+                'initial' => null,
+                'final' => null,
+                'delta' => null,
+                'liters' => round($items->sum('quantity_liters'), 3),
+                'value' => null,
+            ];
+        }
+
+        $previous = null;
+
+        foreach ($valid as $filling) {
+            $current = (float) $filling[$counterField];
+
+            if ($previous !== null && $current <= $previous) {
+                return [
+                    'status' => $counterField === 'vehicle_km' ? 'km_invalido' : 'horas_invalidas',
+                    'initial' => (float) $valid->first()[$counterField],
+                    'final' => (float) $valid->last()[$counterField],
+                    'delta' => null,
+                    'liters' => round($items->sum('quantity_liters'), 3),
+                    'value' => null,
+                ];
+            }
+
+            $previous = $current;
+        }
+
+        $initial = (float) $valid->first()[$counterField];
+        $final = (float) $valid->last()[$counterField];
+        $delta = $final - $initial;
+
+        if ($delta <= 0) {
+            return [
+                'status' => $counterField === 'vehicle_km' ? 'km_invalido' : 'horas_invalidas',
+                'initial' => $initial,
+                'final' => $final,
+                'delta' => null,
+                'liters' => round($items->sum('quantity_liters'), 3),
+                'value' => null,
+            ];
+        }
+
+        $firstDate = $valid->first()['date'];
+        $lastDate = $valid->last()['date'];
+        $intervalLiters = $items
+            ->filter(fn (array $filling) => $filling['date']->gt($firstDate) && $filling['date']->lte($lastDate))
+            ->sum('quantity_liters');
+
+        if ($intervalLiters <= 0) {
+            $intervalLiters = $items->sum('quantity_liters');
+        }
+
+        return [
+            'status' => 'calculado',
+            'initial' => $initial,
+            'final' => $final,
+            'delta' => $delta,
+            'liters' => round($intervalLiters, 3),
+            'value' => $counterField === 'vehicle_km'
+                ? round($delta / max($intervalLiters, 0.001), 3)
+                : round($intervalLiters / $delta, 3),
+        ];
+    }
+
+    private function combinedFuelConsumptionStatus(Collection $items, array $km, array $hours): string
+    {
+        if ($km['status'] === 'calculado' || $hours['status'] === 'calculado') {
+            return 'calculado';
+        }
+
+        if ($items->every(fn (array $filling) => $filling['vehicle_km'] === null && $filling['vehicle_hours'] === null)) {
+            return 'sem_km_hr';
+        }
+
+        if ($km['status'] === 'km_invalido') {
+            return 'km_invalido';
+        }
+
+        if ($hours['status'] === 'horas_invalidas') {
+            return 'horas_invalidas';
+        }
+
+        return 'dados_insuficientes';
+    }
+
+    private function cancelledFuelFillings(array $context, Vehicle $vehicle, array $filters): Collection
+    {
+        return FuelFilling::query()
+            ->with(['tank.product', 'product', 'canceller'])
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division']->id)
+            ->where('location_id', $context['location']->id)
+            ->where('vehicle_id', $vehicle->id)
+            ->whereNotNull('cancelled_at')
+            ->whereBetween('cancelled_at', [$filters['start_date'], $filters['end_date']])
+            ->get()
+            ->map(fn (FuelFilling $filling) => [
+                'module' => 'fuel',
+                'record_type' => 'Abastecimento cancelado',
+                'record_label' => ($filling->product?->name ?? $filling->tank?->product?->name ?? 'Produto') . ' - ' . ($filling->tank?->name ?? 'Tanque'),
+                'date' => $filling->filled_at,
+                'total_cost' => (float) ($filling->total_cost ?? 0),
+                'quantity_liters' => (float) $filling->quantity_liters,
+                'cancelled_at' => $filling->cancelled_at,
+                'cancel_reason' => $filling->cancel_reason,
+                'cancelled_by' => $filling->canceller?->name,
+                'considered_in_operational_indicators' => false,
+            ])
+            ->values();
     }
 }

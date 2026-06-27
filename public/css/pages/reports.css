@@ -1844,6 +1844,48 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-stock-page .stock-f
     margin-top: 14px;
 }
 
+.reports-page.reports-vehicle-dossier-page .dossier-product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-product-card {
+    padding: 14px;
+    border: 1px solid var(--tire-border);
+    border-radius: 12px;
+    background: var(--tire-panel-muted);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-product-card span {
+    display: block;
+    color: var(--tire-subtle);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-product-card strong {
+    display: block;
+    margin-top: 6px;
+    color: var(--tire-text);
+    font-size: 24px;
+    line-height: 1.1;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-product-card small {
+    display: block;
+    margin-top: 6px;
+    color: var(--tire-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-product-card.is-empty {
+    border-style: dashed;
+}
+
 .reports-page.reports-vehicle-dossier-page .dossier-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -1888,6 +1930,14 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-stock-page .stock-f
 .reports-page.reports-vehicle-dossier-page .dossier-table tr.is-muted td {
     color: var(--tire-subtle);
     background: rgba(148, 163, 184, .08);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-table tr.has-warning td {
+    background: rgba(217, 119, 6, .07);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-consumption-table {
+    min-width: 1040px;
 }
 
 .reports-page.reports-vehicle-dossier-page .dossier-muted-line {
@@ -1937,7 +1987,8 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-stock-page .stock-f
 
 html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid > div,
 html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-policy-grid > div,
-html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-table-wrap {
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-table-wrap,
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-product-card {
     background: var(--tire-panel-muted);
 }
 
@@ -1954,7 +2005,8 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-pag
     .reports-page.reports-vehicle-dossier-page .dossier-filter-grid,
     .reports-page.reports-vehicle-dossier-page .dossier-summary-grid,
     .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid,
-    .reports-page.reports-vehicle-dossier-page .dossier-policy-grid {
+    .reports-page.reports-vehicle-dossier-page .dossier-policy-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-product-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -1963,7 +2015,8 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-pag
     .reports-page.reports-vehicle-dossier-page .dossier-filter-grid,
     .reports-page.reports-vehicle-dossier-page .dossier-summary-grid,
     .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid,
-    .reports-page.reports-vehicle-dossier-page .dossier-policy-grid {
+    .reports-page.reports-vehicle-dossier-page .dossier-policy-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-product-grid {
         grid-template-columns: 1fr;
     }
 }
