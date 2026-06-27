@@ -1786,6 +1786,7 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-stock-page .stock-f
 .reports-page.reports-vehicle-dossier-page .dossier-empty-guidance,
 .reports-page.reports-vehicle-dossier-page .dossier-validation-panel,
 .reports-page.reports-vehicle-dossier-page .dossier-vehicle-header,
+.reports-page.reports-vehicle-dossier-page .dossier-data-section,
 .reports-page.reports-vehicle-dossier-page .dossier-policy-section {
     border-color: var(--tire-border);
     background: var(--tire-panel);
@@ -1843,9 +1844,110 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-stock-page .stock-f
     margin-top: 14px;
 }
 
-html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid > div,
-html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-policy-grid > div {
+.reports-page.reports-vehicle-dossier-page .dossier-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--tire-border);
+    border-radius: 12px;
     background: var(--tire-panel-muted);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-table {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-table th,
+.reports-page.reports-vehicle-dossier-page .dossier-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--tire-border);
+    color: var(--tire-muted);
+    font-size: 13px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-table th {
+    background: var(--tire-panel-soft);
+    color: var(--tire-subtle);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-table strong {
+    color: var(--tire-text);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-table tr.is-muted td {
+    color: var(--tire-subtle);
+    background: rgba(148, 163, 184, .08);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-muted-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+    color: var(--tire-subtle);
+    font-size: 11px;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-muted-line span {
+    display: inline-flex;
+    padding: 3px 7px;
+    border: 1px solid var(--tire-border);
+    border-radius: 999px;
+    background: var(--tire-panel-soft);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-empty-cell {
+    color: var(--tire-subtle);
+    text-align: center;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--tire-border);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-badge.warning {
+    border-color: rgba(250, 204, 21, .42);
+    color: #fde68a;
+    background: rgba(217, 119, 6, .16);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-cancelled-section {
+    border-color: rgba(248, 113, 113, .28);
+}
+
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid > div,
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-policy-grid > div,
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-table-wrap {
+    background: var(--tire-panel-muted);
+}
+
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-table th {
+    background: var(--tire-panel-soft);
+}
+
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-badge.warning {
+    color: #92400e;
+    background: rgba(245, 158, 11, .12);
 }
 
 @media (max-width: 1180px) {

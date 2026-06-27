@@ -14,6 +14,9 @@
     $isValid = $validation['is_valid'] ?? false;
     $summary = $executive_summary;
     $statusLabel = fn ($value) => $value ?: '-';
+    $maintenancesList = collect($maintenances);
+    $stockConsumptionList = collect($stock_consumption);
+    $cancelledList = collect($cancelled_records);
 @endphp
 
 <div class="reports-page reports-tires-page reports-vehicle-dossier-page tire-summary-dashboard">
@@ -154,14 +157,14 @@
                 <div>
                     <span class="tire-section-kicker">Resumo executivo</span>
                     <h2>Estrutura inicial do dossie</h2>
-                    <p>Campos preparados para os proximos blocos; valores consolidados ainda nao sao definitivos.</p>
+                    <p>Manutencoes e pecas ja consolidadas; total operacional definitivo segue pendente para evitar duplicidade.</p>
                 </div>
             </div>
 
             <div class="tire-summary-grid dossier-summary-grid">
-                <div class="tire-summary-card"><span>Manutencoes</span><strong>{{ $summary['maintenance_count'] }}</strong><small>Em preparacao</small></div>
-                <div class="tire-summary-card"><span>Custo manutencao</span><strong>{{ $money($summary['maintenance_cost']) }}</strong><small>Nao consolidado</small></div>
-                <div class="tire-summary-card"><span>Pecas consumidas</span><strong>{{ $summary['stock_consumed_cost'] > 0 ? $money($summary['stock_consumed_cost']) : 'Em preparacao' }}</strong><small>Estoque vinculado</small></div>
+                <div class="tire-summary-card"><span>Manutencoes</span><strong>{{ $summary['maintenance_count'] }}</strong><small>Validas no periodo</small></div>
+                <div class="tire-summary-card"><span>Custo manutencao</span><strong>{{ $money($summary['maintenance_cost_registered']) }}</strong><small>Custo registrado</small></div>
+                <div class="tire-summary-card"><span>Pecas consumidas</span><strong>{{ $money($summary['stock_consumed_cost']) }}</strong><small>{{ $summary['stock_consumed_cost_estimated'] > 0 ? 'Contem estimativas' : 'Estoque vinculado' }}</small></div>
                 <div class="tire-summary-card"><span>Litros abastecidos</span><strong>{{ $summary['fuel_liters'] > 0 ? $number($summary['fuel_liters'], 2) : 'Em preparacao' }}</strong><small>Sem calculo km/L</small></div>
                 <div class="tire-summary-card"><span>Custo abastecimento</span><strong>{{ $summary['fuel_cost'] > 0 ? $money($summary['fuel_cost']) : 'Em preparacao' }}</strong><small>Nao consolidado</small></div>
                 <div class="tire-summary-card"><span>Pneus instalados</span><strong>{{ $summary['installed_tires_count'] }}</strong><small>Em preparacao</small></div>
@@ -172,6 +175,152 @@
                 <div class="tire-summary-card danger"><span>Total operacional</span><strong>Em preparacao</strong><small>Nao definitivo</small></div>
             </div>
         </section>
+
+        <section class="tire-report-section dossier-data-section">
+            <div class="tire-section-header">
+                <div>
+                    <span class="tire-section-kicker">Manutencoes</span>
+                    <h2>Manutencoes no periodo</h2>
+                    <p>Somente registros validos, sem manutencoes canceladas.</p>
+                </div>
+            </div>
+
+            <div class="dossier-table-wrap">
+                <table class="dossier-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Procedimento</th>
+                            <th>Tipo</th>
+                            <th>Fornecedor/oficina</th>
+                            <th>KM/HR</th>
+                            <th>Custo registrado</th>
+                            <th>Observacao</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($maintenancesList as $maintenance)
+                            <tr>
+                                <td>{{ $formatDate($maintenance['date']) }}</td>
+                                <td>
+                                    <strong>{{ $maintenance['procedure_name'] }}</strong>
+                                    @if($maintenance['dynamic_values']->isNotEmpty())
+                                        <div class="dossier-muted-line">
+                                            @foreach($maintenance['dynamic_values'] as $dynamicValue)
+                                                <span>{{ $dynamicValue['label'] }}: {{ $dynamicValue['value'] }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </td>
+                                <td>{{ $maintenance['maintenance_type'] ?: '-' }}</td>
+                                <td>{{ $maintenance['provider_name'] ?: '-' }}</td>
+                                <td>
+                                    KM {{ $maintenance['performed_km'] !== null ? $number($maintenance['performed_km']) : '-' }}
+                                    <br>
+                                    HR {{ $maintenance['performed_hours'] !== null ? $number($maintenance['performed_hours'], 1) : '-' }}
+                                </td>
+                                <td>{{ $money($maintenance['total_cost']) }}</td>
+                                <td>{{ $maintenance['notes'] ?: $maintenance['reason'] ?: '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="dossier-empty-cell">Nenhuma manutencao valida encontrada para o periodo.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tire-report-section dossier-data-section">
+            <div class="tire-section-header">
+                <div>
+                    <span class="tire-section-kicker">Estoque consumido</span>
+                    <h2>Pecas consumidas do estoque</h2>
+                    <p>Consumos vinculados a manutencoes validas do veiculo. Reversoes e cancelados ficam fora desta tabela.</p>
+                </div>
+            </div>
+
+            <div class="dossier-table-wrap">
+                <table class="dossier-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Manutencao</th>
+                            <th>Item</th>
+                            <th>Categoria</th>
+                            <th>Qtd.</th>
+                            <th>Custo unit.</th>
+                            <th>Custo total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($stockConsumptionList as $movement)
+                            <tr>
+                                <td>{{ $formatDate($movement['date']) }}</td>
+                                <td>
+                                    #{{ $movement['maintenance_id'] }}
+                                    <div class="dossier-muted-line">{{ $movement['procedure_name'] }}</div>
+                                </td>
+                                <td>{{ $movement['item_name'] }}</td>
+                                <td>{{ $movement['category_name'] }}</td>
+                                <td>{{ $number($movement['quantity'], 2) }}</td>
+                                <td>
+                                    {{ $money($movement['unit_cost']) }}
+                                    @if($movement['cost_is_estimated'])
+                                        <span class="dossier-badge warning">Estimado</span>
+                                    @endif
+                                </td>
+                                <td>{{ $money($movement['total_cost']) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="dossier-empty-cell">Nenhum consumo de estoque vinculado a manutencao no periodo.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        @if($cancelledList->isNotEmpty())
+            <section class="tire-report-section dossier-data-section dossier-cancelled-section">
+                <div class="tire-section-header">
+                    <div>
+                        <span class="tire-section-kicker">Canceladas</span>
+                        <h2>Manutencoes canceladas</h2>
+                        <p>Registros exibidos separadamente. Nao entram em contagem, custo ou resumo operacional.</p>
+                    </div>
+                </div>
+
+                <div class="dossier-table-wrap">
+                    <table class="dossier-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Procedimento</th>
+                                <th>Custo registrado</th>
+                                <th>Cancelada em</th>
+                                <th>Responsavel</th>
+                                <th>Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($cancelledList as $cancelled)
+                                <tr class="is-muted">
+                                    <td>{{ $formatDate($cancelled['date']) }}</td>
+                                    <td>{{ $cancelled['procedure_name'] }}</td>
+                                    <td>{{ $money($cancelled['total_cost']) }}</td>
+                                    <td>{{ $cancelled['cancelled_at'] ? \Carbon\Carbon::parse($cancelled['cancelled_at'])->format('d/m/Y H:i') : '-' }}</td>
+                                    <td>{{ $cancelled['cancelled_by'] ?: '-' }}</td>
+                                    <td>{{ $cancelled['cancel_reason'] ?: '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
 
         <section class="tire-report-section dossier-policy-section">
             <div class="tire-section-header">
