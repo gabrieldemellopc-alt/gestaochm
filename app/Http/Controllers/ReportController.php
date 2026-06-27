@@ -11,6 +11,7 @@ use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\Reports\FuelReportService;
 use App\Services\Reports\ReportContextService;
+use App\Services\Reports\StockReportService;
 use App\Services\Reports\TireReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -184,6 +185,28 @@ class ReportController extends Controller
         }
 
         return view('reports.fuel', $fuelReport->build($request->query(), $context));
+    }
+
+    public function stock(Request $request, StockReportService $stockReport)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        return view('reports.stock', $stockReport->build($request->query(), $context));
+    }
+
+    public function stockFull(Request $request, StockReportService $stockReport)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        return view('reports.stock-full', $stockReport->build($request->query(), $context));
     }
 
     public function fuelFull(Request $request, FuelReportService $fuelReport)

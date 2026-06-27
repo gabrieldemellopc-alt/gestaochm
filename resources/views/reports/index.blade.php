@@ -445,7 +445,7 @@
                 <button
                     class="report-module-button"
                     onclick="
-                        openStockReportModal()
+                        window.location.href = '{{ route('reports.stock.index') }}'
                     "
                 >
 

@@ -1062,6 +1062,26 @@ Route::middleware('auth')->group(function () {
 
             Route::get(
 
+                '/stock',
+
+                'stock'
+
+            )->name('stock.index');
+
+
+
+            Route::get(
+
+                '/stock/full',
+
+                'stockFull'
+
+            )->name('stock.full');
+
+
+
+            Route::get(
+
                 '/fuel/full',
 
                 'fuelFull'
