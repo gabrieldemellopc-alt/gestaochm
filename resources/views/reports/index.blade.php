@@ -422,7 +422,79 @@
 
         </div>
 
-        {{-- ESTOQUE --}}
+        {{-- DOSSIE DO VEICULO --}}
+        <div class="report-module-card">
+
+
+
+            <div class="report-module-icon">
+
+
+
+                <i data-lucide="clipboard-list"></i>
+
+
+
+            </div>
+
+
+
+            <h3>
+
+                Dossie do Veiculo
+
+            </h3>
+
+
+
+            <p>
+
+                Prontuario operacional individual por veiculo, periodo,
+                custos, pneus, abastecimentos e alertas.
+
+            </p>
+
+
+
+            <div class="reports-kpi-description">
+
+                Estrutura inicial pronta para consolidacao por periodo
+
+            </div>
+
+
+
+            <div class="report-module-actions">
+
+
+
+                <a
+
+                    href="{{ route('reports.vehicle-dossier.index') }}"
+
+                    class="report-module-button"
+
+                >
+
+
+
+                    Abrir dossie
+
+
+
+                </a>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+        {{-- ESTOQUE --}}
         <div class="report-module-card">
 
             <div class="report-module-icon">

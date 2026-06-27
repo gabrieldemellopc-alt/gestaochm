@@ -14,6 +14,7 @@ use App\Services\Reports\FuelReportService;
 use App\Services\Reports\ReportContextService;
 use App\Services\Reports\StockReportService;
 use App\Services\Reports\TireReportService;
+use App\Services\Reports\VehicleDossierReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -197,6 +198,25 @@ class ReportController extends Controller
         }
 
         return view('reports.stock', $stockReport->build($request->query(), $context));
+    }
+
+    public function vehicleDossier(Request $request, VehicleDossierReportService $vehicleDossier)
+    {
+        $context = $this->reportContext->resolve();
+
+        if (! $context) {
+            return $this->missingActiveContextRedirect();
+        }
+
+        $vehicles = $this->reportContext
+            ->vehicleQuery($context)
+            ->orderBy('name')
+            ->get(['id', 'name', 'plate', 'asset_code']);
+
+        return view('reports.vehicle-dossier', [
+            ...$vehicleDossier->build($request->query()),
+            'vehicles' => $vehicles,
+        ]);
     }
 
     public function stockFull(Request $request, StockReportService $stockReport)

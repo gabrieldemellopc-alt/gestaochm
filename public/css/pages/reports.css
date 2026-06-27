@@ -1773,3 +1773,95 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-stock-page .stock-f
         flex-direction: column;
     }
 }
+
+/* Vehicle dossier report */
+.reports-page.reports-vehicle-dossier-page .dossier-filter-grid {
+    grid-template-columns: 1.3fr repeat(2, minmax(180px, .7fr));
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-filter-checks {
+    align-items: center;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-empty-guidance,
+.reports-page.reports-vehicle-dossier-page .dossier-validation-panel,
+.reports-page.reports-vehicle-dossier-page .dossier-vehicle-header,
+.reports-page.reports-vehicle-dossier-page .dossier-policy-section {
+    border-color: var(--tire-border);
+    background: var(--tire-panel);
+    box-shadow: none;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid,
+.reports-page.reports-vehicle-dossier-page .dossier-policy-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid > div,
+.reports-page.reports-vehicle-dossier-page .dossier-policy-grid > div {
+    padding: 12px;
+    border: 1px solid var(--tire-border);
+    border-radius: 10px;
+    background: var(--tire-panel-muted);
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid span,
+.reports-page.reports-vehicle-dossier-page .dossier-policy-grid span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--tire-subtle);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid strong,
+.reports-page.reports-vehicle-dossier-page .dossier-policy-grid strong {
+    color: var(--tire-text);
+    font-size: 14px;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-summary-grid {
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-summary-grid small {
+    display: block;
+    margin-top: 6px;
+    color: var(--tire-subtle);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.reports-page.reports-vehicle-dossier-page .dossier-warning-list,
+.reports-page.reports-vehicle-dossier-page .dossier-alert-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid > div,
+html[data-chm-theme="corporate-light"] .reports-page.reports-vehicle-dossier-page .dossier-policy-grid > div {
+    background: var(--tire-panel-muted);
+}
+
+@media (max-width: 1180px) {
+    .reports-page.reports-vehicle-dossier-page .dossier-filter-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-summary-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-policy-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .reports-page.reports-vehicle-dossier-page .dossier-filter-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-summary-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-vehicle-grid,
+    .reports-page.reports-vehicle-dossier-page .dossier-policy-grid {
+        grid-template-columns: 1fr;
+    }
+}

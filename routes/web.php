@@ -1072,6 +1072,16 @@ Route::middleware('auth')->group(function () {
 
             Route::get(
 
+                '/vehicle-dossier',
+
+                'vehicleDossier'
+
+            )->name('vehicle-dossier.index');
+
+
+
+            Route::get(
+
                 '/stock/full',
 
                 'stockFull'
