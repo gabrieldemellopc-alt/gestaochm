@@ -43,7 +43,7 @@
 
             <h1>
 
-                Lançar manutenção
+                Abrir manutenção
 
             </h1>
 
@@ -51,7 +51,8 @@
 
             <p>
 
-                Registre a execução do procedimento selecionado para este veículo.
+                Abra uma manutenção para este veículo e acompanhe o andamento até a conclusão.
+
 
             </p>
 
@@ -256,55 +257,6 @@
             </div>
 
 
-
-            <div class="maintenance-context-item">
-
-
-
-                <span>
-
-                    Procedimento
-
-                </span>
-
-
-
-                <strong>
-
-                    {{ $procedure->name }}
-
-                </strong>
-
-
-
-            </div>
-
-
-
-            <div class="maintenance-context-item">
-
-
-
-                <span>
-
-                    Execução
-
-                </span>
-
-
-
-                <strong>
-
-                    {{ $executionType === 'internal' ? 'Oficina interna' : 'Terceirizado' }}
-
-                </strong>
-
-
-
-            </div>
-
-
-
         </div>
 
 
@@ -317,33 +269,11 @@
         method="POST"
         action="{{ route('vehicles.maintenance.store', $vehicle->id) }}"
         class="maintenance-form"
-        x-data="maintenanceSummary()"
     >
 
 
 
         @csrf
-
-
-
-        <input
-
-            type="hidden"
-
-            name="procedure_id"
-
-            value="{{ $procedure->id }}"
-
-        >
-
-
-
-        <input
-            type="hidden"
-            name="maintenance_type"
-            value="{{ $executionType }}"
-        >
-
 
 
         <div class="maintenance-layout">
@@ -388,8 +318,7 @@
 
                             <p>
 
-                                Informe os dados básicos da execução deste procedimento.
-
+                                Informe os dados básicos da entrada do veículo em manutenção.
                             </p>
 
 
@@ -416,24 +345,18 @@
 
                             <label>
 
-                                Data da execução
+                                Data de entrada
 
                             </label>
 
 
 
                             <input
-
-                                type="date"
-
-                                name="performed_at"
-
+                                type="datetime-local"
+                                name="started_at"
                                 class="form-input"
-
-                                value="{{ old('performed_at', now()->format('Y-m-d')) }}"
-
+                                value="{{ old('started_at', now()->format('Y-m-d\TH:i')) }}"
                                 required
-
                             >
 
 
@@ -554,8 +477,7 @@
 
                                 class="form-input"
 
-                                value="{{ old('km', $vehicle->current_km ?? 0) }}"
-
+                                value="{{ old('performed_km', $vehicle->current_km ?? 0) }}"
                                 required
 
                             >
@@ -589,8 +511,7 @@
                                 name="performed_hours"
                                 class="form-input"
 
-                                value="{{ old('hours', $vehicle->current_hours ?? 0) }}"
-
+                                value="{{ old('performed_hours', $vehicle->current_hours ?? 0) }}"
                                 required
 
                             >
@@ -623,77 +544,34 @@
 
                                 name="extra_cost"
                                 class="form-input"
-                                x-model.number="extraCost"
 
-                                value="{{ old('additional_cost', 0) }}"
-
+                                value="{{ old('extra_cost', 0) }}"      
                             >
 
 
 
                         </div>
-
-
 
                         <div class="form-group">
-
-
-
                             <label>
-
-                                Status após lançamento
-
+                                Status inicial
                             </label>
-
-
-
+                        
                             <select
-
-                                name="vehicle_status_after"
-
+                                name="service_status"
                                 class="form-input"
-
                                 required
-
                             >
-
-
-
-                                <option
-
-                                    value="operational"
-
-                                    @selected(old('vehicle_status_after', $vehicle->operational_status) === 'operational')
-
-                                >
-
-                                    Operacional
-
-                                </option>
-
-
-
-                                <option
-
-                                    value="maintenance"
-
-                                    @selected(old('vehicle_status_after', $vehicle->operational_status) === 'maintenance')
-
-                                >
-
-                                    Em manutenção
-
-                                </option>
-
-
-
+                                @foreach(\App\Services\MaintenanceService::serviceStatuses() as $statusKey => $statusLabel)
+                                    <option
+                                        value="{{ $statusKey }}"
+                                        @selected(old('service_status', \App\Services\MaintenanceService::defaultServiceStatus()) === $statusKey)
+                                    >
+                                        {{ $statusLabel }}
+                                    </option>
+                                @endforeach
                             </select>
-
-
-
                         </div>
-
-
 
                         <div class="form-group full-width">
 
@@ -717,7 +595,7 @@
 
                                 placeholder="Descreva detalhes da manutenção, diagnóstico, peças trocadas ou observações relevantes..."
 
-                            >{{ old('observation') }}</textarea>
+                            >{{ old('notes') }}</textarea>
 
 
 
@@ -730,295 +608,6 @@
 
 
                 </div>
-
-
-
-                {{-- CAMPOS DINÂMICOS DO PROCEDIMENTO --}}
-
-                <div class="maintenance-card">
-
-
-
-                    <div class="maintenance-card-header">
-
-
-
-                        <div>
-
-
-
-                            <span>
-
-                                Campos do procedimento
-
-                            </span>
-
-
-
-                            <h3>
-
-                                {{ $procedure->name }}
-
-                            </h3>
-
-
-
-                            <p>
-
-                                Preencha as informações complementares exigidas por este procedimento.
-
-                            </p>
-
-
-
-                        </div>
-
-
-
-                        <i data-lucide="list-checks"></i>
-
-
-
-                    </div>
-
-
-
-                    @if($procedure->fields->count())
-
-
-
-                        <div class="maintenance-fields">
-
-
-
-                            @foreach($procedure->fields as $field)
-
-
-
-                                <div class="maintenance-field-row">
-
-
-
-                                    @if($field->field_type === 'text')
-
-
-
-                                        <div class="form-group full-width">
-
-
-
-                                            <label>
-
-                                                {{ $field->label }}
-
-
-
-                                                @if($field->required)
-
-                                                    <span class="required-mark">*</span>
-
-                                                @endif
-
-                                            </label>
-
-
-
-                                            <input
-                                                type="text"
-                                                name="fields[{{ $field->slug }}]"
-                                                class="form-input"
-                                                value="{{ old('fields.' . $field->slug) }}"
-                                                x-model="simpleFields['{{ $field->slug }}']"
-                                                {{ $field->required ? 'required' : '' }}
-                                            >
-
-
-
-                                        </div>
-
-
-
-                                    @elseif($field->field_type === 'number')
-
-
-
-                                        <div class="form-group full-width">
-
-
-
-                                            <label>
-
-                                                {{ $field->label }}
-
-
-
-                                                @if($field->required)
-
-                                                    <span class="required-mark">*</span>
-
-                                                @endif
-
-                                            </label>
-
-
-
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                name="fields[{{ $field->slug }}]"
-                                                class="form-input"
-                                                value="{{ old('fields.' . $field->slug) }}"
-                                                x-model="simpleFields['{{ $field->slug }}']"
-                                                {{ $field->required ? 'required' : '' }}
-                                            >
-
-
-
-                                        </div>
-
-
-
-                                    @elseif($field->field_type === 'stock_item')
-
-                                        <div class="maintenance-stock-field">
-
-                                            <div class="form-group">
-
-                                                <label>
-                                                    {{ $field->label }}
-
-                                                    @if($field->required)
-                                                        <span class="required-mark">*</span>
-                                                    @endif
-                                                </label>
-
-                                                <select
-                                                    name="fields[{{ $field->slug }}]"
-                                                    class="form-input"
-                                                    x-model="stockFields['{{ $field->slug }}'].itemId"
-                                                    @change="updateStockField('{{ $field->slug }}')"
-                                                    {{ $field->required ? 'required' : '' }}
-                                                >
-                                                    <option
-                                                        value=""
-                                                        data-name=""
-                                                        data-unit=""
-                                                        data-cost="0"
-                                                    >
-                                                        Selecione o item
-                                                    </option>
-
-                                                    @foreach(($field->stockCategory->items ?? []) as $stockItem)
-                                                        <option
-                                                            value="{{ $stockItem->id }}"
-                                                            data-name="{{ $stockItem->name }}"
-                                                            data-unit="{{ $stockItem->unit }}"
-                                                            data-cost="{{ $stockItem->unit_cost ?? 0 }}"
-                                                            @selected(old('fields.' . $field->slug) == $stockItem->id)
-                                                        >
-                                                            {{ $stockItem->name }}
-                                                            —
-                                                            Estoque:
-                                                            {{ number_format($stockItem->quantity, 2, ',', '.') }}
-                                                            {{ $stockItem->unit }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-
-                                                @if($field->stockCategory)
-
-                                                    <small class="field-help">
-                                                        Categoria:
-                                                        {{ $field->stockCategory->name }}
-                                                    </small>
-
-                                                @endif
-
-                                            </div>
-
-                                            <div class="form-group">
-
-                                                <label>
-                                                    Quantidade utilizada
-
-                                                    @if($field->required)
-                                                        <span class="required-mark">*</span>
-                                                    @endif
-                                                </label>
-
-                                                <input
-                                                    type="number"
-                                                    step="1"
-                                                    min="1"
-                                                    name="fields[{{ $field->slug }}_quantity]"
-                                                    class="form-input"
-                                                    value="{{ old('fields.' . $field->slug . '_quantity', 1) }}"
-                                                    x-model.number="stockFields['{{ $field->slug }}'].quantity"
-                                                    {{ $field->required ? 'required' : '' }}
-                                                >
-
-                                                <small class="field-help">
-                                                    Informe a quantidade consumida na manutenção.
-                                                </small>
-
-                                            </div>
-
-                                        </div>
-
-                                    @endif
-
-
-
-                                </div>
-
-
-
-                            @endforeach
-
-
-
-                        </div>
-
-
-
-                    @else
-
-
-
-                        <div class="maintenance-empty-fields">
-
-
-
-                            <i data-lucide="info"></i>
-
-
-
-                            <strong>
-
-                                Nenhum campo adicional
-
-                            </strong>
-
-
-
-                            <p>
-
-                                Este procedimento não possui campos complementares configurados.
-
-                            </p>
-
-
-
-                        </div>
-
-
-
-                    @endif
-
-
-
-                </div>
-
 
 
             </div>
@@ -1064,73 +653,15 @@
                             <span>Veículo</span>
                             <strong>{{ $vehicle->name }}</strong>
                         </div>
-
+                        
                         <div class="maintenance-summary-item">
-                            <span>Procedimento</span>
-                            <strong>{{ $procedure->name }}</strong>
+                            <span>Status inicial</span>
+                            <strong>Será definido no formulário</strong>
                         </div>
-
+                        
                         <div class="maintenance-summary-item">
-                            <span>Execução</span>
-                            <strong>{{ $executionType === 'internal' ? 'Interna' : 'Terceirizada' }}</strong>
-                        </div>
-
-                        <div class="maintenance-summary-divider">
-                            Campos preenchidos
-                        </div>
-
-                        <template x-if="filledSimpleFields.length === 0 && filledStockFields.length === 0">
-                            <div class="maintenance-summary-empty">
-                                Nenhum campo adicional preenchido ainda.
-                            </div>
-                        </template>
-
-                        <template x-for="field in filledSimpleFields" :key="field.slug">
-                            <div class="maintenance-summary-item">
-                                <span x-text="field.label"></span>
-                                <strong x-text="field.value"></strong>
-                            </div>
-                        </template>
-
-                        <template x-for="field in filledStockFields" :key="field.slug">
-                            <div class="maintenance-summary-stock">
-                                <div class="maintenance-summary-stock-top">
-                                    <span x-text="field.label"></span>
-                                    <strong x-text="field.name"></strong>
-                                </div>
-
-                                <div class="maintenance-summary-stock-details">
-                                    <small>
-                                        Qtd:
-                                        <b x-text="formatNumber(field.quantity)"></b>
-                                        <b x-text="field.unit"></b>
-                                    </small>
-
-                                    <small>
-                                        Unit:
-                                        <b x-text="formatMoney(field.unitCost)"></b>
-                                    </small>
-                                </div>
-
-                                <div class="maintenance-summary-stock-total">
-                                    <span>Subtotal</span>
-                                    <strong x-text="formatMoney(field.subtotal)"></strong>
-                                </div>
-                            </div>
-                        </template>
-
-                        <div class="maintenance-summary-divider">
-                            Custos
-                        </div>
-
-                        <div class="maintenance-summary-item">
-                            <span>Custo adicional</span>
-                            <strong x-text="formatMoney(extraCost || 0)"></strong>
-                        </div>
-
-                        <div class="maintenance-summary-total">
-                            <span>Total estimado</span>
-                            <strong x-text="formatMoney(totalEstimated)"></strong>
+                            <span>Custo inicial</span>
+                            <strong>Informado como custo adicional da parada</strong>
                         </div>
                     </div>
 
@@ -1166,7 +697,7 @@
 
 
 
-                            Salvar manutenção
+                            Abrir manutenção
 
                         </button>
 
@@ -1195,127 +726,7 @@
 </div>
 
 <script>
-    function maintenanceSummary() {
-        return {
-            extraCost: {{ old('extra_cost', 0) ?: 0 }},
 
-            simpleFields: {
-                @foreach($procedure->fields as $field)
-                    @if(in_array($field->field_type, ['text', 'number']))
-                        '{{ $field->slug }}': @json(old('fields.' . $field->slug, '')),
-                    @endif
-                @endforeach
-            },
-
-            simpleFieldLabels: {
-                @foreach($procedure->fields as $field)
-                    @if(in_array($field->field_type, ['text', 'number']))
-                        '{{ $field->slug }}': @json($field->label),
-                    @endif
-                @endforeach
-            },
-
-            stockFields: {
-                @foreach($procedure->fields as $field)
-                    @if($field->field_type === 'stock_item')
-                        '{{ $field->slug }}': {
-                            label: @json($field->label),
-                            itemId: @json(old('fields.' . $field->slug, '')),
-                            name: '',
-                            unit: '',
-                            unitCost: 0,
-                            quantity: {{ old('fields.' . $field->slug . '_quantity', 1) ?: 1 }},
-                        },
-                    @endif
-                @endforeach
-            },
-
-            init() {
-                this.$nextTick(() => {
-                    Object.keys(this.stockFields).forEach((slug) => {
-                        this.updateStockField(slug);
-                    });
-                });
-            },
-
-            updateStockField(slug) {
-                const select = document.querySelector(`[name="fields[${slug}]"]`);
-
-                if (!select) {
-                    return;
-                }
-
-                const option = select.options[select.selectedIndex];
-
-                this.stockFields[slug].name = option?.dataset?.name || '';
-                this.stockFields[slug].unit = option?.dataset?.unit || '';
-                this.stockFields[slug].unitCost = parseFloat(option?.dataset?.cost || 0);
-            },
-
-            get filledSimpleFields() {
-                return Object.keys(this.simpleFields)
-                    .filter((slug) => {
-                        return this.simpleFields[slug] !== null &&
-                            this.simpleFields[slug] !== undefined &&
-                            String(this.simpleFields[slug]).trim() !== '';
-                    })
-                    .map((slug) => {
-                        return {
-                            slug: slug,
-                            label: this.simpleFieldLabels[slug],
-                            value: this.simpleFields[slug],
-                        };
-                    });
-            },
-
-            get filledStockFields() {
-                return Object.keys(this.stockFields)
-                    .filter((slug) => {
-                        return this.stockFields[slug].itemId &&
-                            this.stockFields[slug].name;
-                    })
-                    .map((slug) => {
-                        const field = this.stockFields[slug];
-                        const quantity = parseFloat(field.quantity || 0);
-                        const unitCost = parseFloat(field.unitCost || 0);
-
-                        return {
-                            slug: slug,
-                            label: field.label,
-                            name: field.name,
-                            unit: field.unit,
-                            quantity: quantity,
-                            unitCost: unitCost,
-                            subtotal: quantity * unitCost,
-                        };
-                    });
-            },
-
-            get stockTotal() {
-                return this.filledStockFields.reduce((total, field) => {
-                    return total + field.subtotal;
-                }, 0);
-            },
-
-            get totalEstimated() {
-                return this.stockTotal + parseFloat(this.extraCost || 0);
-            },
-
-            formatMoney(value) {
-                return new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                }).format(parseFloat(value || 0));
-            },
-
-            formatNumber(value) {
-                return new Intl.NumberFormat('pt-BR', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 2
-                }).format(parseFloat(value || 0));
-            }
-        }
-    }
 </script>
 
 @endsection

@@ -9744,10 +9744,6 @@
 
 
 
-    margin-top: 28px;
-
-
-
     margin-bottom: 18px;
 
 
@@ -14244,4 +14240,45 @@ html[data-chm-theme="corporate-light"] .topbar .user-dropdown a {
         left: auto;
         width: min(260px, calc(100vw - 24px));
     }
+}
+
+.division-wordmark {
+    margin: 0;
+
+    color: #ffffff;
+
+    font-family: Inter, Arial, sans-serif;
+    font-size: clamp(42px, 5vw, 72px);
+    font-weight: 950;
+    line-height: .9;
+    letter-spacing: .01em;
+
+    text-transform: uppercase;
+    text-shadow: 0 8px 20px rgba(0, 0, 0, .18);
+}
+.topbar .topbar-location-selector select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    background: transparent !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+
+    padding-right: 22px;
+}
+.topbar .topbar-location-selector {
+    position: relative;
+}
+
+.topbar .topbar-location-selector::after {
+    content: "⌄";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-55%);
+    pointer-events: none;
+    color: rgba(255,255,255,.55);
+    font-size: 13px;
 }

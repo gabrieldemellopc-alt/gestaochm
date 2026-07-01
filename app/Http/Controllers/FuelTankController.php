@@ -170,8 +170,6 @@ class FuelTankController extends Controller
                 'vehicle_km',
                 'vehicle_hours',
                 'quantity_liters',
-                'unit_cost',
-                'total_cost',
                 'notes',
             ]));
         } catch (ValidationException $exception) {

@@ -2108,52 +2108,6 @@
 
 .chm-access-modal-content .nf-input,
 
-.chm-access-modal-content .nf-select {
-
-    height: 48px !important;
-
-    min-height: 48px !important;
-
-
-
-    width: 100% !important;
-
-
-
-    border-radius: 14px !important;
-
-
-
-    padding: 0 16px !important;
-
-
-
-    font-size: 14px !important;
-
-    line-height: 48px !important;
-
-
-
-    background: #0b1220 !important;
-
-
-
-    border: 1px solid rgba(148, 163, 184, .24) !important;
-
-
-
-    color: #f8fafc !important;
-
-
-
-    box-shadow:
-
-        inset 0 1px 0 rgba(255,255,255,.03) !important;
-
-}
-
-
-
 .chm-access-modal-content .chm-input::placeholder,
 
 .chm-access-modal-content .nf-input::placeholder {

@@ -16,6 +16,8 @@ class FuelTank extends Model
         'current_balance_liters',
         'minimum_balance_liters',
         'active',
+        'average_unit_cost',
+        'estimated_stock_value',
     ];
 
     protected $casts = [
@@ -23,6 +25,8 @@ class FuelTank extends Model
         'current_balance_liters' => 'decimal:3',
         'minimum_balance_liters' => 'decimal:3',
         'active' => 'boolean',
+        'average_unit_cost' => 'decimal:4',
+        'estimated_stock_value' => 'decimal:2',
     ];
 
     public function tenant()

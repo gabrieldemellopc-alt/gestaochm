@@ -1,28 +1,1 @@
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-
-class Location extends Model
-{
-    protected $fillable = [
-        'tenant_id',
-        'division_id',
-        'name',
-    ];
-
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
-    }
-
-    public function division()
-    {
-        return $this->belongsTo(Division::class);
-    }
-        public function allocations()
-    {
-        return $this->hasMany(VehicleAllocation::class);
-    }
-}
+<?phpnamespace App\Models;use Illuminate\Database\Eloquent\Model;class Location extends Model{    protected $fillable = [        'tenant_id',        'division_id',        'name','active',    ];    protected $casts = [        'active' => 'boolean',        ];    public function tenant()    {        return $this->belongsTo(Tenant::class);    }    public function division()    {        return $this->belongsTo(Division::class);    }        public function allocations()    {        return $this->hasMany(VehicleAllocation::class);    }}

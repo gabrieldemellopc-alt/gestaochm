@@ -1,498 +1,1 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Models\Location;
-use Illuminate\Http\Request;
-use App\Models\Vehicle;
-use App\Models\UserDivisionAccess;
-use App\Services\PreventiveService;
-
-class LocationController extends Controller
-{
-    public function index()
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | DIVISÃO ATIVA
-        |--------------------------------------------------------------------------
-        */
-    
-        if (! session('active_division_id')) {
-    
-            return redirect()
-                ->route('portal')
-                ->with(
-                    'warning',
-                    'Selecione uma divisão para continuar.'
-                );
-        }
-    
-        $tenantId =
-            auth()->user()->tenant_id;
-    
-        $divisionId =
-            session('active_division_id');
-    
-        /*
-        |--------------------------------------------------------------------------
-        | CIDADES / LOCATIONS
-        |--------------------------------------------------------------------------
-        */
-    
-        $locations =
-            Location::where(
-                'tenant_id',
-                $tenantId
-            )
-            ->where(
-                'division_id',
-                $divisionId
-            )
-            ->orderBy('name')
-            ->get();
-    
-        /*
-        |--------------------------------------------------------------------------
-        | INDICADORES POR CIDADE
-        |--------------------------------------------------------------------------
-        */
-    
-        foreach ($locations as $location) {
-    
-            /*
-            |--------------------------------------------------------------------------
-            | VEÍCULOS DA CIDADE
-            |--------------------------------------------------------------------------
-            */
-    
-            $vehicles =
-                Vehicle::with([
-                    'maintenances.procedure',
-                    'procedures',
-                    'activeMaintenances.procedure',
-                    'updateLogs.user',
-                    'currentAllocation.location',
-                    'currentAllocation.division',
-                ])
-                ->where('tenant_id', $tenantId)
-                ->where('division_id', $divisionId)
-                ->where('location_id', $location->id)
-                ->get();
-            
-            foreach ($vehicles as $vehicle) {
-            
-                $vehicle->alerts =
-                    PreventiveService::getVehicleAlerts($vehicle);
-            
-                $vehicle->main_alert =
-                    collect($vehicle->alerts)
-                        ->sortByDesc(function ($alert) {
-                            return match ($alert['status']) {
-                                'danger' => 3,
-                                'warning' => 2,
-                                default => 1,
-                            };
-                        })
-                        ->first();
-            
-                $vehicle->alert_status =
-                    PreventiveService::getVehicleStatus($vehicle);
-            
-                if (! $vehicle->operational_status) {
-                    $vehicle->operational_status =
-                        'operational';
-                }
-            }
-            
-            $location->vehicles_payload =
-                $vehicles
-                    ->map(function ($vehicle) {
-                        return [
-                            'id' =>
-                                $vehicle->id,
-            
-                            'plate' =>
-                                $vehicle->plate,
-            
-                            'name' =>
-                                $vehicle->name,
-            
-                            'brand' =>
-                                $vehicle->brand,
-            
-                            'model' =>
-                                $vehicle->model,
-            
-                            'current_km' =>
-                                $vehicle->current_km,
-            
-                            'current_hours' =>
-                                $vehicle->current_hours,
-            
-                            'operational_status' =>
-                                $vehicle->operational_status,
-            
-                            'alert_status' =>
-                                $vehicle->alert_status,
-            
-                            'main_alert' =>
-                                $vehicle->main_alert
-                                    ? [
-                                        'status' =>
-                                            $vehicle->main_alert['status'] ?? 'ok',
-            
-                                        'procedure' =>
-                                            $vehicle->main_alert['procedure'] ?? null,
-            
-                                        'message' =>
-                                            $vehicle->main_alert['message'] ?? null,
-                                    ]
-                                    : null,
-                        ];
-                    })
-                    ->values();
-    
-            $location->vehicles_count =
-                $vehicles->count();
-                
-    
-            $location->operational_vehicles_count =
-                $vehicles
-                    ->where('operational_status', 'operational')
-                    ->count();
-    
-            $location->maintenance_vehicles_count =
-                $vehicles
-                    ->where('operational_status', 'maintenance')
-                    ->count();
-    
-            $location->inactive_vehicles_count =
-                $vehicles
-                    ->where('status', 'inactive')
-                    ->count();
-    
-            $location->warning_vehicles_count =
-                $vehicles
-                    ->where('alert_status', 'warning')
-                    ->count();
-    
-            $location->critical_vehicles_count =
-                $vehicles
-                    ->where('alert_status', 'danger')
-                    ->count();
-    
-            /*
-            |--------------------------------------------------------------------------
-            | USUÁRIOS / ACESSOS DA CIDADE
-            |--------------------------------------------------------------------------
-            */
-    
-            $accesses =
-                UserDivisionAccess::where(
-                    'tenant_id',
-                    $tenantId
-                )
-                ->where(
-                    'division_id',
-                    $divisionId
-                )
-                ->where(
-                    'location_id',
-                    $location->id
-                )
-                ->where(
-                    'active',
-                    true
-                )
-                ->get();
-    
-            $location->drivers_count =
-                $accesses
-                    ->where('profile', 'driver')
-                    ->count();
-    
-            $location->mechanics_count =
-                $accesses
-                    ->where('profile', 'mechanic')
-                    ->count();
-    
-            $location->supervisors_count =
-                $accesses
-                    ->where('profile', 'supervisor')
-                    ->count();
-    
-            $location->managers_count =
-                $accesses
-                    ->where('profile', 'manager')
-                    ->count();
-                    
-            $location->team_payload =
-                $accesses
-                    ->load([
-                        'user',
-                    ])
-                    ->map(function ($access) {
-                        return [
-                            'id' =>
-                                $access->id,
-            
-                            'user_id' =>
-                                $access->user_id,
-            
-                            'name' =>
-                                $access->user?->name ?? 'Usuário',
-            
-                            'email' =>
-                                $access->user?->email,
-            
-                            'profile' =>
-                                $access->profile,
-            
-                            'profile_label' =>
-                                match ($access->profile) {
-                                    'driver' => 'Motorista',
-                                    'mechanic' => 'Mecânico',
-                                    'supervisor' => 'Supervisor',
-                                    'manager' => 'Gestor',
-                                    default => ucfirst($access->profile),
-                                },
-            
-                            'module' =>
-                                $access->module,
-            
-                            'active' =>
-                                (bool) $access->active,
-                        ];
-                    })
-                    ->values();       
-        }
-    
-        /*
-        |--------------------------------------------------------------------------
-        | RESUMO GERAL DA DIVISÃO
-        |--------------------------------------------------------------------------
-        */
-    
-        $summary = [
-            'locations' =>
-                $locations->count(),
-    
-            'vehicles' =>
-                $locations->sum('vehicles_count'),
-    
-            'critical' =>
-                $locations->sum('critical_vehicles_count'),
-    
-            'warning' =>
-                $locations->sum('warning_vehicles_count'),
-    
-            'drivers' =>
-                $locations->sum('drivers_count'),
-    
-            'mechanics' =>
-                $locations->sum('mechanics_count'),
-    
-            'supervisors' =>
-                $locations->sum('supervisors_count'),
-    
-            'managers' =>
-                $locations->sum('managers_count'),
-        ];
-    
-        return view(
-            'locations.index',
-            compact(
-                'locations',
-                'summary'
-            )
-        );
-    }
-
-    public function store(Request $request)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | DIVISÃO ATIVA
-        |--------------------------------------------------------------------------
-        */
-
-        if (! session('active_division_id')) {
-
-            return redirect()
-                ->route('portal')
-                ->with(
-                    'warning',
-                    'Selecione uma divisão para continuar.'
-                );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDAÇÃO
-        |--------------------------------------------------------------------------
-        */
-
-        $data =
-            $request->validate([
-                'name' => [
-                    'required',
-                    'string',
-                    'max:120',
-                ],
-            ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | DUPLICIDADE NA MESMA DIVISÃO
-        |--------------------------------------------------------------------------
-        */
-
-        $exists =
-            Location::where(
-                'tenant_id',
-                auth()->user()->tenant_id
-            )
-            ->where(
-                'division_id',
-                session('active_division_id')
-            )
-            ->where(
-                'name',
-                $data['name']
-            )
-            ->exists();
-
-        if ($exists) {
-
-            return back()
-                ->withErrors([
-                    'name' =>
-                        'Já existe uma cidade com esse nome nesta divisão.',
-                ])
-                ->withInput();
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | CRIAÇÃO
-        |--------------------------------------------------------------------------
-        */
-
-        Location::create([
-            'tenant_id' =>
-                auth()->user()->tenant_id,
-
-            'division_id' =>
-                session('active_division_id'),
-
-            'name' =>
-                $data['name'],
-        ]);
-
-        return back()->with(
-            'success',
-            'Cidade cadastrada com sucesso.'
-        );
-    }
-
-    public function update(Request $request, Location $location)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | DIVISÃO ATIVA
-        |--------------------------------------------------------------------------
-        */
-
-        if (! session('active_division_id')) {
-
-            return redirect()
-                ->route('portal')
-                ->with(
-                    'warning',
-                    'Selecione uma divisão para continuar.'
-                );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | SEGURANÇA DE ESCOPO
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            (int) $location->tenant_id !== (int) auth()->user()->tenant_id
-            ||
-            (int) $location->division_id !== (int) session('active_division_id')
-        ) {
-            abort(403);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDAÇÃO
-        |--------------------------------------------------------------------------
-        */
-
-        $data =
-            $request->validate([
-                'name' => [
-                    'required',
-                    'string',
-                    'max:120',
-                ],
-            ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | DUPLICIDADE NA MESMA DIVISÃO
-        |--------------------------------------------------------------------------
-        */
-
-        $exists =
-            Location::where(
-                'tenant_id',
-                auth()->user()->tenant_id
-            )
-            ->where(
-                'division_id',
-                session('active_division_id')
-            )
-            ->where(
-                'name',
-                $data['name']
-            )
-            ->where(
-                'id',
-                '!=',
-                $location->id
-            )
-            ->exists();
-
-        if ($exists) {
-
-            return back()
-                ->withErrors([
-                    'name' =>
-                        'Já existe outra cidade com esse nome nesta divisão.',
-                ])
-                ->withInput();
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | ATUALIZAÇÃO
-        |--------------------------------------------------------------------------
-        */
-
-        $location->update([
-            'name' =>
-                $data['name'],
-        ]);
-
-        return back()->with(
-            'success',
-            'Cidade atualizada com sucesso.'
-        );
-    }
-}
+<?phpnamespace App\Http\Controllers;use App\Models\Location;use Illuminate\Http\Request;use App\Models\Vehicle;use App\Models\UserDivisionAccess;use App\Services\PreventiveService;class LocationController extends Controller{    public function index()    {        /*        |--------------------------------------------------------------------------        | DIVISÃO ATIVA        |--------------------------------------------------------------------------        */            if (! session('active_division_id')) {                return redirect()                ->route('portal')                ->with(                    'warning',                    'Selecione uma divisão para continuar.'                );        }            $tenantId =            auth()->user()->tenant_id;            $divisionId =            session('active_division_id');            /*        |--------------------------------------------------------------------------        | CIDADES / LOCATIONS        |--------------------------------------------------------------------------        */            $locations =            Location::where(                'tenant_id',                $tenantId            )            ->where(                'division_id',                $divisionId            )            ->orderBy('name')            ->get();            /*        |--------------------------------------------------------------------------        | INDICADORES POR CIDADE        |--------------------------------------------------------------------------        */            foreach ($locations as $location) {                /*            |--------------------------------------------------------------------------            | VEÍCULOS DA CIDADE            |--------------------------------------------------------------------------            */                $vehicles =                Vehicle::with([                    'maintenances.procedure',                    'procedures',                    'activeMaintenances.procedure',                    'updateLogs.user',                    'currentAllocation.location',                    'currentAllocation.division',                ])                ->where('tenant_id', $tenantId)                ->where('division_id', $divisionId)                ->where('location_id', $location->id)                ->get();                        foreach ($vehicles as $vehicle) {                            $vehicle->alerts =                    PreventiveService::getVehicleAlerts($vehicle);                            $vehicle->main_alert =                    collect($vehicle->alerts)                        ->sortByDesc(function ($alert) {                            return match ($alert['status']) {                                'danger' => 3,                                'warning' => 2,                                default => 1,                            };                        })                        ->first();                            $vehicle->alert_status =                    PreventiveService::getVehicleStatus($vehicle);                            if (! $vehicle->operational_status) {                    $vehicle->operational_status =                        'operational';                }            }                        $location->vehicles_payload =                $vehicles                    ->map(function ($vehicle) {                        return [                            'id' =>                                $vehicle->id,                                        'plate' =>                                $vehicle->plate,                                        'name' =>                                $vehicle->name,                                        'brand' =>                                $vehicle->brand,                                        'model' =>                                $vehicle->model,                                        'current_km' =>                                $vehicle->current_km,                                        'current_hours' =>                                $vehicle->current_hours,                                        'operational_status' =>                                $vehicle->operational_status,                                        'alert_status' =>                                $vehicle->alert_status,                                        'main_alert' =>                                $vehicle->main_alert                                    ? [                                        'status' =>                                            $vehicle->main_alert['status'] ?? 'ok',                                                    'procedure' =>                                            $vehicle->main_alert['procedure'] ?? null,                                                    'message' =>                                            $vehicle->main_alert['message'] ?? null,                                    ]                                    : null,                        ];                    })                    ->values();                $location->vehicles_count =                $vehicles->count();                                $location->operational_vehicles_count =                $vehicles                    ->where('operational_status', 'operational')                    ->count();                $location->maintenance_vehicles_count =                $vehicles                    ->where('operational_status', 'maintenance')                    ->count();                $location->inactive_vehicles_count =                $vehicles                    ->where('status', 'inactive')                    ->count();                $location->warning_vehicles_count =                $vehicles                    ->where('alert_status', 'warning')                    ->count();                $location->critical_vehicles_count =                $vehicles                    ->where('alert_status', 'danger')                    ->count();                /*            |--------------------------------------------------------------------------            | USUÁRIOS / ACESSOS DA CIDADE            |--------------------------------------------------------------------------            */                $accesses =                UserDivisionAccess::where(                    'tenant_id',                    $tenantId                )                ->where(                    'division_id',                    $divisionId                )                ->where(                    'location_id',                    $location->id                )                ->where(                    'active',                    true                )                ->get();                $location->drivers_count =                $accesses                    ->where('profile', 'driver')                    ->count();                $location->mechanics_count =                $accesses                    ->where('profile', 'mechanic')                    ->count();                $location->supervisors_count =                $accesses                    ->where('profile', 'supervisor')                    ->count();                $location->managers_count =                $accesses                    ->where('profile', 'manager')                    ->count();                                $location->team_payload =                $accesses                    ->load([                        'user',                    ])                    ->map(function ($access) {                        return [                            'id' =>                                $access->id,                                        'user_id' =>                                $access->user_id,                                        'name' =>                                $access->user?->name ?? 'Usuário',                                        'email' =>                                $access->user?->email,                                        'profile' =>                                $access->profile,                                        'profile_label' =>                                match ($access->profile) {                                    'driver' => 'Motorista',                                    'mechanic' => 'Mecânico',                                    'supervisor' => 'Supervisor',                                    'manager' => 'Gestor',                                    default => ucfirst($access->profile),                                },                                        'module' =>                                $access->module,                                        'active' =>                                (bool) $access->active,                        ];                    })                    ->values();               }            /*        |--------------------------------------------------------------------------        | RESUMO GERAL DA DIVISÃO        |--------------------------------------------------------------------------        */            $summary = [            'locations' =>                $locations->count(),                'vehicles' =>                $locations->sum('vehicles_count'),                'critical' =>                $locations->sum('critical_vehicles_count'),                'warning' =>                $locations->sum('warning_vehicles_count'),                'drivers' =>                $locations->sum('drivers_count'),                'mechanics' =>                $locations->sum('mechanics_count'),                'supervisors' =>                $locations->sum('supervisors_count'),                'managers' =>                $locations->sum('managers_count'),        ];        $isAdmin = UserDivisionAccess::query()            ->where('tenant_id', $tenantId)            ->where('division_id', $divisionId)            ->where('user_id', auth()->id())            ->where('profile', 'admin')            ->where('active', true)            ->exists();        return view(            'locations.index',            compact(                'locations',                'isAdmin',                'summary'            )        );    }    public function store(Request $request)    {        /*        |--------------------------------------------------------------------------        | DIVISÃO ATIVA        |--------------------------------------------------------------------------        */        if (! session('active_division_id')) {            return redirect()                ->route('portal')                ->with(                    'warning',                    'Selecione uma divisão para continuar.'                );        }        /*        |--------------------------------------------------------------------------        | VALIDAÇÃO        |--------------------------------------------------------------------------        */        $data =            $request->validate([                'name' => [                    'required',                    'string',                    'max:120',                ],            ]);        /*        |--------------------------------------------------------------------------        | DUPLICIDADE NA MESMA DIVISÃO        |--------------------------------------------------------------------------        */        $exists =            Location::where(                'tenant_id',                auth()->user()->tenant_id            )            ->where(                'division_id',                session('active_division_id')            )            ->where(                'name',                $data['name']            )            ->exists();        if ($exists) {            return back()                ->withErrors([                    'name' =>                        'Já existe uma cidade com esse nome nesta divisão.',                ])                ->withInput();        }        /*        |--------------------------------------------------------------------------        | CRIAÇÃO        |--------------------------------------------------------------------------        */        Location::create([            'tenant_id' =>                auth()->user()->tenant_id,            'division_id' =>                session('active_division_id'),            'name' =>                $data['name'],        ]);        return back()->with(            'success',            'Cidade cadastrada com sucesso.'        );    }    public function update(Request $request, Location $location)    {        /*        |--------------------------------------------------------------------------        | DIVISÃO ATIVA        |--------------------------------------------------------------------------        */        if (! session('active_division_id')) {            return redirect()                ->route('portal')                ->with(                    'warning',                    'Selecione uma divisão para continuar.'                );        }        /*        |--------------------------------------------------------------------------        | SEGURANÇA DE ESCOPO        |--------------------------------------------------------------------------        */        if (            (int) $location->tenant_id !== (int) auth()->user()->tenant_id            ||            (int) $location->division_id !== (int) session('active_division_id')        ) {            abort(403);        }        /*        |--------------------------------------------------------------------------        | VALIDAÇÃO        |--------------------------------------------------------------------------        */        $data =            $request->validate([                'name' => [                    'required',                    'string',                    'max:120',                ],            ]);        /*        |--------------------------------------------------------------------------        | DUPLICIDADE NA MESMA DIVISÃO        |--------------------------------------------------------------------------        */        $exists =            Location::where(                'tenant_id',                auth()->user()->tenant_id            )            ->where(                'division_id',                session('active_division_id')            )            ->where(                'name',                $data['name']            )            ->where(                'id',                '!=',                $location->id            )            ->exists();        if ($exists) {            return back()                ->withErrors([                    'name' =>                        'Já existe outra cidade com esse nome nesta divisão.',                ])                ->withInput();        }        /*        |--------------------------------------------------------------------------        | ATUALIZAÇÃO        |--------------------------------------------------------------------------        */        $location->update([            'name' =>                $data['name'],        ]);        return back()->with(            'success',            'Cidade atualizada com sucesso.'        );    }    public function toggleActive(Location $location)    {        $hasAdminAccess = UserDivisionAccess::query()            ->where('tenant_id', auth()->user()->tenant_id)            ->where('division_id', session('active_division_id'))            ->where('user_id', auth()->id())            ->where('profile', 'admin')            ->where('active', true)            ->exists();                abort_unless($hasAdminAccess, 403);            $activeDivisionId = session('active_division_id');            abort_unless(            (int) $location->tenant_id === (int) auth()->user()->tenant_id            && (int) $location->division_id === (int) $activeDivisionId,            403        );            $location->update([            'active' => ! $location->active,        ]);            return back()->with('success', 'Status da cidade atualizado.');    }}

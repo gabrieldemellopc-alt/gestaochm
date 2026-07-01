@@ -5,15 +5,24 @@
 @endpush
 
 @php
-
-    $pageTitle = 'Portal Corporativo';
-
-    $pageSubtitle = 'Selecione uma divisão operacional';
-
-@endphp
-
-@section('content')
-
+
+
+    $pageTitle = 'Portal Corporativo';
+
+
+
+    $pageSubtitle = 'Selecione uma divisão operacional';
+
+
+
+@endphp
+
+
+
+@section('content')
+
+
+
 <div class="portal-page">
     <header class="portal-header">
         <div>
@@ -31,77 +40,84 @@
             <span>Divisões</span>
             <h2>Grupos operacionais</h2>
         </div>
-        <small>1 disponível</small>
+        <small>
+            {{ count($availableDivisionIds ?? []) }} disponível{{ count($availableDivisionIds ?? []) === 1 ? '' : 's' }}
+        </small>    
     </div>
-
-    <div class="portal-grid">
-
-        @foreach($divisions as $division)
-            <div class="
-                portal-card
-                division-theme-{{ $division->logo_theme }}
-            ">
-
-                <div class="portal-card-top">
-
-                    <div class="portal-icon {{ $division->logo_theme }}">
-
-                        <img
-                            src="{{ $division->logo ? asset('images/' . $division->logo) : asset('images/logo-chm.png') }}"
-                            alt="{{ $division->name }}"
-                        >
-
-                    </div>
-
-                    <div>
-
-                        <h3>
-                            {{ $division->name }}
-                        </h3>
-
-                        <span>
-                            Divisão operacional
-                        </span>
-
-                    </div>
-
-                </div>
-
-                <a
-                    href="{{ route('division.modules', $division) }}"
-                    class="portal-button"
-                >
-
-                    Acessar grupo
-
-                </a>
-
-            </div>
-
-        @endforeach
 
-        @foreach([
-            ['name' => 'BSM', 'description' => 'Divisão operacional em preparação'],
-            ['name' => 'PGS', 'description' => 'Divisão operacional em preparação'],
-            ['name' => 'MG', 'description' => 'Divisão operacional em preparação'],
-        ] as $placeholderDivision)
-            <div class="portal-card portal-card-disabled" aria-disabled="true">
-                <span class="portal-coming-soon">Em breve</span>
+
+    <div class="portal-grid">
+    
+        @foreach($divisions as $division)
+    
+            @php
+                $baseLogo = $division->logo ?: 'logo-chm.png';
+            
+                $logoForDarkBg = preg_replace('/(\.[a-zA-Z0-9]+)$/', '_$1', $baseLogo);
+            
+                $shouldUseLightLogo = ($division->logo_theme ?? 'dark') === 'dark';
+            
+                $resolvedLogo = $baseLogo;
+            
+                if ($shouldUseLightLogo && file_exists(public_path('images/' . $logoForDarkBg))) {
+                    $resolvedLogo = $logoForDarkBg;
+                }
+
+                $isAvailable = in_array($division->id, $availableDivisionIds ?? []);
+                
+            @endphp
+    
+            <div class="
+                portal-card
+                division-theme-{{ $division->logo_theme }}
+                {{ ! $isAvailable ? 'portal-card-disabled' : '' }}
+            ">
+    
+                @unless($isAvailable)
+                    <span class="portal-coming-soon">Indisponível</span>
+                @endunless
+    
                 <div class="portal-card-top">
-                    <div class="portal-icon portal-placeholder-icon">
-                        <i data-lucide="building"></i>
+    
+                    <div class="portal-icon {{ $division->logo_theme }}">
+                        <img
+                            src="{{ asset('images/' . $resolvedLogo) }}"
+                            alt="{{ $division->name }}"
+                        >
                     </div>
+    
                     <div>
-                        <h3>{{ $placeholderDivision['name'] }}</h3>
-                        <span>{{ $placeholderDivision['description'] }}</span>
+                        <h3>{{ $division->name }}</h3>
+    
+                        <span>
+                            {{ $isAvailable ? 'Divisão operacional' : 'Sem acesso para este perfil' }}
+                        </span>
                     </div>
+    
                 </div>
-                <div class="portal-button portal-button-disabled">Indisponível</div>
+    
+                @if($isAvailable)
+                    <a
+                        href="{{ route('division.modules', $division) }}"
+                        class="portal-button"
+                    >
+                        Acessar grupo
+                    </a>
+                @else
+                    <div class="portal-button portal-button-disabled">
+                        Indisponível
+                    </div>
+                @endif
+    
             </div>
+    
         @endforeach
-
-    </div>
-
-</div>
-
+    
+    </div>
+
+
+</div>
+
+
+
 @endsection

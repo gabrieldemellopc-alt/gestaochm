@@ -2147,7 +2147,7 @@ html[data-chm-theme="corporate-light"] .procedures-form-page .form-input {
 .procedures-form-page .procedure-summary-list .summary-item,
 .procedures-form-page .procedure-summary-list > li {
     min-width: 0;
-    padding: 10px 0;
+    /*padding: 10px 0;*/
     color: var(--procedure-muted);
     border-color: var(--procedure-border);
 }
@@ -2260,4 +2260,33 @@ html[data-chm-theme="corporate-light"] .procedures-page .procedures-empty-icon {
     .procedures-form-page .field-remove-btn {
         width: 100%;
     }
+}
+.procedure-section-header{
+margin-bottom: 10px;
+}
+.procedures-form-page .procedure-summary-list .summary-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.procedures-form-page .procedure-summary-list .summary-item span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.procedures-form-page .procedure-summary-list .summary-item strong {
+    justify-self: end;
+    white-space: nowrap;
+    text-align: right;
+}
+.procedures-form-page .procedure-summary-list .summary-item svg {
+    flex: 0 0 20px;
+}
+
+.sub-procedure{
+    font-size: smaller;
 }

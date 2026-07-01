@@ -146,8 +146,8 @@ class ReportController extends Controller
             ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at !== null)
             ->values();
 
-        $pdf = Pdf::loadView('reports.pdf.maintenance', $pdfData);
-
+        $pdf = Pdf::loadView('reports.pdf.maintenance', $pdfData)
+            ->setPaper('a4', 'landscape');
         return $pdf->download('relatorio-manutencoes.pdf');
     }
 
@@ -348,7 +348,14 @@ class ReportController extends Controller
 
         $maintenanceQuery = $this->applyMaintenanceFilters(
             $this->reportContext->maintenanceQuery($context, $filters['query_includes_cancelled'])
-                ->with(['vehicle', 'procedure', 'canceller']),
+                ->with([
+                    'vehicle',
+                    'items.procedure',
+                    'extraCosts',
+                    'canceller',
+                    'opener',
+                    'closer',
+                ]),
             $filters
         )
             ->orderBy('performed_at', 'desc');
@@ -373,17 +380,19 @@ class ReportController extends Controller
             ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at !== null)
             ->values();
 
-        $internalCount = $operationalMaintenances->where('maintenance_type', 'internal')->count();
-        $externalCount = $operationalMaintenances->where('maintenance_type', 'external')->count();
+        $allItems = $operationalMaintenances->flatMap->items;
+        
+        $internalCount = $allItems->where('maintenance_type', 'internal')->count();
+        $externalCount = $allItems->where('maintenance_type', 'external')->count();
         $totalCost = $operationalMaintenances->sum('total_cost');
         $averageCost = $operationalMaintenances->count() > 0 ? $totalCost / $operationalMaintenances->count() : 0;
 
-        $procedureStats = $operationalMaintenances
-            ->groupBy(fn ($maintenance) => $maintenance->procedure->name ?? 'Sem procedimento')
+        $procedureStats = $allItems
+            ->groupBy(fn ($item) => $item->procedure->name ?? 'Sem procedimento')
             ->map(function ($items, $procedure) {
                 $total = $items->sum('total_cost');
                 $count = $items->count();
-
+        
                 return [
                     'procedure' => $procedure,
                     'count' => $count,
@@ -431,13 +440,16 @@ class ReportController extends Controller
             'operational_maintenances_raw' => $operationalMaintenances,
             'maintenances' => $displayMaintenances
                 ->map(fn (MaintenanceRecord $maintenance) => [
-                    'created_at' => $maintenance->performed_at ?? $maintenance->created_at,
-                    'performed_at' => $maintenance->performed_at,
+                    'id' => $maintenance->id,
+                    'started_at' => $maintenance->started_at,
+                    'finished_at' => $maintenance->finished_at,
                     'vehicle_name' => $maintenance->vehicle->name ?? '-',
                     'vehicle_plate' => $maintenance->vehicle->plate ?? '-',
-                    'procedure_name' => $maintenance->procedure->name ?? '-',
-                    'provider_name' => $maintenance->provider_name,
-                    'maintenance_type' => $maintenance->maintenance_type,
+                    'workflow_status' => $maintenance->workflow_status,
+                    'service_status' => $maintenance->service_status,
+                    'items_count' => $maintenance->items->count(),
+                    'items' => $maintenance->items,
+                    'extra_costs' => $maintenance->extraCosts,
                     'total_cost' => $maintenance->total_cost,
                     'cancelled_at' => $maintenance->cancelled_at,
                     'cancel_reason' => $context['can_view_cancelled'] ? $maintenance->cancel_reason : null,
@@ -516,18 +528,21 @@ class ReportController extends Controller
 
     private function applyMaintenanceFilters(Builder $query, array $filters): Builder
     {
-        $query->whereBetween('performed_at', [$filters['start_date'], $filters['end_date']]);
-
+        $query->whereBetween('started_at', [$filters['start_date'], $filters['end_date']]);
         if ($filters['vehicle_id']) {
             $query->where('vehicle_id', $filters['vehicle_id']);
         }
 
         if ($filters['maintenance_type']) {
-            $query->where('maintenance_type', $filters['maintenance_type']);
+            $query->whereHas('items', function ($itemQuery) use ($filters) {
+                $itemQuery->where('maintenance_type', $filters['maintenance_type']);
+            });
         }
-
+        
         if ($filters['procedure_id']) {
-            $query->where('procedure_id', $filters['procedure_id']);
+            $query->whereHas('items', function ($itemQuery) use ($filters) {
+                $itemQuery->where('procedure_id', $filters['procedure_id']);
+            });
         }
 
         if ($filters['provider_name']) {

@@ -107,6 +107,8 @@
 
         <div class="audit-filter-actions">
             <button type="submit">Filtrar</button>
+        </div>
+        <div class="audit-filter-actions">
             <a href="{{ route('audit.index') }}">Limpar</a>
         </div>
     </form>

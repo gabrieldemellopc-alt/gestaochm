@@ -117,7 +117,7 @@ html[data-chm-theme="corporate-light"] .card-header,
 html[data-chm-theme="corporate-light"] .panel-header,
 html[data-chm-theme="corporate-light"] .modal-header,
 html[data-chm-theme="corporate-light"] .dropdown-user {
-    background-color: var(--chm-theme-card-elevated);
+    /*background-color: var(--chm-theme-card-elevated);*/
     border-color: var(--chm-theme-border);
 }
 

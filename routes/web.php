@@ -84,7 +84,8 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
 
-
+    Route::patch('/locations/{location}/toggle-active', [LocationController::class, 'toggleActive'])
+        ->name('locations.toggle-active');
 
     /*
 
@@ -409,8 +410,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/vehicles/{vehicle}/maintenance', [MaintenanceController::class, 'store'])
         ->name('vehicles.maintenance.store');
 
-    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/cancel', [MaintenanceController::class, 'cancel'])
-        ->name('vehicles.maintenance.cancel');
+    // Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/cancel', [MaintenanceController::class, 'cancel'])
+    //     ->name('vehicles.maintenance.cancel');
 
     Route::get(
 
@@ -420,7 +421,10 @@ Route::middleware('auth')->group(function () {
 
     )->name('vehicle.maintenance.index');
 
-
+    Route::post(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/status',
+        [MaintenanceController::class, 'changeStatus']
+    )->name('vehicles.maintenance.status');
 
     Route::get(
 
@@ -430,8 +434,36 @@ Route::middleware('auth')->group(function () {
 
     )->name('vehicle.maintenance.create');
 
+    Route::get(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/add-item',
+        [MaintenanceController::class, 'addItemCreate']
+    )->name('vehicles.maintenance.items.create');
+    
+    Route::post(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/items',
+        [MaintenanceController::class, 'storeItem']
+    )->name('vehicles.maintenance.items.store');
 
 
+    Route::post(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/close',
+        [MaintenanceController::class, 'close']
+    )->name('vehicles.maintenance.close');
+    
+    Route::post(
+        '/vehicle/{vehicle}/maintenance/{maintenance}/cancel',
+        [MaintenanceController::class, 'cancel']
+    )->name('vehicles.maintenance.cancel');
+    
+    Route::post(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/extra-costs',
+        [MaintenanceController::class, 'storeExtraCost']
+    )->name('vehicles.maintenance.extra-costs.store');
+    
+    Route::get(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/pdf',
+        [MaintenanceController::class, 'exportOrderPdf']
+    )->name('vehicles.maintenance.order.pdf');
     /*
 
     |--------------------------------------------------------------------------

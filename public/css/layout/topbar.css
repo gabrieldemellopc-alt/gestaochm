@@ -1,116 +1,1 @@
-/*
-|--------------------------------------------------------------------------
-| TOPBAR
-|--------------------------------------------------------------------------
-*/
-
-.topbar {
-
-    height: 84px;
-
-    padding: 0 28px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    position: sticky;
-
-    top: 0;
-
-    z-index: 50;
-
-    backdrop-filter: blur(12px);
-
-    background: rgba(11,18,48,.72);
-
-    border-bottom: 1px solid var(--border-soft);
-}
-
-/*
-|--------------------------------------------------------------------------
-| LEFT
-|--------------------------------------------------------------------------
-*/
-
-.topbar-left {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 18px;
-}
-
-/*
-|--------------------------------------------------------------------------
-| TITLE
-|--------------------------------------------------------------------------
-*/
-
-.topbar-title {
-
-    font-size: 24px;
-
-    font-weight: 700;
-}
-
-.topbar-subtitle {
-
-    font-size: 14px;
-
-    color: var(--text-secondary);
-}
-
-/*
-|--------------------------------------------------------------------------
-| RIGHT
-|--------------------------------------------------------------------------
-*/
-
-.topbar-right {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 14px;
-}
-
-/*
-|--------------------------------------------------------------------------
-| USER
-|--------------------------------------------------------------------------
-*/
-
-.topbar-user {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-}
-
-.topbar-user-avatar {
-
-    width: 42px;
-
-    height: 42px;
-
-    border-radius: 14px;
-
-    background: rgba(255,255,255,.06);
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-weight: 700;
-}
+/*|--------------------------------------------------------------------------| TOPBAR|--------------------------------------------------------------------------*/.topbar {    height: 84px;    padding: 0 28px;    display: flex;    align-items: center;    justify-content: space-between;    gap: 20px;    position: sticky;    top: 0;    z-index: 50;    backdrop-filter: blur(12px);    background: rgba(11,18,48,.72);    border-bottom: 1px solid var(--border-soft);}/*|--------------------------------------------------------------------------| LEFT|--------------------------------------------------------------------------*/.topbar-left {    display: flex;    align-items: center;    gap: 18px;}/*|--------------------------------------------------------------------------| TITLE|--------------------------------------------------------------------------*/.topbar-title {    font-size: 24px;    font-weight: 700;}.topbar-subtitle {    font-size: 14px;    color: var(--text-secondary);}/*|--------------------------------------------------------------------------| RIGHT|--------------------------------------------------------------------------*/.topbar-right {    display: flex;    align-items: center;    gap: 14px;}/*|--------------------------------------------------------------------------| USER|--------------------------------------------------------------------------*/.topbar-user {    display: flex;    align-items: center;    gap: 12px;}.topbar-user-avatar {    width: 42px;    height: 42px;    border-radius: 14px;    background: rgba(255,255,255,.06);    display: flex;    align-items: center;    justify-content: center;    font-weight: 700;}

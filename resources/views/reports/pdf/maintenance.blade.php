@@ -1,838 +1,1 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <style>
-
-        body {
-
-            font-family: DejaVu Sans;
-
-            color: #111827;
-
-            font-size: 12px;
-        }
-
-        .header {
-
-            margin-bottom: 28px;
-        }
-
-        .title {
-
-            font-size: 28px;
-
-            font-weight: bold;
-        }
-
-        .subtitle {
-
-            color: #6b7280;
-
-            margin-top: 6px;
-        }
-
-        .kpi-grid {
-        
-            width: 100%;
-        
-            display: table;
-        
-            border-spacing: 18px 0;
-        
-            margin: 24px 0 34px;
-        }
-
-        .kpi-box {
-        
-            display: table-cell;
-        
-            width: 50%;
-        
-            border: 1px solid #d1d5db;
-        
-            border-radius: 12px;
-        
-            padding: 18px 20px;
-        
-            vertical-align: top;
-        }
-        
-        .kpi-box:first-child {
-
-        }
-        .kpi-box + .kpi-box {
-        
-            border-left-width: 1px;
-        }
-        .kpi-label {
-
-            font-size: 11px;
-
-            color: #6b7280;
-        }
-
-        .kpi-value {
-
-            font-size: 22px;
-
-            font-weight: bold;
-
-            margin-top: 8px;
-        }
-
-        table {
-
-            width: 100%;
-
-            border-collapse: collapse;
-
-            margin-top: 28px;
-        }
-
-        th {
-
-            background: #111827;
-
-            color: white;
-
-            padding: 12px;
-
-            text-align: left;
-
-            font-size: 11px;
-        }
-
-        td {
-
-            padding: 12px;
-
-            border-bottom: 1px solid #e5e7eb;
-
-            font-size: 11px;
-        }
-        .report-header {
-        
-            width: 100%;
-        
-            display: table;
-        
-            margin-bottom: 34px;
-        
-            border-bottom: 2px solid #e5e7eb;
-        
-            padding-bottom: 22px;
-        }
-        
-        .report-header-left,
-        .report-header-center,
-        .report-header-right {
-        
-            display: table-cell;
-        
-            vertical-align: middle;
-        }
-        
-        .report-header-left {
-        
-            width: 120px;
-        }
-        
-        .report-header-center {
-        
-            text-align: center;
-        }
-        
-        .report-header-right {
-        
-            width: 180px;
-        
-            text-align: right;
-        
-            font-size: 11px;
-        
-            color: #6b7280;
-        }
-        
-        .report-logo {
-        
-            width: 90px;
-        }
-        
-        .report-title {
-        
-            font-size: 22px;
-        
-            font-weight: 800;
-        
-            color: #0f172a;
-        
-            line-height: 1.2;
-        }
-        
-        .report-subtitle {
-        
-            margin-top: 8px;
-        
-            font-size: 12px;
-        
-            color: #64748b;
-        }
-        
-        .report-meta-item {
-        
-            margin-bottom: 12px;
-        }
-        .section-title {
-        
-            font-size: 15px;
-        
-            font-weight: bold;
-        
-            color: #0f172a;
-        
-            margin: 12px 0 18px;
-        }
-        
-        .procedure-stats-section {
-        
-            margin-bottom: 34px;
-        }
-        
-
-        .procedure-stat-card {
-        
-            width: 45%;
-        
-            float: left;
-        
-            border: 1px solid #dbe2ea;
-        
-            border-radius: 10px;
-        
-            padding: 14px 18px;
-        
-            margin-bottom: 14px;
-        
-            min-height: 82px;
-        }
-        .procedure-stat-card:nth-child(odd) {
-        
-            margin-right: 2%;
-        }
-        
-        .procedure-grid::after {
-        
-            content: "";
-        
-            display: block;
-        
-            clear: both;
-        }
-
-        .page-break {
-        
-            page-break-after: always;
-        }
-        .procedure-stat-right {
-        
-            margin-top: 14px;
-        
-            font-size: 11px;
-        
-            color: #475569;
-        
-            line-height: 1.8;
-            
-            right: 20px;
-        
-            top: 18px;
-        }
-        .procedure-box {
-        
-            position: relative;
-        
-            min-height: 92px;
-        }
-        .procedure-box-left {
-
-            width: 52%;
-        
-            display: inline-block;
-        
-            vertical-align: top;
-        }
-        
-        .procedure-box-right {
-        
-            width: 42%;
-        
-            display: inline-block;
-        
-            vertical-align: top;
-        
-            text-align: right;
-        
-            font-size: 11px;
-        
-            color: #475569;
-        
-            line-height: 1.9;
-        }
-        .procedure-stat-card::after {
-        
-            content: "";
-        
-            display: block;
-        
-            clear: both;
-        }
-        
-        
-        .procedure-stat-count {
-        
-            font-size: 20px;
-        
-            font-weight: bold;
-        
-            color: #0f172a;
-        }
-        
-        .procedure-stat-name {
-        
-            font-size: 13px;
-        
-            color: #475569;
-        
-            margin-top: 4px;
-        }
-        .vehicle-cost-section {
-        
-            margin-bottom: 36px;
-        }
-        
-        .vehicle-cost-table {
-        
-            width: 100%;
-        
-            border-collapse: collapse;
-        
-            margin-top: 12px;
-        }
-        
-        .vehicle-cost-table th {
-        
-            background: #f1f5f9;
-        
-            color: #0f172a;
-        
-            font-size: 11px;
-        
-            text-align: left;
-        
-            padding: 12px;
-        
-            border-bottom: 1px solid #dbe2ea;
-        }
-        
-        .vehicle-cost-table td {
-        
-            padding: 12px;
-        
-            border-bottom: 1px solid #e5e7eb;
-        
-            font-size: 11px;
-        }
-        .procedure-grid {
-
-            width: 100%;
-        
-            overflow: hidden;
-        }
-        .report-footer {
-        
-            margin-top: 40px;
-        
-            padding-top: 12px;
-        
-            border-top: 1px solid #dbe2ea;
-        
-            text-align: center;
-        
-            font-size: 10px;
-        
-            color: #94a3b8;
-        }
-        .kpi-box {
-        
-            position: relative;
-        }
-    </style>
-
-</head>
-
-<body>
-
-    <div class="report-header">
-    
-        {{-- LOGO --}}
-        <div class="report-header-left">
-    
-            @if($division?->logo)
-            
-                <img
-                    src="{{ public_path('images/' . $division->logo) }}"
-                    class="report-logo"
-                >
-            
-            @else
-            
-                <img
-                    src="{{ public_path('images/logo-chm.png') }}"
-                    class="report-logo"
-                >
-            
-            @endif
-        </div>
-    
-        {{-- CENTRO --}}
-        <div class="report-header-center">
-    
-            <div class="report-title">
-    
-                RELATÓRIO OPERACIONAL
-                DE MANUTENÇÕES
-    
-            </div>
-    
-            <div class="report-subtitle">
-    
-                Controle técnico e operacional da frota
-    
-            </div>
-    
-        </div>
-    
-        {{-- DIREITA --}}
-        <div class="report-header-right">
-    
-            <div class="report-meta-item">
-    
-                <strong>
-                    Gerado em:
-                </strong>
-    
-                <br>
-    
-                {{ now()->format('d/m/Y H:i') }}
-    
-            </div>
-    
-            <div class="report-meta-item">
-    
-                <strong>
-                    Período:
-                </strong>
-    
-                <br>
-    
-                {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}
-    
-                →
-    
-                {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
-    
-            </div>
-    
-        </div>
-    
-    </div>
-    <div class="kpi-grid">
-    
-        {{-- MANUTENÇÕES --}}
-        <div class="kpi-box">
-    
-            <div class="kpi-label">
-                Manutenções
-            </div>
-    
-            <div class="kpi-value">
-    
-                {{ $maintenances->count() }}
-    
-            </div>
-    
-            <div class="kpi-extra">
-    
-                • {{ $internalCount }} internas
-    
-                <br>
-    
-                • {{ $externalCount }} terceirizadas
-    
-            </div>
-    
-        </div>
-    
-        {{-- CUSTOS --}}
-        <div class="kpi-box">
-    
-            <div class="kpi-label">
-                Custos operacionais
-            </div>
-    
-            <div class="kpi-value">
-    
-                R$
-                {{ number_format($totalCost, 2, ',', '.') }}
-    
-            </div>
-    
-            <div class="kpi-extra">
-    
-                • média R$
-    
-                {{
-                    number_format(
-                        $maintenances->count() > 0
-                            ? $totalCost / $maintenances->count()
-                            : 0,
-                        2,
-                        ',',
-                        '.'
-                    )
-                }}
-    
-                <br>
-    
-                • {{ $maintenances->count() }} registros
-    
-            </div>
-    
-        </div>
-    
-    </div>
-    {{-- PROCEDIMENTOS --}}
-    <div class="procedure-stats-section">
-    
-        <div class="section-title">
-    
-            Procedimentos mais executados
-    
-        </div>
-    
-        <div class="kpi-grid">
-        
-            @foreach($procedureStats as $stat)
-                    
-            <div class="kpi-box procedure-box">
-            
-                <div class="procedure-box-left">
-            
-                    <div class="procedure-stat-count">
-            
-                        {{ $stat['count'] }}x
-            
-                    </div>
-            
-                    <div class="procedure-stat-name">
-            
-                        <strong>{{ $stat['procedure'] }}</strong>
-            
-                    </div>
-            
-                </div>
-            
-                <div class="procedure-box-right">
-            
-                    <div>
-            
-                        Custo:
-                        <strong>{{ 'R$ '.number_format($stat['total'], 2, ',', '.') }}</strong>
-            
-                    </div>
-            
-                    <div>
-            
-                        Média:
-                        <strong>{{ 'R$ '.number_format($stat['average'], 2, ',', '.') }}</strong>
-            
-                    </div>
-            
-                </div>
-            
-            </div>        
-            @endforeach
-        
-        </div>
-</div>
-    {{-- CUSTO POR VEÍCULO --}}
-    <div class="vehicle-cost-section">
-    
-        <div class="section-title">
-    
-            Custos por veículo
-    
-        </div>
-    
-        <table class="vehicle-cost-table">
-    
-            <thead>
-    
-                <tr>
-    
-                    <th>
-                        Veículo
-                    </th>
-    
-                    <th>
-                        Placa
-                    </th>
-                    <th>
-                        KM rodados
-                    </th>
-                    
-                    <th>
-                        HR rodadas
-                    </th>
-    
-                    <th>
-                        Total gasto
-                    </th>
-    
-                </tr>
-    
-            </thead>
-    
-            <tbody>
-    
-                @foreach($vehicleCosts as $vehicle)
-    
-                    <tr>
-    
-                        <td>
-    
-                            {{ $vehicle['vehicle'] }}
-    
-                        </td>
-    
-                        <td>
-    
-                            {{ $vehicle['plate'] }}
-    
-                        </td>
-                        <td>
-
-                            {{ number_format(
-                                $vehicle['km_driven'],
-                                0,
-                                ',',
-                                '.'
-                            ) }}
-                        
-                            KM
-                        
-                        </td>
-                        
-                        <td>
-                        
-                            {{ number_format(
-                                $vehicle['hours_driven'],
-                                0,
-                                ',',
-                                '.'
-                            ) }}
-                        
-                            HR
-                        
-                        </td>
-    
-                        <td>
-    
-                            <strong>
-    
-                                R$
-                                {{ number_format($vehicle['total'], 2, ',', '.') }}
-    
-                            </strong>
-    
-                        </td>
-    
-                    </tr>
-    
-                @endforeach
-    
-            </tbody>
-    
-        </table>
-    
-    </div>
-    
-    <table>
-
-        <thead>
-
-            <tr>
-
-                <th>
-                    Data
-                </th>
-
-                <th>
-                    Veículo
-                </th>
-                <th>
-                    Placa
-                </th>
-
-                <th>
-                    Procedimento
-                </th>
-
-                <th>
-                    Tipo
-                </th>
-
-                <th>
-                    Valor
-                </th>
-
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-            @foreach($maintenances as $maintenance)
-
-                <tr>
-
-                    <td>
-
-                        {{ \Carbon\Carbon::parse($maintenance->performed_at)->format('d/m/Y') }}
-
-                    </td>
-
-                    <td>
-
-                        {{ $maintenance->vehicle->name ?? '-' }}
-
-                    </td>
-                    <td>
-                    
-                        {{ $maintenance->vehicle->plate ?? '-' }}
-                    
-                    </td>
-                    <td>
-
-                        {{ $maintenance->procedure->name ?? '-' }}
-
-                    </td>
-
-                    <td>
-                    
-                        @if($maintenance->maintenance_type == 'internal')
-                    
-                            <span
-                                style="
-                                    color:#166534;
-                                    font-weight:bold;
-                                "
-                            >
-                    
-                                ● Interna
-                    
-                            </span>
-                    
-                        @else
-                    
-                            <span
-                                style="
-                                    color:#1d4ed8;
-                                    font-weight:bold;
-                                "
-                            >
-                    
-                                ● Terceirizada
-                    
-                            </span>
-                    
-                        @endif
-                    
-                    </td>
-
-                    <td>
-
-                        R$
-                        {{ number_format($maintenance->total_cost ?? 0, 2, ',', '.') }}
-
-                    </td>
-
-                </tr>
-
-            @endforeach
-
-        </tbody>
-
-    </table>
-    @if(($canViewCancelled ?? false) && isset($cancelledMaintenancesRaw) && $cancelledMaintenancesRaw->count() > 0)
-
-        <div class="section-title">
-
-            Registros cancelados
-
-        </div>
-
-        <p style="font-size: 11px; color: #64748b; margin-bottom: 12px;">
-            Estes registros são exibidos apenas para conferência e não compõem custos, rankings ou indicadores operacionais.
-        </p>
-
-        <table>
-
-            <thead>
-
-                <tr>
-                    <th>Data</th>
-                    <th>Veículo</th>
-                    <th>Placa</th>
-                    <th>Procedimento</th>
-                    <th>Valor original</th>
-                    <th>Cancelada por</th>
-                    <th>Motivo</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                @foreach($cancelledMaintenancesRaw as $maintenance)
-
-                    <tr>
-                        <td>{{ optional($maintenance->cancelled_at)->format('d/m/Y H:i') }}</td>
-                        <td>{{ $maintenance->vehicle->name ?? '-' }}</td>
-                        <td>{{ $maintenance->vehicle->plate ?? '-' }}</td>
-                        <td>{{ $maintenance->procedure->name ?? '-' }}</td>
-                        <td>R$ {{ number_format($maintenance->total_cost ?? 0, 2, ',', '.') }}</td>
-                        <td>{{ $maintenance->canceller?->name ?? '-' }}</td>
-                        <td>{{ $maintenance->cancel_reason ?? '-' }}</td>
-                    </tr>
-
-                @endforeach
-
-            </tbody>
-
-        </table>
-
-    @endif
-
-    <div class="report-footer">
-    
-        Relatório gerado automaticamente pelo CHM —
-        {{ now()->format('d/m/Y H:i') }}
-    
-    </div>
-</body>
-</html>
+<!DOCTYPE html><html lang="pt-br"><head>    <meta charset="UTF-8">    <style>        body {            font-family: DejaVu Sans;            color: #111827;            font-size: 12px;        }        .header {            margin-bottom: 28px;        }        .title {            font-size: 28px;            font-weight: bold;        }        .subtitle {            color: #6b7280;            margin-top: 6px;        }        .kpi-grid {                    width: 100%;                    display: table;                    border-spacing: 18px 0;                    margin: 24px 0 34px;        }        .kpi-box {                    display: table-cell;                    width: 50%;                    border: 1px solid #d1d5db;                    border-radius: 12px;                    padding: 18px 20px;                    vertical-align: top;        }                .kpi-box:first-child {        }        .kpi-box + .kpi-box {                    border-left-width: 1px;        }        .kpi-label {            font-size: 11px;            color: #6b7280;        }        .kpi-value {            font-size: 22px;            font-weight: bold;            margin-top: 8px;        }        table {            width: 100%;            border-collapse: collapse;            margin-top: 28px;        }        th {            background: #111827;            color: white;            padding: 12px;            text-align: left;            font-size: 11px;        }        td {            padding: 12px;            border-bottom: 1px solid #e5e7eb;            font-size: 11px;        }        .report-header {                    width: 100%;                    display: table;                    margin-bottom: 34px;                    border-bottom: 2px solid #e5e7eb;                    padding-bottom: 22px;        }                .report-header-left,        .report-header-center,        .report-header-right {                    display: table-cell;                    vertical-align: middle;        }                .report-header-left {                    width: 120px;        }                .report-header-center {                    text-align: center;        }                .report-header-right {                    width: 180px;                    text-align: right;                    font-size: 11px;                    color: #6b7280;        }                .report-logo {                    width: 90px;        }                .report-title {                    font-size: 22px;                    font-weight: 800;                    color: #0f172a;                    line-height: 1.2;        }                .report-subtitle {                    margin-top: 8px;                    font-size: 12px;                    color: #64748b;        }                .report-meta-item {                    margin-bottom: 12px;        }        .section-title {                    font-size: 15px;                    font-weight: bold;                    color: #0f172a;                    margin: 12px 0 18px;        }                .procedure-stats-section {                    margin-bottom: 34px;        }                .procedure-stat-card {                    width: 45%;                    float: left;                    border: 1px solid #dbe2ea;                    border-radius: 10px;                    padding: 14px 18px;                    margin-bottom: 14px;                    min-height: 82px;        }        .procedure-stat-card:nth-child(odd) {                    margin-right: 2%;        }                .procedure-grid::after {                    content: "";                    display: block;                    clear: both;        }        .page-break {                    page-break-after: always;        }        .procedure-stat-right {                    margin-top: 14px;                    font-size: 11px;                    color: #475569;                    line-height: 1.8;                        right: 20px;                    top: 18px;        }        .procedure-box {                    position: relative;                    min-height: 92px;        }        .procedure-box-left {            width: 52%;                    display: inline-block;                    vertical-align: top;        }                .procedure-box-right {                    width: 42%;                    display: inline-block;                    vertical-align: top;                    text-align: right;                    font-size: 11px;                    color: #475569;                    line-height: 1.9;        }        .procedure-stat-card::after {                    content: "";                    display: block;                    clear: both;        }                        .procedure-stat-count {                    font-size: 20px;                    font-weight: bold;                    color: #0f172a;        }                .procedure-stat-name {                    font-size: 13px;                    color: #475569;                    margin-top: 4px;        }        .vehicle-cost-section {                    margin-bottom: 36px;        }                .vehicle-cost-table {                    width: 100%;                    border-collapse: collapse;                    margin-top: 12px;        }                .vehicle-cost-table th {                    background: #f1f5f9;                    color: #0f172a;                    font-size: 11px;                    text-align: left;                    padding: 12px;                    border-bottom: 1px solid #dbe2ea;        }                .vehicle-cost-table td {                    padding: 12px;                    border-bottom: 1px solid #e5e7eb;                    font-size: 11px;        }        .procedure-grid {            width: 100%;                    overflow: hidden;        }        .report-footer {                    margin-top: 40px;                    padding-top: 12px;                    border-top: 1px solid #dbe2ea;                    text-align: center;                    font-size: 10px;                    color: #94a3b8;        }        .kpi-box {                    position: relative;        }    </style></head><body>    <div class="report-header">            {{-- LOGO --}}        <div class="report-header-left">                @if($division?->logo)                            <img                    src="{{ public_path('images/' . $division->logo) }}"                    class="report-logo"                >                        @else                            <img                    src="{{ public_path('images/logo-chm.png') }}"                    class="report-logo"                >                        @endif        </div>            {{-- CENTRO --}}        <div class="report-header-center">                <div class="report-title">                    RELATÓRIO OPERACIONAL                DE MANUTENÇÕES                </div>                <div class="report-subtitle">                    Controle técnico e operacional da frota                </div>            </div>            {{-- DIREITA --}}        <div class="report-header-right">                <div class="report-meta-item">                    <strong>                    Gerado em:                </strong>                    <br>                    {{ now()->format('d/m/Y H:i') }}                </div>                <div class="report-meta-item">                    <strong>                    Período:                </strong>                    <br>                    {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}                    →                    {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}                </div>            </div>        </div>    <div class="kpi-grid">            {{-- MANUTENÇÕES --}}        <div class="kpi-box">                <div class="kpi-label">Serviços executados</div>                        <div class="kpi-value">                {{ $internalCount + $externalCount }}            </div>                        <div class="kpi-extra">                • {{ $internalCount }} internos                <br>                • {{ $externalCount }} terceirizados            </div>            </div>            {{-- CUSTOS --}}        <div class="kpi-box">                <div class="kpi-label">                Custos operacionais            </div>                <div class="kpi-value">                    R$                {{ number_format($totalCost, 2, ',', '.') }}                </div>                <div class="kpi-extra">                    • média R$                    {{                    number_format(                        $maintenances->count() > 0                            ? $totalCost / $maintenances->count()                            : 0,                        2,                        ',',                        '.'                    )                }}                    <br>                    • {{ $maintenances->count() }} registros                </div>            </div>        </div>    {{-- PROCEDIMENTOS --}}    <div class="procedure-stats-section">            <div class="section-title">                Procedimentos mais executados            </div>            <div class="kpi-grid">                    @foreach($procedureStats as $stat)                                <div class="kpi-box procedure-box">                            <div class="procedure-box-left">                                <div class="procedure-stat-count">                                    {{ $stat['count'] }}x                                </div>                                <div class="procedure-stat-name">                                    <strong>{{ $stat['procedure'] }}</strong>                                </div>                            </div>                            <div class="procedure-box-right">                                <div>                                    Custo:                        <strong>{{ 'R$ '.number_format($stat['total'], 2, ',', '.') }}</strong>                                </div>                                <div>                                    Média:                        <strong>{{ 'R$ '.number_format($stat['average'], 2, ',', '.') }}</strong>                                </div>                            </div>                        </div>                    @endforeach                </div></div>    {{-- CUSTO POR VEÍCULO --}}    <div class="vehicle-cost-section">            <div class="section-title">                Custos por veículo            </div>            <table class="vehicle-cost-table">                <thead>                    <tr>                        <th>                        Veículo                    </th>                        <th>                        Placa                    </th>                    <th>                        KM rodados                    </th>                                        <th>                        HR rodadas                    </th>                        <th>                        Total gasto                    </th>                    </tr>                </thead>                <tbody>                    @foreach($vehicleCosts as $vehicle)                        <tr>                            <td>                                {{ $vehicle['vehicle'] }}                            </td>                            <td>                                {{ $vehicle['plate'] }}                            </td>                        <td>                            {{ number_format(                                $vehicle['km_driven'],                                0,                                ',',                                '.'                            ) }}                                                    KM                                                </td>                                                <td>                                                    {{ number_format(                                $vehicle['hours_driven'],                                0,                                ',',                                '.'                            ) }}                                                    HR                                                </td>                            <td>                                <strong>                                    R$                                {{ number_format($vehicle['total'], 2, ',', '.') }}                                </strong>                            </td>                        </tr>                    @endforeach                </tbody>            </table>        </div>            <table>            <thead>                <tr>                    <th>Ordem</th>                    <th>Entrada</th>                    <th>Saída</th>                    <th>Veículo</th>                    <th>Placa</th>                    <th>Serviços</th>                    <th>Custos avulsos</th>                    <th>Status</th>                    <th>Valor</th>                </tr>            </thead>                    <tbody>                @foreach($maintenances as $maintenance)                    <tr>                        <td>#{{ $maintenance->id }}</td>                        <td>{{ optional($maintenance->started_at)->format('d/m/Y H:i') }}</td>                        <td>{{ $maintenance->finished_at ? optional($maintenance->finished_at)->format('d/m/Y H:i') : 'Em aberto' }}</td>                        <td>{{ $maintenance->vehicle->name ?? '-' }}</td>                        <td>{{ $maintenance->vehicle->plate ?? '-' }}</td>                        <td>                            @forelse($maintenance->items as $item)                                <div>                                    {{ $item->procedure->name ?? '-' }}                                    —                                    {{ $item->maintenance_type === 'internal' ? 'Interna' : 'Terceirizada' }}                                    —                                    R$ {{ number_format($item->total_cost ?? 0, 2, ',', '.') }}                                </div>                            @empty                                -                            @endforelse                                </td>                        <td>                            @forelse($maintenance->extraCosts as $extraCost)                                <div>                                    {{ $extraCost->description }}                                    —                                    R$ {{ number_format($extraCost->amount ?? 0, 2, ',', '.') }}                                </div>                            @empty                                -                            @endforelse                        </td>                        <td>                        @if($maintenance->workflow_status === 'closed')                            <span style="background:#dcfce7;color:#166534;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:bold;">                                Encerrada                            </span>                        @elseif($maintenance->workflow_status === 'open')                            <span style="background:#dbeafe;color:#1d4ed8;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:bold;">                                Aberta                            </span>                        @elseif($maintenance->workflow_status === 'cancelled')                            <span style="background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:bold;">                                Cancelada                            </span>                        @else                            {{ $maintenance->workflow_status ?? '-' }}                        @endif                        </td>                        <td><strong>R$ {{ number_format($maintenance->total_cost ?? 0, 2, ',', '.') }}</strong></td>                    </tr>                @endforeach            </tbody>        </table>    @if(($canViewCancelled ?? false) && isset($cancelledMaintenancesRaw) && $cancelledMaintenancesRaw->count() > 0)        <div class="section-title">            Registros cancelados        </div>            <p style="font-size: 11px; color: #64748b; margin-bottom: 12px;">            Estes registros são exibidos apenas para conferência e não compõem custos, rankings ou indicadores operacionais.        </p>            <table>            <thead>                <tr>                    <th>Ordem</th>                    <th>Cancelada em</th>                    <th>Veículo</th>                    <th>Placa</th>                    <th>Serviços</th>                    <th>Valor original</th>                    <th>Cancelada por</th>                    <th>Motivo</th>                </tr>            </thead>                <tbody>                @foreach($cancelledMaintenancesRaw as $maintenance)                    <tr>                        <td>#{{ $maintenance->id }}</td>                            <td>{{ optional($maintenance->cancelled_at)->format('d/m/Y H:i') }}</td>                            <td>{{ $maintenance->vehicle->name ?? '-' }}</td>                            <td>{{ $maintenance->vehicle->plate ?? '-' }}</td>                            <td>                            @forelse($maintenance->items as $item)                                <div>                                    {{ $item->procedure->name ?? '-' }}                                </div>                            @empty                                -                            @endforelse                        </td>                            <td>                            R$ {{ number_format($maintenance->total_cost ?? 0, 2, ',', '.') }}                        </td>                            <td>{{ $maintenance->canceller?->name ?? '-' }}</td>                            <td>{{ $maintenance->cancel_reason ?? '-' }}</td>                    </tr>                @endforeach            </tbody>        </table>    @endif    <div class="report-footer">            Relatório gerado automaticamente pelo CHM —        {{ now()->format('d/m/Y H:i') }}        </div></body></html>

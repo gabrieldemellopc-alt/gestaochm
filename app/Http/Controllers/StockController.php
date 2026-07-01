@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Validation\Rule;
 use App\Models\StockCategory;
 use App\Models\StockItem;
 use App\Models\StockMovement;
@@ -118,9 +119,7 @@ class StockController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'brand' => ['nullable', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:50'],
-            'quantity' => ['nullable', 'numeric', 'min:0'],
             'minimum_quantity' => ['nullable', 'numeric', 'min:0'],
-            'unit_cost' => ['nullable', 'numeric', 'min:0'],
             'observation' => ['nullable', 'string'],
         ]);
 
@@ -132,9 +131,9 @@ class StockController extends Controller
                 'name' => $validated['name'],
                 'brand' => $validated['brand'] ?? null,
                 'unit' => $validated['unit'],
-                'quantity' => $validated['quantity'] ?? 0,
+                'quantity' => 0,
                 'minimum_quantity' => $validated['minimum_quantity'] ?? 0,
-                'unit_cost' => $validated['unit_cost'] ?? 0,
+                'unit_cost' => 0,
                 'observation' => $validated['observation'] ?? null,
                 'active' => true,
             ]);
@@ -166,7 +165,6 @@ class StockController extends Controller
             'brand' => ['nullable', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:50'],
             'minimum_quantity' => ['required', 'numeric', 'min:0'],
-            'unit_cost' => ['required', 'numeric', 'min:0'],
             'observation' => ['nullable', 'string'],
         ]);
 
@@ -178,51 +176,117 @@ class StockController extends Controller
     public function storeMovement(Request $request)
     {
         $activeLocation = $this->activeLocation();
-
+    
         if (! $activeLocation) {
             return $this->missingActiveLocationRedirect();
         }
-
+    
         $tenantId = auth()->user()->tenant_id;
-
+    
         $validated = $request->validate([
             'stock_item_id' => ['required', 'integer'],
             'movement_type' => ['required', 'in:in,out'],
             'quantity' => ['required', 'numeric', 'min:0.01'],
-            'unit_cost' => ['nullable', 'numeric', 'min:0'],
-            'description' => ['nullable', 'string'],
+            'moved_at' => ['required', 'date'],
+            // ENTRADA
+            'unit_cost' => [
+                Rule::requiredIf($request->input('movement_type') === 'in'),
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'total_cost' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'invoice_number' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'supplier_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+    
+            // SAÍDA
+            'description' => [
+                Rule::requiredIf($request->input('movement_type') === 'out'),
+                'nullable',
+                'string',
+                'min:10',
+                'max:1000',
+            ],
         ]);
-
+    
         $requestedItem = StockItem::findOrFail($validated['stock_item_id']);
-
+    
         if ($redirect = $this->ensureItemInActiveContext($requestedItem)) {
             return $redirect;
         }
-
+    
         $stored = DB::transaction(function () use ($validated, $tenantId, $activeLocation) {
             $item = StockItem::query()
                 ->where('tenant_id', $tenantId)
                 ->where('location_id', $activeLocation->id)
                 ->lockForUpdate()
                 ->findOrFail($validated['stock_item_id']);
-
+    
+            $quantity = round((float) $validated['quantity'], 2);
+            $quantityBefore = round((float) $item->quantity, 2);
+            $unitCostBefore = round((float) $item->unit_cost, 2);
+    
             if (
                 $validated['movement_type'] === 'out'
-                && $validated['quantity'] > $item->quantity
+                && $quantity > $quantityBefore
             ) {
                 return false;
             }
-
+    
+            if ($validated['movement_type'] === 'in') {
+                $movementTotalCost = isset($validated['total_cost']) && $validated['total_cost'] !== null
+                    ? round((float) $validated['total_cost'], 2)
+                    : round($quantity * (float) ($validated['unit_cost'] ?? 0), 2);
+    
+                $movementUnitCost = $quantity > 0
+                    ? round($movementTotalCost / $quantity, 2)
+                    : 0;
+    
+                $quantityAfter = round($quantityBefore + $quantity, 2);
+    
+                $stockValueBefore = round($quantityBefore * $unitCostBefore, 2);
+                $stockValueAfter = round($stockValueBefore + $movementTotalCost, 2);
+    
+                $newAverageUnitCost = $quantityAfter > 0
+                    ? round($stockValueAfter / $quantityAfter, 2)
+                    : 0;
+            } else {
+                $movementUnitCost = $unitCostBefore;
+                $movementTotalCost = round($quantity * $movementUnitCost, 2);
+                $quantityAfter = round($quantityBefore - $quantity, 2);
+                $newAverageUnitCost = $unitCostBefore;
+            }
+    
             $movement = StockMovement::create([
                 'tenant_id' => $tenantId,
                 'location_id' => $activeLocation->id,
                 'stock_item_id' => $item->id,
                 'movement_type' => $validated['movement_type'],
-                'quantity' => $validated['quantity'],
-                'unit_cost' => $validated['unit_cost'] ?? 0,
+                'quantity' => $quantity,
+                'unit_cost' => $movementUnitCost,
+                'total_cost' => $movementTotalCost,
+                'invoice_number' => $validated['invoice_number'] ?? null,
+                'supplier_name' => $validated['supplier_name'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'moved_at' => $validated['moved_at'],
             ]);
-
+    
+            $item->quantity = $quantityAfter;
+            $item->unit_cost = $newAverageUnitCost;
+            $item->save();
+    
             app(AuditLogService::class)->created($movement, [
                 'tenant_id' => $tenantId,
                 'location_id' => $activeLocation->id,
@@ -232,28 +296,22 @@ class StockController extends Controller
                 'metadata' => [
                     'stock_item_id' => $item->id,
                     'movement_type' => $validated['movement_type'],
-                    'quantity_before' => $item->quantity,
-                    'quantity_after' => $validated['movement_type'] === 'in'
-                        ? (float) $item->quantity + (float) $validated['quantity']
-                        : (float) $item->quantity - (float) $validated['quantity'],
+                    'quantity_before' => $quantityBefore,
+                    'quantity_after' => $quantityAfter,
+                    'unit_cost_before' => $unitCostBefore,
+                    'unit_cost_after' => $newAverageUnitCost,
+                    'movement_unit_cost' => $movementUnitCost,
+                    'movement_total_cost' => $movementTotalCost,
                 ],
             ]);
-
-            if ($validated['movement_type'] === 'in') {
-                $item->quantity += $validated['quantity'];
-            } else {
-                $item->quantity -= $validated['quantity'];
-            }
-
-            $item->save();
-
+    
             return true;
         });
-
+    
         if (! $stored) {
             return back()->with('error', 'Quantidade indisponível em estoque.');
         }
-
+    
         return redirect()->back();
     }
 
@@ -382,7 +440,7 @@ class StockController extends Controller
                 'movement_type' => $reverseType,
                 'quantity' => $movement->quantity,
                 'unit_cost' => $movement->unit_cost,
-                'description' => 'Reversao do cancelamento da movimentacao #'.$movement->id,
+                'description' => 'Reversão do cancelamento da movimentação #'.$movement->id,
                 'reversed_from_movement_id' => $movement->id,
             ]);
 

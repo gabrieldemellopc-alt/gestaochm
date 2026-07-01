@@ -20,10 +20,17 @@ class StockMovement extends Model
         'cancel_reason',
         'reversal_movement_id',
         'reversed_from_movement_id',
+        'total_cost',
+        'invoice_number',
+        'supplier_name',
+        'moved_at',
+        'maintenance_record_item_id',
     ];
 
     protected $casts = [
         'cancelled_at' => 'datetime',
+        'total_cost' => 'decimal:2',
+        'moved_at' => 'datetime',
     ];
 
     public function location()
@@ -55,4 +62,9 @@ class StockMovement extends Model
     {
         return $this->belongsTo(self::class, 'reversed_from_movement_id');
     }
+    public function maintenanceRecordItem()
+    {
+        return $this->belongsTo(MaintenanceRecordItem::class);
+    }
+    
 }

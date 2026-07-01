@@ -223,7 +223,7 @@
 
 .fuel-tank-meta {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     margin: 16px 0 0;
 }
@@ -331,6 +331,7 @@
     display: flex;
     justify-content: flex-end;
     margin-top: 16px;
+    gap:10px;
 }
 
 .fuel-table-wrap {
@@ -366,7 +367,7 @@
 
 .fuel-table td strong,
 .fuel-table td span {
-    display: block;
+    /*display: block;*/
 }
 
 .fuel-table-empty {
@@ -702,4 +703,141 @@ html[data-chm-theme="corporate-light"] .fuel-modal-close {
         width: 100%;
         box-shadow: none;
     }
+}
+
+.input-with-badge {
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.06);
+    overflow: hidden;
+}
+
+.input-with-badge span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 54px;
+    height: 42px;
+
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .08em;
+
+    color: rgba(255,255,255,.78);
+    background: rgba(255,255,255,.08);
+    border-right: 1px solid rgba(255,255,255,.14);
+}
+
+.input-with-badge input {
+    flex: 1;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.receipt-grid {
+    align-items: end;
+}
+
+.receipt-grid [data-fuel-unit-cost] {
+    opacity: .85;
+    cursor: not-allowed;
+}
+
+.receipt-grid label:has([data-fuel-unit-cost]) {
+    position: relative;
+}
+
+.receipt-grid label:has([data-fuel-unit-cost])::after {
+    content: "automático";
+    position: absolute;
+    top: 2px;
+    right: 0;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+
+    color: rgba(255,255,255,.42);
+}
+.fuel-cost-preview {
+    padding: 16px 18px;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 14px;
+    background: rgba(255,255,255,.055);
+}
+
+.fuel-cost-preview span {
+    display: block;
+    margin-bottom: 6px;
+
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+
+    color: rgba(255,255,255,.58);
+}
+
+.fuel-cost-preview strong {
+    display: block;
+
+    font-size: 22px;
+    font-weight: 950;
+
+    color: #ffffff;
+}
+
+.fuel-cost-preview small {
+    display: block;
+    margin-top: 4px;
+
+    color: rgba(255,255,255,.52);
+}
+.fuel-filling-layout {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 18px 20px;
+}
+
+.fuel-span-4 {
+    grid-column: span 4;
+}
+
+.fuel-span-6 {
+    grid-column: span 6;
+}
+
+.fuel-span-12 {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+    .fuel-span-4,
+    .fuel-span-6,
+    .fuel-span-12 {
+        grid-column: 1 / -1;
+    }
+}
+.fuel-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fuel-panel-actions p {
+    margin: 0;
+}
+
+.fuel-secondary-action.disabled {
+    opacity: .45;
+    pointer-events: none;
 }

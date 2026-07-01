@@ -3433,7 +3433,7 @@ select.form-input {
 .vehicle-edit-header.vehicle-create-page,
 .vehicle-edit-header.vehicle-edit-page {
     display: flex;
-    align-items: center;
+    /*align-items: center;*/
     justify-content: space-between;
     gap: 16px;
     padding: 20px;
@@ -3993,4 +3993,81 @@ html[data-chm-theme="corporate-light"] .vehicle-edit-page .type-option:hover {
     .vehicle-edit-page .tire-layout-selector {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+
+.vehicles-page .vehicles-table td {
+    vertical-align: middle !important;
+}
+
+.vehicles-page .vehicle-status-badge,
+.vehicles-page .vehicle-status-badge.maintenance,
+.vehicles-page .vehicle-status-badge.operational,
+.vehicles-page .vehicle-status-badge.inactive {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    min-width: 112px !important;
+    height: 32px !important;
+    padding: 0 14px !important;
+
+    border-radius: 999px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+
+    font-size: 12px !important;
+    font-weight: 800 !important;
+}
+.vehicles-page .vehicle-status-cell {
+    vertical-align: middle !important;
+    text-align: center;
+}
+
+.vehicles-page .vehicle-status-cell .vehicle-status-badge {
+    position: static !important;
+    transform: none !important;
+    margin: 0 auto !important;
+}
+
+.vehicle-status-summary{
+    display:flex;
+    gap:14px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+}
+
+.vehicle-status-box{
+    min-width:160px;
+    padding:12px 14px;
+    border-radius:14px;
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.06);
+}
+
+.vehicle-status-box small{
+    display:block;
+    font-size:11px;
+    text-transform:uppercase;
+    opacity:.7;
+    margin-bottom:6px;
+}
+
+.vehicle-status-box strong{
+    font-size:14px;
+    font-weight:700;
+}
+
+.vehicle-status-box.warning{
+    border-color: rgba(245,158,11,.22);
+}
+
+.vehicle-status-reason{
+    margin-bottom:18px;
+    padding:14px;
+    border-radius:14px;
+    background: rgba(255,255,255,.025);
+    border:1px solid rgba(255,255,255,.06);
+    font-size:13px;
+    line-height:1.5;
 }

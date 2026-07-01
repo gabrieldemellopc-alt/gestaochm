@@ -44,10 +44,23 @@ class FuelService
             $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
 
             $quantity = $this->decimal($validated['quantity_liters'], 3);
-            $unitCost = $this->nullableDecimal($validated['unit_cost'] ?? null, 4);
-            $totalCost = $this->resolveTotalCost($quantity, $unitCost, $validated['total_cost'] ?? null);
+            $totalCost = $this->nullableDecimal($validated['total_cost'] ?? null, 2);
+            
+            $unitCost = $this->resolveUnitCostFromTotal(
+                $quantity,
+                $totalCost,
+                $validated['unit_cost'] ?? null
+            );
+            
             $balanceBefore = $this->decimal($tank->current_balance_liters, 3);
+            $stockValueBefore = $this->decimal($tank->estimated_stock_value ?? 0, 2);
+            
             $balanceAfter = $this->decimal($balanceBefore + $quantity, 3);
+            $stockValueAfter = $this->decimal($stockValueBefore + ($totalCost ?? 0), 2);
+            
+            $averageUnitCostAfter = $balanceAfter > 0
+                ? $this->decimal($stockValueAfter / $balanceAfter, 4)
+                : 0;
             $responsibleUserId = $validated['responsible_user_id'] ?? $context['user']->id;
 
             if ($balanceAfter > (float) $tank->capacity_liters) {
@@ -74,6 +87,8 @@ class FuelService
 
             $tank->forceFill([
                 'current_balance_liters' => $balanceAfter,
+                'average_unit_cost' => $averageUnitCostAfter,
+                'estimated_stock_value' => $stockValueAfter,
             ])->save();
 
             $movement = $this->createMovement(
@@ -120,8 +135,6 @@ class FuelService
             'vehicle_km' => ['nullable', 'numeric', 'min:0'],
             'vehicle_hours' => ['nullable', 'numeric', 'min:0'],
             'quantity_liters' => ['required', 'numeric', 'gt:0'],
-            'unit_cost' => ['nullable', 'numeric', 'min:0'],
-            'total_cost' => ['nullable', 'numeric', 'min:0'],
             'responsible_user_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string'],
         ])->validate();
@@ -135,8 +148,13 @@ class FuelService
             $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
 
             $quantity = $this->decimal($validated['quantity_liters'], 3);
-            $unitCost = $this->nullableDecimal($validated['unit_cost'] ?? null, 4);
-            $totalCost = $this->resolveTotalCost($quantity, $unitCost, $validated['total_cost'] ?? null);
+            
+            $unitCost = $this->decimal($tank->average_unit_cost ?? 0, 4);
+            
+            $totalCost = $this->decimal(
+                $quantity * $unitCost,
+                2
+            );
             $balanceBefore = $this->decimal($tank->current_balance_liters, 3);
 
             if ($quantity > $balanceBefore) {
@@ -144,8 +162,15 @@ class FuelService
                     'quantity_liters' => 'A quantidade abastecida não pode ser maior que o saldo atual do tanque.',
                 ]);
             }
-
+            
             $balanceAfter = $this->decimal($balanceBefore - $quantity, 3);
+            
+            $stockValueBefore = $this->decimal($tank->estimated_stock_value ?? 0, 2);
+            $stockValueAfter = $this->decimal(max(0, $stockValueBefore - $totalCost), 2);
+            
+            $averageUnitCostAfter = $balanceAfter > 0
+                ? $this->decimal($stockValueAfter / $balanceAfter, 4)
+                : 0;
             $responsibleUserId = $validated['responsible_user_id'] ?? $context['user']->id;
 
             $filling = FuelFilling::query()->create([
@@ -168,6 +193,8 @@ class FuelService
 
             $tank->forceFill([
                 'current_balance_liters' => $balanceAfter,
+                'average_unit_cost' => $averageUnitCostAfter,
+                'estimated_stock_value' => $stockValueAfter,
             ])->save();
 
             $movement = $this->createMovement(
@@ -355,6 +382,18 @@ class FuelService
         ]);
     }
 
+    private function resolveUnitCostFromTotal(
+        float $quantity,
+        ?float $totalCost,
+        mixed $fallbackUnitCost
+    ): ?float {
+        if ($totalCost !== null && $totalCost > 0 && $quantity > 0) {
+            return $this->decimal($totalCost / $quantity, 4);
+        }
+    
+        return $this->nullableDecimal($fallbackUnitCost, 4);
+    }
+    
     private function resolveTotalCost(float $quantity, ?float $unitCost, mixed $totalCost): ?float
     {
         if ($totalCost !== null && $totalCost !== '') {
@@ -381,4 +420,7 @@ class FuelService
     {
         return round((float) $value, $precision);
     }
+
+
+    
 }
