@@ -108,8 +108,22 @@ class MaintenanceController extends Controller
         Vehicle $vehicle,
         MaintenanceRecord $maintenance
     ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Selecione uma unidade para continuar.',
+                ], 422);
+            }
+
+            return $redirect;
+        }
+
         if ((int) $maintenance->vehicle_id !== (int) $vehicle->id) {
             abort(404);
+        }
+
+        if ((int) $maintenance->tenant_id !== (int) auth()->user()->tenant_id) {
+            abort(403);
         }
     
         $data = $request->validate([
@@ -382,4 +396,3 @@ class MaintenanceController extends Controller
     }
 
 }
-
