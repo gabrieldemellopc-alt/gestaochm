@@ -7,6 +7,7 @@ use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use App\Services\MaintenanceService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -388,6 +389,7 @@ class MaintenanceController extends Controller
         $pdf = Pdf::loadView('vehicle.pdf.maintenance-order', [
             'vehicle' => $vehicle,
             'maintenance' => $maintenance,
+            'canViewAuditLogs' => Gate::allows('viewAuditLogs'),
         ])->setPaper('a4', 'portrait');
     
         return $pdf->download(

@@ -219,6 +219,7 @@
         ];
 
         $serviceStatuses = \App\Services\MaintenanceService::serviceStatuses();
+        $canViewAuditLogs = $canViewAuditLogs ?? false;
 
         $startedAt = $maintenance->started_at;
         $finishedAt = $maintenance->finished_at;
@@ -306,7 +307,7 @@
         </div>
     </div>
 
-    @if($maintenance->notes || $maintenance->closure_notes || $maintenance->cancel_reason)
+    @if($maintenance->notes || $maintenance->closure_notes || $maintenance->workflow_status === 'cancelled')
         <div class="section-title">Observações</div>
 
         <table>
@@ -325,10 +326,20 @@
                     </tr>
                 @endif
 
-                @if($maintenance->cancel_reason)
+                @if($maintenance->workflow_status === 'cancelled')
                     <tr>
-                        <td><strong>Motivo do cancelamento</strong></td>
-                        <td>{{ $maintenance->cancel_reason }}</td>
+                        <td><strong>Cancelamento</strong></td>
+                        <td>
+                            @if($canViewAuditLogs)
+                                {{ $maintenance->cancel_reason ?: 'Manutenção cancelada.' }}
+                                @if($maintenance->canceller)
+                                    <br>
+                                    <span class="muted">Responsável: {{ $maintenance->canceller->name }}</span>
+                                @endif
+                            @else
+                                Detalhes do cancelamento restritos à gestão.
+                            @endif
+                        </td>
                     </tr>
                 @endif
             </tbody>
@@ -484,7 +495,17 @@
         <div class="timeline-item">
             <strong>Cancelamento da manutenção</strong>
             <span>{{ optional($maintenance->cancelled_at)->format('d/m/Y H:i') }}</span>
-            <div>{{ $maintenance->cancel_reason ?? 'Manutenção cancelada.' }}</div>
+            <div>
+                @if($canViewAuditLogs)
+                    {{ $maintenance->cancel_reason ?? 'Manutenção cancelada.' }}
+                    @if($maintenance->canceller)
+                        <br>
+                        Responsável: {{ $maintenance->canceller->name }}
+                    @endif
+                @else
+                    Detalhes do cancelamento restritos à gestão.
+                @endif
+            </div>
         </div>
     @endif
 
