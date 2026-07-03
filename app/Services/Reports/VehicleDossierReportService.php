@@ -363,7 +363,13 @@ class VehicleDossierReportService
     private function maintenances(array $context, Vehicle $vehicle, array $filters): Collection
     {
         return $this->maintenanceBaseQuery($context, $vehicle, $filters, false)
-            ->with(['procedure', 'values.field'])
+            ->with([
+                'procedure',
+                'values.field',
+                'items.procedure',
+                'items.values.field',
+                'extraCosts',
+            ])
             ->orderByDesc('performed_at')
             ->orderByDesc('id')
             ->get()
@@ -378,7 +384,14 @@ class VehicleDossierReportService
         }
 
         return $this->maintenanceBaseQuery($context, $vehicle, $filters, true)
-            ->with(['procedure', 'canceller'])
+            ->with([
+                'procedure',
+                'values.field',
+                'items.procedure',
+                'items.values.field',
+                'extraCosts',
+                'canceller',
+            ])
             ->whereNotNull('cancelled_at')
             ->orderByDesc('cancelled_at')
             ->orderByDesc('id')
@@ -387,7 +400,7 @@ class VehicleDossierReportService
                 ...$this->maintenanceRow($maintenance),
                 'module' => 'maintenance',
                 'record_type' => 'Manutencao cancelada',
-                'record_label' => $maintenance->procedure?->name ?? 'Manutencao rapida',
+                'record_label' => $this->procedureSummary($this->normalizedMaintenanceItems($maintenance)),
                 'cancelled_at' => $maintenance->cancelled_at,
                 'cancel_reason' => $maintenance->cancel_reason,
                 'cancelled_by' => $maintenance->canceller?->name,
@@ -412,13 +425,20 @@ class VehicleDossierReportService
 
     private function maintenanceRow(MaintenanceRecord $maintenance): array
     {
+        $items = $this->normalizedMaintenanceItems($maintenance);
+        $firstItem = $items->first();
+
         return [
             'model' => $maintenance,
             'id' => $maintenance->id,
             'date' => $maintenance->performed_at,
-            'procedure' => $maintenance->procedure,
-            'procedure_name' => $maintenance->procedure?->name ?? 'Manutencao rapida',
-            'maintenance_type' => $maintenance->maintenance_type,
+            'procedure' => $firstItem['procedure'] ?? $maintenance->procedure,
+            'procedure_name' => $firstItem['procedure_name'] ?? 'Item de manutencao',
+            'procedure_summary' => $this->procedureSummary($items),
+            'items_count' => $items->count(),
+            'items' => $items,
+            'is_legacy_record' => (bool) ($firstItem['is_legacy'] ?? false),
+            'maintenance_type' => $firstItem['maintenance_type'] ?? $maintenance->maintenance_type,
             'provider_name' => $maintenance->provider_name,
             'performed_km' => $maintenance->performed_km,
             'performed_hours' => $maintenance->performed_hours,
@@ -427,14 +447,82 @@ class VehicleDossierReportService
             'reason' => $maintenance->reason,
             'notes' => $maintenance->notes,
             'responsible' => null,
-            'dynamic_values' => $this->dynamicValues($maintenance),
+            'dynamic_values' => $items
+                ->flatMap(fn (array $item) => $item['dynamic_values'])
+                ->take(6)
+                ->values(),
             'is_cancelled' => $maintenance->cancelled_at !== null,
         ];
     }
 
-    private function dynamicValues(MaintenanceRecord $maintenance): Collection
+    private function normalizedMaintenanceItems(MaintenanceRecord $maintenance): Collection
     {
-        return $maintenance->values
+        if ($maintenance->items->isNotEmpty()) {
+            return $maintenance->items
+                ->sortBy(fn ($item) => $item->performed_at ?? $item->id)
+                ->map(fn ($item) => [
+                    'id' => $item->id,
+                    'procedure' => $item->procedure,
+                    'procedure_name' => $item->procedure?->name ?? 'Item de manutencao',
+                    'maintenance_type' => $item->maintenance_type,
+                    'provider_name' => $item->provider_name,
+                    'performed_km' => $item->performed_km,
+                    'performed_hours' => $item->performed_hours,
+                    'performed_at' => $item->performed_at,
+                    'next_due_km' => $item->next_due_km,
+                    'next_due_hours' => $item->next_due_hours,
+                    'next_due_date' => $item->next_due_date,
+                    'total_cost' => (float) ($item->total_cost ?? 0),
+                    'extra_cost' => (float) ($item->extra_cost ?? 0),
+                    'notes' => $item->notes,
+                    'dynamic_values' => $this->dynamicValues($item->values),
+                    'is_legacy' => false,
+                ])
+                ->values();
+        }
+
+        return collect([[
+            'id' => null,
+            'procedure' => $maintenance->procedure,
+            'procedure_name' => $maintenance->procedure?->name ?? 'Manutencao rapida',
+            'maintenance_type' => $maintenance->maintenance_type,
+            'provider_name' => $maintenance->provider_name,
+            'performed_km' => $maintenance->performed_km,
+            'performed_hours' => $maintenance->performed_hours,
+            'performed_at' => $maintenance->performed_at,
+            'next_due_km' => $maintenance->next_due_km,
+            'next_due_hours' => $maintenance->next_due_hours,
+            'next_due_date' => $maintenance->next_due_date,
+            'total_cost' => (float) ($maintenance->total_cost ?? 0),
+            'extra_cost' => (float) ($maintenance->extra_cost ?? 0),
+            'notes' => $maintenance->notes,
+            'dynamic_values' => $this->dynamicValues($maintenance->values),
+            'is_legacy' => true,
+        ]]);
+    }
+
+    private function procedureSummary(Collection $items): string
+    {
+        if ($items->isEmpty()) {
+            return 'Item de manutencao';
+        }
+
+        $names = $items
+            ->pluck('procedure_name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($names->count() <= 2) {
+            return $names->implode(', ');
+        }
+
+        return $names->take(2)->implode(', ') . ' +' . ($names->count() - 2) . ' itens';
+    }
+
+    private function dynamicValues(Collection $values): Collection
+    {
+        return $values
             ->filter(fn ($value) => $value->field !== null && $value->value !== null && $value->value !== '')
             ->sortBy(fn ($value) => $value->field?->sort_order ?? $value->id)
             ->take(6)
@@ -457,7 +545,12 @@ class VehicleDossierReportService
 
         return $this->reportContext
             ->stockMovementQuery($context)
-            ->with(['stockItem.category', 'maintenanceRecord.procedure', 'maintenanceRecord.vehicle'])
+            ->with([
+                'stockItem.category',
+                'maintenanceRecord.procedure',
+                'maintenanceRecord.vehicle',
+                'maintenanceRecordItem.procedure',
+            ])
             ->whereIn('maintenance_record_id', $maintenanceIds)
             ->where('movement_type', 'out')
             ->whereNull('cancelled_at')
@@ -476,6 +569,8 @@ class VehicleDossierReportService
     private function stockConsumptionRow(StockMovement $movement): array
     {
         $item = $movement->stockItem;
+        $procedure = $movement->maintenanceRecordItem?->procedure
+            ?? $movement->maintenanceRecord?->procedure;
         $unitCost = $movement->unit_cost !== null
             ? (float) $movement->unit_cost
             : (float) ($item?->unit_cost ?? 0);
@@ -486,9 +581,11 @@ class VehicleDossierReportService
             'id' => $movement->id,
             'date' => $movement->created_at,
             'maintenance_id' => $movement->maintenance_record_id,
+            'maintenance_item_id' => $movement->maintenance_record_item_id,
             'maintenance' => $movement->maintenanceRecord,
-            'procedure' => $movement->maintenanceRecord?->procedure,
-            'procedure_name' => $movement->maintenanceRecord?->procedure?->name ?? 'Manutencao rapida',
+            'maintenance_item' => $movement->maintenanceRecordItem,
+            'procedure' => $procedure,
+            'procedure_name' => $procedure?->name ?? 'Item de manutencao',
             'item' => $item,
             'item_name' => $item?->name ?? '-',
             'category_name' => $item?->category?->name ?? '-',

@@ -239,19 +239,49 @@
                     </thead>
                     <tbody>
                         @forelse($maintenancesList as $maintenance)
+                            @php
+                                $maintenanceItems = collect($maintenance['items'] ?? []);
+                                $visibleItems = $maintenanceItems->take(3);
+                                $hiddenItemsCount = max(0, $maintenanceItems->count() - $visibleItems->count());
+                            @endphp
                             <tr>
                                 <td>{{ $formatDate($maintenance['date']) }}</td>
                                 <td>
-                                    <strong>{{ $maintenance['procedure_name'] }}</strong>
-                                    @if($maintenance['dynamic_values']->isNotEmpty())
-                                        <div class="dossier-muted-line">
-                                            @foreach($maintenance['dynamic_values'] as $dynamicValue)
-                                                <span>{{ $dynamicValue['label'] }}: {{ $dynamicValue['value'] }}</span>
-                                            @endforeach
+                                    <strong>Ordem #{{ $maintenance['id'] }}</strong>
+                                    <div class="dossier-muted-line">{{ $maintenance['procedure_summary'] }}</div>
+
+                                    <div class="dossier-muted-line">
+                                        {{ $maintenance['items_count'] }} serviço(s)
+                                    </div>
+
+                                    @foreach($visibleItems as $item)
+                                        <div class="dossier-item-line">
+                                            <strong>{{ $item['procedure_name'] }}</strong>
+                                            @if($item['maintenance_type'])
+                                                <span>{{ $item['maintenance_type'] }}</span>
+                                            @endif
+
+                                            @if($item['dynamic_values']->isNotEmpty())
+                                                <div class="dossier-muted-line">
+                                                    @foreach($item['dynamic_values']->take(3) as $dynamicValue)
+                                                        <span>{{ $dynamicValue['label'] }}: {{ $dynamicValue['value'] }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </div>
+                                    @endforeach
+
+                                    @if($hiddenItemsCount > 0)
+                                        <div class="dossier-muted-line">+ {{ $hiddenItemsCount }} itens</div>
                                     @endif
                                 </td>
-                                <td>{{ $maintenance['maintenance_type'] ?: '-' }}</td>
+                                <td>
+                                    @if($maintenance['items_count'] > 1)
+                                        Múltipla
+                                    @else
+                                        {{ $maintenance['maintenance_type'] ?: '-' }}
+                                    @endif
+                                </td>
                                 <td>{{ $maintenance['provider_name'] ?: '-' }}</td>
                                 <td>
                                     KM {{ $maintenance['performed_km'] !== null ? $number($maintenance['performed_km']) : '-' }}
