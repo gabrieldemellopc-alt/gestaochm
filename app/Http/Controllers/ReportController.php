@@ -7,6 +7,7 @@ use App\Exports\TireReportExport;
 use App\Exports\FuelReportExport;
 use App\Exports\StockReportExport;
 use App\Models\MaintenanceRecord;
+use App\Models\MaintenanceRecordItem;
 use App\Models\Procedure;
 use App\Models\StockItem;
 use App\Models\StockMovement;
@@ -48,12 +49,23 @@ class ReportController extends Controller
             ->where('performed_at', '>=', $last30Days);
 
         $maintenanceCount30 = (clone $maintenance30Query)->count();
-        $internalMaintenances30 = (clone $maintenance30Query)
+        $maintenance30Ids = (clone $maintenance30Query)->pluck('id');
+        $internalMaintenances30 = MaintenanceRecordItem::query()
+            ->whereIn('maintenance_record_id', $maintenance30Ids)
             ->where('maintenance_type', 'internal')
-            ->count();
-        $externalMaintenances30 = (clone $maintenance30Query)
+            ->count()
+            + (clone $maintenance30Query)
+                ->whereDoesntHave('items')
+                ->where('maintenance_type', 'internal')
+                ->count();
+        $externalMaintenances30 = MaintenanceRecordItem::query()
+            ->whereIn('maintenance_record_id', $maintenance30Ids)
             ->where('maintenance_type', 'external')
-            ->count();
+            ->count()
+            + (clone $maintenance30Query)
+                ->whereDoesntHave('items')
+                ->where('maintenance_type', 'external')
+                ->count();
         $maintenanceCost30 = (clone $maintenance30Query)->sum('total_cost');
 
         $maintenance6MonthsCount = (clone $maintenanceBaseQuery)
@@ -141,9 +153,11 @@ class ReportController extends Controller
         $data = $this->buildMaintenanceReportData($request, $context);
 
         $pdfData = $data;
-        $pdfData['maintenances'] = $data['operational_maintenances_raw'];
+        $pdfData['maintenances'] = $data['operational_maintenances_raw']
+            ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceForPdf($maintenance));
         $pdfData['cancelledMaintenancesRaw'] = $data['maintenances_raw']
             ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at !== null)
+            ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceForPdf($maintenance))
             ->values();
 
         $pdf = Pdf::loadView('reports.pdf.maintenance', $pdfData)
@@ -350,7 +364,10 @@ class ReportController extends Controller
             $this->reportContext->maintenanceQuery($context, $filters['query_includes_cancelled'])
                 ->with([
                     'vehicle',
+                    'procedure',
+                    'values.field',
                     'items.procedure',
+                    'items.values.field',
                     'extraCosts',
                     'canceller',
                     'opener',
@@ -373,14 +390,20 @@ class ReportController extends Controller
         $maintenanceIds = $operationalMaintenances->pluck('id');
 
         $stockConsumed = $this->stockConsumedQuery($context, $maintenanceIds)
-            ->with(['stockItem', 'maintenanceRecord.vehicle'])
+            ->with([
+                'stockItem',
+                'maintenanceRecord.vehicle',
+                'maintenanceRecord.procedure',
+                'maintenanceRecordItem.procedure',
+            ])
             ->get();
 
         $cancelledMaintenances = $displayMaintenances
             ->filter(fn (MaintenanceRecord $maintenance) => $maintenance->cancelled_at !== null)
             ->values();
 
-        $allItems = $operationalMaintenances->flatMap->items;
+        $allItems = $operationalMaintenances
+            ->flatMap(fn (MaintenanceRecord $maintenance) => $this->normalizedMaintenanceItems($maintenance));
         
         $internalCount = $allItems->where('maintenance_type', 'internal')->count();
         $externalCount = $allItems->where('maintenance_type', 'external')->count();
@@ -388,7 +411,7 @@ class ReportController extends Controller
         $averageCost = $operationalMaintenances->count() > 0 ? $totalCost / $operationalMaintenances->count() : 0;
 
         $procedureStats = $allItems
-            ->groupBy(fn ($item) => $item->procedure->name ?? 'Sem procedimento')
+            ->groupBy(fn (array $item) => $item['procedure_name'] ?? 'Sem procedimento')
             ->map(function ($items, $procedure) {
                 $total = $items->sum('total_cost');
                 $count = $items->count();
@@ -439,23 +462,7 @@ class ReportController extends Controller
             'maintenances_raw' => $displayMaintenances,
             'operational_maintenances_raw' => $operationalMaintenances,
             'maintenances' => $displayMaintenances
-                ->map(fn (MaintenanceRecord $maintenance) => [
-                    'id' => $maintenance->id,
-                    'started_at' => $maintenance->started_at,
-                    'finished_at' => $maintenance->finished_at,
-                    'vehicle_name' => $maintenance->vehicle->name ?? '-',
-                    'vehicle_plate' => $maintenance->vehicle->plate ?? '-',
-                    'workflow_status' => $maintenance->workflow_status,
-                    'service_status' => $maintenance->service_status,
-                    'items_count' => $maintenance->items->count(),
-                    'items' => $maintenance->items,
-                    'extra_costs' => $maintenance->extraCosts,
-                    'total_cost' => $maintenance->total_cost,
-                    'cancelled_at' => $maintenance->cancelled_at,
-                    'cancel_reason' => $context['can_view_cancelled'] ? $maintenance->cancel_reason : null,
-                    'cancelled_by' => $context['can_view_cancelled'] ? $maintenance->canceller?->name : null,
-                    'considered_in_totals' => $maintenance->cancelled_at === null,
-                ])
+                ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceReportRow($maintenance, $context))
                 ->toArray(),
             'internalCount' => $internalCount,
             'externalCount' => $externalCount,
@@ -470,8 +477,10 @@ class ReportController extends Controller
                 ->map(fn (StockMovement $movement) => [
                     'date' => $movement->created_at,
                     'maintenance_id' => $movement->maintenance_record_id,
+                    'maintenance_record_item_id' => $movement->maintenance_record_item_id,
                     'vehicle' => $movement->maintenanceRecord?->vehicle?->name ?? '-',
                     'plate' => $movement->maintenanceRecord?->vehicle?->plate ?? '-',
+                    'procedure' => $this->stockMovementProcedureName($movement),
                     'item' => $movement->stockItem?->name ?? '-',
                     'quantity' => $movement->quantity,
                     'unit_cost' => $movement->unit_cost,
@@ -483,7 +492,7 @@ class ReportController extends Controller
                     'date' => $maintenance->cancelled_at,
                     'vehicle' => $maintenance->vehicle->name ?? '-',
                     'plate' => $maintenance->vehicle->plate ?? '-',
-                    'procedure' => $maintenance->procedure->name ?? '-',
+                    'procedure' => $this->procedureSummary($this->normalizedMaintenanceItems($maintenance)),
                     'total_cost' => $maintenance->total_cost,
                     'reason' => $maintenance->cancel_reason,
                     'cancelled_by' => $maintenance->canceller?->name,
@@ -534,14 +543,30 @@ class ReportController extends Controller
         }
 
         if ($filters['maintenance_type']) {
-            $query->whereHas('items', function ($itemQuery) use ($filters) {
-                $itemQuery->where('maintenance_type', $filters['maintenance_type']);
+            $query->where(function (Builder $query) use ($filters) {
+                $query
+                    ->whereHas('items', function ($itemQuery) use ($filters) {
+                        $itemQuery->where('maintenance_type', $filters['maintenance_type']);
+                    })
+                    ->orWhere(function (Builder $query) use ($filters) {
+                        $query
+                            ->whereDoesntHave('items')
+                            ->where('maintenance_type', $filters['maintenance_type']);
+                    });
             });
         }
         
         if ($filters['procedure_id']) {
-            $query->whereHas('items', function ($itemQuery) use ($filters) {
-                $itemQuery->where('procedure_id', $filters['procedure_id']);
+            $query->where(function (Builder $query) use ($filters) {
+                $query
+                    ->whereHas('items', function ($itemQuery) use ($filters) {
+                        $itemQuery->where('procedure_id', $filters['procedure_id']);
+                    })
+                    ->orWhere(function (Builder $query) use ($filters) {
+                        $query
+                            ->whereDoesntHave('items')
+                            ->where('procedure_id', $filters['procedure_id']);
+                    });
             });
         }
 
@@ -565,6 +590,138 @@ class ReportController extends Controller
             ->where('movement_type', 'out')
             ->whereNull('cancelled_at')
             ->whereNull('reversed_from_movement_id');
+    }
+
+    private function maintenanceReportRow(MaintenanceRecord $maintenance, array $context): array
+    {
+        $items = $this->normalizedMaintenanceItems($maintenance);
+
+        return [
+            'id' => $maintenance->id,
+            'date' => $maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at,
+            'created_at' => $maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at,
+            'started_at' => $maintenance->started_at,
+            'finished_at' => $maintenance->finished_at,
+            'vehicle_name' => $maintenance->vehicle->name ?? '-',
+            'vehicle_plate' => $maintenance->vehicle->plate ?? '-',
+            'workflow_status' => $maintenance->workflow_status,
+            'service_status' => $maintenance->service_status,
+            'items_count' => $items->count(),
+            'items' => $items,
+            'procedure_name' => $items->first()['procedure_name'] ?? 'Item de manutencao',
+            'procedure_summary' => $this->procedureSummary($items),
+            'maintenance_type' => $items->first()['maintenance_type'] ?? $maintenance->maintenance_type,
+            'maintenance_type_summary' => $this->maintenanceTypeSummary($items),
+            'extra_costs' => $maintenance->extraCosts,
+            'total_cost' => $maintenance->total_cost,
+            'cancelled_at' => $maintenance->cancelled_at,
+            'cancel_reason' => $context['can_view_cancelled'] ? $maintenance->cancel_reason : null,
+            'cancelled_by' => $context['can_view_cancelled'] ? $maintenance->canceller?->name : null,
+            'considered_in_totals' => $maintenance->cancelled_at === null,
+        ];
+    }
+
+    private function normalizedMaintenanceItems(MaintenanceRecord $maintenance)
+    {
+        if ($maintenance->items->isNotEmpty()) {
+            return $maintenance->items
+                ->sortBy(fn ($item) => $item->performed_at ?? $item->id)
+                ->map(fn ($item) => [
+                    'id' => $item->id,
+                    'procedure' => $item->procedure,
+                    'procedure_name' => $item->procedure?->name ?? 'Item de manutencao',
+                    'maintenance_type' => $item->maintenance_type,
+                    'total_cost' => (float) ($item->total_cost ?? 0),
+                    'dynamic_values' => $this->dynamicValues($item->values),
+                    'is_legacy' => false,
+                ])
+                ->values();
+        }
+
+        return collect([[
+            'id' => null,
+            'procedure' => $maintenance->procedure,
+            'procedure_name' => $maintenance->procedure?->name ?? 'Manutencao rapida',
+            'maintenance_type' => $maintenance->maintenance_type,
+            'total_cost' => (float) ($maintenance->total_cost ?? 0),
+            'dynamic_values' => $this->dynamicValues($maintenance->values),
+            'is_legacy' => true,
+        ]]);
+    }
+
+    private function dynamicValues($values)
+    {
+        return collect($values)
+            ->filter(fn ($value) => $value->field !== null && $value->value !== null && $value->value !== '')
+            ->sortBy(fn ($value) => $value->field?->sort_order ?? $value->id)
+            ->take(4)
+            ->map(fn ($value) => [
+                'label' => $value->field?->label ?? 'Campo',
+                'value' => $value->value,
+            ])
+            ->values();
+    }
+
+    private function procedureSummary($items): string
+    {
+        $names = collect($items)
+            ->pluck('procedure_name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($names->isEmpty()) {
+            return 'Item de manutencao';
+        }
+
+        if ($names->count() <= 2) {
+            return $names->implode(', ');
+        }
+
+        return $names->take(2)->implode(', ') . ' +' . ($names->count() - 2) . ' itens';
+    }
+
+    private function maintenanceTypeSummary($items): ?string
+    {
+        $types = collect($items)
+            ->pluck('maintenance_type')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($types->isEmpty()) {
+            return null;
+        }
+
+        if ($types->count() === 1) {
+            return $types->first();
+        }
+
+        return 'mixed';
+    }
+
+    private function stockMovementProcedureName(StockMovement $movement): string
+    {
+        return $movement->maintenanceRecordItem?->procedure?->name
+            ?? $movement->maintenanceRecord?->procedure?->name
+            ?? 'Item de manutencao';
+    }
+
+    private function maintenanceForPdf(MaintenanceRecord $maintenance): MaintenanceRecord
+    {
+        if ($maintenance->items->isNotEmpty()) {
+            return $maintenance;
+        }
+
+        $maintenance->setRelation('items', collect([
+            (object) [
+                'procedure' => $maintenance->procedure,
+                'maintenance_type' => $maintenance->maintenance_type,
+                'total_cost' => $maintenance->total_cost,
+            ],
+        ]));
+
+        return $maintenance;
     }
 
     private function sumVehicleLogDelta(int $vehicleId, array $context, array $filters, string $type): float

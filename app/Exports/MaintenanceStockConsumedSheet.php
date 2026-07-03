@@ -16,12 +16,13 @@ class MaintenanceStockConsumedSheet implements FromArray, WithTitle
     {
         $rows = [[
             'Data',
-            'Manutenção',
-            'Veículo',
+            'Manutencao',
+            'Veiculo',
             'Placa',
+            'Procedimento',
             'Item',
             'Quantidade',
-            'Custo unitário',
+            'Custo unitario',
             'Total',
         ]];
 
@@ -31,6 +32,7 @@ class MaintenanceStockConsumedSheet implements FromArray, WithTitle
                 $movement['maintenance_id'],
                 $movement['vehicle'],
                 $movement['plate'],
+                $movement['procedure'] ?? '-',
                 $movement['item'],
                 $movement['quantity'],
                 $movement['unit_cost'],
