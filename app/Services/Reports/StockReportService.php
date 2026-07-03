@@ -267,6 +267,7 @@ class StockReportService
     {
         $item = $movement->stockItem;
         $maintenance = $movement->maintenanceRecord;
+        $procedure = $this->movementProcedure($movement);
         $unitCost = $movement->unit_cost !== null
             ? (float) $movement->unit_cost
             : (float) ($item?->unit_cost ?? 0);
@@ -294,8 +295,11 @@ class StockReportService
             'responsible' => null,
             'maintenance' => $maintenance,
             'maintenance_id' => $movement->maintenance_record_id,
+            'maintenance_record_item_id' => $movement->maintenance_record_item_id,
             'vehicle' => $maintenance?->vehicle,
-            'procedure' => $maintenance?->procedure,
+            'procedure' => $procedure['procedure'],
+            'procedure_name' => $procedure['name'],
+            'procedure_source' => $procedure['source'],
             'is_cancelled' => $movement->cancelled_at !== null,
             'is_reversal' => $movement->reversed_from_movement_id !== null,
             'reversed_from_movement_id' => $movement->reversed_from_movement_id,
@@ -420,6 +424,7 @@ class StockReportService
                 'stockItem.category',
                 'maintenanceRecord.vehicle',
                 'maintenanceRecord.procedure',
+                'maintenanceRecordItem.procedure',
                 'canceller',
                 'reversalMovement',
                 'reversedFromMovement',
@@ -456,8 +461,18 @@ class StockReportService
         }
 
         if ($filters['procedure_id']) {
-            $query->whereHas('maintenanceRecord', function (Builder $query) use ($filters) {
-                $query->where('procedure_id', $filters['procedure_id']);
+            $query->where(function (Builder $query) use ($filters) {
+                $query
+                    ->whereHas('maintenanceRecordItem', function (Builder $query) use ($filters) {
+                        $query->where('procedure_id', $filters['procedure_id']);
+                    })
+                    ->orWhere(function (Builder $query) use ($filters) {
+                        $query
+                            ->whereNull('maintenance_record_item_id')
+                            ->whereHas('maintenanceRecord', function (Builder $query) use ($filters) {
+                                $query->where('procedure_id', $filters['procedure_id']);
+                            });
+                    });
             });
         }
 
@@ -519,6 +534,39 @@ class StockReportService
     {
         return $movement->reversed_from_movement_id !== null
             || str_starts_with((string) $movement->description, 'Reversao');
+    }
+
+    private function movementProcedure(StockMovement $movement): array
+    {
+        if ($movement->maintenanceRecordItem?->procedure) {
+            return [
+                'procedure' => $movement->maintenanceRecordItem->procedure,
+                'name' => $movement->maintenanceRecordItem->procedure->name,
+                'source' => 'item',
+            ];
+        }
+
+        if ($movement->maintenanceRecord?->procedure) {
+            return [
+                'procedure' => $movement->maintenanceRecord->procedure,
+                'name' => $movement->maintenanceRecord->procedure->name,
+                'source' => 'legado',
+            ];
+        }
+
+        if ($movement->maintenance_record_id !== null) {
+            return [
+                'procedure' => null,
+                'name' => 'Item de manutencao',
+                'source' => 'maintenance',
+            ];
+        }
+
+        return [
+            'procedure' => null,
+            'name' => null,
+            'source' => null,
+        ];
     }
 
     private function sumQuantity(Collection $items): float

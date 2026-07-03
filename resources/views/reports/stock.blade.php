@@ -256,7 +256,7 @@
                         <strong>{{ $movement['item_name'] ?? '-' }}</strong>
                         <span>
                             {{ $movement['vehicle']?->plate ?? '-' }}
-                            | {{ $movement['procedure']?->name ?? 'Sem procedimento' }}
+                            | {{ $movement['procedure_name'] ?? $movement['procedure']?->name ?? 'Sem procedimento' }}
                             | {{ $qty($movement['quantity']) }}
                             | {{ $money($movement['total_cost']) }}
                         </span>

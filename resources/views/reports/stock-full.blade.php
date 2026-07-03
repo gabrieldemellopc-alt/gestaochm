@@ -280,7 +280,7 @@
                             <td>#{{ $movement['maintenance_id'] ?? '-' }}</td>
                             <td>{{ $movement['vehicle']?->name ?? '-' }}</td>
                             <td>{{ $movement['vehicle']?->plate ?? '-' }}</td>
-                            <td>{{ $movement['procedure']?->name ?? '-' }}</td>
+                            <td>{{ $movement['procedure_name'] ?? $movement['procedure']?->name ?? '-' }}</td>
                             <td>{{ $movement['item_name'] ?? '-' }}</td>
                             <td>{{ $qty($movement['quantity']) }}</td>
                             <td>{{ $money($movement['unit_cost']) }}</td>

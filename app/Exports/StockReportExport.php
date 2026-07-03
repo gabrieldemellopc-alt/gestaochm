@@ -205,7 +205,7 @@ class StockReportExport implements WithMultipleSheets
                 $movement['maintenance_id'] ? '#' . $movement['maintenance_id'] : null,
                 $movement['vehicle']?->name,
                 $movement['vehicle']?->plate,
-                $movement['procedure']?->name,
+                $movement['procedure_name'] ?? $movement['procedure']?->name,
                 $movement['item_name'],
                 (float) $movement['quantity'],
                 (float) $movement['unit_cost'],
@@ -395,7 +395,7 @@ class StockReportExport implements WithMultipleSheets
             $movement['description'],
             $movement['maintenance_id'] ? '#' . $movement['maintenance_id'] : null,
             $movement['vehicle'] ? trim(($movement['vehicle']->name ?? '-') . ' - ' . ($movement['vehicle']->plate ?? '-')) : null,
-            $movement['procedure']?->name,
+            $movement['procedure_name'] ?? $movement['procedure']?->name,
             $movement['cost_is_estimated'] ? 'Sim' : 'Nao',
         ];
     }
