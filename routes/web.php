@@ -968,7 +968,7 @@ Route::middleware('auth')->group(function () {
 
         [ChecklistController::class, 'toggleItem']
 
-    )->name('checklists.items.toggle');
+    )->name('checklists.items.toggle.legacy');
 
 
 
