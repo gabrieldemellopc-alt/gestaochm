@@ -318,6 +318,10 @@ class StockReportService
             return 'reversal';
         }
 
+        if ($this->isRevertedMovement($movement)) {
+            return 'reverted';
+        }
+
         if (
             $movement->maintenance_record_id !== null
             && $movement->movement_type === 'out'
@@ -344,6 +348,7 @@ class StockReportService
             'manual_output' => 'Saida manual',
             'maintenance_consumption' => 'Consumo por manutencao',
             'reversal' => 'Reversao',
+            'reverted' => 'Revertido',
             'cancelled' => 'Cancelado',
             default => 'Outro',
         };
@@ -353,6 +358,7 @@ class StockReportService
     {
         return $movement->cancelled_at === null
             && ! $this->isReversalMovement($movement)
+            && ! $this->isRevertedMovement($movement)
             && (
                 $movement->maintenance_record_id === null
                 || $movement->maintenanceRecord?->cancelled_at === null
@@ -534,6 +540,11 @@ class StockReportService
     {
         return $movement->reversed_from_movement_id !== null
             || str_starts_with((string) $movement->description, 'Reversao');
+    }
+
+    private function isRevertedMovement(StockMovement $movement): bool
+    {
+        return $movement->reversal_movement_id !== null;
     }
 
     private function movementProcedure(StockMovement $movement): array
