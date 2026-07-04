@@ -37,9 +37,13 @@ class PortalController extends Controller
             ->pluck('id')
             ->toArray();
 
+        $canManageAccessControl = (int) $user->id === 1
+            || userHasProfile('admin');
+
         return view('portal.index', compact(
             'divisions',
-            'availableDivisionIds'
+            'availableDivisionIds',
+            'canManageAccessControl'
         ));
     }
 

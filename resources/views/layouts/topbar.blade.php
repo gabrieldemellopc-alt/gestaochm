@@ -241,7 +241,17 @@
 
         <div
             class="topbar-user-wrapper"
-            x-data="{ open: false }"
+            x-data="{
+                open: false,
+                toggle() {
+                    this.open = ! this.open;
+
+                    if (this.open) {
+                        this.$nextTick(() => this.$refs.firstDropdownItem?.focus());
+                    }
+                }
+            }"
+            @keydown.escape.window="open = false"
 
         >
 
@@ -249,9 +259,15 @@
 
             <button
 
+                type="button"
+
                 class="topbar-user"
 
-                @click="open = !open"
+                @click="toggle()"
+
+                :aria-expanded="open.toString()"
+
+                aria-haspopup="menu"
 
             >
 
@@ -329,6 +345,8 @@
 
                 @click.outside="open = false"
 
+                role="menu"
+
                 x-transition
 
                 x-cloak
@@ -381,7 +399,11 @@
 
                 {{-- TROCAR DIVISÃO --}}
                 @if($canSwitchDivision)
-                    <a href="{{ route('division.leave') }}">
+                    <a
+                        href="{{ route('division.leave') }}"
+                        role="menuitem"
+                        x-ref="firstDropdownItem"
+                    >
                         <i data-lucide="building-2"></i>
                         Trocar divisão
                     </a>
@@ -391,7 +413,11 @@
 
                 {{-- PERFIL --}}
 
-                <a href="#">
+                <a
+                    href="{{ route('profile.edit') }}"
+                    role="menuitem"
+                    @if(! $canSwitchDivision) x-ref="firstDropdownItem" @endif
+                >
 
 
 
@@ -409,7 +435,10 @@
 
                 {{-- SEGURANÇA --}}
 
-                <a href="#">
+                <a
+                    href="{{ route('profile.security') }}"
+                    role="menuitem"
+                >
 
 
 
@@ -427,7 +456,10 @@
 
                 {{-- CONFIG --}}
 
-                <a href="#">
+                <a
+                    href="{{ route('profile.settings') }}"
+                    role="menuitem"
+                >
 
 
 
@@ -463,7 +495,7 @@
 
 
 
-                    <button type="submit">
+                    <button type="submit" role="menuitem">
 
 
 

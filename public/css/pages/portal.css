@@ -336,6 +336,33 @@ html[data-chm-theme="corporate-light"] .portal-page {
     font-weight: 700;
 }
 
+.portal-page .portal-admin-section {
+    margin-top: 26px;
+}
+
+.portal-page .portal-admin-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 390px);
+    gap: 14px;
+}
+
+.portal-page .portal-admin-card {
+    display: block;
+    text-decoration: none;
+}
+
+.portal-page .portal-admin-card .portal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.portal-page .portal-admin-card .portal-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+}
+
 .portal-page .portal-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;

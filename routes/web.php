@@ -107,6 +107,22 @@ Route::middleware('auth')->group(function () {
 
     )->name('profile.edit');
 
+    Route::get(
+
+        '/profile/security',
+
+        [ProfileController::class, 'security']
+
+    )->name('profile.security');
+
+    Route::get(
+
+        '/profile/settings',
+
+        [ProfileController::class, 'settings']
+
+    )->name('profile.settings');
+
 
 
     Route::patch(

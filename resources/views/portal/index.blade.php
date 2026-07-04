@@ -115,6 +115,39 @@
     
     </div>
 
+    @if($canManageAccessControl ?? false)
+        <section class="portal-admin-section" aria-labelledby="portalAdminTitle">
+            <div class="portal-section-heading">
+                <div>
+                    <span>AdministraÃ§Ã£o</span>
+                    <h2 id="portalAdminTitle">AdministraÃ§Ã£o do ambiente</h2>
+                </div>
+            </div>
+
+            <div class="portal-admin-grid">
+                <a
+                    href="{{ route('access-control.index') }}"
+                    class="portal-card portal-admin-card"
+                >
+                    <div class="portal-card-top">
+                        <div class="portal-icon">
+                            <i data-lucide="shield-check"></i>
+                        </div>
+
+                        <div>
+                            <h3>Controle de acessos</h3>
+                            <span>Gerencie usuÃ¡rios, perfis e acessos Ã s divisÃµes.</span>
+                        </div>
+                    </div>
+
+                    <div class="portal-button">
+                        Abrir administraÃ§Ã£o
+                    </div>
+                </a>
+            </div>
+        </section>
+    @endif
+
 
 </div>
 

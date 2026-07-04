@@ -22,6 +22,26 @@ class ProfileController extends Controller
     }
 
     /**
+     * Display the personal security page.
+     */
+    public function security(Request $request): View
+    {
+        return view('profile.security', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
+     * Display personal settings that are currently supported without persistence.
+     */
+    public function settings(Request $request): View
+    {
+        return view('profile.settings', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
