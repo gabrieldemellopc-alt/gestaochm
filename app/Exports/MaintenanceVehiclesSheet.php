@@ -24,7 +24,7 @@ class MaintenanceVehiclesSheet implements FromCollection, WithTitle
             'Placa',
             'KM rodados',
             'HR rodadas',
-            'Total gasto'
+            'Custo registrado das ordens'
         ]);
 
         foreach ($this->data['vehicleCosts'] as $vehicle)

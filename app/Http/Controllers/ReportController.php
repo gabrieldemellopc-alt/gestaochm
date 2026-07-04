@@ -407,12 +407,18 @@ class ReportController extends Controller
         
         $internalCount = $allItems->where('maintenance_type', 'internal')->count();
         $externalCount = $allItems->where('maintenance_type', 'external')->count();
+
+        // Politica oficial de custo: maintenance_records.total_cost e a
+        // fonte consolidada da ordem. Itens, custos avulsos e pecas consumidas
+        // sao detalhamentos e nao entram em nova soma nos indicadores.
         $totalCost = $operationalMaintenances->sum('total_cost');
         $averageCost = $operationalMaintenances->count() > 0 ? $totalCost / $operationalMaintenances->count() : 0;
 
         $procedureStats = $allItems
             ->groupBy(fn (array $item) => $item['procedure_name'] ?? 'Sem procedimento')
             ->map(function ($items, $procedure) {
+                // Aqui o custo e detalhamento por item/procedimento, nao uma
+                // nova soma consolidada sobre o custo oficial da ordem.
                 $total = $items->sum('total_cost');
                 $count = $items->count();
         

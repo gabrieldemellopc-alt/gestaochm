@@ -126,7 +126,7 @@ class MaintenanceSummarySheet implements
                     $this->data['externalCount']
                 );
 
-                $sheet->setCellValue('A8', 'Custos');
+                $sheet->setCellValue('A8', 'Custo registrado das ordens');
                 $sheet->setCellValue(
                     'B8',
                     $this->data['totalCost']
@@ -147,7 +147,7 @@ class MaintenanceSummarySheet implements
 
                 $sheet->setCellValue('A13', 'Procedimento');
                 $sheet->setCellValue('B13', 'Quantidade');
-                $sheet->setCellValue('C13', 'Custo');
+                $sheet->setCellValue('C13', 'Custo por item/procedimento');
                 $sheet->setCellValue('D13', 'Média');
 
                 $row = 14;
@@ -224,7 +224,7 @@ class MaintenanceSummarySheet implements
 
                 $sheet->setCellValue(
                     'E'.$vehicleHeaderRow,
-                    'Total gasto'
+                    'Custo registrado das ordens'
                 );
 
                 $vehicleRow =

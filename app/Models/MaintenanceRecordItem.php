@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Detalhe de procedimento/servico dentro de uma ordem.
+ *
+ * total_cost compoe a ordem, mas nao e fonte de total consolidado quando a
+ * ordem ja apresenta MaintenanceRecord::total_cost.
+ */
 class MaintenanceRecordItem extends Model
 {
     protected $fillable = [

@@ -23,7 +23,7 @@ class MaintenanceDetailsSheet implements FromArray, ShouldAutoSize, WithTitle
             'Procedimentos',
             'Tipo',
             'Itens',
-            'Valor',
+            'Custo registrado da ordem',
         ]];
 
         foreach ($this->data['maintenances'] ?? [] as $maintenance) {

@@ -23,7 +23,7 @@ class MaintenanceStockConsumedSheet implements FromArray, WithTitle
             'Item',
             'Quantidade',
             'Custo unitario',
-            'Total',
+            'Custo das pecas',
         ]];
 
         foreach ($this->data['stockConsumed'] ?? [] as $movement) {

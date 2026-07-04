@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Detalhe de custo avulso da ordem.
+ *
+ * amount e composicao da manutencao. Quando a ordem usa total_cost, nao some
+ * este valor novamente em indicadores consolidados.
+ */
 class MaintenanceRecordExtraCost extends Model
 {
     protected $fillable = [

@@ -240,7 +240,8 @@ class VehicleDossierReportService
                 'contains_uncalculated_fuel_consumption' => false,
             ],
             'notes' => [
-                'Total operacional definitivo ainda nao calculado para evitar duplicidade entre custo da manutencao e pecas consumidas.',
+                'O custo registrado da ordem vem de maintenance_records.total_cost.',
+                'Pecas consumidas, custos por item e custos avulsos sao detalhamentos separados e nao sao somados novamente ao custo da ordem.',
             ],
         ];
     }
@@ -303,13 +304,16 @@ class VehicleDossierReportService
     private function costPolicy(): array
     {
         return [
-            'maintenance_total_includes_stock' => 'unknown',
+            // maintenance_records.total_cost e a fonte oficial do custo
+            // operacional consolidado da ordem. Os demais custos abaixo sao
+            // trilhas de composicao e nao devem ser somados novamente.
+            'maintenance_total_includes_stock' => 'total oficial da ordem',
             'maintenance_cost_source' => 'maintenance_records.total_cost',
-            'stock_cost_source' => 'stock_movements vinculados a maintenance_record_id',
-            'operational_total_rule' => 'pending_definition',
+            'stock_cost_source' => 'stock_movements.total_cost como detalhamento de pecas',
+            'operational_total_rule' => 'usar maintenance_records.total_cost para custo de manutencao',
             'warnings' => [
-                'Nao foi encontrada regra tecnica conclusiva indicando se MaintenanceRecord.total_cost incorpora pecas do estoque.',
-                'Por isso, o dossie mostra custo registrado da manutencao e pecas consumidas em linhas separadas, sem calcular total operacional definitivo.',
+                'Custos por item/procedimento, custos avulsos e pecas consumidas sao exibidos como detalhamento, sem nova soma sobre o custo registrado da ordem.',
+                'maintenance_records.extra_cost e campo legado/compatibilidade e nao deve ser usado como total consolidado independente.',
                 'Custos de pneus nao serao tratados como custo operacional do periodo sem politica contabil explicita.',
                 'Consumo km/l ou l/h nao sera calculado sem leituras confiaveis e crescentes.',
             ],

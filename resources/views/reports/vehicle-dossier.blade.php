@@ -168,14 +168,14 @@
                 <div>
                     <span class="tire-section-kicker">Resumo executivo</span>
                     <h2>Estrutura inicial do dossie</h2>
-                    <p>Manutencoes e pecas ja consolidadas; total operacional definitivo segue pendente para evitar duplicidade.</p>
+                    <p>Custo de manutencao usa o valor registrado da ordem. Pecas e custos avulsos aparecem como detalhamento separado, sem nova soma.</p>
                 </div>
             </div>
 
             <div class="tire-summary-grid dossier-summary-grid">
                 <div class="tire-summary-card"><span>Manutencoes</span><strong>{{ $summary['maintenance_count'] }}</strong><small>Validas no periodo</small></div>
-                <div class="tire-summary-card"><span>Custo manutencao</span><strong>{{ $money($summary['maintenance_cost_registered']) }}</strong><small>Custo registrado</small></div>
-                <div class="tire-summary-card"><span>Pecas consumidas</span><strong>{{ $money($summary['stock_consumed_cost']) }}</strong><small>{{ $summary['stock_consumed_cost_estimated'] > 0 ? 'Contem estimativas' : 'Estoque vinculado' }}</small></div>
+                <div class="tire-summary-card"><span>Custo registrado da ordem</span><strong>{{ $money($summary['maintenance_cost_registered']) }}</strong><small>Total oficial da manutencao</small></div>
+                <div class="tire-summary-card"><span>Pecas consumidas</span><strong>{{ $money($summary['stock_consumed_cost']) }}</strong><small>{{ $summary['stock_consumed_cost_estimated'] > 0 ? 'Detalhe com estimativas' : 'Detalhamento separado' }}</small></div>
                 <div class="tire-summary-card"><span>Abastecimentos</span><strong>{{ $summary['fuel_fillings_count'] }}</strong><small>Validos no periodo</small></div>
                 <div class="tire-summary-card"><span>Litros abastecidos</span><strong>{{ $number($summary['fuel_liters'], 3) }}</strong><small>Diesel/ARLA separados abaixo</small></div>
                 <div class="tire-summary-card"><span>Custo abastecimento</span><strong>{{ $money($summary['fuel_cost']) }}</strong><small>Custo registrado</small></div>
@@ -185,7 +185,7 @@
                 <div class="tire-summary-card"><span>Operacoes</span><strong>{{ $summary['operations_count'] }}</strong><small>Em preparacao</small></div>
                 <div class="tire-summary-card"><span>Checklists concluidos</span><strong>{{ $summary['checklists_completed_count'] }}</strong><small>Em preparacao</small></div>
                 <div class="tire-summary-card warning"><span>Alertas</span><strong>{{ $summary['alerts_count'] }}</strong><small>Em preparacao</small></div>
-                <div class="tire-summary-card danger"><span>Total operacional</span><strong>Em preparacao</strong><small>Nao definitivo</small></div>
+                <div class="tire-summary-card danger"><span>Total operacional</span><strong>Em preparacao</strong><small>Nao soma pecas novamente</small></div>
             </div>
         </section>
 
@@ -233,7 +233,7 @@
                             <th>Tipo</th>
                             <th>Fornecedor/oficina</th>
                             <th>KM/HR</th>
-                            <th>Custo registrado</th>
+                            <th>Custo registrado da ordem</th>
                             <th>Observacao</th>
                         </tr>
                     </thead>
@@ -306,7 +306,7 @@
                 <div>
                     <span class="tire-section-kicker">Estoque consumido</span>
                     <h2>Pecas consumidas do estoque</h2>
-                    <p>Consumos vinculados a manutencoes validas do veiculo. Reversoes e cancelados ficam fora desta tabela.</p>
+                    <p>Consumos vinculados a manutencoes validas do veiculo. Detalhamento separado; nao somado novamente ao custo registrado da ordem.</p>
                 </div>
             </div>
 
@@ -520,16 +520,16 @@
             <div class="tire-section-header">
                 <div>
                     <span class="tire-section-kicker">Politica de custos</span>
-                    <h2>Total operacional ainda nao definido</h2>
+                    <h2>Politica oficial do custo de manutencao</h2>
                     <p>
-                        Antes de somar manutencao e pecas, precisamos confirmar se
-                        <strong>maintenance_records.total_cost</strong> ja incorpora itens de estoque.
+                        <strong>maintenance_records.total_cost</strong> e a fonte oficial do custo operacional consolidado da ordem.
+                        Itens, avulsos e pecas sao trilhas de composicao e nao entram em nova soma.
                     </p>
                 </div>
             </div>
 
             <div class="dossier-policy-grid">
-                <div><span>Manutencao inclui estoque?</span><strong>{{ $cost_policy['maintenance_total_includes_stock'] }}</strong></div>
+                <div><span>Politica da ordem</span><strong>{{ $cost_policy['maintenance_total_includes_stock'] }}</strong></div>
                 <div><span>Fonte manutencao</span><strong>{{ $cost_policy['maintenance_cost_source'] }}</strong></div>
                 <div><span>Fonte estoque</span><strong>{{ $cost_policy['stock_cost_source'] }}</strong></div>
                 <div><span>Regra do total</span><strong>{{ $cost_policy['operational_total_rule'] }}</strong></div>

@@ -4,6 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Movimento de estoque.
+ *
+ * Em relatorios de estoque, total_cost e a fonte oficial do custo do
+ * movimento. Quando vinculado a manutencao, e detalhe de pecas consumidas e
+ * nao deve ser somado novamente ao MaintenanceRecord::total_cost.
+ */
 class StockMovement extends Model
 {
     protected $fillable = [

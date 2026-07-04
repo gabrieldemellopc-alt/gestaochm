@@ -21,7 +21,7 @@ class MaintenanceProceduresSheet implements FromArray, WithTitle
         $rows[] = [
             'Procedimento',
             'Quantidade',
-            'Custo',
+            'Custo por item/procedimento',
             'Média'
         ];
 
