@@ -124,6 +124,17 @@ class MaintenanceService
             $vehicle->update([
                 'operational_status' => 'operational',
             ]);
+
+            VehicleDowntimePeriod::query()
+                ->where('vehicle_id', $vehicle->id)
+                ->where('status', 'maintenance')
+                ->where('reason', 'like', '%#'.$maintenance->id)
+                ->whereNull('ended_at')
+                ->latest('started_at')
+                ->first()
+                ?->update([
+                    'ended_at' => now(),
+                ]);
     
             $maintenanceAfter = $maintenance->fresh(['vehicle', 'items.values']);
     
