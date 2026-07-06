@@ -543,3 +543,119 @@ html[data-chm-theme="corporate-light"] .portal-page .portal-card-disabled {
         font-size: 16px;
     }
 }
+
+/* Portal administrative tabs */
+.portal-page.portal-admin-tabs-page {
+    display: grid;
+    gap: 18px;
+}
+
+.portal-page .portal-compact-header {
+    margin-bottom: 0;
+}
+
+.portal-page .portal-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 6px;
+    border: 1px solid var(--portal-border);
+    border-radius: 12px;
+    background: var(--portal-surface);
+}
+
+.portal-page .portal-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: var(--portal-muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.portal-page .portal-tab svg {
+    width: 16px;
+    height: 16px;
+}
+
+.portal-page .portal-tab:hover {
+    color: var(--portal-text);
+    border-color: var(--portal-border);
+    background: rgba(255, 255, 255, .04);
+}
+
+.portal-page .portal-tab.active {
+    color: #fff;
+    border-color: rgba(248, 113, 113, .38);
+    background: var(--portal-red);
+}
+
+.portal-page .portal-divisions-panel,
+.portal-page .portal-access-panel {
+    min-width: 0;
+}
+
+.portal-page .portal-section-heading p {
+    max-width: 680px;
+    margin: 6px 0 0;
+    color: var(--portal-muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.portal-page .portal-access-heading {
+    align-items: center;
+    padding: 16px 18px;
+    border: 1px solid var(--portal-border);
+    border-left: 3px solid var(--portal-red);
+    border-radius: 12px;
+    background: var(--portal-surface);
+}
+
+.portal-page .portal-access-add-btn {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.portal-page .portal-access-panel .access-control-page {
+    min-height: auto;
+    padding: 0;
+}
+
+.portal-page .portal-access-panel .chm-users-card {
+    margin-top: 0;
+}
+
+html[data-chm-theme="corporate-light"] .portal-page .portal-tabs,
+html[data-chm-theme="corporate-light"] .portal-page .portal-access-heading {
+    background: var(--portal-surface);
+}
+
+@media (max-width: 760px) {
+    .portal-page .portal-tabs {
+        display: grid;
+        width: 100%;
+        grid-template-columns: 1fr;
+    }
+
+    .portal-page .portal-tab {
+        width: 100%;
+    }
+
+    .portal-page .portal-access-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .portal-page .portal-access-add-btn {
+        width: 100%;
+    }
+}

@@ -1258,7 +1258,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware([
 
-            'profile:admin',
+            'profile:admin,tenant-admin',
 
         ])
 

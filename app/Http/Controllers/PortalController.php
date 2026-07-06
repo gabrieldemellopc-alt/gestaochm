@@ -3,15 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Division;
+use App\Services\AccessControlDataService;
 use App\Services\ActiveContextService;
 use App\Services\PortalAccessResolver;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PortalController extends Controller
 {
     public function index(
+        Request $request,
         PortalAccessResolver $resolver,
-        ActiveContextService $activeContext
+        ActiveContextService $activeContext,
+        AccessControlDataService $accessControlData
     ) {
         $user = Auth::user();
 
@@ -37,13 +41,20 @@ class PortalController extends Controller
             ->pluck('id')
             ->toArray();
 
-        $canManageAccessControl = (int) $user->id === 1
-            || userHasProfile('admin');
+        $canManageAccessControl = $this->canManageAccessControl($user);
+        $activePortalTab = $request->query('tab') === 'access-control' && $canManageAccessControl
+            ? 'access-control'
+            : 'divisions';
+        $accessControlPanelData = $canManageAccessControl
+            ? $accessControlData->forUser($user)
+            : [];
 
         return view('portal.index', compact(
             'divisions',
             'availableDivisionIds',
-            'canManageAccessControl'
+            'canManageAccessControl',
+            'activePortalTab',
+            'accessControlPanelData'
         ));
     }
 
@@ -166,5 +177,19 @@ class PortalController extends Controller
             403,
             'Você não possui acesso a esta divisão.'
         );
+    }
+
+    private function canManageAccessControl($user): bool
+    {
+        if ((int) $user->id === 1) {
+            return true;
+        }
+
+        return $user
+            ->divisionAccesses()
+            ->where('active', true)
+            ->where('tenant_id', $user->tenant_id)
+            ->where('profile', 'admin')
+            ->exists();
     }
 }
