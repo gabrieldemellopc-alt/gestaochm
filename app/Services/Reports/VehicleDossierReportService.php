@@ -97,6 +97,7 @@ class VehicleDossierReportService
             'include_drafts' => filter_var($filters['include_drafts'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'include_events_without_cost' => filter_var($filters['include_events_without_cost'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'include_fillings_without_km_hr' => filter_var($filters['include_fillings_without_km_hr'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'section_config' => filter_var($filters['section_config'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'sections' => $this->sections($filters['sections'] ?? null),
         ];
     }
@@ -114,6 +115,7 @@ class VehicleDossierReportService
             'include_drafts' => filter_var($filters['include_drafts'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'include_events_without_cost' => filter_var($filters['include_events_without_cost'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'include_fillings_without_km_hr' => filter_var($filters['include_fillings_without_km_hr'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'section_config' => filter_var($filters['section_config'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'sections' => $this->sections($filters['sections'] ?? null),
         ];
     }
@@ -136,6 +138,10 @@ class VehicleDossierReportService
 
         if ($filters['period_error']) {
             $errors[] = $filters['period_error'];
+        }
+
+        if ($filters['section_config'] && $filters['sections'] === []) {
+            $errors[] = 'Selecione pelo menos um conteudo para visualizar no relatorio.';
         }
 
         return $errors;

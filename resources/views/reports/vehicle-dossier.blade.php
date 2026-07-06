@@ -20,6 +20,9 @@
     $fuelConsumptionList = collect($fuel_consumption ?? []);
     $fuelByProductList = collect($summary['fuel_by_product'] ?? []);
     $cancelledList = collect($cancelled_records);
+    $selectedSections = collect($filters['sections'] ?? []);
+    $sectionConfigEnabled = (bool) ($filters['section_config'] ?? false);
+    $showSection = fn (string $section) => ! $sectionConfigEnabled || $selectedSections->contains($section);
     $consumptionStatusLabel = fn ($status) => match ($status) {
         'calculado' => 'Calculado',
         'dados_insuficientes' => 'Dados insuficientes',
@@ -163,6 +166,7 @@
             </div>
         </section>
 
+        @if($showSection('summary') || $showSection('maintenance_costs'))
         <section class="tire-report-section">
             <div class="tire-section-header">
                 <div>
@@ -188,7 +192,9 @@
                 <div class="tire-summary-card danger"><span>Total operacional</span><strong>Em preparacao</strong><small>Nao soma pecas novamente</small></div>
             </div>
         </section>
+        @endif
 
+        @if($showSection('fuel'))
         <section class="tire-report-section dossier-data-section">
             <div class="tire-section-header">
                 <div>
@@ -214,7 +220,9 @@
                 @endforelse
             </div>
         </section>
+        @endif
 
+        @if($showSection('maintenances') || $showSection('maintenance_costs'))
         <section class="tire-report-section dossier-data-section">
             <div class="tire-section-header">
                 <div>
@@ -300,7 +308,9 @@
                 </table>
             </div>
         </section>
+        @endif
 
+        @if($showSection('stock'))
         <section class="tire-report-section dossier-data-section">
             <div class="tire-section-header">
                 <div>
@@ -351,7 +361,9 @@
                 </table>
             </div>
         </section>
+        @endif
 
+        @if($showSection('fuel'))
         <section class="tire-report-section dossier-data-section">
             <div class="tire-section-header">
                 <div>
@@ -407,7 +419,9 @@
                 </table>
             </div>
         </section>
+        @endif
 
+        @if($showSection('fuel_consumption'))
         <section class="tire-report-section dossier-data-section">
             <div class="tire-section-header">
                 <div>
@@ -468,6 +482,58 @@
                 </table>
             </div>
         </section>
+        @endif
+
+        @if($showSection('km_hr'))
+            <section class="tire-report-section dossier-data-section">
+                <div class="tire-section-header">
+                    <div>
+                        <span class="tire-section-kicker">KM e horimetro</span>
+                        <h2>Atualizacoes de KM e horimetro</h2>
+                        <p>Estrutura reservada para logs detalhados do periodo. O cabecalho mantem KM e horimetro atuais do veiculo.</p>
+                    </div>
+                </div>
+
+                <div class="tire-compact-item">
+                    <strong>Bloco em preparacao</strong>
+                    <span>A consulta detalhada de alteracoes de KM/HR sera conectada sem criar soma operacional paralela.</span>
+                </div>
+            </section>
+        @endif
+
+        @if($showSection('downtime'))
+            <section class="tire-report-section dossier-data-section">
+                <div class="tire-section-header">
+                    <div>
+                        <span class="tire-section-kicker">Status operacional</span>
+                        <h2>Status e indisponibilidade</h2>
+                        <p>O status atual aparece no cabecalho do veiculo. Historico detalhado de indisponibilidade sera consolidado em bloco proprio.</p>
+                    </div>
+                </div>
+
+                <div class="tire-compact-item">
+                    <strong>{{ $vehicle['operational_status'] ?? '-' }}</strong>
+                    <span>Status operacional atual respeitando a unidade ativa.</span>
+                </div>
+            </section>
+        @endif
+
+        @if($showSection('alerts'))
+            <section class="tire-report-section dossier-data-section">
+                <div class="tire-section-header">
+                    <div>
+                        <span class="tire-section-kicker">Alertas</span>
+                        <h2>Alertas e preventivas</h2>
+                        <p>Alertas atuais ficam separados dos custos e nao alteram indicadores financeiros.</p>
+                    </div>
+                </div>
+
+                <div class="tire-compact-item">
+                    <strong>{{ $summary['alerts_count'] }}</strong>
+                    <span>Alerta(s) diagnosticado(s) pelo Dossie nesta etapa.</span>
+                </div>
+            </section>
+        @endif
 
         @if($cancelledList->isNotEmpty())
             <section class="tire-report-section dossier-data-section dossier-cancelled-section">
