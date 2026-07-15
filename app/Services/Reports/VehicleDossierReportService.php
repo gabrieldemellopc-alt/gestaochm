@@ -106,6 +106,7 @@ class VehicleDossierReportService
             'include_fillings_without_km_hr' => filter_var($filters['include_fillings_without_km_hr'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'section_config' => filter_var($filters['section_config'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'sections' => $this->sections($filters['sections'] ?? null),
+            'invalid_sections' => $this->invalidSections($filters['sections'] ?? null),
         ];
     }
 
@@ -124,6 +125,7 @@ class VehicleDossierReportService
             'include_fillings_without_km_hr' => filter_var($filters['include_fillings_without_km_hr'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'section_config' => filter_var($filters['section_config'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'sections' => $this->sections($filters['sections'] ?? null),
+            'invalid_sections' => $this->invalidSections($filters['sections'] ?? null),
         ];
     }
 
@@ -149,6 +151,10 @@ class VehicleDossierReportService
 
         if ($filters['section_config'] && $filters['sections'] === []) {
             $errors[] = 'Selecione pelo menos um conteudo para visualizar no relatorio.';
+        }
+
+        if ($filters['section_config'] && $filters['invalid_sections'] !== []) {
+            $errors[] = 'Uma ou mais secoes solicitadas nao sao validas para este relatorio.';
         }
 
         return $errors;
@@ -381,6 +387,24 @@ class VehicleDossierReportService
 
     private function sections(mixed $sections): array
     {
+        return collect($this->sectionValues($sections))
+            ->intersect($this->allowedSections())
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function invalidSections(mixed $sections): array
+    {
+        return collect($this->sectionValues($sections))
+            ->diff($this->allowedSections())
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function sectionValues(mixed $sections): array
+    {
         if (is_string($sections)) {
             $sections = array_filter(array_map('trim', explode(',', $sections)));
         }
@@ -392,9 +416,23 @@ class VehicleDossierReportService
         return collect($sections)
             ->filter(fn ($section) => is_string($section) && trim($section) !== '')
             ->map(fn ($section) => trim($section))
-            ->unique()
             ->values()
             ->all();
+    }
+
+    private function allowedSections(): array
+    {
+        return [
+            'summary',
+            'maintenances',
+            'maintenance_costs',
+            'stock',
+            'fuel',
+            'fuel_consumption',
+            'km_hr',
+            'downtime',
+            'alerts',
+        ];
     }
 
     private function positiveInteger(mixed $value): ?int
@@ -970,4 +1008,3 @@ class VehicleDossierReportService
     
     
 }
-

@@ -87,10 +87,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/locations/{location}/toggle-active', [LocationController::class, 'toggleActive'])
         ->name('locations.toggle-active');
 
-    Route::get(
-        '/reports/vehicle-dossier/pdf',
-        [ReportController::class, 'pdf']
-    )->name('reports.vehicle-dossier.pdf');
     /*
 
     |--------------------------------------------------------------------------
@@ -1144,6 +1140,16 @@ Route::middleware('auth')->group(function () {
                 'vehicleDossier'
 
             )->name('vehicle-dossier.index');
+
+
+
+            Route::get(
+
+                '/vehicle-dossier/pdf',
+
+                'pdf'
+
+            )->name('vehicle-dossier.pdf');
 
 
 
