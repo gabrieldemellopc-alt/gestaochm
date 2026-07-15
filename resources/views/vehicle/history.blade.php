@@ -121,14 +121,23 @@
 
 
 
+                    @php
+                        $vehicleStatusLabel = match ($vehicle->operational_status) {
+                            'operational' => 'Operacional',
+                            'maintenance' => 'Em manutenção',
+                            'inactive' => 'Inativo',
+                            'inoperant' => 'Inoperante',
+                            'accident' => 'Sinistro',
+                            'support' => 'Socorro',
+                            'testing' => 'Em testes',
+                            'transfer' => 'Em transferência',
+                            'transferred' => 'Transferido',
+                            default => 'Não informado',
+                        };
+                    @endphp
+                    
                     <span class="vehicle-status-badge">
-
-
-
-                        {{ ucfirst($vehicle->operational_status ?? 'operacional') }}
-
-
-
+                        {{ $vehicleStatusLabel }}
                     </span>
 
 
@@ -1048,7 +1057,7 @@
 
                         $procedureSummary = $procedureNames->isNotEmpty()
                             ? $procedureNames->take(2)->implode(' + ')
-                            : 'Manutencao rapida';
+                            : 'Manutenção rápida';
 
                         $extraProcedureCount = max($procedureNames->count() - 2, 0);
 
@@ -1060,8 +1069,8 @@
                             ? 'Mista'
                             : match($maintenanceTypes->first()) {
                                 'internal' => 'Oficina interna',
-                                'external' => 'Servico terceirizado',
-                                default => 'Tipo nao informado',
+                                'external' => 'Serviçoo terceirizado',
+                                default => 'Tipo não informado',
                             };
 
                         $typeClass = $maintenanceTypes->count() > 1
@@ -1183,15 +1192,46 @@
                             </h4>
 
                             <small>
-                                {{ ucfirst($maintenance->reason ?? 'preventiva') }}
-                                -
-                                {{ $hasNewItems ? $maintenanceItems->count() . ' item(ns)' : 'Registro legado' }}
-                                -
+                                {{ match($maintenance->reason) {
+                                    'preventive' => 'Preventiva',
+                                    'corrective' => 'Corretiva',
+                                    'inspection' => 'Inspeção',
+                                    'other' => 'Outros',
+                                    default => 'Não informado',
+                                } }}
+                            
+                                @if($maintenance->maintenance_category)
+                                    ·
+                            
+                                    {{ \App\Services\MaintenanceService::maintenanceCategories()[
+                                        $maintenance->maintenance_category
+                                    ] ?? 'Outros' }}
+                                @endif
+                            
+                                ·
+                            
+                                {{ $hasNewItems
+                                    ? $maintenanceItems->count() . ' item(ns)'
+                                    : 'Registro legado'
+                                }}
+                            
+                                ·
+                            
                                 {{ $typeLabel }}
                             </small>
                         </div>
 
                         <div class="maintenance-card-actions">
+                            <a
+                                href="{{ route(
+                                    'vehicles.maintenance.show',
+                                    [$vehicle->id, $maintenance->id]
+                                ) }}"
+                                class="maintenance-pdf-mini"
+                            >
+                                <i data-lucide="eye"></i>
+                                Detalhes
+                            </a>
                             <a
                                 href="{{ route('vehicles.maintenance.order.pdf', [$vehicle->id, $maintenance->id]) }}"
                                 class="maintenance-pdf-mini"
@@ -1384,7 +1424,7 @@
                         @if($hasNewItems)
 
                             <div class="maintenance-notes">
-                                <strong>Servicos da ordem:</strong>
+                                <strong>Serviços da ordem:</strong>
 
                                 @foreach($maintenanceItems->take(3) as $item)
                                     <div>

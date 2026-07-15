@@ -745,4 +745,35 @@ class ReportController extends Controller
             ->route('portal')
             ->with('warning', 'Selecione uma divisão e uma unidade para continuar.');
     }
+
+    public function pdf(
+        Request $request,
+        VehicleDossierReportService $dossierService
+    ) {
+        $report = $dossierService->build($request->all());
+    
+        if (! ($report['validation']['is_valid'] ?? false)) {
+            return redirect()
+                ->route('reports.vehicle-dossier.index', $request->query())
+                ->with('warning', 'Revise os filtros antes de gerar o PDF.');
+        }
+    
+        $vehicle = $report['vehicle'];
+        $filters = $report['applied_filters'];
+    
+        $fileName = sprintf(
+            'dossie-%s-%s.pdf',
+            str($vehicle['plate'] ?? $vehicle['name'] ?? 'veiculo')
+                ->slug('-'),
+            now()->format('Ymd-His')
+        );
+    
+        return Pdf::loadView(
+            'reports.pdf.vehicle-dossier',
+            $report
+        )
+            ->setPaper('a4', 'portrait')
+            ->stream($fileName);
+    }
+    
 }

@@ -113,6 +113,49 @@ class AuditLogController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
+        $moduleLabels = [
+            'fleet' => 'Frota',
+            'maintenance' => 'Manutenção',
+            'stock' => 'Estoque',
+            'tires' => 'Pneus',
+            'fuel' => 'Abastecimento',
+            'checklists' => 'Checklists',
+            'access' => 'Acessos',
+            'system' => 'Sistema',
+        ];
+
+        $actionLabels = [
+            'created' => 'Criado',
+            'updated' => 'Alterado',
+            'cancelled' => 'Cancelado',
+            'deleted' => 'Excluído',
+            'reversed' => 'Estornado',
+            'restored' => 'Restaurado',
+        ];
+
+        $profileLabels = [
+            'admin' => 'Administrador',
+            'tenant-admin' => 'Administrador do tenant',
+            'manager' => 'Gestor',
+            'supervisor' => 'Supervisor',
+            'mechanic' => 'Mecânico',
+            'driver' => 'Motorista',
+        ];
+
+        $entityLabels = [
+            'Vehicle' => 'Veículo',
+            'MaintenanceRecord' => 'Ordem de manutenção',
+            'MaintenanceRecordItem' => 'Serviço da manutenção',
+            'MaintenanceRecordExtraCost' => 'Custo avulso',
+            'StockItem' => 'Item de estoque',
+            'StockMovement' => 'Movimentação de estoque',
+            'Tire' => 'Pneu',
+            'TireMeasurement' => 'Medição de pneu',
+            'VehicleOperation' => 'Operação do veículo',
+            'User' => 'Usuário',
+            'UserDivisionAccess' => 'Acesso do usuário',
+        ];
+
         return view('audit.index', [
             'logs' => $logs,
             'modules' => $modules,
@@ -131,6 +174,10 @@ class AuditLogController extends Controller
                 'date_to',
                 'search',
             ]),
+            'moduleLabels' => $moduleLabels,
+            'actionLabels' => $actionLabels,
+            'profileLabels' => $profileLabels,
+            'entityLabels' => $entityLabels,
         ]);
     }
 

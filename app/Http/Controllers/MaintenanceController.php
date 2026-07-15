@@ -40,6 +40,15 @@ class MaintenanceController extends Controller
                 'string',
                 Rule::in(array_keys(MaintenanceService::serviceStatuses())),
             ],
+            'maintenance_category' => [
+                'nullable',
+                'string',
+                Rule::in(
+                    array_keys(
+                        MaintenanceService::maintenanceCategories()
+                    )
+                ),
+            ],
         ]);
     
         $result = MaintenanceService::create($data, $vehicle);
@@ -261,6 +270,121 @@ class MaintenanceController extends Controller
         return redirect()
             ->route('vehicle.maintenance.index', $vehicle->id)
             ->with('success', 'Procedimento adicionado à manutenção.');
+    }
+    
+    public function show(
+        Vehicle $vehicle,
+        MaintenanceRecord $maintenance
+    ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+    
+        if ((int) $maintenance->vehicle_id !== (int) $vehicle->id) {
+            abort(404);
+        }
+    
+        if ((int) $maintenance->tenant_id !== (int) auth()->user()->tenant_id) {
+            abort(403);
+        }
+    
+        if ($maintenance->deleted_at) {
+            abort(404);
+        }
+    
+        $maintenance->load([
+            'vehicle.division',
+            'vehicle.location',
+            'procedure',
+            'items.procedure',
+            'items.values.field',
+            'extraCosts.creator',
+            'statusLogs.user',
+            'opener',
+            'closer',
+            'canceller',
+            'deleter',
+        ]);
+    
+        $canManageMaintenance = $this->userCanCancelMaintenance($vehicle);
+    
+        return view('vehicle.maintenance-show', compact(
+            'vehicle',
+            'maintenance',
+            'canManageMaintenance'
+        ));
+    }
+    
+    public function reopen(
+        Request $request,
+        Vehicle $vehicle,
+        MaintenanceRecord $maintenance
+    ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+    
+        if ((int) $maintenance->vehicle_id !== (int) $vehicle->id) {
+            abort(404);
+        }
+    
+        if ((int) $maintenance->tenant_id !== (int) auth()->user()->tenant_id) {
+            abort(403);
+        }
+    
+        if (! $this->userCanCancelMaintenance($vehicle)) {
+            abort(403);
+        }
+    
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+    
+        MaintenanceService::reopen(
+            $maintenance,
+            $data['reason'],
+            auth()->user()
+        );
+    
+        return redirect()
+            ->route('vehicle.maintenance.index', $vehicle->id)
+            ->with('success', 'Manutenção reaberta com sucesso.');
+    }
+    
+    public function destroy(
+        Request $request,
+        Vehicle $vehicle,
+        MaintenanceRecord $maintenance
+    ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+    
+        if ((int) $maintenance->vehicle_id !== (int) $vehicle->id) {
+            abort(404);
+        }
+    
+        if ((int) $maintenance->tenant_id !== (int) auth()->user()->tenant_id) {
+            abort(403);
+        }
+    
+        if (! $this->userCanCancelMaintenance($vehicle)) {
+            abort(403);
+        }
+    
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+    
+        MaintenanceService::logicalDelete(
+            $maintenance,
+            $data['reason'],
+            auth()->user()
+        );
+    
+        return redirect()
+            ->route('vehicle.maintenance.index', $vehicle->id)
+            ->with('success', 'Manutenção apagada com sucesso.');
     }
 
     private function ensureVehicleInActiveContext(Vehicle $vehicle)

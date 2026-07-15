@@ -1,1903 +1,1 @@
-.workshop-tires-page {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-}
-
-.workshop-alert {
-    padding: 14px 16px;
-    border-radius: 16px;
-    font-size: 14px;
-    font-weight: 800;
-}
-
-.workshop-alert.success {
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .22);
-}
-
-.workshop-hero {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-
-    padding: 24px;
-
-    border-radius: 24px;
-
-    background: #111827;
-
-    border: 1px solid rgba(148, 163, 184, .14);
-}
-
-.workshop-hero span {
-    display: inline-flex;
-
-    margin-bottom: 8px;
-
-    padding: 5px 10px;
-
-    border-radius: 999px;
-
-    color: #86efac;
-
-    background: rgba(34, 197, 94, .10);
-
-    border: 1px solid rgba(34, 197, 94, .22);
-
-    font-size: 10px;
-    font-weight: 850;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-}
-
-.workshop-hero h1 {
-    margin: 0;
-
-    color: #ffffff;
-
-    font-size: 26px;
-    font-weight: 900;
-}
-
-.workshop-hero p {
-    margin: 8px 0 0;
-
-    color: #94a3b8;
-
-    font-size: 14px;
-}
-
-.workshop-hero-btn {
-    height: 42px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    padding: 0 14px;
-
-    border-radius: 14px;
-
-    color: #cbd5e1;
-
-    background: rgba(15, 23, 42, .70);
-
-    border: 1px solid rgba(148, 163, 184, .18);
-
-    text-decoration: none;
-
-    font-size: 13px;
-    font-weight: 800;
-}
-
-.workshop-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
-}
-
-.workshop-summary-card {
-    padding: 18px;
-
-    border-radius: 20px;
-
-    background: #111827;
-
-    border: 1px solid rgba(148, 163, 184, .14);
-}
-
-.workshop-summary-card small {
-    display: block;
-
-    color: #94a3b8;
-
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-}
-
-.workshop-summary-card strong {
-    display: block;
-
-    margin-top: 8px;
-
-    color: #ffffff;
-
-    font-size: 28px;
-    font-weight: 900;
-}
-
-.workshop-summary-card.available strong {
-    color: #86efac;
-}
-
-.workshop-summary-card.installed strong {
-    color: #93c5fd;
-}
-
-.workshop-summary-card.maintenance strong {
-    color: #fde68a;
-}
-
-.workshop-summary-card.discarded strong {
-    color: #fca5a5;
-}
-
-.workshop-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr);
-    gap: 18px;
-}
-
-.workshop-card {
-    padding: 20px;
-
-    border-radius: 22px;
-
-    background: #111827;
-
-    border: 1px solid rgba(148, 163, 184, .14);
-}
-
-.workshop-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-
-    margin-bottom: 18px;
-}
-
-.workshop-card-header h2 {
-    margin: 0;
-
-    color: #ffffff;
-
-    font-size: 18px;
-    font-weight: 900;
-}
-
-.workshop-card-header p {
-    margin: 6px 0 0;
-
-    color: #94a3b8;
-
-    font-size: 13px;
-}
-
-.workshop-card-header svg {
-    color: #86efac;
-}
-
-.workshop-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.form-group label {
-    color: #cbd5e1;
-
-    font-size: 11px;
-    font-weight: 850;
-    text-transform: uppercase;
-    letter-spacing: .07em;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-    width: 100%;
-
-    border-radius: 13px;
-
-    border: 1px solid rgba(148, 163, 184, .18);
-
-    background: #0f172a;
-
-    color: #f8fafc;
-
-    padding: 0 13px;
-
-    outline: none;
-
-    font-size: 14px;
-}
-
-.form-group input,
-.form-group select {
-    height: 44px;
-}
-
-.form-group textarea {
-    padding-top: 12px;
-    resize: vertical;
-}
-
-.workshop-submit-btn {
-    height: 44px;
-
-    margin-top: 16px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    padding: 0 16px;
-
-    border-radius: 14px;
-
-    color: #052e16;
-
-    background: #22c55e;
-
-    border: none;
-
-    cursor: pointer;
-
-    font-size: 13px;
-    font-weight: 900;
-}
-
-.workshop-entry-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.workshop-entry-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-
-    padding: 13px;
-
-    border-radius: 16px;
-
-    background: #151f31;
-
-    border: 1px solid rgba(148, 163, 184, .12);
-}
-
-.workshop-entry-item strong {
-    display: block;
-
-    color: #ffffff;
-
-    font-size: 13px;
-    font-weight: 850;
-}
-
-.workshop-entry-item span,
-.workshop-entry-item small {
-    display: block;
-
-    margin-top: 3px;
-
-    color: #94a3b8;
-
-    font-size: 12px;
-}
-
-.workshop-table {
-    overflow: hidden;
-
-    border-radius: 18px;
-
-    border: 1px solid rgba(148, 163, 184, .12);
-}
-
-.workshop-table-head,
-.workshop-table-row {
-    display: grid;
-    grid-template-columns: 1.1fr 1.4fr .8fr 1fr .7fr;
-    gap: 14px;
-    align-items: center;
-}
-
-.workshop-table-head {
-    padding: 14px 16px;
-
-    background: #151f31;
-
-    color: #94a3b8;
-
-    font-size: 11px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-}
-
-.workshop-table-row {
-    padding: 15px 16px;
-
-    border-top: 1px solid rgba(148, 163, 184, .10);
-
-    color: #cbd5e1;
-
-    font-size: 13px;
-}
-
-.workshop-table-row strong {
-    display: block;
-
-    color: #ffffff;
-
-    font-size: 14px;
-    font-weight: 850;
-}
-
-.workshop-table-row span {
-    display: block;
-
-    margin-top: 3px;
-
-    color: #94a3b8;
-
-    font-size: 12px;
-}
-
-.workshop-status {
-    display: inline-flex;
-
-    padding: 6px 9px;
-
-    border-radius: 999px;
-
-    font-size: 11px !important;
-    font-weight: 900;
-}
-
-.workshop-status.available {
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .22);
-}
-
-.workshop-status.installed {
-    color: #93c5fd;
-    background: rgba(59, 130, 246, .10);
-    border: 1px solid rgba(59, 130, 246, .22);
-}
-
-.workshop-status.maintenance {
-    color: #fde68a;
-    background: rgba(250, 204, 21, .10);
-    border: 1px solid rgba(250, 204, 21, .20);
-}
-
-.workshop-status.discarded {
-    color: #fca5a5;
-    background: rgba(239, 68, 68, .12);
-    border: 1px solid rgba(239, 68, 68, .24);
-}
-
-.workshop-empty {
-    padding: 18px;
-
-    color: #94a3b8;
-
-    font-size: 13px;
-}
-
-@media (max-width: 1100px) {
-    .workshop-summary-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .workshop-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .workshop-table-head {
-        display: none;
-    }
-
-    .workshop-table-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 640px) {
-    .workshop-hero {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .workshop-summary-grid,
-    .workshop-form-grid {
-        grid-template-columns: 1fr;
-    }
-}
-.input-with-suffix {
-    position: relative;
-    width: 100%;
-}
-
-.input-with-suffix input {
-    padding-right: 48px;
-}
-
-.input-with-suffix span {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-
-    transform: translateY(-50%);
-
-    color: #94a3b8;
-
-    font-size: 12px;
-    font-weight: 900;
-    letter-spacing: .04em;
-
-    pointer-events: none;
-}
-
-.form-help {
-    display: block;
-
-    margin-top: 7px;
-
-    color: #94a3b8;
-
-    font-size: 11px;
-    line-height: 1.35;
-}
-/* =========================================================
-   TIRE FILTERS
-========================================================= */
-
-.workshop-tire-filters {
-    display: grid;
-    grid-template-columns: minmax(280px, 1fr) auto auto;
-    gap: 12px;
-    align-items: center;
-
-    margin-bottom: 16px;
-}
-
-.workshop-tire-search {
-    height: 46px;
-
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    padding: 0 14px;
-
-    border-radius: 15px;
-
-    background: #0f172a;
-
-    border: 1px solid rgba(148, 163, 184, .18);
-}
-
-.workshop-tire-search svg {
-    width: 17px;
-    height: 17px;
-
-    color: #86efac;
-}
-
-.workshop-tire-search input {
-    width: 100%;
-    height: 100%;
-
-    background: transparent;
-
-    border: none;
-
-    outline: none;
-
-    color: #f8fafc;
-
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.workshop-tire-search input::placeholder {
-    color: #64748b;
-}
-
-.workshop-tire-status-filters {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.workshop-tire-status-filters a {
-    height: 36px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 12px;
-
-    border-radius: 999px;
-
-    color: #94a3b8;
-
-    background: rgba(15, 23, 42, .58);
-
-    border: 1px solid rgba(148, 163, 184, .16);
-
-    text-decoration: none;
-
-    font-size: 12px;
-    font-weight: 850;
-
-    transition: .15s ease;
-}
-
-.workshop-tire-status-filters a:hover,
-.workshop-tire-status-filters a.active {
-    color: #86efac;
-
-    background: rgba(34, 197, 94, .10);
-
-    border-color: rgba(34, 197, 94, .28);
-}
-
-.workshop-filter-submit {
-    height: 40px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 14px;
-
-    border-radius: 13px;
-
-    color: #86efac;
-
-    background: rgba(34, 197, 94, .10);
-
-    border: 1px solid rgba(34, 197, 94, .28);
-
-    cursor: pointer;
-
-    font-size: 12px;
-    font-weight: 900;
-}
-
-/* =========================================================
-   TABLE WITH LARGE DATA
-========================================================= */
-
-.workshop-table {
-    overflow: hidden;
-
-    border-radius: 18px;
-
-    border: 1px solid rgba(148, 163, 184, .12);
-}
-
-.workshop-table-body {
-    max-height: 620px;
-    overflow-y: auto;
-}
-
-.workshop-table-head {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-}
-
-.workshop-pagination {
-    margin-top: 16px;
-
-    display: flex;
-    justify-content: flex-end;
-}
-
-/* Laravel pagination basic dark support */
-.workshop-pagination nav {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.workshop-pagination a,
-.workshop-pagination span {
-    color: #cbd5e1;
-}
-
-@media (max-width: 1100px) {
-    .workshop-tire-filters {
-        grid-template-columns: 1fr;
-    }
-
-    .workshop-tire-status-filters {
-        justify-content: flex-start;
-    }
-
-    .workshop-pagination {
-        justify-content: center;
-    }
-}
-.workshop-pagination {
-    margin-top: 16px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-
-    padding: 14px 16px;
-
-    border-radius: 18px;
-
-    background: rgba(15, 23, 42, .55);
-
-    border: 1px solid rgba(148, 163, 184, .12);
-}
-
-.workshop-pagination-info {
-    color: #94a3b8;
-
-    font-size: 12px;
-    font-weight: 750;
-}
-
-.workshop-pagination-info strong {
-    color: #f8fafc;
-}
-
-.workshop-pagination-links {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    flex-wrap: wrap;
-}
-
-.workshop-pagination-links a,
-.workshop-pagination-links span {
-    min-width: 34px;
-    height: 34px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 10px;
-
-    border-radius: 11px;
-
-    color: #cbd5e1;
-
-    background: rgba(15, 23, 42, .75);
-
-    border: 1px solid rgba(148, 163, 184, .16);
-
-    text-decoration: none;
-
-    font-size: 12px;
-    font-weight: 900;
-}
-
-.workshop-pagination-links a:hover {
-    color: #86efac;
-
-    background: rgba(34, 197, 94, .10);
-
-    border-color: rgba(34, 197, 94, .28);
-}
-
-.workshop-pagination-links span.active {
-    color: #052e16;
-
-    background: #22c55e;
-
-    border-color: rgba(34, 197, 94, .45);
-}
-
-.workshop-pagination-links span.disabled {
-    opacity: .42;
-    cursor: not-allowed;
-}
-
-@media (max-width: 760px) {
-    .workshop-pagination {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .workshop-pagination-links {
-        justify-content: center;
-    }
-
-    .workshop-pagination-info {
-        text-align: center;
-    }
-}
-.workshop-status-head{
-    width:fit-content;
-}
-.workshop-table-head,
-.workshop-table-row {
-    grid-template-columns: 1fr 1.3fr .8fr 1fr .7fr 120px;
-}
-.workshop-table-action {
-    height: 34px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-
-    padding: 0 11px;
-
-    border-radius: 11px;
-
-    color: #cbd5e1;
-
-    background: rgba(15, 23, 42, .72);
-
-    border: 1px solid rgba(148, 163, 184, .18);
-
-    cursor: pointer;
-
-    font-size: 12px;
-    font-weight: 850;
-}
-
-.workshop-table-action:hover {
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border-color: rgba(34, 197, 94, .28);
-}
-
-.workshop-table-action svg {
-    width: 15px;
-    height: 15px;
-}
-
-.workshop-modal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 2200;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 24px;
-
-    background: rgba(2, 6, 23, .72);
-    backdrop-filter: blur(8px);
-
-    overflow: hidden;
-}
-
-.workshop-tire-modal {
-    width: min(860px, 100%);
-
-    max-height: calc(100vh - 48px);
-
-    display: flex;
-    flex-direction: column;
-
-    border-radius: 24px;
-
-    background: #111827;
-
-    border: 1px solid rgba(148, 163, 184, .18);
-
-    box-shadow:
-        0 32px 80px rgba(0, 0, 0, .45);
-
-    overflow: hidden;
-}
-
-.workshop-tire-modal-header {
-    flex: 0 0 auto;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-
-    padding: 24px;
-
-    border-bottom: 1px solid rgba(148, 163, 184, .12);
-}
-
-.workshop-tire-modal-header span {
-    display: inline-flex;
-
-    margin-bottom: 8px;
-
-    padding: 5px 10px;
-
-    border-radius: 999px;
-
-    color: #86efac;
-
-    background: rgba(34, 197, 94, .10);
-
-    border: 1px solid rgba(34, 197, 94, .22);
-
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-}
-
-.workshop-tire-modal-header h2 {
-    margin: 0;
-
-    color: #ffffff;
-
-    font-size: 24px;
-    font-weight: 950;
-}
-
-.workshop-tire-modal-header p {
-    margin: 6px 0 0;
-
-    color: #94a3b8;
-
-    font-size: 13px;
-}
-
-.workshop-tire-modal-header button {
-    width: 42px;
-    height: 42px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 14px;
-
-    color: #cbd5e1;
-
-    background: rgba(15, 23, 42, .70);
-
-    border: 1px solid rgba(148, 163, 184, .18);
-
-    cursor: pointer;
-}
-
-.workshop-tire-modal-form {
-    flex: 1 1 auto;
-
-    min-height: 0;
-
-    padding: 22px 24px;
-
-    overflow-y: auto;
-}
-
-.workshop-tire-modal-footer {
-    position: sticky;
-    bottom: -22px;
-
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-
-    margin: 18px -24px -22px;
-    padding: 16px 24px;
-
-    background: #111827;
-
-    border-top: 1px solid rgba(148, 163, 184, .12);
-}
-
-.workshop-modal-cancel,
-.workshop-modal-save {
-    height: 44px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    padding: 0 16px;
-
-    border-radius: 14px;
-
-    cursor: pointer;
-
-    font-size: 13px;
-    font-weight: 900;
-}
-
-.workshop-modal-cancel {
-    color: #cbd5e1;
-    background: rgba(15, 23, 42, .70);
-    border: 1px solid rgba(148, 163, 184, .18);
-}
-
-.workshop-modal-save {
-    color: #86efac;
-    background: rgba(34, 197, 94, .10);
-    border: 1px solid rgba(34, 197, 94, .28);
-}
-
-.workshop-modal-save svg {
-    width: 16px;
-    height: 16px;
-}
-/* CHM workshop tires corporate visual layer */
-.workshop-tires-page,
-.workshop-modal-overlay {
-    --tires-surface: #202a40;
-    --tires-soft: #253149;
-    --tires-muted-surface: #1b2437;
-    --tires-elevated: #2b3850;
-    --tires-border: rgba(203, 213, 225, .14);
-    --tires-border-strong: rgba(203, 213, 225, .23);
-    --tires-text: #f1f5f9;
-    --tires-muted: #a8b1c1;
-    --tires-accent: #b9434c;
-    --tires-positive: #72ad88;
-    --tires-info: #91a8c8;
-    --tires-warning: #d2b77a;
-    --tires-danger: #df747c;
-    color: var(--tires-text);
-}
-
-html[data-chm-theme="corporate-light"] .workshop-tires-page,
-html[data-chm-theme="corporate-light"] .workshop-modal-overlay {
-    --tires-surface: var(--chm-theme-card, #3b4a66);
-    --tires-soft: var(--chm-theme-card-elevated, #435373);
-    --tires-muted-surface: var(--chm-theme-surface, #34425b);
-    --tires-elevated: #4a5b7b;
-    --tires-border: var(--chm-theme-border, rgba(226, 232, 240, .24));
-    --tires-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .36));
-    --tires-text: var(--chm-theme-text, #f8fafc);
-    --tires-muted: var(--chm-theme-muted, #d0d7e2);
-}
-
-.workshop-tires-page .workshop-hero {
-    padding: 20px;
-    border: 1px solid var(--tires-border);
-    border-left: 3px solid var(--tires-accent);
-    border-radius: 10px;
-    background: var(--tires-muted-surface);
-    box-shadow: none;
-}
-
-.workshop-tires-page .workshop-hero span,
-.workshop-modal-overlay .workshop-tire-modal-header span {
-    margin-bottom: 6px;
-    padding: 0;
-    color: var(--tires-muted);
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-}
-
-.workshop-tires-page .workshop-hero h1 {
-    color: var(--tires-text);
-    font-size: clamp(1.45rem, 2vw, 1.8rem);
-    line-height: 1.15;
-}
-
-.workshop-tires-page .workshop-hero p,
-.workshop-tires-page .workshop-card-header p,
-.workshop-tires-page .workshop-card-header svg,
-.workshop-tires-page .form-help,
-.workshop-tires-page .workshop-entry-item span,
-.workshop-tires-page .workshop-entry-item small,
-.workshop-tires-page .workshop-table-row span,
-.workshop-tires-page .workshop-pagination-info,
-.workshop-modal-overlay .workshop-tire-modal-header p {
-    color: var(--tires-muted);
-}
-
-.workshop-tires-page .workshop-hero-btn,
-.workshop-tires-page .workshop-submit-btn,
-.workshop-tires-page .workshop-filter-submit,
-.workshop-tires-page .workshop-table-action,
-.workshop-modal-overlay .workshop-modal-cancel,
-.workshop-modal-overlay .workshop-modal-save {
-    min-height: 39px;
-    padding: 0 13px;
-    border: 1px solid var(--tires-border-strong);
-    border-radius: 7px;
-    color: var(--tires-text);
-    background: var(--tires-soft);
-    box-shadow: none;
-    font-size: 12px;
-    font-weight: 750;
-    text-decoration: none;
-    transform: none;
-}
-
-.workshop-tires-page .workshop-submit-btn,
-.workshop-tires-page .workshop-filter-submit,
-.workshop-modal-overlay .workshop-modal-save {
-    color: #fff;
-    background: var(--tires-accent);
-    border-color: var(--tires-accent);
-}
-
-.workshop-tires-page .workshop-alert,
-.workshop-tires-page .workshop-summary-card,
-.workshop-tires-page .workshop-card,
-.workshop-tires-page .workshop-entry-item,
-.workshop-tires-page .workshop-empty {
-    color: var(--tires-text);
-    background: var(--tires-surface);
-    border: 1px solid var(--tires-border);
-    border-radius: 10px;
-    box-shadow: none;
-}
-
-.workshop-tires-page .workshop-alert.success {
-    color: #c4e4cf;
-    background: rgba(114, 173, 136, .10);
-    border-color: rgba(114, 173, 136, .28);
-    box-shadow: inset 3px 0 0 var(--tires-positive);
-}
-
-.workshop-tires-page .workshop-summary-grid {
-    gap: 12px;
-}
-
-.workshop-tires-page .workshop-summary-card {
-    min-height: 0;
-    padding: 14px 15px;
-}
-
-.workshop-tires-page .workshop-summary-card small {
-    color: var(--tires-muted);
-}
-
-.workshop-tires-page .workshop-summary-card strong,
-.workshop-tires-page .workshop-card-header h2,
-.workshop-tires-page .workshop-entry-item strong,
-.workshop-tires-page .workshop-table-row strong,
-.workshop-modal-overlay .workshop-tire-modal-header h2 {
-    color: var(--tires-text);
-}
-
-.workshop-tires-page .workshop-summary-card.available {
-    border-color: rgba(114, 173, 136, .28);
-    box-shadow: inset 3px 0 0 var(--tires-positive);
-}
-
-.workshop-tires-page .workshop-summary-card.available strong {
-    color: #b9ddc5;
-}
-
-.workshop-tires-page .workshop-summary-card.installed {
-    border-color: rgba(145, 168, 200, .30);
-    box-shadow: inset 3px 0 0 var(--tires-info);
-}
-
-.workshop-tires-page .workshop-summary-card.installed strong {
-    color: #c4d2e4;
-}
-
-.workshop-tires-page .workshop-summary-card.maintenance {
-    border-color: rgba(210, 183, 122, .30);
-    box-shadow: inset 3px 0 0 var(--tires-warning);
-}
-
-.workshop-tires-page .workshop-summary-card.maintenance strong {
-    color: #e2c98f;
-}
-
-.workshop-tires-page .workshop-summary-card.discarded {
-    border-color: rgba(223, 116, 124, .30);
-    box-shadow: inset 3px 0 0 var(--tires-danger);
-}
-
-.workshop-tires-page .workshop-summary-card.discarded strong {
-    color: #f0a6ac;
-}
-
-.workshop-tires-page .workshop-grid {
-    gap: 16px;
-}
-
-.workshop-tires-page .workshop-card {
-    min-width: 0;
-    overflow: hidden;
-}
-
-.workshop-tires-page .workshop-card-header {
-    padding: 16px 18px;
-    background: var(--tires-muted-surface);
-    border-bottom: 1px solid var(--tires-border);
-}
-
-.workshop-tires-page .workshop-entry-form {
-    padding: 18px;
-}
-
-.workshop-tires-page .workshop-form-grid {
-    gap: 12px;
-}
-
-.workshop-tires-page .form-group,
-.workshop-modal-overlay .form-group,
-.workshop-tires-page .input-with-suffix,
-.workshop-modal-overlay .input-with-suffix {
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.workshop-tires-page .form-group label,
-.workshop-modal-overlay .form-group label {
-    color: var(--tires-muted);
-}
-
-.workshop-tires-page .form-group input,
-.workshop-tires-page .form-group textarea,
-.workshop-tires-page .form-group select,
-.workshop-modal-overlay .form-group input,
-.workshop-modal-overlay .form-group textarea,
-.workshop-modal-overlay .form-group select {
-    max-width: 100%;
-    color: var(--tires-text);
-    background: var(--tires-muted-surface);
-    border: 1px solid var(--tires-border-strong);
-    border-radius: 7px;
-    box-shadow: none;
-}
-
-.workshop-tires-page .input-with-suffix,
-.workshop-modal-overlay .input-with-suffix {
-    background: var(--tires-muted-surface);
-    border: 1px solid var(--tires-border-strong);
-    border-radius: 7px;
-    overflow: hidden;
-}
-
-.workshop-tires-page .input-with-suffix input,
-.workshop-modal-overlay .input-with-suffix input {
-    border: 0;
-    border-radius: 0;
-}
-
-.workshop-tires-page .input-with-suffix span,
-.workshop-modal-overlay .input-with-suffix span {
-    color: var(--tires-muted);
-    background: var(--tires-soft);
-    border-left: 1px solid var(--tires-border);
-}
-
-.workshop-tires-page .workshop-entry-list {
-    padding: 14px 16px 16px;
-    gap: 8px;
-}
-
-.workshop-tires-page .workshop-entry-item {
-    min-width: 0;
-    padding: 11px 12px;
-    overflow-wrap: anywhere;
-}
-
-.workshop-tires-page .workshop-tire-filters {
-    margin: 16px 18px;
-    padding: 12px;
-    gap: 10px;
-    background: var(--tires-muted-surface);
-    border: 1px solid var(--tires-border);
-    border-radius: 8px;
-    box-shadow: none;
-}
-
-.workshop-tires-page .workshop-tire-search {
-    min-width: 0;
-    color: var(--tires-muted);
-    background: var(--tires-surface);
-    border: 1px solid var(--tires-border-strong);
-    border-radius: 7px;
-}
-
-.workshop-tires-page .workshop-tire-search svg {
-    color: var(--tires-muted);
-}
-
-.workshop-tires-page .workshop-tire-search input {
-    min-width: 0;
-    color: var(--tires-text);
-    background: transparent;
-}
-
-.workshop-tires-page .workshop-tire-status-filters a {
-    min-height: 34px;
-    padding: 0 10px;
-    color: var(--tires-muted);
-    background: var(--tires-surface);
-    border: 1px solid var(--tires-border);
-    border-radius: 6px;
-    box-shadow: none;
-}
-
-.workshop-tires-page .workshop-tire-status-filters a:hover,
-.workshop-tires-page .workshop-tire-status-filters a.active {
-    color: var(--tires-text);
-    background: var(--tires-elevated);
-    border-color: var(--tires-border-strong);
-    box-shadow: inset 0 -2px 0 var(--tires-accent);
-}
-
-.workshop-tires-page .workshop-table {
-    margin: 0 18px 18px;
-    min-width: 0;
-    border: 1px solid var(--tires-border);
-    border-radius: 8px;
-    background: var(--tires-surface);
-    box-shadow: none;
-    overflow-x: auto;
-}
-
-.workshop-tires-page .workshop-table-head {
-    color: var(--tires-muted);
-    background: var(--tires-muted-surface);
-    border-bottom: 1px solid var(--tires-border);
-}
-
-.workshop-tires-page .workshop-table-row {
-    min-width: 760px;
-    color: var(--tires-text);
-    background: transparent;
-    border-bottom: 1px solid var(--tires-border);
-}
-
-.workshop-tires-page .workshop-table-row:hover {
-    background: var(--tires-soft);
-}
-
-.workshop-tires-page .workshop-status {
-    border-radius: 6px;
-    box-shadow: none;
-}
-
-.workshop-tires-page .workshop-status.available {
-    color: #b9ddc5;
-    background: rgba(114, 173, 136, .10);
-    border-color: rgba(114, 173, 136, .28);
-}
-
-.workshop-tires-page .workshop-status.installed {
-    color: #c4d2e4;
-    background: rgba(145, 168, 200, .10);
-    border-color: rgba(145, 168, 200, .30);
-}
-
-.workshop-tires-page .workshop-status.maintenance {
-    color: #e2c98f;
-    background: rgba(210, 183, 122, .10);
-    border-color: rgba(210, 183, 122, .30);
-}
-
-.workshop-tires-page .workshop-status.discarded {
-    color: #f0a6ac;
-    background: rgba(223, 116, 124, .10);
-    border-color: rgba(223, 116, 124, .30);
-}
-
-.workshop-tires-page .workshop-pagination {
-    margin: 0 18px 18px;
-    padding: 11px 12px;
-    background: var(--tires-muted-surface);
-    border: 1px solid var(--tires-border);
-    border-radius: 8px;
-    box-shadow: none;
-}
-
-.workshop-tires-page .workshop-pagination-links a,
-.workshop-tires-page .workshop-pagination-links span {
-    color: var(--tires-muted);
-    background: var(--tires-surface);
-    border: 1px solid var(--tires-border);
-    border-radius: 6px;
-    box-shadow: none;
-}
-
-.workshop-modal-overlay {
-    padding: 18px;
-    background: rgba(10, 15, 27, .78);
-    backdrop-filter: blur(3px);
-}
-
-.workshop-modal-overlay .workshop-tire-modal {
-    color: var(--tires-text);
-    background: var(--tires-surface);
-    border: 1px solid var(--tires-border-strong);
-    border-radius: 11px;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .24);
-}
-
-.workshop-modal-overlay .workshop-tire-modal-header {
-    padding: 17px 20px;
-    background: var(--tires-muted-surface);
-    border-bottom: 1px solid var(--tires-border);
-}
-
-.workshop-modal-overlay .workshop-tire-modal-header h2 {
-    font-size: 1.35rem;
-}
-
-.workshop-modal-overlay .workshop-tire-modal-header button {
-    width: 36px;
-    height: 36px;
-    color: var(--tires-muted);
-    background: var(--tires-soft);
-    border: 1px solid var(--tires-border);
-    border-radius: 7px;
-    box-shadow: none;
-}
-
-.workshop-modal-overlay .workshop-tire-modal-form {
-    padding: 18px 20px;
-}
-
-.workshop-modal-overlay .workshop-tire-modal-footer {
-    bottom: -18px;
-    margin: 16px -20px -18px;
-    padding: 13px 20px;
-    background: var(--tires-muted-surface);
-    border-top: 1px solid var(--tires-border);
-}
-
-html[data-chm-theme="corporate-light"] .workshop-tires-page .form-group input,
-html[data-chm-theme="corporate-light"] .workshop-tires-page .form-group textarea,
-html[data-chm-theme="corporate-light"] .workshop-tires-page .form-group select,
-html[data-chm-theme="corporate-light"] .workshop-modal-overlay .form-group input,
-html[data-chm-theme="corporate-light"] .workshop-modal-overlay .form-group textarea,
-html[data-chm-theme="corporate-light"] .workshop-modal-overlay .form-group select {
-    background: var(--chm-theme-input, #4a5c7b);
-}
-
-@media (max-width: 1100px) {
-    .workshop-tires-page .workshop-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-@media (max-width: 760px) {
-    .workshop-tires-page .workshop-form-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .workshop-tires-page .workshop-filter-submit,
-    .workshop-tires-page .workshop-submit-btn,
-    .workshop-modal-overlay .workshop-modal-cancel,
-    .workshop-modal-overlay .workshop-modal-save {
-        width: 100%;
-    }
-
-    .workshop-modal-overlay {
-        padding: 9px;
-    }
-
-    .workshop-modal-overlay .workshop-tire-modal-footer {
-        align-items: stretch;
-        flex-direction: column-reverse;
-    }
-}
-/* CHM tire retread phase 1 */
-.workshop-tires-page .workshop-table-action.retread {
-    color: #e2c98f;
-    background: rgba(210, 183, 122, .10);
-    border-color: rgba(210, 183, 122, .30);
-}
-
-.workshop-tires-page .workshop-table-action.retread:hover {
-    color: #f0dcab;
-    background: rgba(210, 183, 122, .16);
-    border-color: rgba(210, 183, 122, .42);
-}
-
-.workshop-modal-overlay .workshop-retread-modal {
-    width: min(620px, 100%);
-}
-
-.workshop-modal-overlay .workshop-retread-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.workshop-modal-overlay .workshop-retread-form-grid .full-width {
-    grid-column: 1 / -1;
-}
-
-.workshop-modal-overlay .workshop-modal-save.retread {
-    color: #fff;
-    background: var(--tires-accent);
-    border-color: var(--tires-accent);
-}
-
-html[data-chm-theme="corporate-light"] .workshop-modal-overlay .workshop-retread-modal {
-    background: var(--tires-surface);
-}
-
-@media (max-width: 620px) {
-    .workshop-modal-overlay .workshop-retread-form-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .workshop-modal-overlay .workshop-retread-form-grid .full-width {
-        grid-column: auto;
-    }
-}
-
-/* CHM tire history phase 2 */
-.workshop-tire-history-page {
-    --tire-history-bg: #182136;
-    --tire-history-surface: #202a40;
-    --tire-history-surface-soft: #253149;
-    --tire-history-border: rgba(203, 213, 225, .14);
-    --tire-history-border-strong: rgba(203, 213, 225, .24);
-    --tire-history-text: #f1f5f9;
-    --tire-history-muted: #a8b1c1;
-    --tire-history-accent: #d95862;
-    width: 100%;
-    color: var(--tire-history-text);
-}
-
-.workshop-tire-history-page .tire-history-header,
-.workshop-tire-history-page .tire-history-summary article,
-.workshop-tire-history-page .tire-history-notice,
-.workshop-tire-history-page .tire-history-section,
-.workshop-tire-history-page .tire-history-event,
-.workshop-tire-history-page .tire-history-empty {
-    border: 1px solid var(--tire-history-border);
-    background: var(--tire-history-surface);
-}
-
-.workshop-tire-history-page .tire-history-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 22px;
-    border-left: 3px solid var(--tire-history-accent);
-    border-radius: 8px;
-}
-
-.workshop-tire-history-page .tire-history-back,
-.workshop-tire-history-page .tire-history-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    border: 1px solid var(--tire-history-border-strong);
-    border-radius: 6px;
-    color: var(--tire-history-text);
-    background: var(--tire-history-surface-soft);
-    text-decoration: none;
-}
-
-.workshop-tire-history-page .tire-history-back {
-    min-height: 36px;
-    margin-bottom: 16px;
-    padding: 7px 11px;
-    font-size: .82rem;
-    font-weight: 700;
-}
-
-.workshop-tire-history-page .tire-history-back svg {
-    width: 15px;
-    height: 15px;
-}
-
-.workshop-tire-history-page .tire-history-header > div > span,
-.workshop-tire-history-page .tire-history-section-header span,
-.workshop-tire-history-page .tire-history-summary span,
-.workshop-tire-history-page .tire-history-event-top span,
-.workshop-tire-history-page .tire-history-event-details span {
-    color: var(--tire-history-muted);
-    font-size: .74rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-}
-
-.workshop-tire-history-page .tire-history-header h1 {
-    margin: 5px 0 3px;
-    font-size: clamp(1.45rem, 3vw, 2rem);
-    line-height: 1.1;
-}
-
-.workshop-tire-history-page .tire-history-header p,
-.workshop-tire-history-page .tire-history-notice p,
-.workshop-tire-history-page .tire-history-empty p,
-.workshop-tire-history-page .tire-history-event-notes {
-    margin: 0;
-    color: var(--tire-history-muted);
-}
-
-.workshop-tire-history-page .tire-history-status {
-    flex: 0 0 auto;
-    padding: 7px 10px;
-    font-size: .78rem;
-    font-weight: 800;
-}
-
-.workshop-tire-history-page .tire-history-status.available {
-    color: #b9dbc5;
-}
-
-.workshop-tire-history-page .tire-history-status.maintenance {
-    color: #e4cc96;
-}
-
-.workshop-tire-history-page .tire-history-status.discarded {
-    color: #e7a6ab;
-}
-
-.workshop-tire-history-page .tire-history-summary {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 14px;
-}
-
-.workshop-tire-history-page .tire-history-summary article {
-    min-width: 0;
-    padding: 15px;
-    border-radius: 7px;
-}
-
-.workshop-tire-history-page .tire-history-summary strong {
-    display: block;
-    margin-top: 6px;
-    overflow-wrap: anywhere;
-    font-size: 1rem;
-}
-
-.workshop-tire-history-page .tire-history-notice {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 14px;
-    padding: 12px 14px;
-    border-radius: 7px;
-}
-
-.workshop-tire-history-page .tire-history-notice svg {
-    flex: 0 0 auto;
-    width: 17px;
-    height: 17px;
-    color: var(--tire-history-accent);
-}
-
-.workshop-tire-history-page .tire-history-section {
-    margin-top: 14px;
-    padding: 18px;
-    border-radius: 8px;
-}
-
-.workshop-tire-history-page .tire-history-section-header,
-.workshop-tire-history-page .tire-history-event-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-.workshop-tire-history-page .tire-history-section-header h2,
-.workshop-tire-history-page .tire-history-event-top h3 {
-    margin: 4px 0 0;
-    color: var(--tire-history-text);
-}
-
-.workshop-tire-history-page .tire-history-section-header h2 {
-    font-size: 1.08rem;
-}
-
-.workshop-tire-history-page .tire-history-section-header > strong,
-.workshop-tire-history-page .tire-history-event-top time {
-    color: var(--tire-history-muted);
-    font-size: .8rem;
-}
-
-.workshop-tire-history-page .tire-history-timeline {
-    display: grid;
-    gap: 10px;
-    margin-top: 16px;
-}
-
-.workshop-tire-history-page .tire-history-event {
-    display: grid;
-    grid-template-columns: 38px minmax(0, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-radius: 7px;
-}
-
-.workshop-tire-history-page .tire-history-marker {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid var(--tire-history-border-strong);
-    border-radius: 6px;
-    color: var(--tire-history-text);
-    background: var(--tire-history-surface-soft);
-}
-
-.workshop-tire-history-page .tire-history-marker svg {
-    width: 16px;
-    height: 16px;
-}
-
-.workshop-tire-history-page .tire-history-event.retread .tire-history-marker,
-.workshop-tire-history-page .tire-history-event.removal .tire-history-marker {
-    color: #e7a6ab;
-    border-color: rgba(217, 88, 98, .34);
-}
-
-.workshop-tire-history-page .tire-history-event-details {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 9px;
-    margin-top: 12px;
-}
-
-.workshop-tire-history-page .tire-history-event-details div {
-    min-width: 0;
-    padding: 9px 10px;
-    border: 1px solid var(--tire-history-border);
-    border-radius: 6px;
-    background: var(--tire-history-surface-soft);
-}
-
-.workshop-tire-history-page .tire-history-event-details strong {
-    display: block;
-    margin-top: 4px;
-    overflow-wrap: anywhere;
-    font-size: .84rem;
-}
-
-.workshop-tire-history-page .tire-history-event-notes {
-    margin-top: 10px;
-    padding: 9px 10px;
-    border-left: 2px solid var(--tire-history-accent);
-    background: var(--tire-history-surface-soft);
-    font-size: .84rem;
-}
-
-.workshop-tire-history-page .tire-history-empty {
-    margin-top: 16px;
-    padding: 28px;
-    border-radius: 7px;
-    text-align: center;
-}
-
-.workshop-tire-history-page .tire-history-empty svg {
-    width: 24px;
-    height: 24px;
-    margin-bottom: 8px;
-    color: var(--tire-history-muted);
-}
-
-.workshop-tire-history-page .tire-history-empty strong {
-    display: block;
-    margin-bottom: 4px;
-}
-
-html[data-chm-theme="corporate-light"] .workshop-tire-history-page {
-    --tire-history-bg: var(--chm-theme-body, #263249);
-    --tire-history-surface: var(--chm-theme-card, #3b4a66);
-    --tire-history-surface-soft: var(--chm-theme-card-elevated, #435373);
-    --tire-history-border: var(--chm-theme-border, rgba(226, 232, 240, .26));
-    --tire-history-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .38));
-    --tire-history-text: var(--chm-theme-text, #f8fafc);
-    --tire-history-muted: var(--chm-theme-muted, #d0d7e2);
-}
-
-@media (max-width: 900px) {
-    .workshop-tire-history-page .tire-history-summary,
-    .workshop-tire-history-page .tire-history-event-details {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 620px) {
-    .workshop-tire-history-page .tire-history-header,
-    .workshop-tire-history-page .tire-history-section-header,
-    .workshop-tire-history-page .tire-history-event-top {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .workshop-tire-history-page .tire-history-summary,
-    .workshop-tire-history-page .tire-history-event-details {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .workshop-tire-history-page .tire-history-event {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-/* Tire audit cancellation controls */
-.workshop-tire-history-page .tire-history-event.cancelled {
-    border-color: rgba(239, 68, 68, 0.28);
-    opacity: 0.82;
-}
-
-.workshop-tire-history-page .tire-history-cancelled {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.75rem;
-    align-items: center;
-    margin: 0.85rem 0;
-    padding: 0.7rem 0.85rem;
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    border-radius: 12px;
-    background: rgba(127, 29, 29, 0.18);
-    color: #fecaca;
-    font-size: 0.82rem;
-}
-
-.workshop-tire-history-page .tire-history-cancelled span {
-    color: #fca5a5;
-}
-
-.workshop-tire-history-page .tire-history-cancel-form {
-    display: grid;
-    gap: 0.75rem;
-    margin: 0.85rem 0;
-    padding: 0.85rem;
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 12px;
-    background: rgba(15, 23, 42, 0.42);
-}
-
-.workshop-tire-history-page .tire-history-cancel-form label {
-    display: grid;
-    gap: 0.45rem;
-    color: #cbd5e1;
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.workshop-tire-history-page .tire-history-cancel-form textarea {
-    width: 100%;
-    resize: vertical;
-    min-height: 72px;
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    border-radius: 10px;
-    background: rgba(15, 23, 42, 0.74);
-    color: #f8fafc;
-    padding: 0.65rem 0.75rem;
-    font: inherit;
-    text-transform: none;
-    letter-spacing: normal;
-}
-
-.workshop-tire-history-page .tire-history-cancel-form button {
-    justify-self: flex-start;
-    border: 1px solid rgba(239, 68, 68, 0.36);
-    border-radius: 10px;
-    background: rgba(153, 27, 27, 0.72);
-    color: #fee2e2;
-    padding: 0.58rem 0.9rem;
-    font-size: 0.82rem;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.workshop-tire-history-page .tire-history-cancel-form button:hover {
-    background: rgba(185, 28, 28, 0.86);
-}
-
-html[data-chm-theme="corporate-light"] .workshop-tire-history-page .tire-history-cancelled {
-    background: rgba(127, 29, 29, 0.13);
-    border-color: rgba(185, 28, 28, 0.28);
-    color: #fee2e2;
-}
-
-html[data-chm-theme="corporate-light"] .workshop-tire-history-page .tire-history-cancel-form {
-    background: rgba(52, 66, 91, 0.72);
-    border-color: rgba(203, 213, 225, 0.22);
-}
-
-html[data-chm-theme="corporate-light"] .workshop-tire-history-page .tire-history-cancel-form textarea {
-    background: rgba(67, 83, 115, 0.9);
-    border-color: rgba(203, 213, 225, 0.28);
-}
-
-/* Tire entry cancellation */
-.workshop-tires-page .workshop-entry-item.cancelled {
-    border-color: rgba(239, 68, 68, 0.26);
-    opacity: 0.82;
-}
-
-.workshop-tires-page .workshop-entry-status.cancelled {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(239, 68, 68, 0.32);
-    border-radius: 999px;
-    background: rgba(127, 29, 29, 0.18);
-    color: #fecaca;
-    padding: 0.22rem 0.55rem;
-    font-size: 0.72rem;
-    font-weight: 800;
-}
-
-.workshop-tires-page .workshop-entry-cancel-reason {
-    grid-column: 1 / -1;
-    color: #fca5a5;
-    font-size: 0.78rem;
-}
-
-.workshop-tires-page .workshop-entry-cancel-form {
-    grid-column: 1 / -1;
-    display: grid;
-    gap: 0.55rem;
-    margin-top: 0.45rem;
-}
-
-.workshop-tires-page .workshop-entry-cancel-form textarea {
-    width: 100%;
-    min-height: 58px;
-    resize: vertical;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    border-radius: 10px;
-    background: rgba(15, 23, 42, 0.62);
-    color: #f8fafc;
-    padding: 0.58rem 0.68rem;
-    font: inherit;
-}
-
-.workshop-tires-page .workshop-entry-cancel-form button {
-    justify-self: flex-start;
-    border: 1px solid rgba(239, 68, 68, 0.34);
-    border-radius: 10px;
-    background: rgba(153, 27, 27, 0.72);
-    color: #fee2e2;
-    padding: 0.48rem 0.78rem;
-    font-size: 0.78rem;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-html[data-chm-theme="corporate-light"] .workshop-tires-page .workshop-entry-cancel-form textarea {
-    background: rgba(67, 83, 115, 0.86);
-    border-color: rgba(203, 213, 225, 0.3);
-}
+.workshop-tires-page {    display: flex;    flex-direction: column;    gap: 22px;}.workshop-alert {    padding: 14px 16px;    border-radius: 16px;    font-size: 14px;    font-weight: 800;}.workshop-alert.success {    color: #86efac;    background: rgba(34, 197, 94, .10);    border: 1px solid rgba(34, 197, 94, .22);}.workshop-hero {    display: flex;    align-items: center;    justify-content: space-between;    gap: 18px;    padding: 24px;    border-radius: 24px;    background: #111827;    border: 1px solid rgba(148, 163, 184, .14);}.workshop-hero span {    display: inline-flex;    margin-bottom: 8px;    padding: 5px 10px;    border-radius: 999px;    color: #86efac;    background: rgba(34, 197, 94, .10);    border: 1px solid rgba(34, 197, 94, .22);    font-size: 10px;    font-weight: 850;    text-transform: uppercase;    letter-spacing: .1em;}.workshop-hero h1 {    margin: 0;    color: #ffffff;    font-size: 26px;    font-weight: 900;}.workshop-hero p {    margin: 8px 0 0;    color: #94a3b8;    font-size: 14px;}.workshop-hero-btn {    height: 42px;    display: inline-flex;    align-items: center;    justify-content: center;    gap: 8px;    padding: 0 14px;    border-radius: 14px;    color: #cbd5e1;    background: rgba(15, 23, 42, .70);    border: 1px solid rgba(148, 163, 184, .18);    text-decoration: none;    font-size: 13px;    font-weight: 800;}.workshop-summary-grid {    display: grid;    grid-template-columns: repeat(5, minmax(0, 1fr));    gap: 14px;}.workshop-summary-card {    padding: 18px;    border-radius: 20px;    background: #111827;    border: 1px solid rgba(148, 163, 184, .14);}.workshop-summary-card small {    display: block;    color: #94a3b8;    font-size: 11px;    font-weight: 800;    text-transform: uppercase;    letter-spacing: .08em;}.workshop-summary-card strong {    display: block;    margin-top: 8px;    color: #ffffff;    font-size: 28px;    font-weight: 900;}.workshop-summary-card.available strong {    color: #86efac;}.workshop-summary-card.installed strong {    color: #93c5fd;}.workshop-summary-card.maintenance strong {    color: #fde68a;}.workshop-summary-card.discarded strong {    color: #fca5a5;}.workshop-grid {    display: grid;    grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr);    gap: 18px;}.workshop-card {    padding: 20px;    border-radius: 22px;    background: #111827;    border: 1px solid rgba(148, 163, 184, .14);}.workshop-card-header {    display: flex;    justify-content: space-between;    align-items: flex-start;    gap: 16px;    margin-bottom: 18px;}.workshop-card-header h2 {    margin: 0;    color: #ffffff;    font-size: 18px;    font-weight: 900;}.workshop-card-header p {    margin: 6px 0 0;    color: #94a3b8;    font-size: 13px;}.workshop-card-header svg {    color: #86efac;}.workshop-form-grid {    display: grid;    grid-template-columns: repeat(2, minmax(0, 1fr));    gap: 14px;}.form-group {    display: flex;    flex-direction: column;    gap: 7px;}.form-group label {    color: #cbd5e1;    font-size: 11px;    font-weight: 850;    text-transform: uppercase;    letter-spacing: .07em;}.form-group input,.form-group textarea,.form-group select {    width: 100%;    border-radius: 13px;    border: 1px solid rgba(148, 163, 184, .18);    background: #0f172a;    color: #f8fafc;    padding: 0 13px;    outline: none;    font-size: 14px;}.form-group input,.form-group select {    height: 44px;}.form-group textarea {    padding-top: 12px;    resize: vertical;}.workshop-submit-btn {    height: 44px;    margin-top: 16px;    display: inline-flex;    align-items: center;    justify-content: center;    gap: 8px;    padding: 0 16px;    border-radius: 14px;    color: #052e16;    background: #22c55e;    border: none;    cursor: pointer;    font-size: 13px;    font-weight: 900;}.workshop-entry-list {    display: flex;    flex-direction: column;    gap: 10px;}.workshop-entry-item{    display:grid;    grid-template-columns: 1fr auto;    gap:14px;    align-items:start;    padding:14px 16px;    border-radius:10px;}.workshop-entry-item strong {    display: block;    color: #ffffff;    font-size: 13px;    font-weight: 850;}.workshop-entry-main{    display:flex;    flex-direction:column;    gap:4px;    min-width:0;}.workshop-entry-actions{    display:flex;    flex-direction:column;    align-items:flex-end;    gap:10px;}.workshop-entry-item span,.workshop-entry-item small {    display: block;    margin-top: 3px;    color: #94a3b8;    font-size: 12px;}.workshop-table {    overflow: hidden;    border-radius: 18px;    border: 1px solid rgba(148, 163, 184, .12);}.workshop-table-head,.workshop-table-row {    display: grid;    grid-template-columns: 1.1fr 1.4fr .8fr 1fr .7fr;    gap: 14px;    align-items: center;}.workshop-table-head {    padding: 14px 16px;    background: #151f31;    color: #94a3b8;    font-size: 11px;    font-weight: 900;    text-transform: uppercase;    letter-spacing: .08em;}.workshop-table-row {    padding: 15px 16px;    border-top: 1px solid rgba(148, 163, 184, .10);    color: #cbd5e1;    font-size: 13px;}.workshop-table-row strong {    display: block;    color: #ffffff;    font-size: 14px;    font-weight: 850;}.workshop-table-row span {    display: block;    margin-top: 3px;    color: #94a3b8;    font-size: 12px;}.workshop-status {    display: inline-flex;    padding: 6px 9px;    border-radius: 999px;    font-size: 11px !important;    font-weight: 900;}.workshop-status.available {    color: #86efac;    background: rgba(34, 197, 94, .10);    border: 1px solid rgba(34, 197, 94, .22);}.workshop-status.installed {    color: #93c5fd;    background: rgba(59, 130, 246, .10);    border: 1px solid rgba(59, 130, 246, .22);}.workshop-status.maintenance {    color: #fde68a;    background: rgba(250, 204, 21, .10);    border: 1px solid rgba(250, 204, 21, .20);}.workshop-status.discarded {    color: #fca5a5;    background: rgba(239, 68, 68, .12);    border: 1px solid rgba(239, 68, 68, .24);}.workshop-empty {    padding: 18px;    color: #94a3b8;    font-size: 13px;}@media (max-width: 1100px) {    .workshop-summary-grid {        grid-template-columns: repeat(2, minmax(0, 1fr));    }    .workshop-grid {        grid-template-columns: 1fr;    }    .workshop-table-head {        display: none;    }    .workshop-table-row {        grid-template-columns: 1fr;    }}@media (max-width: 640px) {    .workshop-hero {        flex-direction: column;        align-items: flex-start;    }    .workshop-summary-grid,    .workshop-form-grid {        grid-template-columns: 1fr;    }}.input-with-suffix {    position: relative;    width: 100%;}.input-with-suffix input {    padding-right: 48px;}.input-with-suffix span {    position: absolute;    right: 14px;    top: 50%;    transform: translateY(-50%);    color: #94a3b8;    font-size: 12px;    font-weight: 900;    letter-spacing: .04em;    pointer-events: none;}.form-help {    display: block;    margin-top: 7px;    color: #94a3b8;    font-size: 11px;    line-height: 1.35;}/* =========================================================   TIRE FILTERS========================================================= */.workshop-tire-filters {    display: grid;    grid-template-columns: minmax(280px, 1fr) auto auto;    gap: 12px;    align-items: center;    margin-bottom: 16px;}.workshop-tire-search {    height: 46px;    display: flex;    align-items: center;    gap: 10px;    padding: 0 14px;    border-radius: 15px;    background: #0f172a;    border: 1px solid rgba(148, 163, 184, .18);}.workshop-tire-search svg {    width: 17px;    height: 17px;    color: #86efac;}.workshop-tire-search input {    width: 100%;    height: 100%;    background: transparent;    border: none;    outline: none;    color: #f8fafc;    font-size: 13px;    font-weight: 700;}.workshop-tire-search input::placeholder {    color: #64748b;}.workshop-tire-status-filters {    display: flex;    align-items: center;    gap: 8px;    flex-wrap: wrap;}.workshop-tire-status-filters a {    height: 36px;    display: inline-flex;    align-items: center;    justify-content: center;    padding: 0 12px;    border-radius: 999px;    color: #94a3b8;    background: rgba(15, 23, 42, .58);    border: 1px solid rgba(148, 163, 184, .16);    text-decoration: none;    font-size: 12px;    font-weight: 850;    transition: .15s ease;}.workshop-tire-status-filters a:hover,.workshop-tire-status-filters a.active {    color: #86efac;    background: rgba(34, 197, 94, .10);    border-color: rgba(34, 197, 94, .28);}.workshop-filter-submit {    height: 40px;    display: inline-flex;    align-items: center;    justify-content: center;    padding: 0 14px;    border-radius: 13px;    color: #86efac;    background: rgba(34, 197, 94, .10);    border: 1px solid rgba(34, 197, 94, .28);    cursor: pointer;    font-size: 12px;    font-weight: 900;}/* =========================================================   TABLE WITH LARGE DATA========================================================= */.workshop-table {    overflow: hidden;    border-radius: 18px;    border: 1px solid rgba(148, 163, 184, .12);}.workshop-table-body {    max-height: 620px;    overflow-y: auto;}.workshop-table-head {    position: sticky;    top: 0;    z-index: 2;}.workshop-pagination {    margin-top: 16px;    display: flex;    justify-content: flex-end;}/* Laravel pagination basic dark support */.workshop-pagination nav {    display: flex;    align-items: center;    gap: 8px;}.workshop-pagination a,.workshop-pagination span {    color: #cbd5e1;}@media (max-width: 1100px) {    .workshop-tire-filters {        grid-template-columns: 1fr;    }    .workshop-tire-status-filters {        justify-content: flex-start;    }    .workshop-pagination {        justify-content: center;    }}.workshop-pagination {    margin-top: 16px;    display: flex;    align-items: center;    justify-content: space-between;    gap: 14px;    padding: 14px 16px;    border-radius: 18px;    background: rgba(15, 23, 42, .55);    border: 1px solid rgba(148, 163, 184, .12);}.workshop-pagination-info {    color: #94a3b8;    font-size: 12px;    font-weight: 750;}.workshop-pagination-info strong {    color: #f8fafc;}.workshop-pagination-links {    display: flex;    align-items: center;    gap: 7px;    flex-wrap: wrap;}.workshop-pagination-links a,.workshop-pagination-links span {    min-width: 34px;    height: 34px;    display: inline-flex;    align-items: center;    justify-content: center;    padding: 0 10px;    border-radius: 11px;    color: #cbd5e1;    background: rgba(15, 23, 42, .75);    border: 1px solid rgba(148, 163, 184, .16);    text-decoration: none;    font-size: 12px;    font-weight: 900;}.workshop-pagination-links a:hover {    color: #86efac;    background: rgba(34, 197, 94, .10);    border-color: rgba(34, 197, 94, .28);}.workshop-pagination-links span.active {    color: #052e16;    background: #22c55e;    border-color: rgba(34, 197, 94, .45);}.workshop-pagination-links span.disabled {    opacity: .42;    cursor: not-allowed;}@media (max-width: 760px) {    .workshop-pagination {        flex-direction: column;        align-items: stretch;    }    .workshop-pagination-links {        justify-content: center;    }    .workshop-pagination-info {        text-align: center;    }}.workshop-status-head{    width:fit-content;}.workshop-table-head,.workshop-table-row {    grid-template-columns: 1fr 1.3fr .8fr 1fr .7fr 120px;}.workshop-table-action {    height: 34px;    display: inline-flex;    align-items: center;    justify-content: center;    gap: 7px;    padding: 0 11px;    border-radius: 11px;    color: #cbd5e1;    background: rgba(15, 23, 42, .72);    border: 1px solid rgba(148, 163, 184, .18);    cursor: pointer;    font-size: 12px;    font-weight: 850;}.workshop-table-action:hover {    color: #86efac;    background: rgba(34, 197, 94, .10);    border-color: rgba(34, 197, 94, .28);}.workshop-table-action svg {    width: 15px;    height: 15px;}.workshop-modal-overlay {    position: fixed;    inset: 0;    z-index: 2200;    display: flex;    align-items: center;    justify-content: center;    padding: 24px;    background: rgba(2, 6, 23, .72);    backdrop-filter: blur(8px);    overflow: hidden;}.workshop-tire-modal {    width: min(860px, 100%);    max-height: calc(100vh - 48px);    display: flex;    flex-direction: column;    border-radius: 24px;    background: #111827;    border: 1px solid rgba(148, 163, 184, .18);    box-shadow:        0 32px 80px rgba(0, 0, 0, .45);    overflow: hidden;}.workshop-tire-modal-header {    flex: 0 0 auto;    display: flex;    justify-content: space-between;    align-items: flex-start;    gap: 16px;    padding: 24px;    border-bottom: 1px solid rgba(148, 163, 184, .12);}.workshop-tire-modal-header span {    display: inline-flex;    margin-bottom: 8px;    padding: 5px 10px;    border-radius: 999px;    color: #86efac;    background: rgba(34, 197, 94, .10);    border: 1px solid rgba(34, 197, 94, .22);    font-size: 10px;    font-weight: 900;    letter-spacing: .08em;    text-transform: uppercase;}.workshop-tire-modal-header h2 {    margin: 0;    color: #ffffff;    font-size: 24px;    font-weight: 950;}.workshop-tire-modal-header p {    margin: 6px 0 0;    color: #94a3b8;    font-size: 13px;}.workshop-tire-modal-header button {    width: 42px;    height: 42px;    display: inline-flex;    align-items: center;    justify-content: center;    border-radius: 14px;    color: #cbd5e1;    background: rgba(15, 23, 42, .70);    border: 1px solid rgba(148, 163, 184, .18);    cursor: pointer;}.workshop-tire-modal-form {    flex: 1 1 auto;    min-height: 0;    padding: 22px 24px;    overflow-y: auto;}.workshop-tire-modal-footer {    position: sticky;    bottom: -22px;    display: flex;    justify-content: flex-end;    gap: 10px;    margin: 18px -24px -22px;    padding: 16px 24px;    background: #111827;    border-top: 1px solid rgba(148, 163, 184, .12);}.workshop-modal-cancel,.workshop-modal-save {    height: 44px;    display: inline-flex;    align-items: center;    justify-content: center;    gap: 8px;    padding: 0 16px;    border-radius: 14px;    cursor: pointer;    font-size: 13px;    font-weight: 900;}.workshop-modal-cancel {    color: #cbd5e1;    background: rgba(15, 23, 42, .70);    border: 1px solid rgba(148, 163, 184, .18);}.workshop-modal-save {    color: #86efac;    background: rgba(34, 197, 94, .10);    border: 1px solid rgba(34, 197, 94, .28);}.workshop-modal-save svg {    width: 16px;    height: 16px;}/* CHM workshop tires corporate visual layer */.workshop-tires-page,.workshop-modal-overlay {    --tires-surface: #202a40;    --tires-soft: #253149;    --tires-muted-surface: #1b2437;    --tires-elevated: #2b3850;    --tires-border: rgba(203, 213, 225, .14);    --tires-border-strong: rgba(203, 213, 225, .23);    --tires-text: #f1f5f9;    --tires-muted: #a8b1c1;    --tires-accent: #b9434c;    --tires-positive: #72ad88;    --tires-info: #91a8c8;    --tires-warning: #d2b77a;    --tires-danger: #df747c;    color: var(--tires-text);}html[data-chm-theme="corporate-light"] .workshop-tires-page,html[data-chm-theme="corporate-light"] .workshop-modal-overlay {    --tires-surface: var(--chm-theme-card, #3b4a66);    --tires-soft: var(--chm-theme-card-elevated, #435373);    --tires-muted-surface: var(--chm-theme-surface, #34425b);    --tires-elevated: #4a5b7b;    --tires-border: var(--chm-theme-border, rgba(226, 232, 240, .24));    --tires-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .36));    --tires-text: var(--chm-theme-text, #f8fafc);    --tires-muted: var(--chm-theme-muted, #d0d7e2);}.workshop-tires-page .workshop-hero {    padding: 20px;    border: 1px solid var(--tires-border);    border-left: 3px solid var(--tires-accent);    border-radius: 10px;    background: var(--tires-muted-surface);    box-shadow: none;}.workshop-tires-page .workshop-hero span,.workshop-modal-overlay .workshop-tire-modal-header span {    margin-bottom: 6px;    padding: 0;    color: var(--tires-muted);    background: transparent;    border: 0;    border-radius: 0;}.workshop-tires-page .workshop-hero h1 {    color: var(--tires-text);    font-size: clamp(1.45rem, 2vw, 1.8rem);    line-height: 1.15;}.workshop-tires-page .workshop-hero p,.workshop-tires-page .workshop-card-header p,.workshop-tires-page .workshop-card-header svg,.workshop-tires-page .form-help,.workshop-tires-page .workshop-entry-item span,.workshop-tires-page .workshop-entry-item small,.workshop-tires-page .workshop-table-row span,.workshop-tires-page .workshop-pagination-info,.workshop-modal-overlay .workshop-tire-modal-header p {    color: var(--tires-muted);}.workshop-tires-page .workshop-hero-btn,.workshop-tires-page .workshop-submit-btn,.workshop-tires-page .workshop-filter-submit,.workshop-tires-page .workshop-table-action,.workshop-modal-overlay .workshop-modal-cancel,.workshop-modal-overlay .workshop-modal-save {    min-height: 39px;    padding: 0 13px;    border: 1px solid var(--tires-border-strong);    border-radius: 7px;    color: var(--tires-text);    background: var(--tires-soft);    box-shadow: none;    font-size: 12px;    font-weight: 750;    text-decoration: none;    transform: none;}.workshop-tires-page .workshop-submit-btn,.workshop-tires-page .workshop-filter-submit,.workshop-modal-overlay .workshop-modal-save {    color: #fff;    background: var(--tires-accent);    border-color: var(--tires-accent);}.workshop-tires-page .workshop-alert,.workshop-tires-page .workshop-summary-card,.workshop-tires-page .workshop-card,.workshop-tires-page .workshop-entry-item,.workshop-tires-page .workshop-empty {    color: var(--tires-text);    background: var(--tires-surface);    border: 1px solid var(--tires-border);    border-radius: 10px;    box-shadow: none;}.workshop-tires-page .workshop-alert.success {    color: #c4e4cf;    background: rgba(114, 173, 136, .10);    border-color: rgba(114, 173, 136, .28);    box-shadow: inset 3px 0 0 var(--tires-positive);}.workshop-tires-page .workshop-summary-grid {    gap: 12px;}.workshop-tires-page .workshop-summary-card {    min-height: 0;    padding: 14px 15px;}.workshop-tires-page .workshop-summary-card small {    color: var(--tires-muted);}.workshop-tires-page .workshop-summary-card strong,.workshop-tires-page .workshop-card-header h2,.workshop-tires-page .workshop-entry-item strong,.workshop-tires-page .workshop-table-row strong,.workshop-modal-overlay .workshop-tire-modal-header h2 {    color: var(--tires-text);}.workshop-tires-page .workshop-summary-card.available {    border-color: rgba(114, 173, 136, .28);    box-shadow: inset 3px 0 0 var(--tires-positive);}.workshop-tires-page .workshop-summary-card.available strong {    color: #b9ddc5;}.workshop-tires-page .workshop-summary-card.installed {    border-color: rgba(145, 168, 200, .30);    box-shadow: inset 3px 0 0 var(--tires-info);}.workshop-tires-page .workshop-summary-card.installed strong {    color: #c4d2e4;}.workshop-tires-page .workshop-summary-card.maintenance {    border-color: rgba(210, 183, 122, .30);    box-shadow: inset 3px 0 0 var(--tires-warning);}.workshop-tires-page .workshop-summary-card.maintenance strong {    color: #e2c98f;}.workshop-tires-page .workshop-summary-card.discarded {    border-color: rgba(223, 116, 124, .30);    box-shadow: inset 3px 0 0 var(--tires-danger);}.workshop-tires-page .workshop-summary-card.discarded strong {    color: #f0a6ac;}.workshop-tires-page .workshop-grid {    gap: 16px;}.workshop-tires-page .workshop-card {    min-width: 0;    overflow: hidden;}.workshop-tires-page .workshop-card-header {    padding: 16px 18px;    background: var(--tires-muted-surface);    border-bottom: 1px solid var(--tires-border);}.workshop-tires-page .workshop-entry-form {    padding: 18px;}.workshop-tires-page .workshop-form-grid {    gap: 12px;}.workshop-tires-page .form-group,.workshop-modal-overlay .form-group,.workshop-tires-page .input-with-suffix,.workshop-modal-overlay .input-with-suffix {    min-width: 0;    max-width: 100%;    box-sizing: border-box;}.workshop-tires-page .form-group label,.workshop-modal-overlay .form-group label {    color: var(--tires-muted);}.workshop-tires-page .form-group input,.workshop-tires-page .form-group textarea,.workshop-tires-page .form-group select,.workshop-modal-overlay .form-group input,.workshop-modal-overlay .form-group textarea,.workshop-modal-overlay .form-group select {    max-width: 100%;    color: var(--tires-text);    background: var(--tires-muted-surface);    border: 1px solid var(--tires-border-strong);    border-radius: 7px;    box-shadow: none;}.workshop-tires-page .input-with-suffix,.workshop-modal-overlay .input-with-suffix {    background: var(--tires-muted-surface);    border: 1px solid var(--tires-border-strong);    border-radius: 7px;    overflow: hidden;}.workshop-tires-page .input-with-suffix input,.workshop-modal-overlay .input-with-suffix input {    border: 0;    border-radius: 0;}.workshop-tires-page .input-with-suffix span,.workshop-modal-overlay .input-with-suffix span {    color: var(--tires-muted);    background: var(--tires-soft);    border-left: 1px solid var(--tires-border);}.workshop-tires-page .workshop-entry-list {    padding: 14px 16px 16px;    gap: 8px;}.workshop-tires-page .workshop-entry-item {    min-width: 0;    padding: 11px 12px;    overflow-wrap: anywhere;}.workshop-tires-page .workshop-tire-filters {    margin: 16px 18px;    padding: 12px;    gap: 10px;    background: var(--tires-muted-surface);    border: 1px solid var(--tires-border);    border-radius: 8px;    box-shadow: none;}.workshop-tires-page .workshop-tire-search {    min-width: 0;    color: var(--tires-muted);    background: var(--tires-surface);    border: 1px solid var(--tires-border-strong);    border-radius: 7px;}.workshop-tires-page .workshop-tire-search svg {    color: var(--tires-muted);}.workshop-tires-page .workshop-tire-search input {    min-width: 0;    color: var(--tires-text);    background: transparent;}.workshop-tires-page .workshop-tire-status-filters a {    min-height: 34px;    padding: 0 10px;    color: var(--tires-muted);    background: var(--tires-surface);    border: 1px solid var(--tires-border);    border-radius: 6px;    box-shadow: none;}.workshop-tires-page .workshop-tire-status-filters a:hover,.workshop-tires-page .workshop-tire-status-filters a.active {    color: var(--tires-text);    background: var(--tires-elevated);    border-color: var(--tires-border-strong);    box-shadow: inset 0 -2px 0 var(--tires-accent);}.workshop-tires-page .workshop-table {    margin: 0 18px 18px;    min-width: 0;    border: 1px solid var(--tires-border);    border-radius: 8px;    background: var(--tires-surface);    box-shadow: none;    overflow-x: auto;}.workshop-tires-page .workshop-table-head {    color: var(--tires-muted);    background: var(--tires-muted-surface);    border-bottom: 1px solid var(--tires-border);}.workshop-tires-page .workshop-table-row {    min-width: 760px;    color: var(--tires-text);    background: transparent;    border-bottom: 1px solid var(--tires-border);}.workshop-tires-page .workshop-table-row:hover {    background: var(--tires-soft);}.workshop-tires-page .workshop-status {    border-radius: 6px;    box-shadow: none;}.workshop-tires-page .workshop-status.available {    color: #b9ddc5;    background: rgba(114, 173, 136, .10);    border-color: rgba(114, 173, 136, .28);}.workshop-tires-page .workshop-status.installed {    color: #c4d2e4;    background: rgba(145, 168, 200, .10);    border-color: rgba(145, 168, 200, .30);}.workshop-tires-page .workshop-status.maintenance {    color: #e2c98f;    background: rgba(210, 183, 122, .10);    border-color: rgba(210, 183, 122, .30);}.workshop-tires-page .workshop-status.discarded {    color: #f0a6ac;    background: rgba(223, 116, 124, .10);    border-color: rgba(223, 116, 124, .30);}.workshop-tires-page .workshop-pagination {    margin: 0 18px 18px;    padding: 11px 12px;    background: var(--tires-muted-surface);    border: 1px solid var(--tires-border);    border-radius: 8px;    box-shadow: none;}.workshop-tires-page .workshop-pagination-links a,.workshop-tires-page .workshop-pagination-links span {    color: var(--tires-muted);    background: var(--tires-surface);    border: 1px solid var(--tires-border);    border-radius: 6px;    box-shadow: none;}.workshop-modal-overlay {    padding: 18px;    background: rgba(10, 15, 27, .78);    backdrop-filter: blur(3px);}.workshop-modal-overlay .workshop-tire-modal {    color: var(--tires-text);    background: var(--tires-surface);    border: 1px solid var(--tires-border-strong);    border-radius: 11px;    box-shadow: 0 14px 34px rgba(0, 0, 0, .24);}.workshop-modal-overlay .workshop-tire-modal-header {    padding: 17px 20px;    background: var(--tires-muted-surface);    border-bottom: 1px solid var(--tires-border);}.workshop-modal-overlay .workshop-tire-modal-header h2 {    font-size: 1.35rem;}.workshop-modal-overlay .workshop-tire-modal-header button {    width: 36px;    height: 36px;    color: var(--tires-muted);    background: var(--tires-soft);    border: 1px solid var(--tires-border);    border-radius: 7px;    box-shadow: none;}.workshop-modal-overlay .workshop-tire-modal-form {    padding: 18px 20px;}.workshop-modal-overlay .workshop-tire-modal-footer {    bottom: -18px;    margin: 16px -20px -18px;    padding: 13px 20px;    background: var(--tires-muted-surface);    border-top: 1px solid var(--tires-border);}html[data-chm-theme="corporate-light"] .workshop-tires-page .form-group input,html[data-chm-theme="corporate-light"] .workshop-tires-page .form-group textarea,html[data-chm-theme="corporate-light"] .workshop-tires-page .form-group select,html[data-chm-theme="corporate-light"] .workshop-modal-overlay .form-group input,html[data-chm-theme="corporate-light"] .workshop-modal-overlay .form-group textarea,html[data-chm-theme="corporate-light"] .workshop-modal-overlay .form-group select {    background: var(--chm-theme-input, #4a5c7b);}@media (max-width: 1100px) {    .workshop-tires-page .workshop-grid {        grid-template-columns: minmax(0, 1fr);    }}@media (max-width: 760px) {    .workshop-tires-page .workshop-form-grid {        grid-template-columns: minmax(0, 1fr);    }    .workshop-tires-page .workshop-filter-submit,    .workshop-tires-page .workshop-submit-btn,    .workshop-modal-overlay .workshop-modal-cancel,    .workshop-modal-overlay .workshop-modal-save {        width: 100%;    }    .workshop-modal-overlay {        padding: 9px;    }    .workshop-modal-overlay .workshop-tire-modal-footer {        align-items: stretch;        flex-direction: column-reverse;    }}/* CHM tire retread phase 1 */.workshop-tires-page .workshop-table-action.retread {    color: #e2c98f;    background: rgba(210, 183, 122, .10);    border-color: rgba(210, 183, 122, .30);}.workshop-tires-page .workshop-table-action.retread:hover {    color: #f0dcab;    background: rgba(210, 183, 122, .16);    border-color: rgba(210, 183, 122, .42);}.workshop-modal-overlay .workshop-retread-modal {    width: min(620px, 100%);}.workshop-modal-overlay .workshop-retread-form-grid {    display: grid;    grid-template-columns: repeat(2, minmax(0, 1fr));    gap: 12px;}.workshop-modal-overlay .workshop-retread-form-grid .full-width {    grid-column: 1 / -1;}.workshop-modal-overlay .workshop-modal-save.retread {    color: #fff;    background: var(--tires-accent);    border-color: var(--tires-accent);}html[data-chm-theme="corporate-light"] .workshop-modal-overlay .workshop-retread-modal {    background: var(--tires-surface);}@media (max-width: 620px) {    .workshop-modal-overlay .workshop-retread-form-grid {        grid-template-columns: minmax(0, 1fr);    }    .workshop-modal-overlay .workshop-retread-form-grid .full-width {        grid-column: auto;    }}/* CHM tire history phase 2 */.workshop-tire-history-page {    --tire-history-bg: #182136;    --tire-history-surface: #202a40;    --tire-history-surface-soft: #253149;    --tire-history-border: rgba(203, 213, 225, .14);    --tire-history-border-strong: rgba(203, 213, 225, .24);    --tire-history-text: #f1f5f9;    --tire-history-muted: #a8b1c1;    --tire-history-accent: #d95862;    width: 100%;    color: var(--tire-history-text);}.workshop-tire-history-page .tire-history-header,.workshop-tire-history-page .tire-history-summary article,.workshop-tire-history-page .tire-history-notice,.workshop-tire-history-page .tire-history-section,.workshop-tire-history-page .tire-history-event,.workshop-tire-history-page .tire-history-empty {    border: 1px solid var(--tire-history-border);    background: var(--tire-history-surface);}.workshop-tire-history-page .tire-history-header {    display: flex;    align-items: flex-start;    justify-content: space-between;    gap: 20px;    padding: 22px;    border-left: 3px solid var(--tire-history-accent);    border-radius: 8px;}.workshop-tire-history-page .tire-history-back,.workshop-tire-history-page .tire-history-status {    display: inline-flex;    align-items: center;    gap: 7px;    border: 1px solid var(--tire-history-border-strong);    border-radius: 6px;    color: var(--tire-history-text);    background: var(--tire-history-surface-soft);    text-decoration: none;}.workshop-tire-history-page .tire-history-back {    min-height: 36px;    margin-bottom: 16px;    padding: 7px 11px;    font-size: .82rem;    font-weight: 700;}.workshop-tire-history-page .tire-history-back svg {    width: 15px;    height: 15px;}.workshop-tire-history-page .tire-history-header > div > span,.workshop-tire-history-page .tire-history-section-header span,.workshop-tire-history-page .tire-history-summary span,.workshop-tire-history-page .tire-history-event-top span,.workshop-tire-history-page .tire-history-event-details span {    color: var(--tire-history-muted);    font-size: .74rem;    font-weight: 700;    letter-spacing: .04em;    text-transform: uppercase;}.workshop-tire-history-page .tire-history-header h1 {    margin: 5px 0 3px;    font-size: clamp(1.45rem, 3vw, 2rem);    line-height: 1.1;}.workshop-tire-history-page .tire-history-header p,.workshop-tire-history-page .tire-history-notice p,.workshop-tire-history-page .tire-history-empty p,.workshop-tire-history-page .tire-history-event-notes {    margin: 0;    color: var(--tire-history-muted);}.workshop-tire-history-page .tire-history-status {    flex: 0 0 auto;    padding: 7px 10px;    font-size: .78rem;    font-weight: 800;}.workshop-tire-history-page .tire-history-status.available {    color: #b9dbc5;}.workshop-tire-history-page .tire-history-status.maintenance {    color: #e4cc96;}.workshop-tire-history-page .tire-history-status.discarded {    color: #e7a6ab;}.workshop-tire-history-page .tire-history-summary {    display: grid;    grid-template-columns: repeat(4, minmax(0, 1fr));    gap: 12px;    margin-top: 14px;}.workshop-tire-history-page .tire-history-summary article {    min-width: 0;    padding: 15px;    border-radius: 7px;}.workshop-tire-history-page .tire-history-summary strong {    display: block;    margin-top: 6px;    overflow-wrap: anywhere;    font-size: 1rem;}.workshop-tire-history-page .tire-history-notice {    display: flex;    align-items: center;    gap: 10px;    margin-top: 14px;    padding: 12px 14px;    border-radius: 7px;}.workshop-tire-history-page .tire-history-notice svg {    flex: 0 0 auto;    width: 17px;    height: 17px;    color: var(--tire-history-accent);}.workshop-tire-history-page .tire-history-section {    margin-top: 14px;    padding: 18px;    border-radius: 8px;}.workshop-tire-history-page .tire-history-section-header,.workshop-tire-history-page .tire-history-event-top {    display: flex;    align-items: flex-start;    justify-content: space-between;    gap: 16px;}.workshop-tire-history-page .tire-history-section-header h2,.workshop-tire-history-page .tire-history-event-top h3 {    margin: 4px 0 0;    color: var(--tire-history-text);}.workshop-tire-history-page .tire-history-section-header h2 {    font-size: 1.08rem;}.workshop-tire-history-page .tire-history-section-header > strong,.workshop-tire-history-page .tire-history-event-top time {    color: var(--tire-history-muted);    font-size: .8rem;}.workshop-tire-history-page .tire-history-timeline {    display: grid;    gap: 10px;    margin-top: 16px;}.workshop-tire-history-page .tire-history-event {    display: grid;    grid-template-columns: 38px minmax(0, 1fr);    gap: 12px;    padding: 14px;    border-radius: 7px;}.workshop-tire-history-page .tire-history-marker {    display: flex;    align-items: center;    justify-content: center;    width: 34px;    height: 34px;    border: 1px solid var(--tire-history-border-strong);    border-radius: 6px;    color: var(--tire-history-text);    background: var(--tire-history-surface-soft);}.workshop-tire-history-page .tire-history-marker svg {    width: 16px;    height: 16px;}.workshop-tire-history-page .tire-history-event.retread .tire-history-marker,.workshop-tire-history-page .tire-history-event.removal .tire-history-marker {    color: #e7a6ab;    border-color: rgba(217, 88, 98, .34);}.workshop-tire-history-page .tire-history-event-details {    display: grid;    grid-template-columns: repeat(4, minmax(0, 1fr));    gap: 9px;    margin-top: 12px;}.workshop-tire-history-page .tire-history-event-details div {    min-width: 0;    padding: 9px 10px;    border: 1px solid var(--tire-history-border);    border-radius: 6px;    background: var(--tire-history-surface-soft);}.workshop-tire-history-page .tire-history-event-details strong {    display: block;    margin-top: 4px;    overflow-wrap: anywhere;    font-size: .84rem;}.workshop-tire-history-page .tire-history-event-notes {    margin-top: 10px;    padding: 9px 10px;    border-left: 2px solid var(--tire-history-accent);    background: var(--tire-history-surface-soft);    font-size: .84rem;}.workshop-tire-history-page .tire-history-empty {    margin-top: 16px;    padding: 28px;    border-radius: 7px;    text-align: center;}.workshop-tire-history-page .tire-history-empty svg {    width: 24px;    height: 24px;    margin-bottom: 8px;    color: var(--tire-history-muted);}.workshop-tire-history-page .tire-history-empty strong {    display: block;    margin-bottom: 4px;}html[data-chm-theme="corporate-light"] .workshop-tire-history-page {    --tire-history-bg: var(--chm-theme-body, #263249);    --tire-history-surface: var(--chm-theme-card, #3b4a66);    --tire-history-surface-soft: var(--chm-theme-card-elevated, #435373);    --tire-history-border: var(--chm-theme-border, rgba(226, 232, 240, .26));    --tire-history-border-strong: var(--chm-theme-border-strong, rgba(226, 232, 240, .38));    --tire-history-text: var(--chm-theme-text, #f8fafc);    --tire-history-muted: var(--chm-theme-muted, #d0d7e2);}@media (max-width: 900px) {    .workshop-tire-history-page .tire-history-summary,    .workshop-tire-history-page .tire-history-event-details {        grid-template-columns: repeat(2, minmax(0, 1fr));    }}@media (max-width: 620px) {    .workshop-tire-history-page .tire-history-header,    .workshop-tire-history-page .tire-history-section-header,    .workshop-tire-history-page .tire-history-event-top {        align-items: stretch;        flex-direction: column;    }    .workshop-tire-history-page .tire-history-summary,    .workshop-tire-history-page .tire-history-event-details {        grid-template-columns: minmax(0, 1fr);    }    .workshop-tire-history-page .tire-history-event {        grid-template-columns: minmax(0, 1fr);    }}/* Tire audit cancellation controls */.workshop-tire-history-page .tire-history-event.cancelled {    border-color: rgba(239, 68, 68, 0.28);    opacity: 0.82;}.workshop-tire-history-page .tire-history-cancelled {    display: flex;    flex-wrap: wrap;    gap: 0.35rem 0.75rem;    align-items: center;    margin: 0.85rem 0;    padding: 0.7rem 0.85rem;    border: 1px solid rgba(239, 68, 68, 0.25);    border-radius: 12px;    background: rgba(127, 29, 29, 0.18);    color: #fecaca;    font-size: 0.82rem;}.workshop-tire-history-page .tire-history-cancelled span {    color: #fca5a5;}.workshop-tire-history-page .tire-history-cancel-form {    display: grid;    gap: 0.75rem;    margin: 0.85rem 0;    padding: 0.85rem;    border: 1px solid rgba(148, 163, 184, 0.16);    border-radius: 12px;    background: rgba(15, 23, 42, 0.42);}.workshop-tire-history-page .tire-history-cancel-form label {    display: grid;    gap: 0.45rem;    color: #cbd5e1;    font-size: 0.78rem;    font-weight: 700;    text-transform: uppercase;    letter-spacing: 0.05em;}.workshop-tire-history-page .tire-history-cancel-form textarea {    width: 100%;    resize: vertical;    min-height: 72px;    border: 1px solid rgba(148, 163, 184, 0.24);    border-radius: 10px;    background: rgba(15, 23, 42, 0.74);    color: #f8fafc;    padding: 0.65rem 0.75rem;    font: inherit;    text-transform: none;    letter-spacing: normal;}.workshop-tire-history-page .tire-history-cancel-form button {    justify-self: flex-start;    border: 1px solid rgba(239, 68, 68, 0.36);    border-radius: 10px;    background: rgba(153, 27, 27, 0.72);    color: #fee2e2;    padding: 0.58rem 0.9rem;    font-size: 0.82rem;    font-weight: 800;    cursor: pointer;}.workshop-tire-history-page .tire-history-cancel-form button:hover {    background: rgba(185, 28, 28, 0.86);}html[data-chm-theme="corporate-light"] .workshop-tire-history-page .tire-history-cancelled {    background: rgba(127, 29, 29, 0.13);    border-color: rgba(185, 28, 28, 0.28);    color: #fee2e2;}html[data-chm-theme="corporate-light"] .workshop-tire-history-page .tire-history-cancel-form {    background: rgba(52, 66, 91, 0.72);    border-color: rgba(203, 213, 225, 0.22);}html[data-chm-theme="corporate-light"] .workshop-tire-history-page .tire-history-cancel-form textarea {    background: rgba(67, 83, 115, 0.9);    border-color: rgba(203, 213, 225, 0.28);}/* Tire entry cancellation */.workshop-tires-page .workshop-entry-item.cancelled {    border-color: rgba(239, 68, 68, 0.26);    opacity: 0.82;}.workshop-tires-page .workshop-entry-status.cancelled {    display: inline-flex;    align-items: center;    justify-content: center;    border: 1px solid rgba(239, 68, 68, 0.32);    border-radius: 999px;    background: rgba(127, 29, 29, 0.18);    color: #fecaca;    padding: 0.22rem 0.55rem;    font-size: 0.72rem;    font-weight: 800;}.workshop-tires-page .workshop-entry-cancel-reason {    grid-column: 1 / -1;    color: #fca5a5;    font-size: 0.78rem;}.workshop-tires-page .workshop-entry-cancel-form {    grid-column: 1 / -1;    display: grid;    gap: 0.55rem;    margin-top: 0.45rem;}.workshop-tires-page .workshop-entry-cancel-form textarea {    width: 100%;    min-height: 58px;    resize: vertical;    border: 1px solid rgba(148, 163, 184, 0.22);    border-radius: 10px;    background: rgba(15, 23, 42, 0.62);    color: #f8fafc;    padding: 0.58rem 0.68rem;    font: inherit;}.workshop-tires-page .workshop-entry-cancel-form button {    justify-self: flex-start;    border: 1px solid rgba(239, 68, 68, 0.34);    border-radius: 10px;    background: rgba(153, 27, 27, 0.72);    color: #fee2e2;    padding: 0.48rem 0.78rem;    font-size: 0.78rem;    font-weight: 800;    cursor: pointer;}html[data-chm-theme="corporate-light"] .workshop-tires-page .workshop-entry-cancel-form textarea {    background: rgba(67, 83, 115, 0.86);    border-color: rgba(203, 213, 225, 0.3);}/* Entrada de lote recolhível */.workshop-entry-card-header {    align-items: center;}.workshop-entry-toggle {    min-height: 40px;    padding: 0 15px;    border: 1px solid rgba(226, 232, 240, .20);    border-radius: 7px;    background: transparent;    color: #d7deea;    display: inline-flex;    align-items: center;    justify-content: center;    gap: 8px;    font-size: 13px;    font-weight: 700;    cursor: pointer;    transition:        background .18s ease,        border-color .18s ease,        color .18s ease;}.workshop-entry-toggle:hover {    border-color: rgba(224, 82, 91, .45);    background: rgba(224, 82, 91, .08);    color: #fff;}.workshop-entry-toggle.is-open {    border-color: rgba(226, 232, 240, .25);    background: rgba(255, 255, 255, .04);}.workshop-entry-toggle svg {    width: 17px;    height: 17px;}.workshop-entry-form-wrapper {    border-top: 1px solid rgba(148, 163, 184, .18);}.workshop-entry-form-wrapper .workshop-entry-form {    padding-top: 24px;}/* Cancelamento progressivo da entrada */.workshop-entry-cancel {    width: 100%;}.workshop-entry-cancel-trigger {    min-height: 34px;    padding: 0 11px;    border: 1px solid rgba(226, 232, 240, .16);    border-radius: 6px;    background: transparent;    color: #b9c3d2;    display: inline-flex;    align-items: center;    justify-content: center;    gap: 7px;    font-size: 12px;    font-weight: 700;    cursor: pointer;    transition:        border-color .18s ease,        background .18s ease,        color .18s ease;}.workshop-entry-cancel-trigger:hover {    border-color: rgba(224, 82, 91, .40);    background: rgba(224, 82, 91, .07);    color: #f1b4b8;}.workshop-entry-cancel-trigger svg {    width: 15px;    height: 15px;}.workshop-entry-cancel-form{    display:grid;    gap:10px;    width:100%;    margin-top:10px;    padding-top:12px;    border-top:1px solid rgba(148,163,184,.18);}.workshop-entry-cancel-form label {    color: #d7deea;    font-size: 12px;    font-weight: 700;}.workshop-entry-cancel-form textarea {    width: 100%;    min-height:62px;    padding: 11px 12px;    border: 1px solid rgba(226, 232, 240, .20);    border-radius: 7px;    resize:none;    color: #f8fafc;    background: rgba(255, 255, 255, .025);}.workshop-entry-cancel-form textarea:focus {    outline: none;    border-color: rgba(224, 82, 91, .50);}.workshop-entry-cancel-actions {    display: flex;    align-items: center;    justify-content:flex-start;    gap: 8px;}.workshop-entry-cancel-back,.workshop-entry-cancel-confirm {    min-height: 35px;    padding: 0 12px;    border-radius: 6px;    display: inline-flex;    align-items: center;    justify-content: center;    gap: 7px;    font-size: 12px;    font-weight: 700;    cursor: pointer;}.workshop-entry-cancel-back {    border: 1px solid rgba(226, 232, 240, .16);    background: transparent;    color: #cbd5e1;}.workshop-entry-cancel-confirm {    border: 1px solid rgba(224, 82, 91, .45);    background: #b72d36;    color: #fff;}.workshop-entry-cancel-confirm:hover {    background: #c73842;}.workshop-entry-cancel-confirm svg {    width: 15px;    height: 15px;}.workshop-entry-item {    display: block;    padding: 14px 16px;    border-radius: 10px;}.workshop-entry-main {    display: flex;    flex-direction: column;    gap: 8px;    min-width: 0;}.workshop-entry-heading {    display: flex;    align-items: flex-start;    justify-content: space-between;    gap: 12px;}.workshop-entry-heading strong {    white-space: nowrap;}.workshop-entry-heading small {    margin-top: 0;    text-align: right;    overflow-wrap: anywhere;}.workshop-entry-cancel {    width: 100%;    margin-top: 4px;}.workshop-entry-cancel-trigger {    margin-left: auto;}.workshop-entry-cancel-form {    width: 100%;    margin-top: 10px;    padding-top: 12px;    border-top: 1px solid rgba(148, 163, 184, .18);    display: grid;    gap: 10px;}.workshop-entry-cancel-form textarea {    width: 100%;    min-height: 64px;    resize: none;}.workshop-entry-cancel-actions {    display: flex;    align-items: center;    justify-content: flex-end;    gap: 8px;    flex-wrap: wrap;}.workshop-entry-cancel-back,.workshop-entry-cancel-confirm {    white-space: nowrap;}.workshop-entry-cancelled-info {    display: flex;    flex-direction: column;    align-items: flex-start;    gap: 7px;    margin-top: 4px;}.workshop-entry-cancel-reason {    margin-top: 0;    line-height: 1.4;}.workshop-tires-page .workshop-entry-cancel-form {    grid-column: 1 / -1;}.workshop-tires-page .workshop-entry-cancel-back {    color: #cbd5e1;    background: transparent;    border-color: rgba(226, 232, 240, .16);}.workshop-tires-page .workshop-entry-cancel-confirm {    color: #fff;    background: #b72d36;    border-color: rgba(224, 82, 91, .45);}

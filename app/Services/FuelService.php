@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use App\Models\VehicleUpdateLog;
 
 class FuelService
 {
@@ -137,11 +138,14 @@ class FuelService
             'quantity_liters' => ['required', 'numeric', 'gt:0'],
             'responsible_user_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string'],
+            'confirm_high_vehicle_km' => ['nullable', 'boolean'],
+            'confirm_high_vehicle_hours' => ['nullable', 'boolean'],
         ])->validate();
 
         return DB::transaction(function () use ($context, $validated) {
             $vehicle = $this->vehicleForContext((int) $validated['vehicle_id'], $context);
             $this->validateVehicleCounters($vehicle, $validated);
+            $this->validateVehicleCounterJumps($vehicle, $validated);
             $this->validateDriverForContext($validated['driver_id'] ?? null, $context);
 
             $tank = $this->lockTankForContext((int) $validated['fuel_tank_id'], $context);
@@ -190,6 +194,13 @@ class FuelService
                 'responsible_user_id' => $responsibleUserId,
                 'notes' => $validated['notes'] ?? null,
             ]);
+            
+            $this->updateVehicleCountersFromFilling(
+                $vehicle,
+                $validated,
+                $context,
+                $filling
+            );
 
             $tank->forceFill([
                 'current_balance_liters' => $balanceAfter,
@@ -227,6 +238,95 @@ class FuelService
 
             return $filling;
         });
+    }
+    private function validateVehicleCounterJumps(Vehicle $vehicle, array $validated): void
+    {
+        $maxKmJump = 500;
+        $maxHoursJump = 24;
+    
+        if (
+            isset($validated['vehicle_km'])
+            && $vehicle->current_km !== null
+            && (float) $validated['vehicle_km'] > (float) $vehicle->current_km
+        ) {
+            $jump = (float) $validated['vehicle_km'] - (float) $vehicle->current_km;
+    
+            if ($jump > $maxKmJump && empty($validated['confirm_high_vehicle_km'])) {
+                throw ValidationException::withMessages([
+                    'vehicle_km' => "O KM informado está {$jump} km acima do atual. Confirme se deseja continuar.",
+                ]);
+            }
+        }
+    
+        if (
+            isset($validated['vehicle_hours'])
+            && $vehicle->current_hours !== null
+            && (float) $validated['vehicle_hours'] > (float) $vehicle->current_hours
+        ) {
+            $jump = (float) $validated['vehicle_hours'] - (float) $vehicle->current_hours;
+    
+            if ($jump > $maxHoursJump && empty($validated['confirm_high_vehicle_hours'])) {
+                throw ValidationException::withMessages([
+                    'vehicle_hours' => "O horímetro informado está {$jump} horas acima do atual. Confirme se deseja continuar.",
+                ]);
+            }
+        }
+    }
+    private function updateVehicleCountersFromFilling(
+        Vehicle $vehicle,
+        array $validated,
+        array $context,
+        FuelFilling $filling
+    ): void {
+        $updates = [];
+    
+        if (array_key_exists('vehicle_km', $validated) && $validated['vehicle_km'] !== null) {
+            $newKm = $this->decimal($validated['vehicle_km'], 0);
+            $oldKm = $vehicle->current_km;
+    
+            if ($oldKm === null || (float) $newKm > (float) $oldKm) {
+                $updates['current_km'] = $newKm;
+                $updates['last_km_update_at'] = now();
+    
+                VehicleUpdateLog::create([
+                    'vehicle_id' => $vehicle->id,
+                    'user_id' => $context['user']->id,
+                    'division_id' => $vehicle->division_id,
+                    'location_id' => $vehicle->location_id,
+                    'type' => 'km',
+                    'source' => 'fuel_filling',
+                    'old_value' => $oldKm,
+                    'new_value' => $newKm,
+                    'observation' => "Hodômetro atualizado automaticamente pelo abastecimento #{$filling->id}.",
+                ]);
+            }
+        }
+    
+        if (array_key_exists('vehicle_hours', $validated) && $validated['vehicle_hours'] !== null) {
+            $newHours = $this->decimal($validated['vehicle_hours'], 1);
+            $oldHours = $vehicle->current_hours;
+    
+            if ($oldHours === null || (float) $newHours > (float) $oldHours) {
+                $updates['current_hours'] = $newHours;
+                $updates['last_hours_update_at'] = now();
+    
+                VehicleUpdateLog::create([
+                    'vehicle_id' => $vehicle->id,
+                    'user_id' => $context['user']->id,
+                    'division_id' => $vehicle->division_id,
+                    'location_id' => $vehicle->location_id,
+                    'type' => 'hours',
+                    'source' => 'fuel_filling',
+                    'old_value' => $oldHours,
+                    'new_value' => $newHours,
+                    'observation' => "Horímetro atualizado automaticamente pelo abastecimento #{$filling->id}.",
+                ]);
+            }
+        }
+    
+        if (! empty($updates)) {
+            $vehicle->forceFill($updates)->save();
+        }
     }
 
     private function resolveContext(): array

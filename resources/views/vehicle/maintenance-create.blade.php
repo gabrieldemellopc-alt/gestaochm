@@ -451,7 +451,37 @@
 
                         </div>
 
-
+                        <div class="form-group">
+                        
+                            <label>
+                                Categoria
+                            </label>
+                        
+                            <select
+                                name="maintenance_category"
+                                class="form-input"
+                                required
+                            >
+                                <option value="">
+                                    Selecione...
+                                </option>
+                        
+                                @foreach(
+                                    \App\Services\MaintenanceService::maintenanceCategories()
+                                    as $categoryKey => $categoryLabel
+                                )
+                                    <option
+                                        value="{{ $categoryKey }}"
+                                        @selected(
+                                            old('maintenance_category') === $categoryKey
+                                        )
+                                    >
+                                        {{ $categoryLabel }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        
+                        </div>
 
                         <div class="form-group">
 
@@ -573,8 +603,7 @@
                             </select>
                         </div>
 
-                        <div class="form-group full-width">
-
+                        <div class="form-group maintenance-observations-field">
 
 
                             <label>
@@ -589,7 +618,7 @@
 
                                 name="notes"
 
-                                rows="4"
+                                rows="2"
 
                                 class="form-input"
 

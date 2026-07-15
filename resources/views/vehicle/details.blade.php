@@ -411,7 +411,14 @@
         </section>
 
         {{-- STATUS --}}
-        <section class="vehicle-center-card vehicle-dash-status-card" x-data="{ editing:false }">
+        <section
+            class="vehicle-center-card vehicle-dash-status-card"
+            x-data="{
+                editing: false,
+                currentStatus: @js($vehicle->operational_status),
+                selectedStatus: @js($vehicle->operational_status)
+            }"
+        >           
             <div class="vehicle-center-card-header">
                 <div>
                     <small>Situação do veículo</small>
@@ -457,15 +464,58 @@
                     {{ $openDowntime->reason }}
                 </div>
             @endif
-            <button
-                type="button"
-                class="vehicle-dash-status-action-btn"
-                @click="editing = true"
-            >
-                <i data-lucide="pencil"></i>
-                Alterar status
-            </button>
+            @if($vehicle->operational_status === 'maintenance')
+            
+                <div class="vehicle-dash-maintenance-lock">
+            
+                    <div class="vehicle-dash-maintenance-lock-text">
+            
+                        <i data-lucide="lock-keyhole"></i>
+            
+                        <div>
+                            <strong>
+                                Status controlado pela manutenção
+                            </strong>
+            
+                            <p>
+                                Para alterar o status deste veículo, encerre primeiro
+                                a ordem de manutenção aberta.
+                            </p>
+                        </div>
+            
+                    </div>
+            
+                    <a
+                        href="{{ route('vehicle.maintenance.index', $vehicle) }}"
+                        class="vehicle-dash-maintenance-link"
+                    >
+                        <i data-lucide="wrench"></i>
+            
+                        Ir para manutenção
+                    </a>
+            
+                </div>
+            
+            @else
+            
+                <button
+                    type="button"
+                    class="vehicle-dash-status-action-btn"
+                    @click="
+                        selectedStatus = currentStatus;
+                        editing = true;
+                    "
+                >
+                    <i data-lucide="pencil"></i>
+            
+                    Alterar status
+                </button>
+            
+            @endif
 
+            
+            @if($vehicle->operational_status !== 'maintenance')
+        
             <div
                 x-show="editing"
                 x-cloak
@@ -494,27 +544,37 @@
                         <div class="form-group">
                             <label>Status</label>
 
-                            <select name="operational_status" class="form-input">
-                                <option value="operational" @selected($vehicle->operational_status === 'operational')>Operacional</option>
-                                <option value="maintenance" @selected($vehicle->operational_status === 'maintenance')>Em manutenção</option>
-                                <option value="inactive" @selected($vehicle->operational_status === 'inactive')>Inativo</option>
-                                <option value="inoperant" @selected($vehicle->operational_status === 'inoperant')>Inoperante</option>
-                                <option value="accident" @selected($vehicle->operational_status === 'accident')>Sinistro</option>
-                                <option value="support" @selected($vehicle->operational_status === 'support')>Socorro</option>
-                                <option value="testing" @selected($vehicle->operational_status === 'testing')>Testes</option>
-                                <option value="transfer" @selected($vehicle->operational_status === 'transfer')>Transferência</option>
-                                <option value="transferred" @selected($vehicle->operational_status === 'transferred')>Transferido</option>
+                            <select
+                                name="operational_status"
+                                class="form-input"
+                                x-model="selectedStatus"
+                            >
+                                <option value="operational">Operacional</option>
+                                <option value="inactive">Inativo</option>
+                                <option value="inoperant">Inoperante</option>
+                                <option value="accident">Sinistro</option>
+                                <option value="support">Socorro</option>
+                                <option value="testing">Testes</option>
+                                <option value="transfer">Transferência</option>
+                                <option value="transferred">Transferido</option>
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label>Motivo / observação</label>
-
+                        <div
+                            class="form-group"
+                            x-show="selectedStatus !== currentStatus"
+                            x-cloak
+                        >
+                            <label>
+                                Motivo / observação
+                            </label>
+                        
                             <textarea
                                 name="status_reason"
                                 rows="4"
                                 class="form-input"
-                                placeholder="Ex.: aguardando peça, pane elétrica..."
+                                :required="selectedStatus !== currentStatus"
+                                placeholder="Informe o motivo da alteração de status..."
                             ></textarea>
                         </div>
 
@@ -523,14 +583,17 @@
                                 Cancelar
                             </button>
 
-                            <button type="submit">
+                            <button
+                                type="submit"
+                                :disabled="selectedStatus === currentStatus"
+                            >
                                 Salvar status
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-
+            @endif
 
         </section>
 
@@ -718,6 +781,7 @@
                     <label><input type="checkbox" name="sections[]" value="maintenances" checked> Manuten&ccedil;&otilde;es</label>
                     <label><input type="checkbox" name="sections[]" value="maintenance_costs" checked> Custos registrados da ordem</label>
                     <label><input type="checkbox" name="sections[]" value="stock" checked> Pe&ccedil;as e consumo de estoque</label>
+                    <label><input type="checkbox" name="sections[]" value="tires" checked> Pneus e sulcagem</label>
                     <label><input type="checkbox" name="sections[]" value="fuel" checked> Abastecimentos</label>
                     <label><input type="checkbox" name="sections[]" value="fuel_consumption" checked> Consumo de combust&iacute;vel</label>
                     <label><input type="checkbox" name="sections[]" value="km_hr"> Atualiza&ccedil;&otilde;es de KM e hor&iacute;metro</label>

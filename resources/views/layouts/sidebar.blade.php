@@ -324,8 +324,8 @@
 
 
 
-            <div class="sidebar-submenu" x-show="open" x-collapse>
-
+        <div class="sidebar-submenu" x-show="open" x-collapse x-cloak>
+    
                 <a
 
                     href="{{ route('workshop.index') }}"
@@ -517,34 +517,58 @@
 
 
         {{-- CIDADES --}}
-
-        <a
-
-            href="{{ route('locations.index') }}"
-
-            class="sidebar-link {{
-
-                request()->routeIs('locations.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"
-
-        >
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="map-pin"></i>
-
-            </span>
-
-
-
-            Cidades
-
-        </a>
+        @php
+            $sidebarUser = auth()->user();
+            $sidebarDivisionId = session('active_division_id');
+        
+            $sidebarIsAdmin = false;
+            $sidebarHasGlobalLocationAccess = false;
+            $sidebarLocationCount = 0;
+        
+            if ($sidebarUser && $sidebarDivisionId) {
+                $sidebarAccessQuery = $sidebarUser
+                    ->divisionAccesses()
+                    ->where('tenant_id', $sidebarUser->tenant_id)
+                    ->where('division_id', $sidebarDivisionId)
+                    ->where('module', 'fleet')
+                    ->where('active', true);
+        
+                $sidebarIsAdmin = (clone $sidebarAccessQuery)
+                    ->where('profile', 'admin')
+                    ->exists();
+        
+                $sidebarHasGlobalLocationAccess = (clone $sidebarAccessQuery)
+                    ->whereNull('location_id')
+                    ->exists();
+        
+                $sidebarLocationCount = (clone $sidebarAccessQuery)
+                    ->whereNotNull('location_id')
+                    ->distinct()
+                    ->count('location_id');
+            }
+        
+            $canViewLocationsMenu =
+                $sidebarIsAdmin
+                || $sidebarHasGlobalLocationAccess
+                || $sidebarLocationCount > 1;
+        @endphp
+        
+        @if($canViewLocationsMenu)
+            <a
+                href="{{ route('locations.index') }}"
+                class="sidebar-link {{
+                    request()->routeIs('locations.*')
+                        ? 'active'
+                        : ''
+                }}"
+            >
+                <span class="sidebar-icon">
+                    <i data-lucide="map-pin"></i>
+                </span>
+        
+                Cidades
+            </a>
+        @endif
 
 
 

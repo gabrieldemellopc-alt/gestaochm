@@ -1,26 +1,1 @@
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-
-class MaintenanceRecordValue extends Model
-{
-    protected $fillable = [
-
-        'maintenance_record_id',
-
-        'procedure_field_id',
-        'quantity',
-        'value'
-    ];
-    public function record()
-    {
-        return $this->belongsTo(MaintenanceRecord::class);
-    }
-    
-    public function field()
-    {
-        return $this->belongsTo(ProcedureField::class);
-    }
-}
+<?phpnamespace App\Models;use Illuminate\Database\Eloquent\Model;class MaintenanceRecordValue extends Model{    protected $fillable = [        'maintenance_record_id',        'procedure_field_id',        'quantity',        'value'    ];    public function record()    {        return $this->belongsTo(MaintenanceRecord::class);    }        public function field()    {        return $this->belongsTo(ProcedureField::class);    }}

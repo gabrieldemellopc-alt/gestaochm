@@ -9,6 +9,9 @@ use App\Models\Vehicle;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use App\Models\TireInstallation;
+use App\Models\TireMeasurement;
+use App\Models\TireRetread;
 
 class VehicleDossierReportService
 {
@@ -50,7 +53,10 @@ class VehicleDossierReportService
         $fuelFillings = $this->fuelFillings($context, $vehicle, $appliedFilters);
         $fuelConsumption = $this->fuelConsumption($fuelFillings);
         $cancelledRecords = $this->cancelledRecords($context, $vehicle, $appliedFilters);
-
+        
+        $currentTires = $this->currentTires($context, $vehicle);
+        $tireEvents = $this->tireEvents($context, $vehicle, $appliedFilters);
+        $tireMeasurements = $this->tireMeasurements($context, $vehicle, $appliedFilters);
         return [
             'context' => $this->contextPayload($context),
             'applied_filters' => $appliedFilters,
@@ -65,8 +71,9 @@ class VehicleDossierReportService
             'stock_consumption' => $stockConsumption,
             'fuel_fillings' => $fuelFillings,
             'fuel_consumption' => $fuelConsumption,
-            'tires_current' => collect(),
-            'tire_events' => collect(),
+            'tires_current' => $currentTires,
+            'tire_events' => $tireEvents,
+            'tire_measurements' => $tireMeasurements,          
             'operations' => collect(),
             'daily_checklists' => collect(),
             'km_hr_logs' => collect(),
@@ -281,6 +288,29 @@ class VehicleDossierReportService
             ->count();
         $fuelHasUncalculatedConsumption = $fuelConsumption
             ->contains(fn (array $row) => $row['status'] !== 'calculado');
+            
+        $fuelConsumptionRecord = collect($fuelConsumption)
+            ->firstWhere('status', 'calculado');
+        
+        $kmTraveled = $fuelConsumptionRecord['km_consumption']['delta'] ?? null;
+        
+        $hoursWorked = $fuelConsumptionRecord['hours_consumption']['delta'] ?? null;
+        
+        $averageKmPerLiter = $fuelConsumptionRecord['km_consumption']['value'] ?? null;
+        
+        $averageLiterPerHour = $fuelConsumptionRecord['hours_consumption']['value'] ?? null;
+        
+        $fuelCost = round($fuelFillings->sum('total_cost'), 2);
+        
+        $operationalCost =
+            $registeredMaintenanceCost +
+            $fuelCost;
+        
+        $costPerKm = (
+            $kmTraveled && $kmTraveled > 0
+        )
+            ? $operationalCost / $kmTraveled
+            : null;
 
         return [
             ...$this->emptyExecutiveSummary(),
@@ -303,6 +333,14 @@ class VehicleDossierReportService
                 'operational_total_is_final' => false,
                 'contains_estimated_stock_cost' => $estimatedStockCost > 0,
                 'contains_uncalculated_fuel_consumption' => $fuelHasUncalculatedConsumption,
+            ],
+            'operational_indicators' => [
+                'km_traveled' => $kmTraveled,
+                'hours_worked' => $hoursWorked,
+                'average_km_per_liter' => $averageKmPerLiter,
+                'average_liter_per_hour' => $averageLiterPerHour,
+                'operational_cost' => $operationalCost,
+                'cost_per_km' => $costPerKm,
             ],
         ];
     }
@@ -684,7 +722,7 @@ class VehicleDossierReportService
         $valid = $items
             ->filter(fn (array $filling) => $filling[$counterField] !== null)
             ->values();
-
+    
         if ($valid->count() < 2) {
             return [
                 'status' => $items->every(fn (array $filling) => $filling['vehicle_km'] === null && $filling['vehicle_hours'] === null)
@@ -697,13 +735,13 @@ class VehicleDossierReportService
                 'value' => null,
             ];
         }
-
+    
         $previous = null;
-
+    
         foreach ($valid as $filling) {
             $current = (float) $filling[$counterField];
-
-            if ($previous !== null && $current <= $previous) {
+    
+            if ($previous !== null && $current < $previous) {
                 return [
                     'status' => $counterField === 'vehicle_km' ? 'km_invalido' : 'horas_invalidas',
                     'initial' => (float) $valid->first()[$counterField],
@@ -713,14 +751,14 @@ class VehicleDossierReportService
                     'value' => null,
                 ];
             }
-
+    
             $previous = $current;
         }
-
+    
         $initial = (float) $valid->first()[$counterField];
         $final = (float) $valid->last()[$counterField];
         $delta = $final - $initial;
-
+    
         if ($delta <= 0) {
             return [
                 'status' => $counterField === 'vehicle_km' ? 'km_invalido' : 'horas_invalidas',
@@ -731,17 +769,18 @@ class VehicleDossierReportService
                 'value' => null,
             ];
         }
-
+    
         $firstDate = $valid->first()['date'];
         $lastDate = $valid->last()['date'];
+    
         $intervalLiters = $items
             ->filter(fn (array $filling) => $filling['date']->gt($firstDate) && $filling['date']->lte($lastDate))
             ->sum('quantity_liters');
-
+    
         if ($intervalLiters <= 0) {
             $intervalLiters = $items->sum('quantity_liters');
         }
-
+    
         return [
             'status' => 'calculado',
             'initial' => $initial,
@@ -800,4 +839,135 @@ class VehicleDossierReportService
             ])
             ->values();
     }
+
+    private function currentTires(array $context, Vehicle $vehicle): Collection
+    {
+        return TireInstallation::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('vehicle_id', $vehicle->id)
+            ->where('active', true)
+            ->with([
+                    'tire' => function ($query) {
+                        $query
+                            ->with([
+                                'latestMeasurement',
+                                'latestRetread',
+                            ])
+                            ->withCount('retreads');
+                    },
+                ])   
+            ->orderBy('position_code')
+            ->get()
+            ->map(function (TireInstallation $installation) {
+                $tire = $installation->tire;
+    
+                return [
+                    'tire_id' => $tire?->id,
+                    'code' => $tire?->code ?? '-',
+                    'brand' => $tire?->brand,
+                    'model' => $tire?->model,
+                    'size' => $tire?->size,
+                    'position_code' => $installation->position_code,
+                    'installed_at' => $installation->installed_at,
+                    'installed_km' => $installation->installed_km,
+                    'initial_tread_depth' => $tire?->initial_tread_depth,
+                    'current_tread_depth' => $tire?->current_tread_depth,
+                    'current_tread_source' => $tire?->current_tread_source,
+                    'current_tread_date' => $tire?->current_tread_date,
+                    'warning_tread_depth' => $tire?->warning_tread_depth,
+                    'critical_tread_depth' => $tire?->critical_tread_depth,
+                    'retreads_count' => (int) ($tire?->retreads_count ?? 0),
+                    'tread_reference_depth' => $tire?->tread_reference_depth,
+                ];
+            });
+    }
+
+    private function tireMeasurements(array $context, Vehicle $vehicle, array $filters): Collection
+    {
+        $start = $filters['start_date'];
+        $end = $filters['end_date'];
+    
+        return TireMeasurement::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('vehicle_id', $vehicle->id)
+            ->whereNull('cancelled_at')
+            ->whereBetween('measured_at', [$start, $end])
+            ->with('tire')
+            ->orderBy('measured_at')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('tire_id')
+            ->map(function (Collection $measurements) {
+                $first = $measurements->first();
+                $last = $measurements->last();
+                $tire = $first->tire;
+    
+                return [
+                    'tire_id' => $first->tire_id,
+                    'code' => $tire?->code ?? '-',
+                    'brand' => $tire?->brand,
+                    'model' => $tire?->model,
+                    'position_code' => $last->position_code,
+                    'measurements_count' => $measurements->count(),
+                    'initial_date' => $first->measured_at,
+                    'final_date' => $last->measured_at,
+                    'initial_tread' => $first->minimum_tread,
+                    'final_tread' => $last->minimum_tread,
+                    'variation' => $first->minimum_tread !== null && $last->minimum_tread !== null
+                        ? round((float) $last->minimum_tread - (float) $first->minimum_tread, 2)
+                        : null,
+                ];
+            })
+            ->values();
+    }    
+
+    private function tireEvents(array $context, Vehicle $vehicle, array $filters): Collection
+    {
+        $start = $filters['start_date'];
+        $end = $filters['end_date'];
+    
+        $installations = TireInstallation::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('vehicle_id', $vehicle->id)
+            ->whereBetween('installed_at', [$start, $end])
+            ->with('tire')
+            ->get()
+            ->map(fn (TireInstallation $installation) => [
+                'type' => 'installation',
+                'label' => 'Instalação',
+                'date' => $installation->installed_at,
+                'tire_code' => $installation->tire?->code ?? '-',
+                'position_code' => $installation->position_code,
+                'km' => $installation->installed_km,
+                'reason' => null,
+            ]);
+    
+        $removals = TireInstallation::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('vehicle_id', $vehicle->id)
+            ->whereNotNull('removed_at')
+            ->whereBetween('removed_at', [$start, $end])
+            ->with('tire')
+            ->get()
+            ->map(fn (TireInstallation $installation) => [
+                'type' => 'removal',
+                'label' => 'Retirada',
+                'date' => $installation->removed_at,
+                'tire_code' => $installation->tire?->code ?? '-',
+                'position_code' => $installation->position_code,
+                'km' => $installation->removed_km,
+                'reason' => $installation->removal_reason,
+            ]);
+    
+        return $installations
+            ->merge($removals)
+            ->sortBy([
+                ['date', 'asc'],
+                ['tire_code', 'asc'],
+            ])
+            ->values();
+    }
+    
+    
 }
+

@@ -321,3 +321,122 @@ html[data-chm-theme="corporate-light"] .audit-page {
         margin: 10px;
     }
 }
+
+/* =========================================================
+   ALTERAÇÕES HUMANIZADAS
+   ========================================================= */
+
+.audit-event-description {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+}
+
+.audit-event-description > span {
+    display: inline-flex;
+    gap: 5px;
+}
+
+.audit-event-meta small {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.audit-change-details summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.audit-change-details summary small {
+    color: var(--audit-muted, #a8b1c1);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.audit-change-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.audit-change-row {
+    display: grid;
+    grid-template-columns: minmax(150px, .7fr) minmax(0, 1.3fr);
+    gap: 14px;
+    align-items: center;
+
+    padding: 10px 12px;
+
+    border: 1px solid rgba(203, 213, 225, .12);
+    border-radius: 7px;
+
+    background: rgba(15, 23, 42, .16);
+}
+
+.audit-change-row > strong {
+    color: #dbe4ef;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.audit-change-values {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+}
+
+.audit-change-values svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #8290a4;
+}
+
+.audit-change-old,
+.audit-change-new {
+    min-width: 0;
+    padding: 5px 8px;
+
+    border-radius: 5px;
+
+    font-size: 11px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.audit-change-old {
+    color: #bac4d2;
+    background: rgba(148, 163, 184, .08);
+    text-decoration: line-through;
+    text-decoration-color: rgba(186, 196, 210, .45);
+}
+
+.audit-change-new {
+    color: #f1f5f9;
+    background: rgba(224, 82, 91, .1);
+    border: 1px solid rgba(224, 82, 91, .18);
+}
+
+.audit-origin strong {
+    color: #cbd5e1;
+}
+
+@media (max-width: 760px) {
+    .audit-change-row {
+        grid-template-columns: 1fr;
+    }
+
+    .audit-change-values {
+        align-items: flex-start;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+}

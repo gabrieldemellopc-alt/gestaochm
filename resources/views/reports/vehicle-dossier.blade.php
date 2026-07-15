@@ -13,12 +13,22 @@
     $hasAnyFilter = request()->filled('vehicle_id') || request()->filled('start_date') || request()->filled('end_date');
     $isValid = $validation['is_valid'] ?? false;
     $summary = $executive_summary;
-    $statusLabel = fn ($value) => $value ?: '-';
+    $statusLabel = fn ($value) => match ($value) {
+        'active' => 'Ativo',
+        'inactive' => 'Inativo',
+        'maintenance' => 'Em manutenção',
+        'operational' => 'Operacional',
+        'unavailable' => 'Indisponível',
+        default => $value ?: '-',
+    };   
     $maintenancesList = collect($maintenances);
     $stockConsumptionList = collect($stock_consumption);
     $fuelFillingsList = collect($fuel_fillings);
     $fuelConsumptionList = collect($fuel_consumption ?? []);
     $fuelByProductList = collect($summary['fuel_by_product'] ?? []);
+    $tiresCurrent = collect($tires_current ?? []);
+    $tireEvents = collect($tire_events ?? []);
+    $tireMeasurements = collect($tire_measurements ?? []);
     $cancelledList = collect($cancelled_records);
     $selectedSections = collect($filters['sections'] ?? []);
     $sectionConfigEnabled = (bool) ($filters['section_config'] ?? false);
@@ -26,22 +36,53 @@
     $consumptionStatusLabel = fn ($status) => match ($status) {
         'calculado' => 'Calculado',
         'dados_insuficientes' => 'Dados insuficientes',
-        'km_invalido' => 'KM invalido',
-        'horas_invalidas' => 'Horas invalidas',
+        'km_invalido' => 'KM inválido',
+        'horas_invalidas' => 'Horas invállidas',
         'sem_km_hr' => 'Sem KM/HR',
         default => $status ?: '-',
+    };
+    $maintenanceTypeLabel = fn ($value) => match ($value) {
+        'preventive' => 'Preventiva',
+        'corrective' => 'Corretiva',
+        'external' => 'Externa',
+        'internal' => 'Interna',
+        default => $value ?: '-',
     };
 @endphp
 
 <div class="reports-page reports-tires-page reports-vehicle-dossier-page tire-summary-dashboard">
-    <div class="reports-hero reports-tires-hero">
+    <div class="reports-hero reports-tires-hero dossier-hero">
         <div>
-            <div class="reports-hero-badge">Prontuario operacional</div>
-            <h1>Dossie Individual do Veiculo</h1>
+            <div class="reports-hero-badge">Prontuário operacional</div>
+    
+            <h1>Dossiê Individual do Veículo</h1>
+    
             <p>
-                Consulta estrutural por veiculo e periodo, respeitando
+                Consulta estrutural por veículo e período, respeitando
                 {{ $context['location']->name ?? 'a unidade ativa' }}.
             </p>
+        </div>
+    
+        <div class="dossier-hero-actions">
+            <a
+                href="{{ route('vehicles.index') }}"
+                class="dossier-hero-button secondary"
+            >
+                <i data-lucide="arrow-left"></i>
+                Voltar para veículos
+            </a>
+    
+            @if($isValid && $vehicle)
+                <a
+                    href="{{ route('reports.vehicle-dossier.pdf', request()->query()) }}"
+                    class="dossier-hero-button primary"
+                    target="_blank"
+                    rel="noopener"
+                >
+                    <i data-lucide="file-text"></i>
+                    Gerar PDF
+                </a>
+            @endif
         </div>
     </div>
 
@@ -50,7 +91,7 @@
             <label>
                 Veiculo
                 <select name="vehicle_id" required>
-                    <option value="">Selecione um veiculo</option>
+                    <option value="">Selecione um veículo</option>
                     @foreach($vehicles as $option)
                         <option value="{{ $option->id }}" @selected((int) $filters['vehicle_id'] === (int) $option->id)>
                             {{ $option->name }} - {{ $option->plate }}
@@ -87,12 +128,12 @@
             @if($context['can_view_cancelled'])
                 <label>
                     <input type="checkbox" name="include_cancelled" value="1" @checked($filters['include_cancelled'])>
-                    Incluir cancelados em secao separada
+                    Incluir cancelados em seção separada
                 </label>
 
                 <label>
                     <input type="checkbox" name="include_audit" value="1" @checked($filters['include_audit'])>
-                    Incluir auditoria quando disponivel
+                    Incluir auditoria quando disponível
                 </label>
             @endif
 
@@ -101,12 +142,9 @@
                 Diagnosticar abastecimentos sem KM/HR
             </label>
 
-            <button type="submit" class="report-module-button">Gerar dossie</button>
+            <button type="submit" class="report-module-button">Gerar dossiê</button>
         </div>
 
-        <div class="tire-filter-note">
-            Veiculo e periodo sao obrigatorios. O dossie nunca mistura dados de outra unidade.
-        </div>
     </form>
 
     @if(! $hasAnyFilter)
@@ -114,11 +152,9 @@
             <div class="tire-section-header">
                 <div>
                     <span class="tire-section-kicker">Comece por aqui</span>
-                    <h2>Selecione um veiculo e um periodo para gerar o dossie.</h2>
+                    <h2>Selecione um veículo e um período para gerar o dossiê.</h2>
                     <p>
-                        Esta primeira versao prepara o prontuario operacional.
-                        As secoes detalhadas de manutencao, pneus, abastecimentos,
-                        operacoes e checklists entram nos proximos blocos.
+                        Informe o veículo e o período desejado para consultar o histórico operacional consolidado.
                     </p>
                 </div>
             </div>
@@ -127,9 +163,9 @@
         <section class="tire-report-section dossier-validation-panel">
             <div class="tire-section-header">
                 <div>
-                    <span class="tire-section-kicker">Validacao</span>
-                    <h2>Revise os filtros para gerar o dossie</h2>
-                    <p>Nenhuma informacao operacional foi consolidada com filtros invalidos.</p>
+                    <span class="tire-section-kicker">Validação</span>
+                    <h2>Revise os filtros para gerar o dossiê</h2>
+                    <p>Nenhuma informação operacional foi consolidada com filtros inválidos.</p>
                 </div>
             </div>
 
@@ -143,235 +179,244 @@
         <section class="tire-report-section dossier-vehicle-header">
             <div class="tire-section-header">
                 <div>
-                    <span class="tire-section-kicker">Cabecalho do veiculo</span>
-                    <h2>{{ $vehicle['name'] }} - {{ $vehicle['plate'] }}</h2>
+                    <span class="tire-section-kicker">IDENTIFICAÇÃO DO VEÍCULO</span>
+                    <h2>{{ $vehicle['name'] }}</h2>
                     <p>
-                        {{ $vehicle['brand'] ?: '-' }} / {{ $vehicle['vehicle_model'] ?: '-' }}
-                        @if($vehicle['year'])
-                            | {{ $vehicle['year'] }}
-                        @endif
+                        <strong>{{ $vehicle['plate'] }}</strong>
+                    
+                        <span class="dossier-separator">•</span>
+                    
+                        {{ $vehicle['brand'] }}
+                    
+                        <span class="dossier-separator">•</span>
+                    
+                        {{ $vehicle['vehicle_model'] }}
+                    
+                        <span class="dossier-separator">•</span>
+                    
+                        {{ $vehicle['year'] }}
                     </p>
                 </div>
             </div>
-
+        
             <div class="dossier-vehicle-grid">
-                <div><span>Tipo</span><strong>{{ $vehicle['type'] ?: '-' }}</strong></div>
-                <div><span>Codigo patrimonial</span><strong>{{ $vehicle['asset_code'] ?: '-' }}</strong></div>
+                <div><span>Placa</span><strong>{{ $vehicle['plate'] }}</strong></div>
+                <div><span>Código patrimonial</span><strong>{{ $vehicle['asset_code'] ?: '-' }}</strong></div>
                 <div><span>Status</span><strong>{{ $statusLabel($vehicle['status']) }}</strong></div>
                 <div><span>Status operacional</span><strong>{{ $statusLabel($vehicle['operational_status']) }}</strong></div>
-                <div><span>Unidade</span><strong>{{ $vehicle['location']?->name ?? '-' }}</strong></div>
-                <div><span>Divisao</span><strong>{{ $vehicle['division']?->name ?? '-' }}</strong></div>
+        
                 <div><span>KM atual</span><strong>{{ $number($vehicle['current_km'], 0) }}</strong></div>
-                <div><span>Horimetro atual</span><strong>{{ $number($vehicle['current_hours'], 1) }}</strong></div>
+                <div><span>Horímetro atual</span><strong>{{ $number($vehicle['current_hours'], 1) }}</strong></div>
+                <div><span>Unidade</span><strong>{{ $vehicle['location']?->name ?? '-' }}</strong></div>
+                <div><span>Divisão</span><strong>{{ $vehicle['division']?->name ?? '-' }}</strong></div>
+        
             </div>
         </section>
-
         @if($showSection('summary') || $showSection('maintenance_costs'))
-        <section class="tire-report-section">
-            <div class="tire-section-header">
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
                 <div>
                     <span class="tire-section-kicker">Resumo executivo</span>
-                    <h2>Estrutura inicial do dossie</h2>
-                    <p>Custo de manutencao usa o valor registrado da ordem. Pecas e custos avulsos aparecem como detalhamento separado, sem nova soma.</p>
+                    <h2>Resumo do período</h2>
+                    <p>Consolidação dos principais registros operacionais do veículo no período selecionado.</p>
+                </div>
+        
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+        
+            <div class="dossier-collapsible-body">
+                <p class="dossier-cost-note">
+                    Custos de peças são exibidos como detalhamento e não são somados novamente ao custo registrado da ordem.
+                </p>
+    
+                <div class="dossier-summary-groups">
+                    <div class="dossier-summary-group">
+                        <h3 class="dossier-summary-title">Manutenção</h3>
+                
+                        <div class="tire-summary-grid dossier-summary-grid">
+                            <div class="tire-summary-card">
+                                <span>Manutenções</span>
+                                <strong>{{ $summary['maintenance_count'] }}</strong>
+                                <small>Válidas no período</small>
+                            </div>
+                
+                            <div class="tire-summary-card">
+                                <span>Custo registrado da ordem</span>
+                                <strong>{{ $money($summary['maintenance_cost_registered']) }}</strong>
+                                <small>Total oficial da manutenção</small>
+                            </div>
+                
+                            <div class="tire-summary-card">
+                                <span>Peças consumidas</span>
+                                <strong>{{ $money($summary['stock_consumed_cost']) }}</strong>
+                                <small>{{ $summary['stock_consumed_cost_estimated'] > 0 ? 'Detalhe com estimativas' : 'Detalhamento separado' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="dossier-summary-group">
+                        <h3 class="dossier-summary-title">Combustível</h3>
+                
+                        <div class="tire-summary-grid dossier-summary-grid">
+                            <div class="tire-summary-card">
+                                <span>Abastecimentos</span>
+                                <strong>{{ $summary['fuel_fillings_count'] }}</strong>
+                                <small>Válidos no período</small>
+                            </div>
+                
+                            <div class="tire-summary-card">
+                                <span>Litros abastecidos</span>
+                                <strong>{{ $number($summary['fuel_liters'], 3) }}</strong>
+                                <small>Diesel/ARLA separados abaixo</small>
+                            </div>
+                
+                            <div class="tire-summary-card">
+                                <span>Custo abastecimento</span>
+                                <strong>{{ $money($summary['fuel_cost']) }}</strong>
+                                <small>Custo registrado</small>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="dossier-summary-group">
+                        <h3 class="dossier-summary-title">
+                            Indicadores operacionais
+                        </h3>                
+                        <div class="tire-summary-grid dossier-summary-grid">
+
+                            <div class="tire-summary-card">
+                                <span>KM RODADOS</span>
+                                <strong>
+                                    {{ $summary['operational_indicators']['km_traveled']
+                                        ? $number($summary['operational_indicators']['km_traveled'])
+                                        : '-' }}
+                                </strong>
+                                <small>Distância percorrida</small>
+                            </div>
+                        
+                            <div class="tire-summary-card">
+                                <span>HORAS TRABALHADAS</span>
+                                <strong>
+                                    {{ $summary['operational_indicators']['hours_worked']
+                                        ? $number($summary['operational_indicators']['hours_worked'],1)
+                                        : '-' }}
+                                </strong>
+                                <small>Horímetro utilizado</small>
+                            </div>
+                        
+                            <div class="tire-summary-card">
+                                <span>CONSUMO MÉDIO</span>
+                                <strong>
+                                    {{ $summary['operational_indicators']['average_km_per_liter']
+                                        ? $number($summary['operational_indicators']['average_km_per_liter'],2).' km/L'
+                                        : '-' }}
+                                </strong>
+                                <small>Média calculada</small>
+                            </div>
+                        
+                            <div class="tire-summary-card">
+                                <span>CONSUMO POR HORA</span>
+                                <strong>
+                                    {{ $summary['operational_indicators']['average_liter_per_hour']
+                                        ? $number($summary['operational_indicators']['average_liter_per_hour'],2).' L/h'
+                                        : '-' }}
+                                </strong>
+                                <small>Quando houver horímetro</small>
+                            </div>
+                        
+                            <div class="tire-summary-card">
+                                <span>CUSTO OPERACIONAL</span>
+                                <strong>
+                                    {{ $money($summary['operational_indicators']['operational_cost']) }}
+                                </strong>
+                                <small>Combustível + manutenção</small>
+                            </div>
+                        
+                            <div class="tire-summary-card">
+                                <span>CUSTO POR KM</span>
+                                <strong>
+                                    {{ $summary['operational_indicators']['cost_per_km']
+                                        ? 'R$ '.$number($summary['operational_indicators']['cost_per_km'],2)
+                                        : '-' }}
+                                </strong>
+                                <small>Custo médio por quilômetro</small>
+                            </div>
+                        
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="tire-summary-grid dossier-summary-grid">
-                <div class="tire-summary-card"><span>Manutencoes</span><strong>{{ $summary['maintenance_count'] }}</strong><small>Validas no periodo</small></div>
-                <div class="tire-summary-card"><span>Custo registrado da ordem</span><strong>{{ $money($summary['maintenance_cost_registered']) }}</strong><small>Total oficial da manutencao</small></div>
-                <div class="tire-summary-card"><span>Pecas consumidas</span><strong>{{ $money($summary['stock_consumed_cost']) }}</strong><small>{{ $summary['stock_consumed_cost_estimated'] > 0 ? 'Detalhe com estimativas' : 'Detalhamento separado' }}</small></div>
-                <div class="tire-summary-card"><span>Abastecimentos</span><strong>{{ $summary['fuel_fillings_count'] }}</strong><small>Validos no periodo</small></div>
-                <div class="tire-summary-card"><span>Litros abastecidos</span><strong>{{ $number($summary['fuel_liters'], 3) }}</strong><small>Diesel/ARLA separados abaixo</small></div>
-                <div class="tire-summary-card"><span>Custo abastecimento</span><strong>{{ $money($summary['fuel_cost']) }}</strong><small>Custo registrado</small></div>
-                <div class="tire-summary-card warning"><span>Sem KM/HR</span><strong>{{ $summary['fuel_fillings_without_km_hr'] }}</strong><small>Diagnostico de leitura</small></div>
-                <div class="tire-summary-card"><span>Pneus instalados</span><strong>{{ $summary['installed_tires_count'] }}</strong><small>Em preparacao</small></div>
-                <div class="tire-summary-card"><span>Medicoes de pneus</span><strong>{{ $summary['tire_measurements_count'] }}</strong><small>Em preparacao</small></div>
-                <div class="tire-summary-card"><span>Operacoes</span><strong>{{ $summary['operations_count'] }}</strong><small>Em preparacao</small></div>
-                <div class="tire-summary-card"><span>Checklists concluidos</span><strong>{{ $summary['checklists_completed_count'] }}</strong><small>Em preparacao</small></div>
-                <div class="tire-summary-card warning"><span>Alertas</span><strong>{{ $summary['alerts_count'] }}</strong><small>Em preparacao</small></div>
-                <div class="tire-summary-card danger"><span>Total operacional</span><strong>Em preparacao</strong><small>Nao soma pecas novamente</small></div>
-            </div>
-        </section>
+        </details>
         @endif
 
         @if($showSection('fuel'))
-        <section class="tire-report-section dossier-data-section">
-            <div class="tire-section-header">
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
                 <div>
                     <span class="tire-section-kicker">Abastecimentos</span>
                     <h2>Resumo por produto</h2>
-                    <p>Diesel e ARLA separados. Cancelados nao entram em litros, custos ou consumo.</p>
+                    <p>Diesel e ARLA separados. Cancelados não entram em litros, custos ou consumo.</p>
                 </div>
-            </div>
+                <span class="dossier-collapse-indicator"></span>
 
-            <div class="dossier-product-grid">
+            </summary>
+            <div class="dossier-collapsible-body">
+
+                <div class="dossier-product-grid">
                 @forelse($fuelByProductList as $product)
+                    @php
+                        $productConsumption = $fuelConsumptionList->firstWhere('product_name', $product['product_name']);
+                
+                        $kmConsumption = $productConsumption['km_consumption']['value'] ?? null;
+                        $hoursConsumption = $productConsumption['hours_consumption']['value'] ?? null;
+                    @endphp
+                
                     <div class="dossier-product-card">
                         <span>{{ $product['product_name'] }}</span>
+                
                         <strong>{{ $number($product['liters'], 3) }} L</strong>
-                        <small>{{ $product['fillings_count'] }} abastecimento(s) | {{ $money($product['total_cost']) }}</small>
+                
+                        <small>
+                            {{ $product['fillings_count'] }} abastecimento(s) | {{ $money($product['total_cost']) }}
+                        </small>
+                
+                        <div class="dossier-product-consumption">
+                            <div>
+                                <span>Consumo KM</span>
+                                <strong>
+                                    {{ $kmConsumption !== null ? $number($kmConsumption, 2) . ' km/L' : '-' }}
+                                </strong>
+                            </div>
+                
+                            <div>
+                                <span>Consumo HR</span>
+                                <strong>
+                                    {{ $hoursConsumption !== null ? $number($hoursConsumption, 2) . ' L/h' : '-' }}
+                                </strong>
+                            </div>
+                        </div>
                     </div>
                 @empty
                     <div class="dossier-product-card is-empty">
                         <span>Sem abastecimentos</span>
                         <strong>0,000 L</strong>
-                        <small>Nenhum registro valido no periodo.</small>
+                        <small>Nenhum registro válido no período.</small>
                     </div>
                 @endforelse
             </div>
-        </section>
-        @endif
-
-        @if($showSection('maintenances') || $showSection('maintenance_costs'))
-        <section class="tire-report-section dossier-data-section">
-            <div class="tire-section-header">
-                <div>
-                    <span class="tire-section-kicker">Manutencoes</span>
-                    <h2>Manutencoes no periodo</h2>
-                    <p>Somente registros validos, sem manutencoes canceladas.</p>
-                </div>
             </div>
-
-            <div class="dossier-table-wrap">
-                <table class="dossier-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Procedimento</th>
-                            <th>Tipo</th>
-                            <th>Fornecedor/oficina</th>
-                            <th>KM/HR</th>
-                            <th>Custo registrado da ordem</th>
-                            <th>Observacao</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($maintenancesList as $maintenance)
-                            @php
-                                $maintenanceItems = collect($maintenance['items'] ?? []);
-                                $visibleItems = $maintenanceItems->take(3);
-                                $hiddenItemsCount = max(0, $maintenanceItems->count() - $visibleItems->count());
-                            @endphp
-                            <tr>
-                                <td>{{ $formatDate($maintenance['date']) }}</td>
-                                <td>
-                                    <strong>Ordem #{{ $maintenance['id'] }}</strong>
-                                    <div class="dossier-muted-line">{{ $maintenance['procedure_summary'] }}</div>
-
-                                    <div class="dossier-muted-line">
-                                        {{ $maintenance['items_count'] }} serviço(s)
-                                    </div>
-
-                                    @foreach($visibleItems as $item)
-                                        <div class="dossier-item-line">
-                                            <strong>{{ $item['procedure_name'] }}</strong>
-                                            @if($item['maintenance_type'])
-                                                <span>{{ $item['maintenance_type'] }}</span>
-                                            @endif
-
-                                            @if($item['dynamic_values']->isNotEmpty())
-                                                <div class="dossier-muted-line">
-                                                    @foreach($item['dynamic_values']->take(3) as $dynamicValue)
-                                                        <span>{{ $dynamicValue['label'] }}: {{ $dynamicValue['value'] }}</span>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
-
-                                    @if($hiddenItemsCount > 0)
-                                        <div class="dossier-muted-line">+ {{ $hiddenItemsCount }} itens</div>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($maintenance['items_count'] > 1)
-                                        Múltipla
-                                    @else
-                                        {{ $maintenance['maintenance_type'] ?: '-' }}
-                                    @endif
-                                </td>
-                                <td>{{ $maintenance['provider_name'] ?: '-' }}</td>
-                                <td>
-                                    KM {{ $maintenance['performed_km'] !== null ? $number($maintenance['performed_km']) : '-' }}
-                                    <br>
-                                    HR {{ $maintenance['performed_hours'] !== null ? $number($maintenance['performed_hours'], 1) : '-' }}
-                                </td>
-                                <td>{{ $money($maintenance['total_cost']) }}</td>
-                                <td>{{ $maintenance['notes'] ?: $maintenance['reason'] ?: '-' }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="dossier-empty-cell">Nenhuma manutencao valida encontrada para o periodo.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        @endif
-
-        @if($showSection('stock'))
-        <section class="tire-report-section dossier-data-section">
-            <div class="tire-section-header">
-                <div>
-                    <span class="tire-section-kicker">Estoque consumido</span>
-                    <h2>Pecas consumidas do estoque</h2>
-                    <p>Consumos vinculados a manutencoes validas do veiculo. Detalhamento separado; nao somado novamente ao custo registrado da ordem.</p>
-                </div>
-            </div>
-
-            <div class="dossier-table-wrap">
-                <table class="dossier-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Manutencao</th>
-                            <th>Item</th>
-                            <th>Categoria</th>
-                            <th>Qtd.</th>
-                            <th>Custo unit.</th>
-                            <th>Custo total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($stockConsumptionList as $movement)
-                            <tr>
-                                <td>{{ $formatDate($movement['date']) }}</td>
-                                <td>
-                                    #{{ $movement['maintenance_id'] }}
-                                    <div class="dossier-muted-line">{{ $movement['procedure_name'] }}</div>
-                                </td>
-                                <td>{{ $movement['item_name'] }}</td>
-                                <td>{{ $movement['category_name'] }}</td>
-                                <td>{{ $number($movement['quantity'], 2) }}</td>
-                                <td>
-                                    {{ $money($movement['unit_cost']) }}
-                                    @if($movement['cost_is_estimated'])
-                                        <span class="dossier-badge warning">Estimado</span>
-                                    @endif
-                                </td>
-                                <td>{{ $money($movement['total_cost']) }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="dossier-empty-cell">Nenhum consumo de estoque vinculado a manutencao no periodo.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        @endif
-
-        @if($showSection('fuel'))
-        <section class="tire-report-section dossier-data-section">
-            <div class="tire-section-header">
+        </details>
+        
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
                 <div>
                     <span class="tire-section-kicker">Abastecimentos</span>
                     <h2>Abastecimentos no periodo</h2>
                     <p>Registros validos do veiculo na unidade ativa, com leituras e custos informados no lancamento.</p>
                 </div>
-            </div>
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            <div class="dossier-collapsible-body">
 
             <div class="dossier-table-wrap">
                 <table class="dossier-table">
@@ -418,20 +463,23 @@
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
+        </details>
         @endif
-
         @if($showSection('fuel_consumption'))
-        <section class="tire-report-section dossier-data-section">
-            <div class="tire-section-header">
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
                 <div>
                     <span class="tire-section-kicker">Consumo</span>
                     <h2>Consumo e leitura operacional</h2>
                     <p>Calculo conservador: exige pelo menos duas leituras crescentes por produto. Medias nao confiaveis nao sao exibidas.</p>
                 </div>
-            </div>
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            
+            <div class="dossier-collapsible-body">
 
-            <div class="dossier-table-wrap">
+                <div class="dossier-table-wrap">
                 <table class="dossier-table dossier-consumption-table">
                     <thead>
                         <tr>
@@ -481,69 +529,518 @@
                     </tbody>
                 </table>
             </div>
-        </section>
-        @endif
 
-        @if($showSection('km_hr'))
-            <section class="tire-report-section dossier-data-section">
-                <div class="tire-section-header">
-                    <div>
-                        <span class="tire-section-kicker">KM e horimetro</span>
-                        <h2>Atualizacoes de KM e horimetro</h2>
-                        <p>Estrutura reservada para logs detalhados do periodo. O cabecalho mantem KM e horimetro atuais do veiculo.</p>
+            </div>
+        </details>
+        @endif
+        
+        @if($showSection('tires'))
+
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
+                <div>
+                    <span class="tire-section-kicker">Pneus</span>
+                    <h2>Resumo dos pneus</h2>
+                    <p>Situação dos pneus instalados, medições de sulcagem e movimentações realizadas no período.</p>
+                </div>
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+
+            <div class="dossier-collapsible-body">
+
+                <div class="tire-summary-grid four-cards">
+                    <article class="tire-summary-card">
+                        <span>PNEUS INSTALADOS</span>
+            
+                        <strong>
+                            {{ $tiresCurrent->count() }}
+                        </strong>
+            
+                        <small>Atualmente no veículo</small>
+                    </article>
+            
+                    <article class="tire-summary-card">
+                        <span>MEDIÇÕES</span>
+            
+                        <strong>
+                            {{ $tireMeasurements->sum('measurements_count') }}
+                        </strong>
+            
+                        <small>No período</small>
+                    </article>
+            
+                    <article class="tire-summary-card">
+                        <span>MOVIMENTAÇÕES</span>        
+                        <strong>
+                            {{ $tireEvents->count() }}
+                        </strong>
+            
+                        <small>Instalações e retiradas</small>
+                    </article>
+            
+                    <article class="tire-summary-card">
+                        <span>MENOR SULCO ATUAL</span>
+            
+                        <strong>
+                            {{ optional($tiresCurrent->sortBy('current_tread_depth')->first())['current_tread_depth']
+                                ? $number(optional($tiresCurrent->sortBy('current_tread_depth')->first())['current_tread_depth'],2).' mm'
+                                : '-' }}
+                        </strong>
+            
+                        <small>Entre os pneus instalados</small>
+                    </article>
+                </div>
+            
+                @php
+                    $positionOrder = ['1E', '1D', '2E', '2D', '3E', '3D', '4E', '4D'];
+                    $activeTiresByPosition = $tiresCurrent->keyBy('position_code');
+                @endphp
+                
+                <div class="dossier-tire-position-grid">
+                    @foreach($positionOrder as $position)
+                        @php
+                            $activeTire = $activeTiresByPosition->get($position);
+                        
+                            if (! $activeTire) {
+                                continue;
+                            }
+                        
+                            $activeTireMeasurement = $tireMeasurements
+                                ->firstWhere('tire_id', $activeTire['tire_id']);
+                        
+                            $initialTread = $activeTireMeasurement['initial_tread']
+                                ?? $activeTire['initial_tread_depth']
+                                ?? null;
+                        
+                            $finalTread = $activeTireMeasurement['final_tread']
+                                ?? $activeTire['current_tread_depth']
+                                ?? null;
+                        
+                            $wear = null;
+                        
+                            if ($initialTread !== null && $finalTread !== null) {
+                                $wear = abs((float) $initialTread - (float) $finalTread);
+                            }
+                        
+                            $wearClass = match (true) {
+                                $wear === null => 'neutral',
+                                $wear > 2 => 'high',
+                                $wear > 0.5 => 'medium',
+                                default => 'low',
+                            };
+                        
+                            $wearLabel = match ($wearClass) {
+                                'high' => 'Alto',
+                                'medium' => 'Médio',
+                                'low' => 'Baixo',
+                                default => 'Sem leitura',
+                            };
+                        
+                            $referenceTread = $activeTire['tread_reference_depth']
+                                ?? $activeTire['initial_tread_depth']
+                                ?? null;
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Limites operacionais de sulcagem
+                            |--------------------------------------------------------------------------
+                            | Acima de 4 mm: normal
+                            | De 2,01 mm até 4 mm: atenção
+                            | Até 2 mm: crítico
+                            */
+                            $warningTread = 4.0;
+                            $criticalTread = 2.0;
+                            
+                            $treadStatusClass = 'normal';
+                            $treadStatusLabel = 'Normal';
+                            
+                            if ($finalTread !== null) {
+                                $currentTread = (float) $finalTread;
+                            
+                                if ($currentTread <= $criticalTread) {
+                                    $treadStatusClass = 'critical';
+                                    $treadStatusLabel = 'Crítico';
+                                } elseif ($currentTread <= $warningTread) {
+                                    $treadStatusClass = 'warning';
+                                    $treadStatusLabel = 'Atenção';
+                                }
+                            }
+                            
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Percentual de sulcagem restante
+                            |--------------------------------------------------------------------------
+                            | Exemplo:
+                            | 15 mm inicial e 4 mm atual = 26,7%
+                            | 15 mm inicial e 2 mm atual = 13,3%
+                            */
+                            $treadRemainingPercentage = null;
+                            
+                            if (
+                                $referenceTread !== null
+                                && $finalTread !== null
+                                && (float) $referenceTread > 0
+                            ) {
+                                $treadRemainingPercentage = min(
+                                    100,
+                                    max(
+                                        0,
+                                        ((float) $finalTread / (float) $referenceTread) * 100
+                                    )
+                                );
+                            }
+                            
+                            $retreadsCount = (int) ($activeTire['retreads_count'] ?? 0);
+                        
+                            $kmRun = null;
+                        
+                            if (
+                                ($activeTire['installed_km'] ?? null) !== null
+                                && ($vehicle['current_km'] ?? null) !== null
+                                && (float) $vehicle['current_km'] >= (float) $activeTire['installed_km']
+                            ) {
+                                $kmRun =
+                                    (float) $vehicle['current_km']
+                                    - (float) $activeTire['installed_km'];
+                            }
+                        @endphp
+                
+                        <article class="dossier-tire-position-card {{ $activeTire ? 'has-tire' : 'is-empty' }}">
+                            <div class="dossier-tire-position-top">
+                                <span>Posição {{ $position }}</span>
+                
+                                @if($activeTire)
+                                    <strong>{{ $activeTire['code'] }}</strong>
+                                    <small>
+                                        {{ trim(($activeTire['brand'] ?? '') . ' ' . ($activeTire['model'] ?? '')) ?: 'Pneu cadastrado' }}
+                                    </small>
+                                    
+                                    <div class="dossier-tire-compact-life {{ $treadStatusClass }}">
+                                        <div class="dossier-tire-compact-life-head">
+                                            <span>
+                                                Sulcagem
+                                                <small>{{ $treadStatusLabel }}</small>
+                                            </span>
+                                        
+                                            <strong class="percentSulcagem">
+                                                {{ $treadRemainingPercentage !== null
+                                                    ? $number($treadRemainingPercentage, 1) . '%'
+                                                    : '-' }}
+                                            </strong>
+                                        </div>
+                                    
+                                        <div
+                                            class="dossier-tire-segments {{ $treadStatusClass }}"
+                                            aria-label="Sulcagem restante: {{ $treadRemainingPercentage !== null ? $number($treadRemainingPercentage, 1) . '%' : 'não calculada' }}"
+                                        >
+                                            @for($segment = 1; $segment <= 20; $segment++)
+                                                @php
+                                                    $segmentStart = ($segment - 1) * 5;
+                                        
+                                                    $segmentActive = $treadRemainingPercentage !== null
+                                                        && $treadRemainingPercentage > $segmentStart;
+                                                @endphp
+                                        
+                                                <span @class(['is-active' => $segmentActive])></span>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                
+                            @if($activeTire)
+                                <div class="dossier-tire-position-metrics">
+                                    <div>
+                                        <span>Sulco inicial</span>
+                                        <strong>{{ $initialTread !== null ? $number($initialTread, 2) . ' mm' : '-' }}</strong>
+                                    </div>
+                
+                                    <div>
+                                        <span>Sulco atual</span>
+                                        <strong>{{ $finalTread !== null ? $number($finalTread, 2) . ' mm' : '-' }}</strong>
+                                    </div>
+                
+                                    <div>
+                                        <span>Medições</span>
+                                        <strong>{{ $activeTireMeasurement['measurements_count'] ?? 0 }}</strong>
+                                    </div>
+                                    
+                                    <div>
+                                        <span>KM rodado</span>
+                                        <strong>{{ $kmRun !== null ? $number($kmRun, 0) . ' km' : '-' }}</strong>
+                                    </div>
+                                </div>
+                                <div class="dossier-tire-footer-badges">
+                                    <span class="dossier-tire-wear-badge {{ $wearClass }}">
+                                        {{ $wear !== null
+                                            ? $number($wear, 2) . ' mm · ' . $wearLabel
+                                            : $wearLabel }}
+                                    </span>
+                                
+                                    <span @class([
+                                        'dossier-tire-retread-badge',
+                                        'has-retread' => $retreadsCount > 0,
+                                    ])>
+                                        @if($retreadsCount === 0)
+                                            Original
+                                        @elseif($retreadsCount === 1)
+                                            1 recapagem
+                                        @else
+                                            {{ $retreadsCount }} recapagens
+                                        @endif
+                                    </span>
+                                </div>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>        
+                @if($tireEvents->isNotEmpty())
+            
+                <div class="dossier-table-wrap dossier-tire-table-wrap dossier-tire-events-table">
+                
+                    <table class="dossier-table dossier-tire-table">        
+                            <thead>
+            
+                                <tr>
+            
+                                    <th>Data</th>
+            
+                                    <th>Evento</th>
+            
+                                    <th>Pneu</th>
+            
+                                    <th>Posição</th>
+            
+                                    <th>KM</th>
+            
+                                    <th>Motivo</th>
+            
+                                </tr>
+            
+                            </thead>
+            
+                            <tbody>
+            
+                            @foreach($tireEvents as $event)
+            
+                                <tr>
+            
+                                    <td>{{ $formatDate($event['date']) }}</td>    
+                                    
+                                    <td>{{ $event['label'] }}</td>
+            
+                                    <td>{{ $event['tire_code'] }}</td>
+            
+                                    <td>{{ $event['position_code'] }}</td>
+            
+                                    <td>{{ $number($event['km']) }}</td>
+            
+                                    <td>{{ $event['reason'] ?: '-' }}</td>
+            
+                                </tr>
+            
+                            @endforeach
+            
+                            </tbody>
+            
+                        </table>
+            
                     </div>
-                </div>
-
-                <div class="tire-compact-item">
-                    <strong>Bloco em preparacao</strong>
-                    <span>A consulta detalhada de alteracoes de KM/HR sera conectada sem criar soma operacional paralela.</span>
-                </div>
-            </section>
+            
+                @endif
+        
+            </div>
+        </details>
         @endif
 
-        @if($showSection('downtime'))
-            <section class="tire-report-section dossier-data-section">
-                <div class="tire-section-header">
-                    <div>
-                        <span class="tire-section-kicker">Status operacional</span>
-                        <h2>Status e indisponibilidade</h2>
-                        <p>O status atual aparece no cabecalho do veiculo. Historico detalhado de indisponibilidade sera consolidado em bloco proprio.</p>
-                    </div>
-                </div>
 
-                <div class="tire-compact-item">
-                    <strong>{{ $vehicle['operational_status'] ?? '-' }}</strong>
-                    <span>Status operacional atual respeitando a unidade ativa.</span>
+        @if($showSection('maintenances') || $showSection('maintenance_costs'))
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
+                <div>
+                    <span class="tire-section-kicker">Manutencoes</span>
+                    <h2>Manutenções no período</h2>
+                    <p>Somente registros válidos, sem manutenções canceladas.</p>
                 </div>
-            </section>
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            
+            <div class="dossier-collapsible-body">
+
+            <div class="dossier-table-wrap">
+                <table class="dossier-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Procedimento</th>
+                            <th>Tipo</th>
+                            <th>Fornecedor/oficina</th>
+                            <th>KM/HR</th>
+                            <th>Custo registrado da ordem</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($maintenancesList as $maintenance)
+                            @php
+                                $maintenanceItems = collect($maintenance['items'] ?? []);
+                                $visibleItems = $maintenanceItems->take(3);
+                                $hiddenItemsCount = max(0, $maintenanceItems->count() - $visibleItems->count());
+                            @endphp
+                            <tr>
+                                <td>{{ $formatDate($maintenance['date']) }}</td>
+                                <td>
+                                    <strong>Ordem #{{ $maintenance['id'] }}</strong>
+                                    <div class="dossier-muted-line">{{ $maintenance['procedure_summary'] }}</div>
+
+                                    <div class="dossier-muted-line">
+                                        {{ $maintenance['items_count'] }} serviço(s)
+                                    </div>
+
+                                    @foreach($visibleItems as $item)
+                                        <div class="dossier-item-line">
+                                            <strong>{{ $item['procedure_name'] }}</strong>
+                                            @if($item['maintenance_type'])
+                                            <span>{{ $maintenanceTypeLabel($item['maintenance_type']) }}</span>
+                                            @endif
+
+                                            @if($item['dynamic_values']->isNotEmpty())
+                                                <div class="dossier-muted-line">
+                                                    @foreach($item['dynamic_values']->take(3) as $dynamicValue)
+                                                        <span>{{ $dynamicValue['label'] }}: {{ $dynamicValue['value'] }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+
+                                    @if($hiddenItemsCount > 0)
+                                        <div class="dossier-muted-line">+ {{ $hiddenItemsCount }} itens</div>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($maintenance['items_count'] > 1)
+                                        Múltipla
+                                    @else
+                                        {{ $maintenanceTypeLabel($maintenance['maintenance_type']) }}
+                                    @endif
+                                </td>
+                                <td>{{ $maintenance['provider_name'] ?: '-' }}</td>
+                                <td>
+                                    KM {{ $maintenance['performed_km'] !== null ? $number($maintenance['performed_km']) : '-' }}
+                                    <br>
+                                    HR {{ $maintenance['performed_hours'] !== null ? $number($maintenance['performed_hours'], 1) : '-' }}
+                                </td>
+                                <td>{{ $money($maintenance['total_cost']) }}</td>
+                                <td>{{ $maintenanceTypeLabel($maintenance['notes'] ?: $maintenance['reason'] ?: null) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="dossier-empty-cell">Nenhuma manutencao valida encontrada para o periodo.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            </div>
+        </details>
         @endif
 
-        @if($showSection('alerts'))
-            <section class="tire-report-section dossier-data-section">
-                <div class="tire-section-header">
+        @if($showSection('stock'))
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
+                <div>
+                    <span class="tire-section-kicker">Estoque consumido</span>
+                    <h2>Peças consumidas do estoque</h2>
+                    <p>Consumos vinculados a manutenções válidas do veiculo. Detalhamento separado; nao somado novamente ao custo registrado da ordem.</p>
+                </div>
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            
+            <div class="dossier-collapsible-body">
+
+                <div class="dossier-table-wrap">
+                <table class="dossier-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Manutencao</th>
+                            <th>Item</th>
+                            <th>Categoria</th>
+                            <th>Qtd.</th>
+                            <th>Custo unit.</th>
+                            <th>Custo total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($stockConsumptionList as $movement)
+                            <tr>
+                                <td>{{ $formatDate($movement['date']) }}</td>
+                                <td>
+                                    #{{ $movement['maintenance_id'] }}
+                                    <div class="dossier-muted-line">{{ $movement['procedure_name'] }}</div>
+                                </td>
+                                <td>{{ $movement['item_name'] }}</td>
+                                <td>{{ $movement['category_name'] }}</td>
+                                <td>{{ $number($movement['quantity'], 2) }}</td>
+                                <td>
+                                    {{ $money($movement['unit_cost']) }}
+                                    @if($movement['cost_is_estimated'])
+                                        <span class="dossier-badge warning">Estimado</span>
+                                    @endif
+                                </td>
+                                <td>{{ $money($movement['total_cost']) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="dossier-empty-cell">Nenhum consumo de estoque vinculado a manutencao no periodo.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            </div>
+        </details>
+        @endif
+
+
+        @if($showSection('alerts') && ($summary['alerts_count'] ?? 0) > 0)   
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
                     <div>
                         <span class="tire-section-kicker">Alertas</span>
-                        <h2>Alertas e preventivas</h2>
-                        <p>Alertas atuais ficam separados dos custos e nao alteram indicadores financeiros.</p>
+                        <h2>Alertas identificados</h2>
+                        <p>Ocorrências relevantes encontradas no período do dossiê.</p>
                     </div>
-                </div>
+
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            
+            <div class="dossier-collapsible-body">
 
                 <div class="tire-compact-item">
                     <strong>{{ $summary['alerts_count'] }}</strong>
                     <span>Alerta(s) diagnosticado(s) pelo Dossie nesta etapa.</span>
                 </div>
-            </section>
+
+            </div>
+        </details>
         @endif
 
         @if($cancelledList->isNotEmpty())
-            <section class="tire-report-section dossier-data-section dossier-cancelled-section">
-                <div class="tire-section-header">
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
                     <div>
                         <span class="tire-section-kicker">Canceladas</span>
                         <h2>Registros cancelados</h2>
-                        <p>Manutencoes e abastecimentos cancelados exibidos separadamente. Nao entram em contagem, litros, custo ou resumo operacional.</p>
+                        <p>Manutenções e abastecimentos cancelados exibidos separadamente. Não entram em contagem, litros, custo ou resumo operacional.</p>
                     </div>
-                </div>
+
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            
+            <div class="dossier-collapsible-body">
 
                 <div class="dossier-table-wrap">
                     <table class="dossier-table">
@@ -579,37 +1076,11 @@
                         </tbody>
                     </table>
                 </div>
-            </section>
+
+            </div>
+        </details>
         @endif
 
-        <section class="tire-report-section dossier-policy-section">
-            <div class="tire-section-header">
-                <div>
-                    <span class="tire-section-kicker">Politica de custos</span>
-                    <h2>Politica oficial do custo de manutencao</h2>
-                    <p>
-                        <strong>maintenance_records.total_cost</strong> e a fonte oficial do custo operacional consolidado da ordem.
-                        Itens, avulsos e pecas sao trilhas de composicao e nao entram em nova soma.
-                    </p>
-                </div>
-            </div>
-
-            <div class="dossier-policy-grid">
-                <div><span>Politica da ordem</span><strong>{{ $cost_policy['maintenance_total_includes_stock'] }}</strong></div>
-                <div><span>Fonte manutencao</span><strong>{{ $cost_policy['maintenance_cost_source'] }}</strong></div>
-                <div><span>Fonte estoque</span><strong>{{ $cost_policy['stock_cost_source'] }}</strong></div>
-                <div><span>Regra do total</span><strong>{{ $cost_policy['operational_total_rule'] }}</strong></div>
-            </div>
-
-            <div class="dossier-warning-list">
-                @foreach($cost_policy['warnings'] as $warning)
-                    <div class="tire-compact-item warning">
-                        <strong>Atencao</strong>
-                        <span>{{ $warning }}</span>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-    @endif
+        @endif
 </div>
 @endsection

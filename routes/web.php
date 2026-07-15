@@ -87,6 +87,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/locations/{location}/toggle-active', [LocationController::class, 'toggleActive'])
         ->name('locations.toggle-active');
 
+    Route::get(
+        '/reports/vehicle-dossier/pdf',
+        [ReportController::class, 'pdf']
+    )->name('reports.vehicle-dossier.pdf');
     /*
 
     |--------------------------------------------------------------------------
@@ -480,6 +484,21 @@ Route::middleware('auth')->group(function () {
         '/vehicles/{vehicle}/maintenance/{maintenance}/pdf',
         [MaintenanceController::class, 'exportOrderPdf']
     )->name('vehicles.maintenance.order.pdf');
+    
+    Route::get(
+        '/vehicles/{vehicle}/maintenance/{maintenance}',
+        [MaintenanceController::class, 'show']
+    )->name('vehicles.maintenance.show');
+    
+    Route::post(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/reopen',
+        [MaintenanceController::class, 'reopen']
+    )->name('vehicles.maintenance.reopen');
+    
+    Route::post(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/delete',
+        [MaintenanceController::class, 'destroy']
+    )->name('vehicles.maintenance.destroy');
     /*
 
     |--------------------------------------------------------------------------

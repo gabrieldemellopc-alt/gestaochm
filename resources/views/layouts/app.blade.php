@@ -1,114 +1,1 @@
-<!DOCTYPE html>
-<html lang="pt-BR" data-chm-theme="dark">
-
-<head>
-
-    <script>
-        (function () {
-            var allowedThemes = ['dark', 'corporate-light'];
-            var theme = 'dark';
-
-            try {
-                var savedTheme = localStorage.getItem('chm-theme');
-
-                if (allowedThemes.indexOf(savedTheme) !== -1) {
-                    theme = savedTheme;
-                }
-            } catch (error) {
-                theme = 'dark';
-            }
-
-            document.documentElement.setAttribute('data-chm-theme', theme);
-        })();
-    </script>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>CHM</title>
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/chm-themes.css') }}?v=1">
-    <!--<link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ time() }}">-->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    
-    @stack('styles')
-</head>
-
-<body class="chm-body">
-
-    @auth
-
-        @if(
-            request()->routeIs('portal')
-            || request()->routeIs('division.*')
-        )
-            <div class="portal-layout">
-
-                @include('layouts.topbar')
-
-                <main class="portal-main">
-
-                    <div class="portal-content">
-                    
-                        @include('layouts.flash-messages')
-                    
-                        @yield('content')
-                    
-                    </div>
-
-                </main>
-
-            </div>
-
-        @else
-
-            @include('layouts.sidebar')
-            <div
-                class="sidebar-overlay"
-                onclick="
-                    document
-                        .querySelector('.sidebar')
-                        .classList
-                        .remove('mobile-open')
-                "
-            ></div>
-            <main class="chm-main">
-
-                @include('layouts.topbar')
-
-                <div class="chm-content">
-                
-                    @include('layouts.flash-messages')
-                
-                    @yield('content')
-                
-                </div>
-
-            </main>
-
-        @endif
-
-    @else
-
-        <main class="guest-main">
-
-            @yield('content')
-
-        </main>
-
-    @endauth
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <script>
-        lucide.createIcons();
-    </script>
-    <script src="{{ asset('js/chm-theme.js') }}?v=1"></script>
-
-    @stack('scripts')
-
-</body>
-</html>
+<!DOCTYPE html><html lang="pt-BR" data-chm-theme="dark"><head>    <script>        (function () {            var allowedThemes = ['dark', 'corporate-light'];            var theme = 'dark';            try {                var savedTheme = localStorage.getItem('chm-theme');                if (allowedThemes.indexOf(savedTheme) !== -1) {                    theme = savedTheme;                }            } catch (error) {                theme = 'dark';            }            document.documentElement.setAttribute('data-chm-theme', theme);        })();    </script>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>CHM</title>    @vite(['resources/css/app.css', 'resources/js/app.js'])    <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ time() }}">    <link rel="stylesheet" href="{{ asset('css/chm-themes.css') }}?v=1">    <!--<link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ time() }}">-->    <meta name="csrf-token" content="{{ csrf_token() }}">        @stack('styles')</head><body class="chm-body">    @auth        @if(            request()->routeIs('portal')            || request()->routeIs('division.*')        )            <div class="portal-layout">                @include('layouts.topbar')                <main class="portal-main">                    <div class="portal-content">                                            @include('layouts.flash-messages')                                            @yield('content')                                        </div>                </main>            </div>        @else            @include('layouts.sidebar')            <div                class="sidebar-overlay"                onclick="                    document                        .querySelector('.sidebar')                        .classList                        .remove('mobile-open')                "            ></div>            <main class="chm-main">                @include('layouts.topbar')                <div class="chm-content">                                    @include('layouts.flash-messages')                                    @yield('content')                                </div>            </main>        @endif    @else        <main class="guest-main">            @yield('content')        </main>    @endauth    <script src="https://unpkg.com/lucide@latest"></script>    <script>        document.addEventListener('DOMContentLoaded', () => {            lucide.createIcons();        });    </script>    <script src="{{ asset('js/chm-theme.js') }}?v=1"></script>    @stack('scripts')</body></html>

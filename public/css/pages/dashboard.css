@@ -1569,6 +1569,13 @@
   border-radius: 24px;
   box-shadow: 0 32px 90px rgba(0, 0, 0, 0.45);
   color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  
+  width: min(1180px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  
+  overflow: hidden;
 }
 
 .vehicle-center-header {
@@ -1745,7 +1752,6 @@
   grid-template-columns: 390px minmax(0, 1fr);
   gap: 18px;
   padding: 22px 26px 26px;
-  max-height: calc(100vh - 270px);
   overflow-y: auto;
 }
 
@@ -1799,6 +1805,10 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+    
+}
+.selectedOperationalStatus{
+  width: stretch;
 }
 
 .vehicle-center-field label {
@@ -2448,9 +2458,7 @@
     color: #fecaca;
 }
 
-.vehicle-center-body {
-    padding-top: 34px;
-}
+
 @media (max-width: 900px) {
 
     .vehicle-center-summary-line {
@@ -4872,4 +4880,152 @@ html[data-chm-theme="corporate-light"] .dashboard-page .quick-action-card:hover 
 
 .vehicle-modal-action.primary {
     border-color: rgba(224,82,91,.32);
+}
+
+.vehicle-center-status-form{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+}
+.vehicle-center-status-form textarea{
+
+    width:100%;
+
+    min-height:80px;
+
+    resize:vertical;
+
+}
+.statusReason{
+    padding: 10px;
+}
+.vehicle-maintenance-status-lock {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    padding: 15px;
+
+    border: 1px solid rgba(224, 184, 91, .28);
+    border-radius: 10px;
+
+    background: rgba(224, 184, 91, .06);
+}
+
+.vehicle-maintenance-status-lock-text {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+}
+
+.vehicle-maintenance-status-lock-text > svg {
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+
+    color: #e0b85b;
+}
+
+.vehicle-maintenance-status-lock-text strong {
+    display: block;
+
+    color: #f4f7fb;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.vehicle-maintenance-status-lock-text p {
+    margin: 4px 0 0;
+
+    color: #aeb8c8;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.vehicle-maintenance-status-link {
+    min-height: 42px;
+    padding: 0 14px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    border: 1px solid rgba(224, 184, 91, .38);
+    border-radius: 7px;
+
+    color: #f3d78f;
+    background: rgba(224, 184, 91, .10);
+
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 800;
+
+    transition:
+        background .16s ease,
+        border-color .16s ease,
+        color .16s ease;
+}
+
+.vehicle-maintenance-status-link:hover {
+    color: #fff4d6;
+    background: rgba(224, 184, 91, .18);
+    border-color: rgba(224, 184, 91, .62);
+}
+
+.vehicle-maintenance-status-link svg {
+    width: 16px;
+    height: 16px;
+}
+.maintenance-open-action-box {
+    height: auto;
+    min-height: 260px;
+}
+.dashboard-page .vehicle-center-left,
+.dashboard-page .vehicle-center-right {
+    min-width: 0;
+    min-height: 0;
+}
+.dashboard-page .modal-overlay {
+    overflow: hidden;
+}
+.vehicle-center-header-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+.vehicle-center-open-page{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    padding:10px 16px;
+
+    border-radius:10px;
+
+    border:1px solid rgba(255,255,255,.10);
+
+    background:rgba(255,255,255,.04);
+
+    color:#fff;
+
+    font-weight:600;
+    font-size:.9rem;
+
+    text-decoration:none;
+
+    transition:.18s;
+}
+
+.vehicle-center-open-page:hover{
+
+    background:rgba(255,255,255,.08);
+
+    border-color:rgba(255,255,255,.20);
+
+    transform:translateY(-1px);
 }

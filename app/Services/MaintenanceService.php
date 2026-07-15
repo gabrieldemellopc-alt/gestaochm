@@ -225,6 +225,8 @@ class MaintenanceService
                 'workflow_status' => 'open',
                 'service_status' => $serviceStatus,
                 'opened_by' => auth()->id(),
+                'maintenance_category' =>
+                    $data['maintenance_category'] ?? null,
     
                 'next_due_km' => null,
                 'next_due_hours' => null,
@@ -660,13 +662,18 @@ class MaintenanceService
         return StockMovement::query()
             ->where('tenant_id', $maintenance->tenant_id)
             ->where('movement_type', 'out')
+            ->whereNull('reversal_movement_id')
             ->where(function ($query) use ($maintenance) {
                 $query
                     ->where('maintenance_record_id', $maintenance->id)
                     ->orWhere(function ($query) use ($maintenance) {
                         $query
                             ->whereNull('maintenance_record_id')
-                            ->where('description', 'like', '%#'.$maintenance->id);
+                            ->where(
+                                'description',
+                                'like',
+                                '%#'.$maintenance->id
+                            );
                     });
             })
             ->orderBy('id')
@@ -849,4 +856,360 @@ class MaintenanceService
             return $extraCost;
         });
     }    
+
+    public static function reopen(
+        MaintenanceRecord $maintenance,
+        string $reason,
+        User $user
+    ): MaintenanceRecord {
+        return DB::transaction(function () use ($maintenance, $reason, $user) {
+            $maintenance = MaintenanceRecord::query()
+                ->whereKey($maintenance->id)
+                ->whereNull('deleted_at')
+                ->lockForUpdate()
+                ->firstOrFail();
+    
+            if ($maintenance->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'maintenance' => 'Manutenções canceladas não podem ser reabertas.',
+                ]);
+            }
+    
+            if ($maintenance->workflow_status !== 'closed') {
+                throw ValidationException::withMessages([
+                    'maintenance' => 'Somente manutenções encerradas podem ser reabertas.',
+                ]);
+            }
+    
+            $vehicle = Vehicle::query()
+                ->whereKey($maintenance->vehicle_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+    
+            $anotherOpenMaintenance = MaintenanceRecord::query()
+                ->where('tenant_id', $maintenance->tenant_id)
+                ->where('vehicle_id', $vehicle->id)
+                ->where('workflow_status', 'open')
+                ->whereNull('cancelled_at')
+                ->whereNull('deleted_at')
+                ->whereKeyNot($maintenance->id)
+                ->lockForUpdate()
+                ->exists();
+    
+            if ($anotherOpenMaintenance) {
+                throw ValidationException::withMessages([
+                    'maintenance' => 'Este veículo já possui outra manutenção aberta.',
+                ]);
+            }
+    
+            $maintenanceBefore = $maintenance->toArray();
+            $vehicleBefore = $vehicle->toArray();
+    
+            $maintenance->update([
+                'workflow_status' => 'open',
+                'finished_at' => null,
+                'closed_by' => null,
+                'closure_notes' => null,
+            ]);
+    
+            $vehicle->update([
+                'operational_status' => 'maintenance',
+                'status_reason' => 'Manutenção reaberta #'.$maintenance->id,
+                'status_changed_at' => now(),
+            ]);
+    
+            VehicleDowntimePeriod::query()
+                ->where('vehicle_id', $vehicle->id)
+                ->whereNull('ended_at')
+                ->latest('started_at')
+                ->first()
+                ?->update([
+                    'ended_at' => now(),
+                ]);
+    
+            VehicleDowntimePeriod::create([
+                'vehicle_id' => $vehicle->id,
+                'status' => 'maintenance',
+                'reason' => 'Manutenção reaberta #'.$maintenance->id,
+                'started_at' => now(),
+            ]);
+    
+            $maintenanceAfter = $maintenance->fresh([
+                'vehicle',
+                'items',
+                'extraCosts',
+            ]);
+    
+            app(AuditLogService::class)->restored($maintenanceAfter, [
+                'tenant_id' => $maintenanceAfter->tenant_id,
+                'division_id' => $vehicle->division_id,
+                'location_id' => $vehicle->location_id,
+                'module' => 'maintenance',
+                'summary' => 'Manutenção #'.$maintenanceAfter->id.' reaberta.',
+                'before_data' => $maintenanceBefore,
+                'after_data' => $maintenanceAfter->toArray(),
+                'metadata' => [
+                    'vehicle_id' => $vehicle->id,
+                    'old_workflow_status' => 'closed',
+                    'new_workflow_status' => 'open',
+                ],
+                'reason' => $reason,
+            ]);
+    
+            app(AuditLogService::class)->updated($vehicle, [
+                'tenant_id' => $vehicle->tenant_id,
+                'division_id' => $vehicle->division_id,
+                'location_id' => $vehicle->location_id,
+                'module' => 'fleet',
+                'summary' => 'Veículo colocado em manutenção pela reabertura da ordem #'.$maintenance->id.'.',
+                'before_data' => $vehicleBefore,
+                'after_data' => $vehicle->fresh()->toArray(),
+                'metadata' => [
+                    'maintenance_record_id' => $maintenance->id,
+                ],
+                'reason' => $reason,
+            ]);
+    
+            return $maintenanceAfter;
+        });
+    }
+    
+    public static function logicalDelete(
+        MaintenanceRecord $maintenance,
+        string $reason,
+        User $user
+    ): MaintenanceRecord {
+        return DB::transaction(function () use ($maintenance, $reason, $user) {
+            $maintenance = MaintenanceRecord::query()
+                ->with([
+                    'vehicle',
+                    'items.values',
+                ])
+                ->whereKey($maintenance->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+    
+            if ($maintenance->deleted_at) {
+                throw ValidationException::withMessages([
+                    'maintenance' => 'Esta manutenção já foi apagada.',
+                ]);
+            }
+    
+            if ($maintenance->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'maintenance' =>
+                        'Manutenções canceladas não podem ser apagadas por este fluxo.',
+                ]);
+            }
+    
+            if ($maintenance->workflow_status !== 'closed') {
+                throw ValidationException::withMessages([
+                    'maintenance' =>
+                        'Somente manutenções encerradas podem ser apagadas.',
+                ]);
+            }
+    
+            $vehicle = $maintenance->vehicle;
+    
+            if (! $vehicle) {
+                throw ValidationException::withMessages([
+                    'maintenance' =>
+                        'Não foi possível localizar o veículo da manutenção.',
+                ]);
+            }
+    
+            $before = $maintenance->toArray();
+            $reverseMovements = collect();
+    
+            /*
+            |--------------------------------------------------------------------------
+            | DEVOLUÇÃO DOS MATERIAIS AO ESTOQUE
+            |--------------------------------------------------------------------------
+            */
+    
+            $stockMovements = self::stockMovementsForMaintenance(
+                $maintenance
+            );
+    
+            foreach ($stockMovements as $movement) {
+                $stockItem = StockItem::query()
+                    ->where('tenant_id', $movement->tenant_id)
+                    ->where('location_id', $movement->location_id)
+                    ->whereKey($movement->stock_item_id)
+                    ->lockForUpdate()
+                    ->first();
+    
+                if (! $stockItem) {
+                    throw ValidationException::withMessages([
+                        'maintenance' =>
+                            'Não foi possível devolver ao estoque um dos materiais utilizados.',
+                    ]);
+                }
+    
+                $reverseMovement = StockMovement::create([
+                    'tenant_id' => $movement->tenant_id,
+                    'location_id' => $movement->location_id,
+                    'stock_item_id' => $movement->stock_item_id,
+    
+                    'maintenance_record_id' => $maintenance->id,
+                    'maintenance_record_item_id' =>
+                        $movement->maintenance_record_item_id,
+    
+                    'movement_type' => 'in',
+                    'quantity' => $movement->quantity,
+                    'unit_cost' => $movement->unit_cost,
+                    'total_cost' =>
+                        (float) $movement->quantity
+                        * (float) $movement->unit_cost,
+    
+                    'description' =>
+                        'Devolução ao estoque pela exclusão lógica da manutenção #'
+                        .$maintenance->id,
+    
+                    'reversed_from_movement_id' => $movement->id,
+                ]);
+    
+                $movement->update([
+                    'reversal_movement_id' => $reverseMovement->id,
+                ]);
+    
+                $stockItem->quantity =
+                    (float) $stockItem->quantity
+                    + (float) $movement->quantity;
+    
+                $stockItem->save();
+    
+                $reverseMovements->push($reverseMovement);
+    
+                app(AuditLogService::class)->created(
+                    $reverseMovement,
+                    [
+                        'tenant_id' => $movement->tenant_id,
+                        'division_id' => $vehicle->division_id,
+                        'location_id' => $movement->location_id,
+                        'module' => 'stock',
+    
+                        'summary' =>
+                            'Material devolvido ao estoque pela exclusão lógica da manutenção #'
+                            .$maintenance->id.'.',
+    
+                        'after_data' =>
+                            $reverseMovement->toArray(),
+    
+                        'metadata' => [
+                            'maintenance_record_id' =>
+                                $maintenance->id,
+    
+                            'maintenance_record_item_id' =>
+                                $movement->maintenance_record_item_id,
+    
+                            'original_stock_movement_id' =>
+                                $movement->id,
+    
+                            'stock_item_id' =>
+                                $movement->stock_item_id,
+    
+                            'quantity_reversed' =>
+                                $movement->quantity,
+                        ],
+    
+                        'reason' => $reason,
+                    ]
+                );
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | EXCLUSÃO LÓGICA
+            |--------------------------------------------------------------------------
+            */
+    
+            $maintenance->update([
+                'deleted_at' => now(),
+                'deleted_by' => $user->id,
+                'delete_reason' => $reason,
+            ]);
+    
+            $maintenanceAfter = $maintenance->fresh([
+                'vehicle',
+                'items',
+                'extraCosts',
+            ]);
+    
+            app(AuditLogService::class)->deleted(
+                $maintenanceAfter,
+                [
+                    'tenant_id' => $maintenanceAfter->tenant_id,
+                    'division_id' => $vehicle->division_id,
+                    'location_id' => $vehicle->location_id,
+                    'module' => 'maintenance',
+    
+                    'summary' =>
+                        'Manutenção #'.$maintenanceAfter->id
+                        .' apagada logicamente.',
+    
+                    'before_data' => $before,
+    
+                    'after_data' => [
+                        'deleted_at' =>
+                            $maintenanceAfter->deleted_at,
+    
+                        'deleted_by' =>
+                            $maintenanceAfter->deleted_by,
+    
+                        'delete_reason' =>
+                            $maintenanceAfter->delete_reason,
+                    ],
+    
+                    'metadata' => [
+                        'vehicle_id' =>
+                            $maintenanceAfter->vehicle_id,
+    
+                        'items_preserved' => true,
+                        'extra_costs_preserved' => true,
+                        'stock_movements_preserved' => true,
+    
+                        'reverse_stock_movements' =>
+                            $reverseMovements
+                                ->map(
+                                    fn ($movement) =>
+                                        $movement->toArray()
+                                )
+                                ->values()
+                                ->all(),
+                    ],
+    
+                    'reason' => $reason,
+                ]
+            );
+    
+            return $maintenanceAfter;
+        });
+    }
+    
+    public static function maintenanceCategories(): array
+    {
+        return [
+            'differential' => 'Diferencial',
+            'axle' => 'Eixo',
+            'electrical' => 'Elétrica',
+            'clutch' => 'Embreagem',
+            'exhaust' => 'Escapamento',
+            'brakes' => 'Freios',
+            'bodywork_paint' => 'Funilaria/Pintura',
+            'bodywork_paint_implement' => 'Funilaria/Pintura (Implemento)',
+            'hydraulic' => 'Hidráulica',
+            'engine' => 'Motor',
+            'tires' => 'Pneus',
+            'inspection' => 'Revisão',
+            'air_conditioning' => 'Sist. de Ar',
+            'welding_boilermaking' => 'Solda/Caldeiraria',
+            'welding_boilermaking_implement' => 'Solda/Caldeiraria (Implemento)',
+            'suspension' => 'Suspensão',
+            'tachograph' => 'Tacógrafo',
+            'arla_system' => 'Sist. ARLA',
+            'transmission' => 'Transmissão',
+            'other' => 'Outros',
+        ];
+    }
 }

@@ -64,6 +64,48 @@
         ->count('division_id');
 
     $canSwitchDivision = $userDivisionCount > 1;
+    $activeAccessProfileLabel = 'Operador';
+
+    if ($activeDivision) {
+        $activeLocationId = $activeLocation?->id;
+    
+        $activeProfiles = auth()
+            ->user()
+            ->divisionAccesses()
+            ->where('active', true)
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('division_id', $activeDivision->id)
+            ->where('module', 'fleet')
+            ->where(function ($query) use ($activeLocationId) {
+                $query->whereNull('location_id');
+    
+                if ($activeLocationId) {
+                    $query->orWhere(
+                        'location_id',
+                        $activeLocationId
+                    );
+                }
+            })
+            ->pluck('profile')
+            ->filter()
+            ->unique()
+            ->map(function ($profile) {
+                return match ($profile) {
+                    'admin' => 'Administrador',
+                    'manager' => 'Gestor',
+                    'supervisor' => 'Supervisor',
+                    'mechanic' => 'Mecânico',
+                    'driver' => 'Motorista',
+                    default => ucfirst($profile),
+                };
+            })
+            ->values();
+    
+        if ($activeProfiles->isNotEmpty()) {
+            $activeAccessProfileLabel =
+                $activeProfiles->implode(' · ');
+        }
+    }
 @endphp
 
 <header class="topbar">
@@ -298,21 +340,12 @@
 
 
                     <small>
-
-
-
-                        {{
-
-                            $activeDivision
-
-                                ? $activeDivision->name
-
-                                : 'Operador'
-
-                        }}
-
-
-
+                        {{ $activeAccessProfileLabel }}
+                    
+                        @if($activeDivision)
+                            <span aria-hidden="true">·</span>
+                            {{ $activeDivision->name }}
+                        @endif
                     </small>
 
 
@@ -370,21 +403,11 @@
 
 
                     <span>
-
-
-
-                        {{
-
-                            $activeDivision
-
-                                ? $activeDivision->name
-
-                                : 'Operador'
-
-                        }}
-
-
-
+                        {{ $activeAccessProfileLabel }}
+                    
+                        @if($activeDivision)
+                            · {{ $activeDivision->name }}
+                        @endif
                     </span>
 
 

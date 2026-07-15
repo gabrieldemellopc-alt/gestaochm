@@ -36,11 +36,15 @@ class MaintenanceRecord extends Model
         'notes',
         'workflow_status',
         'service_status',
+        'maintenance_category',
         'started_at',
         'finished_at',
         'opened_by',
         'closed_by',
         'closure_notes',
+        'deleted_at',
+        'deleted_by',
+        'delete_reason',
     ];
 
     protected $casts = [
@@ -49,6 +53,9 @@ class MaintenanceRecord extends Model
         'finished_at' => 'datetime',
         'next_due_date' => 'date',
         'cancelled_at' => 'datetime',
+        'deleted_at' => 'datetime',
+        'total_cost' => 'decimal:2',
+        'extra_cost' => 'decimal:2',
     ];
 
     public function vehicle()
@@ -70,10 +77,18 @@ class MaintenanceRecord extends Model
     {
         return $this->belongsTo(User::class, 'cancelled_by');
     }
+    public function deleter()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
 
     public function getIsCancelledAttribute(): bool
     {
         return $this->cancelled_at !== null;
+    }
+    public function getIsDeletedAttribute(): bool
+    {
+        return $this->deleted_at !== null;
     }
 
     public function getKmRemainingAttribute()
