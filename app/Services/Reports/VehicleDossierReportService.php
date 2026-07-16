@@ -953,6 +953,7 @@ class VehicleDossierReportService
             ->where('vehicle_id', $vehicle->id)
             ->where('active', true)
             ->with([
+                    'creator',
                     'tire' => function ($query) {
                         $query
                             ->with([
@@ -984,6 +985,7 @@ class VehicleDossierReportService
                     'critical_tread_depth' => $tire?->critical_tread_depth,
                     'retreads_count' => (int) ($tire?->retreads_count ?? 0),
                     'tread_reference_depth' => $tire?->tread_reference_depth,
+                    'installed_by_name' => $installation->creator?->name ?? 'Não informado',
                 ];
             });
     }
@@ -998,7 +1000,7 @@ class VehicleDossierReportService
             ->where('vehicle_id', $vehicle->id)
             ->whereNull('cancelled_at')
             ->whereBetween('measured_at', [$start, $end])
-            ->with('tire')
+            ->with(['tire', 'user'])
             ->orderBy('measured_at')
             ->orderBy('id')
             ->get()
@@ -1022,6 +1024,7 @@ class VehicleDossierReportService
                     'variation' => $first->minimum_tread !== null && $last->minimum_tread !== null
                         ? round((float) $last->minimum_tread - (float) $first->minimum_tread, 2)
                         : null,
+                    'measured_by_name' => $last->user?->name ?? 'Não informado',
                 ];
             })
             ->values();
@@ -1036,7 +1039,7 @@ class VehicleDossierReportService
             ->where('tenant_id', $context['tenant_id'])
             ->where('vehicle_id', $vehicle->id)
             ->whereBetween('installed_at', [$start, $end])
-            ->with('tire')
+            ->with(['tire', 'creator'])
             ->get()
             ->map(fn (TireInstallation $installation) => [
                 'type' => 'installation',
@@ -1046,6 +1049,8 @@ class VehicleDossierReportService
                 'position_code' => $installation->position_code,
                 'km' => $installation->installed_km,
                 'reason' => null,
+                'author_label' => 'Instalado por',
+                'author_name' => $installation->creator?->name ?? 'Não informado',
             ]);
     
         $removals = TireInstallation::query()
@@ -1053,7 +1058,7 @@ class VehicleDossierReportService
             ->where('vehicle_id', $vehicle->id)
             ->whereNotNull('removed_at')
             ->whereBetween('removed_at', [$start, $end])
-            ->with('tire')
+            ->with(['tire', 'creator'])
             ->get()
             ->map(fn (TireInstallation $installation) => [
                 'type' => 'removal',
@@ -1063,6 +1068,8 @@ class VehicleDossierReportService
                 'position_code' => $installation->position_code,
                 'km' => $installation->removed_km,
                 'reason' => $installation->removal_reason,
+                'author_label' => 'Registrado por',
+                'author_name' => $installation->creator?->name ?? 'Não informado',
             ]);
     
         return $installations

@@ -795,6 +795,11 @@
                                     </tr>
                                 </table>
 
+                                <div class="muted">Instalado por: {{ $activeTire['installed_by_name'] ?? 'Não informado' }}</div>
+                                @if(! empty($measurement['measured_by_name']))
+                                    <div class="muted">Última medição por: {{ $measurement['measured_by_name'] }}</div>
+                                @endif
+
                                 @if($wear !== null)
                                     <span class="badge {{ $wearClass }}">
                                         Desgaste: {{ $number($wear, 2) }} mm
@@ -825,6 +830,7 @@
                         <th>Posição</th>
                         <th>KM</th>
                         <th>Motivo</th>
+                        <th>Autoria</th>
                     </tr>
                 </thead>
 
@@ -837,6 +843,7 @@
                             <td>{{ $event['position_code'] }}</td>
                             <td>{{ $number($event['km']) }}</td>
                             <td>{{ $event['reason'] ?: '-' }}</td>
+                            <td>{{ ($event['author_label'] ?? 'Registrado por') . ': ' . ($event['author_name'] ?? 'Não informado') }}</td>
                         </tr>
                     @endforeach
                 </tbody>

@@ -757,6 +757,11 @@
                                         <strong>{{ $kmRun !== null ? $number($kmRun, 0) . ' km' : '-' }}</strong>
                                     </div>
                                 </div>
+
+                                <div class="dossier-muted-line">Instalado por: {{ $activeTire['installed_by_name'] ?? 'Não informado' }}</div>
+                                @if(! empty($activeTireMeasurement['measured_by_name']))
+                                    <div class="dossier-muted-line">Última medição por: {{ $activeTireMeasurement['measured_by_name'] }}</div>
+                                @endif
                                 <div class="dossier-tire-footer-badges">
                                     <span class="dossier-tire-wear-badge {{ $wearClass }}">
                                         {{ $wear !== null
@@ -801,6 +806,8 @@
                                     <th>KM</th>
             
                                     <th>Motivo</th>
+
+                                    <th>Autoria</th>
             
                                 </tr>
             
@@ -823,6 +830,8 @@
                                     <td>{{ $number($event['km']) }}</td>
             
                                     <td>{{ $event['reason'] ?: '-' }}</td>
+
+                                    <td>{{ ($event['author_label'] ?? 'Registrado por') . ': ' . ($event['author_name'] ?? 'Não informado') }}</td>
             
                                 </tr>
             
