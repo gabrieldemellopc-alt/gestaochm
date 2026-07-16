@@ -142,7 +142,7 @@
 
                         <div>
                             <span>{{ $receipt->supplier_name ?: 'Fornecedor não informado' }}</span>
-                            <small>{{ $receipt->responsible?->name ?: 'Responsável automático' }}</small>
+                            <small>Recebido por: {{ $receipt->responsible?->name ?: 'Não informado' }}</small>
                         </div>
                     </article>
                 @empty
@@ -188,7 +188,8 @@
                                     Sem custo informado
                                 @endif
                             </span>
-                            <small>{{ $filling->driver?->name ?: 'Motorista não informado' }}</small>
+                            <small>Motorista/Condutor: {{ $filling->driver?->name ?: 'Não informado' }}</small>
+                            <small>Registrado por: {{ $filling->responsible?->name ?: 'Não informado' }}</small>
                         </div>
                     </article>
                 @empty

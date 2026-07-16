@@ -553,7 +553,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="empty">
+                        <td colspan="8" class="empty">
                             Nenhuma manutenção encontrada no período.
                         </td>
                     </tr>
@@ -592,7 +592,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="empty">
+                        <td colspan="8" class="empty">
                             Nenhuma peça consumida no período.
                         </td>
                     </tr>
@@ -613,6 +613,8 @@
                     <th>Data</th>
                     <th>Produto</th>
                     <th>Tanque</th>
+                    <th>Motorista/Condutor</th>
+                    <th>Registrado por</th>
                     <th>KM/HR</th>
                     <th>Litros</th>
                     <th>Custo</th>
@@ -632,6 +634,8 @@
 
                         <td>{{ $filling['product_name'] }}</td>
                         <td>{{ $filling['tank_name'] }}</td>
+                        <td>{{ $filling['driver_name'] ?? 'Não informado' }}</td>
+                        <td>{{ $filling['registered_by_name'] ?? $filling['responsible_name'] ?? 'Não informado' }}</td>
 
                         <td>
                             KM {{ $number($filling['vehicle_km']) }}
@@ -644,7 +648,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="empty">
+                        <td colspan="8" class="empty">
                             Nenhum abastecimento encontrado no período.
                         </td>
                     </tr>

@@ -62,4 +62,9 @@ class FuelMovement extends Model
     {
         return $this->belongsTo(User::class, 'responsible_user_id');
     }
+
+    public function responsibleUser()
+    {
+        return $this->responsible();
+    }
 }

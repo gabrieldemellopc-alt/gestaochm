@@ -188,7 +188,7 @@
                         <th>Litros</th>
                         <th>Custo unit.</th>
                         <th>Custo total</th>
-                        <th>Responsavel</th>
+                        <th>Recebido por</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -202,7 +202,7 @@
                             <td>{{ $liters($receipt->quantity_liters) }}</td>
                             <td>{{ $money($receipt->unit_cost) }}</td>
                             <td>{{ $money($receipt->total_cost) }}</td>
-                            <td>{{ $receipt->responsible?->name ?? '-' }}</td>
+                            <td>{{ $receipt->responsible?->name ?? 'Não informado' }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -229,14 +229,14 @@
                         <th>Data/hora</th>
                         <th>Veiculo</th>
                         <th>Placa</th>
-                        <th>Motorista</th>
+                        <th>Motorista/Condutor</th>
                         <th>Tanque</th>
                         <th>Produto</th>
                         <th>KM</th>
                         <th>Horas</th>
                         <th>Litros</th>
                         <th>Custo</th>
-                        <th>Responsavel</th>
+                        <th>Registrado por</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -245,14 +245,14 @@
                             <td>{{ $formatDateTime($filling->filled_at) }}</td>
                             <td>{{ $filling->vehicle?->name ?? '-' }}</td>
                             <td>{{ $filling->vehicle?->plate ?? '-' }}</td>
-                            <td>{{ $filling->driver?->name ?? '-' }}</td>
+                            <td>{{ $filling->driver?->name ?? 'Não informado' }}</td>
                             <td>{{ $filling->tank?->name ?? '-' }}</td>
                             <td>{{ $filling->product?->name ?? '-' }}</td>
                             <td>{{ $filling->vehicle_km !== null ? $decimal($filling->vehicle_km, 0) : '-' }}</td>
                             <td>{{ $filling->vehicle_hours !== null ? $decimal($filling->vehicle_hours, 1) : '-' }}</td>
                             <td>{{ $liters($filling->quantity_liters) }}</td>
                             <td>{{ $money($filling->total_cost) }}</td>
-                            <td>{{ $filling->responsible?->name ?? '-' }}</td>
+                            <td>{{ $filling->responsible?->name ?? 'Não informado' }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -284,7 +284,7 @@
                             <th>Litros</th>
                             <th>Saldo antes</th>
                             <th>Saldo depois</th>
-                            <th>Responsavel</th>
+                            <th>Registrado por</th>
                             <th>Observacao</th>
                         </tr>
                     </thead>
@@ -298,7 +298,7 @@
                                 <td>{{ $liters($movement->quantity_liters) }}</td>
                                 <td>{{ $liters($movement->balance_before) }}</td>
                                 <td>{{ $liters($movement->balance_after) }}</td>
-                                <td>{{ $movement->responsible?->name ?? '-' }}</td>
+                                <td>{{ $movement->responsible?->name ?? 'Não informado' }}</td>
                                 <td>{{ $movement->notes ?: '-' }}</td>
                             </tr>
                         @endforeach
@@ -507,7 +507,7 @@
                             <th>Litros</th>
                             <th>Custo</th>
                             <th>Motivo</th>
-                            <th>Responsavel</th>
+                            <th>Registrado por</th>
                         </tr>
                     </thead>
                     <tbody>

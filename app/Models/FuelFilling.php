@@ -77,6 +77,11 @@ class FuelFilling extends Model
         return $this->belongsTo(User::class, 'responsible_user_id');
     }
 
+    public function responsibleUser()
+    {
+        return $this->responsible();
+    }
+
     public function canceller()
     {
         return $this->belongsTo(User::class, 'cancelled_by');

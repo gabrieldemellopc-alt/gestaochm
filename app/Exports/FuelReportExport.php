@@ -157,7 +157,7 @@ class FuelReportExport implements WithMultipleSheets
             'Litros',
             'Custo unitario',
             'Custo total',
-            'Responsavel',
+            'Recebido por',
             'Observacao',
         ]];
 
@@ -171,7 +171,7 @@ class FuelReportExport implements WithMultipleSheets
                 (float) $receipt->quantity_liters,
                 $receipt->unit_cost !== null ? (float) $receipt->unit_cost : null,
                 $receipt->total_cost !== null ? (float) $receipt->total_cost : null,
-                $receipt->responsible?->name,
+                $receipt->responsible?->name ?? 'Não informado',
                 $receipt->notes,
             ];
         }
@@ -185,7 +185,7 @@ class FuelReportExport implements WithMultipleSheets
             'Data/hora',
             'Veiculo',
             'Placa',
-            'Motorista',
+            'Motorista/Condutor',
             'Tanque',
             'Produto',
             'KM',
@@ -193,7 +193,7 @@ class FuelReportExport implements WithMultipleSheets
             'Litros',
             'Custo unitario',
             'Custo total',
-            'Responsavel',
+            'Registrado por',
             'Observacao',
         ]];
 
@@ -202,7 +202,7 @@ class FuelReportExport implements WithMultipleSheets
                 $this->dateTime($filling->filled_at),
                 $filling->vehicle?->name,
                 $filling->vehicle?->plate,
-                $filling->driver?->name,
+                $filling->driver?->name ?? 'Não informado',
                 $filling->tank?->name,
                 $filling->product?->name,
                 $filling->vehicle_km !== null ? (float) $filling->vehicle_km : null,
@@ -210,7 +210,7 @@ class FuelReportExport implements WithMultipleSheets
                 (float) $filling->quantity_liters,
                 $filling->unit_cost !== null ? (float) $filling->unit_cost : null,
                 $filling->total_cost !== null ? (float) $filling->total_cost : null,
-                $filling->responsible?->name,
+                $filling->responsible?->name ?? 'Não informado',
                 $filling->notes,
             ];
         }
@@ -228,7 +228,7 @@ class FuelReportExport implements WithMultipleSheets
             'Litros',
             'Saldo antes',
             'Saldo depois',
-            'Responsavel',
+            'Registrado por',
             'Observacao',
             'Fonte',
         ]];
@@ -242,7 +242,7 @@ class FuelReportExport implements WithMultipleSheets
                 (float) $movement->quantity_liters,
                 (float) $movement->balance_before,
                 (float) $movement->balance_after,
-                $movement->responsible?->name,
+                $movement->responsible?->name ?? 'Não informado',
                 $movement->notes,
                 $movement->source_type ? class_basename($movement->source_type) . ' #' . $movement->source_id : null,
             ];
@@ -350,7 +350,7 @@ class FuelReportExport implements WithMultipleSheets
             'Litros',
             'Custo',
             'Motivo',
-            'Responsavel',
+            'Registrado por',
             'Considerado nos indicadores?',
         ]];
 

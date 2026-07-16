@@ -412,12 +412,12 @@
                             <th>Data/hora</th>
                             <th>Produto</th>
                             <th>Tanque</th>
-                            <th>Motorista</th>
+                            <th>Motorista/Condutor</th>
                             <th>KM/HR</th>
                             <th>Litros</th>
                             <th>Custo unit.</th>
                             <th>Custo total</th>
-                            <th>Responsavel</th>
+                            <th>Registrado por</th>
                             <th>Observacao</th>
                         </tr>
                     </thead>
@@ -439,7 +439,7 @@
                                 <td>{{ $number($filling['quantity_liters'], 3) }} L</td>
                                 <td>{{ $filling['unit_cost'] !== null ? $money($filling['unit_cost']) : '-' }}</td>
                                 <td>{{ $money($filling['total_cost']) }}</td>
-                                <td>{{ $filling['responsible_name'] }}</td>
+                                <td>{{ $filling['registered_by_name'] ?? $filling['responsible_name'] ?? 'Não informado' }}</td>
                                 <td>{{ $filling['notes'] ?: '-' }}</td>
                             </tr>
                         @empty
@@ -1069,7 +1069,7 @@
                                 <th>Registro</th>
                                 <th>Qtd./Valor</th>
                                 <th>Cancelada em</th>
-                                <th>Responsavel</th>
+                                <th>Registrado por</th>
                                 <th>Motivo</th>
                             </tr>
                         </thead>
