@@ -456,7 +456,10 @@ class VehicleDossierReportService
                 'values.field',
                 'items.procedure',
                 'items.values.field',
-                'extraCosts',
+                'extraCosts.creator',
+                'statusLogs.user',
+                'opener',
+                'closer',
             ])
             ->orderByDesc('performed_at')
             ->orderByDesc('id')
@@ -477,7 +480,10 @@ class VehicleDossierReportService
                 'values.field',
                 'items.procedure',
                 'items.values.field',
-                'extraCosts',
+                'extraCosts.creator',
+                'statusLogs.user',
+                'opener',
+                'closer',
                 'canceller',
             ])
             ->whereNotNull('cancelled_at')
@@ -528,6 +534,11 @@ class VehicleDossierReportService
             'is_legacy_record' => (bool) ($firstItem['is_legacy'] ?? false),
             'maintenance_type' => $firstItem['maintenance_type'] ?? $maintenance->maintenance_type,
             'provider_name' => $maintenance->provider_name,
+            'opened_by_name' => $maintenance->opener?->name ?? 'Não informado',
+            'closed_by_name' => $maintenance->workflow_status === 'closed' ? ($maintenance->closer?->name ?? 'Não informado') : null,
+            'cancelled_by_name' => $maintenance->cancelled_at !== null ? ($maintenance->canceller?->name ?? 'Não informado') : null,
+            'status_logs' => $this->maintenanceStatusLogRows($maintenance),
+            'extra_costs' => $this->maintenanceExtraCostRows($maintenance),
             'performed_km' => $maintenance->performed_km,
             'performed_hours' => $maintenance->performed_hours,
             'total_cost' => (float) ($maintenance->total_cost ?? 0),
@@ -543,6 +554,32 @@ class VehicleDossierReportService
         ];
     }
 
+    private function maintenanceStatusLogRows(MaintenanceRecord $maintenance): Collection
+    {
+        return $maintenance->statusLogs
+            ->sortBy('created_at')
+            ->map(fn ($log) => [
+                'old_status' => $log->old_status,
+                'new_status' => $log->new_status,
+                'changed_at' => $log->created_at,
+                'changed_by_name' => $log->user?->name ?? 'Não informado',
+                'reason' => $log->reason,
+            ])
+            ->values();
+    }
+
+    private function maintenanceExtraCostRows(MaintenanceRecord $maintenance): Collection
+    {
+        return $maintenance->extraCosts
+            ->sortBy('created_at')
+            ->map(fn ($extraCost) => [
+                'description' => $extraCost->description,
+                'amount' => (float) ($extraCost->amount ?? 0),
+                'created_at' => $extraCost->created_at,
+                'created_by_name' => $extraCost->creator?->name ?? 'Não informado',
+            ])
+            ->values();
+    }
     private function normalizedMaintenanceItems(MaintenanceRecord $maintenance): Collection
     {
         if ($maintenance->items->isNotEmpty()) {

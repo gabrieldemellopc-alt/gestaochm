@@ -878,6 +878,10 @@
                                 <td>
                                     <strong>Ordem #{{ $maintenance['id'] }}</strong>
                                     <div class="dossier-muted-line">{{ $maintenance['procedure_summary'] }}</div>
+                                    <div class="dossier-muted-line">Aberta por: {{ $maintenance['opened_by_name'] ?? 'Não informado' }}</div>
+                                    @if(! empty($maintenance['closed_by_name']))
+                                        <div class="dossier-muted-line">Finalizada por: {{ $maintenance['closed_by_name'] }}</div>
+                                    @endif
 
                                     <div class="dossier-muted-line">
                                         {{ $maintenance['items_count'] }} serviço(s)

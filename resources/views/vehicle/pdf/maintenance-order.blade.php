@@ -291,12 +291,12 @@
     <div class="info-grid">
         <div class="info-box">
             <div class="info-label">Abertura</div>
-            <div class="info-value">{{ $maintenance->opener?->name ?? '-' }}</div>
+            <div class="info-value">{{ $maintenance->opener?->name ?? 'Não informado' }}</div>
         </div>
 
         <div class="info-box">
             <div class="info-label">Encerramento</div>
-            <div class="info-value">{{ $maintenance->closer?->name ?? '-' }}</div>
+            <div class="info-value">{{ $maintenance->workflow_status === 'closed' ? ($maintenance->closer?->name ?? 'Não informado') : 'Em aberto' }}</div>
         </div>
 
         <div class="info-box">
@@ -421,7 +421,7 @@
             @forelse($maintenance->extraCosts as $extraCost)
                 <tr>
                     <td>{{ $extraCost->description }}</td>
-                    <td>{{ $extraCost->creator?->name ?? '-' }}</td>
+                    <td>{{ $extraCost->creator?->name ?? 'Não informado' }}</td>
                     <td>{{ optional($extraCost->created_at)->format('d/m/Y H:i') }}</td>
                     <td><strong>R$ {{ number_format($extraCost->amount ?? 0, 2, ',', '.') }}</strong></td>
                 </tr>
@@ -451,6 +451,8 @@
                     →
                     {{ $serviceStatuses[$log->new_status] ?? $log->new_status }}
                 </div>
+
+                <div class="muted">Alterado por: {{ $log->user?->name ?? 'Não informado' }}</div>
 
                 @if($log->reason)
                     <div class="muted">{{ $log->reason }}</div>

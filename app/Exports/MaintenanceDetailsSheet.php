@@ -24,6 +24,8 @@ class MaintenanceDetailsSheet implements FromArray, ShouldAutoSize, WithTitle
             'Tipo',
             'Itens',
             'Custo registrado da ordem',
+            'Aberta por',
+            'Finalizada por',
         ]];
 
         foreach ($this->data['maintenances'] ?? [] as $maintenance) {
@@ -35,6 +37,8 @@ class MaintenanceDetailsSheet implements FromArray, ShouldAutoSize, WithTitle
                 $this->maintenanceTypeLabel($maintenance['maintenance_type_summary'] ?? $maintenance['maintenance_type'] ?? null),
                 $maintenance['items_count'] ?? 1,
                 (float) ($maintenance['total_cost'] ?? 0),
+                $maintenance['opened_by_name'] ?? 'Não informado',
+                $maintenance['closed_by_name'] ?? '-',
             ];
         }
 

@@ -533,6 +533,10 @@
                         <td>
                             <strong>Ordem #{{ $maintenance['id'] }}</strong>
                             <span class="muted">{{ $maintenance['procedure_summary'] }}</span>
+                            <span class="muted">Aberta por: {{ $maintenance['opened_by_name'] ?? 'Não informado' }}</span>
+                            @if(! empty($maintenance['closed_by_name']))
+                                <span class="muted">Finalizada por: {{ $maintenance['closed_by_name'] }}</span>
+                            @endif
                         </td>
 
                         <td>
