@@ -334,6 +334,7 @@
     $tiresCurrent = collect($tires_current ?? []);
     $tireEvents = collect($tire_events ?? []);
     $tireMeasurements = collect($tire_measurements ?? []);
+    $kmHrLogs = collect($km_hr_logs ?? []);
     $cancelledList = collect($cancelled_records ?? []);
 
     $selectedSections = collect($filters['sections'] ?? []);
@@ -848,7 +849,35 @@
     <div class="section can-break">
         <div class="section-kicker">KM / Horimetro</div>
         <div class="section-title">Atualizacoes de KM e horimetro</div>
-        <div class="empty">Ainda nao ha logs consolidados de KM/horimetro para esta secao do dossie.</div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data/hora</th>
+                    <th>Tipo</th>
+                    <th>Anterior</th>
+                    <th>Novo</th>
+                    <th>Origem</th>
+                    <th>Atualizado por</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($kmHrLogs as $log)
+                    <tr>
+                        <td>{{ $log['date'] ? \Carbon\Carbon::parse($log['date'])->format('d/m/Y H:i') : '-' }}</td>
+                        <td>{{ $log['type_label'] }}</td>
+                        <td>{{ $number($log['old_value']) }}</td>
+                        <td>{{ $number($log['new_value']) }}</td>
+                        <td>{{ $log['source_label'] }}</td>
+                        <td>{{ $log['updated_by_name'] }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="empty">Nenhuma atualizacao de KM/horimetro encontrada no periodo.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 @endif
 

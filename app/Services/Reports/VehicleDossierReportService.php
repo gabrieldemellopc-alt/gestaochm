@@ -6,6 +6,7 @@ use App\Models\MaintenanceRecord;
 use App\Models\StockMovement;
 use App\Models\FuelFilling;
 use App\Models\Vehicle;
+use App\Models\VehicleUpdateLog;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -58,6 +59,7 @@ class VehicleDossierReportService
         $currentTires = $this->currentTires($context, $vehicle);
         $tireEvents = $this->tireEvents($context, $vehicle, $appliedFilters);
         $tireMeasurements = $this->tireMeasurements($context, $vehicle, $appliedFilters);
+        $kmHrLogs = $this->kmHrLogs($context, $vehicle, $appliedFilters);
         return [
             'context' => $this->contextPayload($context),
             'applied_filters' => $appliedFilters,
@@ -77,7 +79,7 @@ class VehicleDossierReportService
             'tire_measurements' => $tireMeasurements,          
             'operations' => collect(),
             'daily_checklists' => collect(),
-            'km_hr_logs' => collect(),
+            'km_hr_logs' => $kmHrLogs,
             'alerts' => collect(),
             'cancelled_records' => $cancelledRecords,
             'audit_records' => collect(),
@@ -919,6 +921,31 @@ class VehicleDossierReportService
             ->values();
     }
 
+    private function kmHrLogs(array $context, Vehicle $vehicle, array $filters): Collection
+    {
+        return VehicleUpdateLog::query()
+            ->with('user')
+            ->where('vehicle_id', $vehicle->id)
+            ->where('division_id', $context['division']->id)
+            ->where('location_id', $context['location']->id)
+            ->whereIn('type', ['km', 'hours'])
+            ->whereBetween('created_at', [$filters['start_date'], $filters['end_date']])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (VehicleUpdateLog $log) => [
+                'id' => $log->id,
+                'date' => $log->created_at,
+                'type' => $log->type,
+                'type_label' => $log->type === 'hours' ? 'Horímetro' : 'KM',
+                'old_value' => $log->old_value !== null ? (float) $log->old_value : null,
+                'new_value' => $log->new_value !== null ? (float) $log->new_value : null,
+                'source' => $log->source,
+                'source_label' => ChmLabel::for('vehicle_update_source', $log->source, 'Não informado'),
+                'updated_by_name' => $log->user?->name ?? 'Não informado',
+                'observation' => $log->observation,
+            ])
+            ->values();
+    }
     private function currentTires(array $context, Vehicle $vehicle): Collection
     {
         return TireInstallation::query()

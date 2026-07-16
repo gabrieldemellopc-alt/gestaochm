@@ -72,6 +72,15 @@ return [
         'sem_km_hr' => 'Sem KM/HR',
     ],
 
+    'vehicle_update_source' => [
+        'dashboard_quick_update' => 'Atualização rápida',
+        'operation_start' => 'Início de operação',
+        'operation_close' => 'Fechamento de operação',
+        'fuel_filling' => 'Abastecimento',
+        'manual' => 'Manual',
+        'maintenance' => 'Manutenção',
+        'tire_measurement' => 'Medição de pneus',
+    ],
     'audit_action' => [
         'created' => 'Criado',
         'updated' => 'Atualizado',
