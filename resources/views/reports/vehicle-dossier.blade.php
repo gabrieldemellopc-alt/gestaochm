@@ -13,14 +13,8 @@
     $hasAnyFilter = request()->filled('vehicle_id') || request()->filled('start_date') || request()->filled('end_date');
     $isValid = $validation['is_valid'] ?? false;
     $summary = $executive_summary;
-    $statusLabel = fn ($value) => match ($value) {
-        'active' => 'Ativo',
-        'inactive' => 'Inativo',
-        'maintenance' => 'Em manutenção',
-        'operational' => 'Operacional',
-        'unavailable' => 'Indisponível',
-        default => $value ?: '-',
-    };   
+    $label = fn (string $domain, $value, ?string $fallback = null) => \App\Support\ChmLabel::for($domain, $value, $fallback);
+    $statusLabel = fn ($value) => $label('operational_status', $value);
     $maintenancesList = collect($maintenances);
     $stockConsumptionList = collect($stock_consumption);
     $fuelFillingsList = collect($fuel_fillings);
@@ -33,21 +27,14 @@
     $selectedSections = collect($filters['sections'] ?? []);
     $sectionConfigEnabled = (bool) ($filters['section_config'] ?? false);
     $showSection = fn (string $section) => ! $sectionConfigEnabled || $selectedSections->contains($section);
-    $consumptionStatusLabel = fn ($status) => match ($status) {
-        'calculado' => 'Calculado',
-        'dados_insuficientes' => 'Dados insuficientes',
-        'km_invalido' => 'KM inválido',
-        'horas_invalidas' => 'Horas invállidas',
-        'sem_km_hr' => 'Sem KM/HR',
-        default => $status ?: '-',
-    };
-    $maintenanceTypeLabel = fn ($value) => match ($value) {
-        'preventive' => 'Preventiva',
-        'corrective' => 'Corretiva',
-        'external' => 'Externa',
-        'internal' => 'Interna',
-        default => $value ?: '-',
-    };
+    $consumptionStatusLabel = fn ($status) => $label('fuel_consumption_status', $status);
+    $maintenanceTypeLabel = fn ($value) => $label('maintenance_type', $value);
+    $observationLabel = fn ($value) => \App\Support\ChmLabel::knownToken([
+        'maintenance_type',
+        'service_type',
+        'execution_type',
+        'workflow_status',
+    ], $value);
 @endphp
 
 <div class="reports-page reports-tires-page reports-vehicle-dossier-page tire-summary-dashboard">
@@ -931,7 +918,7 @@
                                     HR {{ $maintenance['performed_hours'] !== null ? $number($maintenance['performed_hours'], 1) : '-' }}
                                 </td>
                                 <td>{{ $money($maintenance['total_cost']) }}</td>
-                                <td>{{ $maintenanceTypeLabel($maintenance['notes'] ?: $maintenance['reason'] ?: null) }}</td>
+                                <td>{{ $observationLabel($maintenance['notes'] ?: $maintenance['reason'] ?: null) }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -1005,7 +992,38 @@
         @endif
 
 
-        @if($showSection('alerts') && ($summary['alerts_count'] ?? 0) > 0)   
+        @if($showSection('km_hr'))
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
+                <div>
+                    <span class="tire-section-kicker">KM / Horimetro</span>
+                    <h2>Atualizacoes de KM e horimetro</h2>
+                    <p>Secao preparada para exibicao das leituras operacionais do veiculo.</p>
+                </div>
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            <div class="dossier-collapsible-body">
+                <div class="dossier-empty-cell">Ainda nao ha logs consolidados de KM/horimetro para esta secao do dossie.</div>
+            </div>
+        </details>
+        @endif
+
+        @if($showSection('downtime'))
+        <details open class="tire-report-section dossier-collapsible">
+            <summary>
+                <div>
+                    <span class="tire-section-kicker">Indisponibilidade</span>
+                    <h2>Status operacional e indisponibilidade</h2>
+                    <p>Secao preparada para consolidar periodos de indisponibilidade do veiculo.</p>
+                </div>
+                <span class="dossier-collapse-indicator"></span>
+            </summary>
+            <div class="dossier-collapsible-body">
+                <div class="dossier-empty-cell">Ainda nao ha dados consolidados de downtime para esta secao do dossie.</div>
+            </div>
+        </details>
+        @endif
+        @if($showSection('alerts'))
         <details open class="tire-report-section dossier-collapsible">
             <summary>
                     <div>

@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use App\Models\TireInstallation;
 use App\Models\TireMeasurement;
 use App\Models\TireRetread;
+use App\Support\ChmLabel;
 
 class VehicleDossierReportService
 {
@@ -431,6 +432,7 @@ class VehicleDossierReportService
             'fuel_consumption',
             'km_hr',
             'downtime',
+            'tires',
             'alerts',
         ];
     }
@@ -972,7 +974,7 @@ class VehicleDossierReportService
             ->get()
             ->map(fn (TireInstallation $installation) => [
                 'type' => 'installation',
-                'label' => 'Instalação',
+                'label' => ChmLabel::for('tire_event', 'installation'),
                 'date' => $installation->installed_at,
                 'tire_code' => $installation->tire?->code ?? '-',
                 'position_code' => $installation->position_code,
@@ -989,7 +991,7 @@ class VehicleDossierReportService
             ->get()
             ->map(fn (TireInstallation $installation) => [
                 'type' => 'removal',
-                'label' => 'Retirada',
+                'label' => ChmLabel::for('tire_event', 'removal'),
                 'date' => $installation->removed_at,
                 'tire_code' => $installation->tire?->code ?? '-',
                 'position_code' => $installation->position_code,

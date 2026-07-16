@@ -341,23 +341,16 @@
 
     $showSection = fn (string $section) =>
         ! $sectionConfigEnabled || $selectedSections->contains($section);
-
-    $statusLabel = fn ($value) => match ($value) {
-        'active' => 'Ativo',
-        'inactive' => 'Inativo',
-        'maintenance' => 'Em manutenção',
-        'operational' => 'Operacional',
-        'unavailable' => 'Indisponível',
-        default => $value ?: '-',
-    };
-
-    $maintenanceTypeLabel = fn ($value) => match ($value) {
-        'preventive' => 'Preventiva',
-        'corrective' => 'Corretiva',
-        'external' => 'Externa',
-        'internal' => 'Interna',
-        default => $value ?: '-',
-    };
+    $label = fn (string $domain, $value, ?string $fallback = null) => \App\Support\ChmLabel::for($domain, $value, $fallback);
+    $statusLabel = fn ($value) => $label('operational_status', $value);
+    $maintenanceTypeLabel = fn ($value) => $label('maintenance_type', $value);
+    $consumptionStatusLabel = fn ($status) => $label('fuel_consumption_status', $status);
+    $observationLabel = fn ($value) => \App\Support\ChmLabel::knownToken([
+        'maintenance_type',
+        'service_type',
+        'execution_type',
+        'workflow_status',
+    ], $value);
 
     $periodStart = $filters['start_date'] ?? null;
     $periodEnd = $filters['end_date'] ?? null;
@@ -555,7 +548,7 @@
                         <td>{{ $money($maintenance['total_cost']) }}</td>
 
                         <td>
-                            {{ $maintenance['notes'] ?: $maintenance['reason'] ?: '-' }}
+                            {{ $observationLabel($maintenance['notes'] ?: $maintenance['reason'] ?: null) }}
                         </td>
                     </tr>
                 @empty
@@ -661,6 +654,43 @@
     </div>
 @endif
 
+@if($showSection('fuel_consumption'))
+    <div class="section can-break">
+        <div class="section-kicker">Consumo</div>
+        <div class="section-title">Consumo e leitura operacional</div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Registros</th>
+                    <th>Litros</th>
+                    <th>Custo</th>
+                    <th>km/L</th>
+                    <th>L/h</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($fuelConsumptionList as $consumption)
+                    <tr>
+                        <td>{{ $consumption['product_name'] }}</td>
+                        <td>{{ $consumption['fillings_count'] }}</td>
+                        <td>{{ $number($consumption['total_liters'], 3) }} L</td>
+                        <td>{{ $money($consumption['total_cost']) }}</td>
+                        <td>{{ $consumption['km_consumption']['value'] !== null ? $number($consumption['km_consumption']['value'], 2) . ' km/L' : '-' }}</td>
+                        <td>{{ $consumption['hours_consumption']['value'] !== null ? $number($consumption['hours_consumption']['value'], 2) . ' L/h' : '-' }}</td>
+                        <td>{{ $consumptionStatusLabel($consumption['status']) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="empty">Sem base de abastecimento para diagnostico de consumo no periodo.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+@endif
 @if($showSection('tires'))
     <div class="section can-break">
         <div class="section-kicker">Pneus</div>
@@ -806,6 +836,29 @@
     </div>
 @endif
 
+@if($showSection('km_hr'))
+    <div class="section can-break">
+        <div class="section-kicker">KM / Horimetro</div>
+        <div class="section-title">Atualizacoes de KM e horimetro</div>
+        <div class="empty">Ainda nao ha logs consolidados de KM/horimetro para esta secao do dossie.</div>
+    </div>
+@endif
+
+@if($showSection('downtime'))
+    <div class="section can-break">
+        <div class="section-kicker">Indisponibilidade</div>
+        <div class="section-title">Status operacional e indisponibilidade</div>
+        <div class="empty">Ainda nao ha dados consolidados de downtime para esta secao do dossie.</div>
+    </div>
+@endif
+
+@if($showSection('alerts'))
+    <div class="section can-break">
+        <div class="section-kicker">Alertas</div>
+        <div class="section-title">Alertas e preventivas</div>
+        <div class="empty">{{ ($summary['alerts_count'] ?? 0) > 0 ? ($summary['alerts_count'] . ' alerta(s) diagnosticado(s) nesta etapa.') : 'Nenhum alerta consolidado para esta secao do dossie.' }}</div>
+    </div>
+@endif
 @if($cancelledList->isNotEmpty())
     <div class="section can-break">
         <div class="section-kicker">Cancelados</div>
