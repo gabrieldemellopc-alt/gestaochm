@@ -781,6 +781,7 @@
                     <label><input type="checkbox" name="sections[]" value="maintenances" checked> Manuten&ccedil;&otilde;es</label>
                     <label><input type="checkbox" name="sections[]" value="maintenance_costs" checked> Custos registrados da ordem</label>
                     <label><input type="checkbox" name="sections[]" value="stock" checked> Pe&ccedil;as e consumo de estoque</label>
+                    <label><input type="checkbox" name="sections[]" value="tires" checked> Pneus</label>
                     <label><input type="checkbox" name="sections[]" value="fuel" checked> Abastecimentos</label>
                     <label><input type="checkbox" name="sections[]" value="fuel_consumption" checked> Consumo de combust&iacute;vel</label>
                     <label><input type="checkbox" name="sections[]" value="km_hr"> Atualiza&ccedil;&otilde;es de KM e hor&iacute;metro</label>
