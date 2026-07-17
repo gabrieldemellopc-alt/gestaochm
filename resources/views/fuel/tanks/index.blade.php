@@ -341,17 +341,22 @@
                     <input type="hidden" name="confirm_high_vehicle_km" value="0">
                     <input type="hidden" name="confirm_high_vehicle_hours" value="0">
                         <div class="fuel-span-12 fuel-source-toggle" data-fuel-source-toggle>
-                            <span>Tipo de abastecimento</span>
-                            <label class="fuel-source-option">
-                                <input type="radio" name="source" value="internal_tank" @checked(old('source', 'internal_tank') !== 'external_station')>
-                                <strong>Tanque da unidade</strong>
-                                <small>Baixa saldo do tanque e registra movimento interno.</small>
-                            </label>
-                            <label class="fuel-source-option">
-                                <input type="radio" name="source" value="external_station" @checked(old('source') === 'external_station')>
-                                <strong>Posto externo</strong>
-                                <small>Registra custo e consumo do veiculo sem mexer no saldo dos tanques.</small>
-                            </label>
+                            <div class="fuel-source-head">
+                                <span>Tipo de abastecimento</span>
+                                <small data-fuel-source-help>Baixa o saldo do tanque selecionado e registra movimentação interna.</small>
+                            </div>
+
+                            <div class="fuel-source-segment" role="radiogroup" aria-label="Tipo de abastecimento">
+                                <label class="fuel-source-option">
+                                    <input type="radio" name="source" value="internal_tank" @checked(old('source', 'internal_tank') !== 'external_station')>
+                                    <span>Tanque da unidade</span>
+                                </label>
+
+                                <label class="fuel-source-option">
+                                    <input type="radio" name="source" value="external_station" @checked(old('source') === 'external_station')>
+                                    <span>Posto externo</span>
+                                </label>
+                            </div>
                         </div>
 
                         <label class="fuel-span-6">
@@ -740,8 +745,15 @@
             });
         });
 
+        const help = form.querySelector('[data-fuel-source-help]');
         const tankSelect = form.querySelector('select[name="fuel_tank_id"]');
         const productSelect = form.querySelector('select[name="fuel_product_id"]');
+
+        if (help) {
+            help.textContent = isExternal
+                ? 'Registra custo e consumo do veículo sem movimentar o saldo dos tanques.'
+                : 'Baixa o saldo do tanque selecionado e registra movimentação interna.';
+        }
 
         if (tankSelect) {
             tankSelect.required = !isExternal;
