@@ -177,7 +177,7 @@
 
                         <div>
                             <strong>{{ number_format((float) $filling->quantity_liters, 3, ',', '.') }} L</strong>
-                            <span>{{ $filling->tank?->name ?? 'Tanque' }} · {{ $filling->product?->name ?? $filling->tank?->product?->name ?? 'Produto' }}</span>
+                            <span>{{ $filling->source_label }} · {{ $filling->location_label }} · {{ $filling->product?->name ?? $filling->tank?->product?->name ?? 'Produto' }}</span>
                         </div>
 
                         <div>
@@ -340,6 +340,20 @@
                     <div class="fuel-form-grid fuel-filling-layout">
                     <input type="hidden" name="confirm_high_vehicle_km" value="0">
                     <input type="hidden" name="confirm_high_vehicle_hours" value="0">
+                        <div class="fuel-span-12 fuel-source-toggle" data-fuel-source-toggle>
+                            <span>Tipo de abastecimento</span>
+                            <label class="fuel-source-option">
+                                <input type="radio" name="source" value="internal_tank" @checked(old('source', 'internal_tank') !== 'external_station')>
+                                <strong>Tanque da unidade</strong>
+                                <small>Baixa saldo do tanque e registra movimento interno.</small>
+                            </label>
+                            <label class="fuel-source-option">
+                                <input type="radio" name="source" value="external_station" @checked(old('source') === 'external_station')>
+                                <strong>Posto externo</strong>
+                                <small>Registra custo e consumo do veiculo sem mexer no saldo dos tanques.</small>
+                            </label>
+                        </div>
+
                         <label class="fuel-span-6">
                             Veículo
                             <select name="vehicle_id" required>
@@ -357,9 +371,9 @@
                             </select>
                         </label>
                     
-                        <label class="fuel-span-6">
+                        <label class="fuel-span-6" data-source-field="internal">
                             Tanque/produto
-                            <select name="fuel_tank_id" required>
+                            <select name="fuel_tank_id">
                                 <option value="">Selecione</option>
                                 @foreach($tanks->where('active', true) as $tank)
                                     <option
@@ -373,6 +387,16 @@
                             </select>
                         </label>
                     
+                        <label class="fuel-span-6 is-hidden" data-source-field="external">
+                            Produto
+                            <select name="fuel_product_id">
+                                <option value="">Selecione</option>
+                                @foreach($products as $product)
+                                    <option value="{{ $product->id }}" @selected(old('fuel_product_id') == $product->id)>{{ $product->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+
                         <label class="fuel-span-4">
                             Motorista
                             <select name="driver_id">
@@ -421,9 +445,28 @@
                                 data-vehicle-km-input
                             >
                         </label>
-                    
+
+                        <label class="fuel-span-6 is-hidden" data-source-field="external">
+                            Fornecedor/posto
+                            <input type="text" name="supplier_name" value="{{ old('supplier_name') }}" maxlength="255" placeholder="Ex.: Posto Central">
+                        </label>
+
+                        <label class="fuel-span-6 is-hidden" data-source-field="external">
+                            Documento/NF/cupom
+                            <input type="text" name="document_number" value="{{ old('document_number') }}" maxlength="255" placeholder="Opcional">
+                        </label>
+
+                        <label class="fuel-span-6 is-hidden" data-source-field="external">
+                            Custo unitario
+                            <input type="number" name="unit_cost" min="0" step="0.0001" value="{{ old('unit_cost') }}" data-external-unit-cost>
+                        </label>
+
+                        <label class="fuel-span-6 is-hidden" data-source-field="external">
+                            Custo total
+                            <input type="number" name="total_cost" min="0" step="0.01" value="{{ old('total_cost') }}" data-external-total-cost>
+                        </label>
                         <div class="fuel-cost-preview fuel-span-12">
-                            <span>Custo estimado automático</span>
+                            <span data-filling-cost-title>Custo estimado automático</span>
                     
                             <strong data-filling-total-preview>
                                 R$ 0,00
@@ -681,19 +724,81 @@
             }
         });
 
+    function fuelFillingSource(form) {
+        return form.querySelector('input[name="source"]:checked')?.value || 'internal_tank';
+    }
+
+    function syncFuelFillingSource(form) {
+        const source = fuelFillingSource(form);
+        const isExternal = source === 'external_station';
+
+        form.querySelectorAll('[data-source-field]').forEach(function (field) {
+            const shouldShow = field.dataset.sourceField === (isExternal ? 'external' : 'internal');
+            field.classList.toggle('is-hidden', !shouldShow);
+            field.querySelectorAll('input, select, textarea').forEach(function (input) {
+                input.disabled = !shouldShow;
+            });
+        });
+
+        const tankSelect = form.querySelector('select[name="fuel_tank_id"]');
+        const productSelect = form.querySelector('select[name="fuel_product_id"]');
+
+        if (tankSelect) {
+            tankSelect.required = !isExternal;
+        }
+
+        if (productSelect) {
+            productSelect.required = isExternal;
+        }
+
+        updateFillingCostPreview(form);
+    }
+
     function updateFillingCostPreview(form) {
         const tankSelect = form.querySelector('select[name="fuel_tank_id"]');
         const litersInput = form.querySelector('input[name="quantity_liters"]');
         const totalPreview = form.querySelector('[data-filling-total-preview]');
         const unitPreview = form.querySelector('[data-filling-unit-preview]');
+        const title = form.querySelector('[data-filling-cost-title]');
     
-        if (!tankSelect || !litersInput || !totalPreview || !unitPreview) {
+        if (!litersInput || !totalPreview || !unitPreview) {
+            return;
+        }
+
+        const liters = Number(litersInput.value || 0);
+
+        if (fuelFillingSource(form) === 'external_station') {
+            const totalInput = form.querySelector('input[name="total_cost"]');
+            const unitInput = form.querySelector('input[name="unit_cost"]');
+            const informedTotal = Number(totalInput?.value || 0);
+            const informedUnit = Number(unitInput?.value || 0);
+            const calculatedTotal = informedTotal || (liters && informedUnit ? liters * informedUnit : 0);
+
+            if (title) {
+                title.textContent = 'Custo informado do posto externo';
+            }
+
+            totalPreview.textContent = calculatedTotal.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+
+            unitPreview.textContent = informedUnit
+                ? `Custo unitario informado: ${informedUnit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/L`
+                : 'Informe custo unitario ou custo total, se houver.';
             return;
         }
     
+        if (title) {
+            title.textContent = 'Custo estimado automatico';
+        }
+
+        if (!tankSelect) {
+            return;
+        }
+
         const selected = tankSelect.options[tankSelect.selectedIndex];
         const unitCost = Number(selected?.dataset?.unitCost || 0);
-        const liters = Number(litersInput.value || 0);
     
         if (!unitCost || !liters) {
             totalPreview.textContent = 'R$ 0,00';
@@ -708,7 +813,7 @@
             currency: 'BRL'
         });
     
-        unitPreview.textContent = `Custo médio atual: ${unitCost.toLocaleString('pt-BR', {
+        unitPreview.textContent = `Custo medio atual: ${unitCost.toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
         })}/L`;
@@ -719,6 +824,10 @@
             event.target.matches('input[name="quantity_liters"]')
             ||
             event.target.matches('select[name="fuel_tank_id"]')
+            ||
+            event.target.matches('input[name="unit_cost"]')
+            ||
+            event.target.matches('input[name="total_cost"]')
         ) {
             const form = event.target.closest('form');
     
@@ -729,15 +838,18 @@
     });
     
     document.addEventListener('change', function (event) {
-        if (event.target.matches('select[name="fuel_tank_id"]')) {
+        if (event.target.matches('select[name="fuel_tank_id"]') || event.target.matches('input[name="source"]')) {
             const form = event.target.closest('form');
     
             if (form && form.classList.contains('fuel-filling-form')) {
-                updateFillingCostPreview(form);
+                if (event.target.matches('input[name="source"]')) {
+                    syncFuelFillingSource(form);
+                } else {
+                    updateFillingCostPreview(form);
+                }
             }
         }
     });
-
     function syncVehicleCounters(form) {
         const vehicleSelect = form.querySelector('select[name="vehicle_id"]');
         const kmInput = form.querySelector('[data-vehicle-km-input]');
@@ -856,7 +968,7 @@
                     syncVehicleCounters(form);
                 }
     
-                updateFillingCostPreview(form);
+                syncFuelFillingSource(form);
             });
     }
     

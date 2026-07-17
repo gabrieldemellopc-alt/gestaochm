@@ -841,3 +841,58 @@ html[data-chm-theme="corporate-light"] .fuel-modal-close {
     opacity: .45;
     pointer-events: none;
 }
+.fuel-source-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.fuel-source-toggle > span {
+    grid-column: 1 / -1;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .64);
+}
+
+.fuel-source-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 10px;
+    align-items: start;
+    padding: 14px 16px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 16px;
+    background: rgba(15, 23, 42, .28);
+    cursor: pointer;
+}
+
+.fuel-source-option input {
+    margin-top: 3px;
+}
+
+.fuel-source-option strong,
+.fuel-source-option small {
+    grid-column: 2;
+}
+
+.fuel-source-option strong {
+    color: #f8fafc;
+    font-size: .94rem;
+}
+
+.fuel-source-option small {
+    color: rgba(226, 232, 240, .68);
+    line-height: 1.35;
+}
+
+.fuel-filling-form .is-hidden {
+    display: none !important;
+}
+
+@media (max-width: 760px) {
+    .fuel-source-toggle {
+        grid-template-columns: 1fr;
+    }
+}

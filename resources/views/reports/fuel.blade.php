@@ -229,7 +229,7 @@
                 @forelse($latest_fillings as $filling)
                     <div class="tire-compact-item">
                         <strong>{{ $filling->vehicle?->name ?? '-' }} - {{ $filling->vehicle?->plate ?? '-' }}</strong>
-                        <span>{{ $formatDate($filling->filled_at) }} | {{ $filling->product?->name ?? '-' }} | {{ $liters($filling->quantity_liters) }} | {{ $money($filling->total_cost) }}</span>
+                        <span>{{ $formatDate($filling->filled_at) }} | {{ $filling->source_label }} - {{ $filling->location_label }} | {{ $filling->product?->name ?? '-' }} | {{ $liters($filling->quantity_liters) }} | {{ $money($filling->total_cost) }}</span>
                     </div>
                 @empty
                     <div class="empty-state">Nenhum abastecimento registrado.</div>

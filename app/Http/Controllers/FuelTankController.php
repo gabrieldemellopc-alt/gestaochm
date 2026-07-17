@@ -128,6 +128,7 @@ class FuelTankController extends Controller
 
         try {
             $fuelService->receiveFuel($request->only([
+                'source',
                 'fuel_tank_id',
                 'fuel_product_id',
                 'received_at',
@@ -162,6 +163,7 @@ class FuelTankController extends Controller
 
         try {
             $fuelService->registerFilling($request->only([
+                'source',
                 'fuel_tank_id',
                 'fuel_product_id',
                 'vehicle_id',
@@ -170,6 +172,10 @@ class FuelTankController extends Controller
                 'vehicle_km',
                 'vehicle_hours',
                 'quantity_liters',
+                'unit_cost',
+                'total_cost',
+                'supplier_name',
+                'document_number',
                 'notes',
                 'confirm_high_vehicle_km',
                 'confirm_high_vehicle_hours',

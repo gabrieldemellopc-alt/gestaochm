@@ -64,6 +64,10 @@ return [
         'cancellation' => 'Cancelamento',
     ],
 
+    'fuel_filling_source' => [
+        'internal_tank' => 'Tanque da unidade',
+        'external_station' => 'Posto externo',
+    ],
     'fuel_consumption_status' => [
         'calculado' => 'Calculado',
         'dados_insuficientes' => 'Dados insuficientes',

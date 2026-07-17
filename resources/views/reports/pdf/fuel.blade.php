@@ -334,7 +334,7 @@
                 <th>Placa</th>
                 <th>Motorista/Condutor</th>
                 <th>Produto</th>
-                <th>Tanque</th>
+                <th>Origem/local</th>
                 <th>KM/HR</th>
                 <th>Litros</th>
                 <th>Custo</th>
@@ -349,7 +349,7 @@
                     <td>{{ $filling->vehicle?->plate ?? '-' }}</td>
                     <td>{{ $filling->driver?->name ?? 'Não informado' }}</td>
                     <td>{{ $filling->product?->name ?? '-' }}</td>
-                    <td>{{ $filling->tank?->name ?? '-' }}</td>
+                    <td><strong>{{ $filling->source_label }}</strong><br><span>{{ $filling->location_label }}</span></td>
                     <td>KM {{ $filling->vehicle_km !== null ? $decimal($filling->vehicle_km, 0) : '-' }} / HR {{ $filling->vehicle_hours !== null ? $decimal($filling->vehicle_hours, 1) : '-' }}</td>
                     <td>{{ $liters($filling->quantity_liters) }}</td>
                     <td>{{ $money($filling->total_cost) }}</td>

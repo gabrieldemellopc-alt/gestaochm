@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\FuelFilling;
 use App\Models\FuelMovement;
+use App\Models\FuelProduct;
 use App\Models\FuelReceipt;
 use App\Models\FuelTank;
 use App\Models\User;
@@ -128,7 +129,8 @@ class FuelService
         $context = $this->resolveContext();
 
         $validated = Validator::make($data, [
-            'fuel_tank_id' => ['required', 'integer'],
+            'source' => ['nullable', 'string', 'in:internal_tank,external_station'],
+            'fuel_tank_id' => ['nullable', 'integer'],
             'fuel_product_id' => ['nullable', 'integer'],
             'vehicle_id' => ['required', 'integer'],
             'driver_id' => ['nullable', 'integer'],
@@ -136,53 +138,82 @@ class FuelService
             'vehicle_km' => ['nullable', 'numeric', 'min:0'],
             'vehicle_hours' => ['nullable', 'numeric', 'min:0'],
             'quantity_liters' => ['required', 'numeric', 'gt:0'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
+            'total_cost' => ['nullable', 'numeric', 'min:0'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
+            'document_number' => ['nullable', 'string', 'max:255'],
             'responsible_user_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string'],
             'confirm_high_vehicle_km' => ['nullable', 'boolean'],
             'confirm_high_vehicle_hours' => ['nullable', 'boolean'],
         ])->validate();
 
-        return DB::transaction(function () use ($context, $validated) {
+        $source = $validated['source'] ?? FuelFilling::SOURCE_INTERNAL_TANK;
+
+        if ($source === FuelFilling::SOURCE_INTERNAL_TANK && empty($validated['fuel_tank_id'])) {
+            throw ValidationException::withMessages([
+                'fuel_tank_id' => 'Informe o tanque da unidade para abastecimento interno.',
+            ]);
+        }
+
+        if ($source === FuelFilling::SOURCE_EXTERNAL_STATION && empty($validated['fuel_product_id'])) {
+            throw ValidationException::withMessages([
+                'fuel_product_id' => 'Informe o produto abastecido no posto externo.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($context, $validated, $source) {
             $vehicle = $this->vehicleForContext((int) $validated['vehicle_id'], $context);
             $this->validateVehicleCounters($vehicle, $validated);
             $this->validateVehicleCounterJumps($vehicle, $validated);
             $this->validateDriverForContext($validated['driver_id'] ?? null, $context);
 
-            $tank = $this->lockTankForContext((int) $validated['fuel_tank_id'], $context);
-            $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
-
             $quantity = $this->decimal($validated['quantity_liters'], 3);
-            
-            $unitCost = $this->decimal($tank->average_unit_cost ?? 0, 4);
-            
-            $totalCost = $this->decimal(
-                $quantity * $unitCost,
-                2
-            );
-            $balanceBefore = $this->decimal($tank->current_balance_liters, 3);
-
-            if ($quantity > $balanceBefore) {
-                throw ValidationException::withMessages([
-                    'quantity_liters' => 'A quantidade abastecida não pode ser maior que o saldo atual do tanque.',
-                ]);
-            }
-            
-            $balanceAfter = $this->decimal($balanceBefore - $quantity, 3);
-            
-            $stockValueBefore = $this->decimal($tank->estimated_stock_value ?? 0, 2);
-            $stockValueAfter = $this->decimal(max(0, $stockValueBefore - $totalCost), 2);
-            
-            $averageUnitCostAfter = $balanceAfter > 0
-                ? $this->decimal($stockValueAfter / $balanceAfter, 4)
-                : 0;
             $responsibleUserId = $validated['responsible_user_id'] ?? $context['user']->id;
+            $movement = null;
+            $tank = null;
+            $balanceBefore = null;
+            $balanceAfter = null;
+
+            if ($source === FuelFilling::SOURCE_INTERNAL_TANK) {
+                $tank = $this->lockTankForContext((int) $validated['fuel_tank_id'], $context);
+                $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
+
+                $unitCost = $this->decimal($tank->average_unit_cost ?? 0, 4);
+                $totalCost = $this->decimal($quantity * $unitCost, 2);
+                $fuelProductId = $tank->fuel_product_id;
+                $balanceBefore = $this->decimal($tank->current_balance_liters, 3);
+
+                if ($quantity > $balanceBefore) {
+                    throw ValidationException::withMessages([
+                        'quantity_liters' => 'A quantidade abastecida não pode ser maior que o saldo atual do tanque.',
+                    ]);
+                }
+
+                $balanceAfter = $this->decimal($balanceBefore - $quantity, 3);
+                $stockValueBefore = $this->decimal($tank->estimated_stock_value ?? 0, 2);
+                $stockValueAfter = $this->decimal(max(0, $stockValueBefore - $totalCost), 2);
+                $averageUnitCostAfter = $balanceAfter > 0
+                    ? $this->decimal($stockValueAfter / $balanceAfter, 4)
+                    : 0;
+            } else {
+                $product = $this->productForContext((int) $validated['fuel_product_id'], $context);
+                $fuelProductId = $product->id;
+                $totalCost = $this->nullableDecimal($validated['total_cost'] ?? null, 2);
+                $unitCost = $this->resolveUnitCostFromTotal($quantity, $totalCost, $validated['unit_cost'] ?? null);
+
+                if ($totalCost === null && $unitCost !== null) {
+                    $totalCost = $this->decimal($quantity * $unitCost, 2);
+                }
+            }
 
             $filling = FuelFilling::query()->create([
                 'tenant_id' => $context['tenant_id'],
                 'division_id' => $context['division_id'],
                 'location_id' => $context['location_id'],
-                'fuel_tank_id' => $tank->id,
-                'fuel_product_id' => $tank->fuel_product_id,
+                'fuel_tank_id' => $tank?->id,
+                'fuel_product_id' => $fuelProductId,
+                'source' => $source,
                 'vehicle_id' => $vehicle->id,
                 'driver_id' => $validated['driver_id'] ?? null,
                 'filled_at' => Carbon::parse($validated['filled_at']),
@@ -191,10 +222,12 @@ class FuelService
                 'quantity_liters' => $quantity,
                 'unit_cost' => $unitCost,
                 'total_cost' => $totalCost,
+                'supplier_name' => $source === FuelFilling::SOURCE_EXTERNAL_STATION ? ($validated['supplier_name'] ?? null) : null,
+                'document_number' => $source === FuelFilling::SOURCE_EXTERNAL_STATION ? ($validated['document_number'] ?? null) : null,
                 'responsible_user_id' => $responsibleUserId,
                 'notes' => $validated['notes'] ?? null,
             ]);
-            
+
             $this->updateVehicleCountersFromFilling(
                 $vehicle,
                 $validated,
@@ -202,35 +235,45 @@ class FuelService
                 $filling
             );
 
-            $tank->forceFill([
-                'current_balance_liters' => $balanceAfter,
-                'average_unit_cost' => $averageUnitCostAfter,
-                'estimated_stock_value' => $stockValueAfter,
-            ])->save();
+            if ($source === FuelFilling::SOURCE_INTERNAL_TANK && $tank) {
+                $tank->forceFill([
+                    'current_balance_liters' => $balanceAfter,
+                    'average_unit_cost' => $averageUnitCostAfter,
+                    'estimated_stock_value' => $stockValueAfter,
+                ])->save();
 
-            $movement = $this->createMovement(
-                $context,
-                $tank,
-                FuelMovement::TYPE_FILLING,
-                $quantity,
-                $balanceBefore,
-                $balanceAfter,
-                $filling,
-                $responsibleUserId,
-                'Abastecimento de veículo'
-            );
+                $movement = $this->createMovement(
+                    $context,
+                    $tank,
+                    FuelMovement::TYPE_FILLING,
+                    $quantity,
+                    $balanceBefore,
+                    $balanceAfter,
+                    $filling,
+                    $responsibleUserId,
+                    'Abastecimento de veículo'
+                );
+            }
+
+            $summary = $source === FuelFilling::SOURCE_EXTERNAL_STATION
+                ? "Abastecimento externo de {$quantity} litros registrado para o veículo {$vehicle->name}."
+                : "Abastecimento de {$quantity} litros registrado para o veículo {$vehicle->name}.";
 
             $this->auditLog->created($filling, [
                 'tenant_id' => $context['tenant_id'],
                 'division_id' => $context['division_id'],
                 'location_id' => $context['location_id'],
                 'module' => 'fuel',
-                'summary' => "Abastecimento de {$quantity} litros registrado para o veículo {$vehicle->name}.",
+                'summary' => $summary,
                 'after_data' => $filling->toArray(),
                 'metadata' => [
-                    'fuel_movement_id' => $movement->id,
-                    'fuel_tank_id' => $tank->id,
+                    'fuel_movement_id' => $movement?->id,
+                    'fuel_tank_id' => $tank?->id,
+                    'fuel_product_id' => $fuelProductId,
                     'vehicle_id' => $vehicle->id,
+                    'source' => $source,
+                    'supplier_name' => $filling->supplier_name,
+                    'document_number' => $filling->document_number,
                     'balance_before' => $balanceBefore,
                     'balance_after' => $balanceAfter,
                 ],
@@ -393,6 +436,21 @@ class FuelService
         return $vehicle;
     }
 
+    private function productForContext(int $productId, array $context): FuelProduct
+    {
+        $product = FuelProduct::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('active', true)
+            ->find($productId);
+
+        if (! $product) {
+            throw ValidationException::withMessages([
+                'fuel_product_id' => 'Produto de combustível não encontrado para o tenant ativo.',
+            ]);
+        }
+
+        return $product;
+    }
     private function validateVehicleCounters(Vehicle $vehicle, array $validated): void
     {
         if (

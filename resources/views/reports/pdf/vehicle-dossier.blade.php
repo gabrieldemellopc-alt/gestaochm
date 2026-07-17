@@ -617,7 +617,7 @@
                 <tr>
                     <th>Data</th>
                     <th>Produto</th>
-                    <th>Tanque</th>
+                    <th>Origem/local</th>
                     <th>Motorista/Condutor</th>
                     <th>Registrado por</th>
                     <th>KM/HR</th>
@@ -638,7 +638,7 @@
                         </td>
 
                         <td>{{ $filling['product_name'] }}</td>
-                        <td>{{ $filling['tank_name'] }}</td>
+                        <td><strong>{{ $filling['source_label'] ?? 'Tanque da unidade' }}</strong><br><span>{{ $filling['location_label'] ?? $filling['tank_name'] ?? '-' }}</span></td>
                         <td>{{ $filling['driver_name'] ?? 'Não informado' }}</td>
                         <td>{{ $filling['registered_by_name'] ?? $filling['responsible_name'] ?? 'Não informado' }}</td>
 
