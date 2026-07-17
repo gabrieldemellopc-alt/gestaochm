@@ -5029,3 +5029,31 @@ html[data-chm-theme="corporate-light"] .dashboard-page .quick-action-card:hover 
 
     transform:translateY(-1px);
 }
+.vehicle-maintenance-status-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.vehicle-maintenance-stopped-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+
+    color: #aeb8c8;
+
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.vehicle-maintenance-stopped-time svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+
+    color: #d6a84f;
+}

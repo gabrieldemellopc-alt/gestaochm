@@ -13885,7 +13885,8 @@
 
 html[data-chm-theme="corporate-light"] .topbar .topbar-location-selector {
     border-color: var(--chm-theme-border, rgba(226, 232, 240, .26));
-    background: rgba(255, 255, 255, .06);
+    background: transparent;
+    border:none;
 }
 
 @media (max-width: 900px) {
@@ -14271,13 +14272,222 @@ html[data-chm-theme="corporate-light"] .topbar .user-dropdown a {
     position: relative;
 }
 
-.topbar .topbar-location-selector::after {
-    content: "⌄";
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-55%);
-    pointer-events: none;
-    color: rgba(255,255,255,.55);
+
+.topbar-location-selector {
+    position: relative;
+    min-width: 230px;
+}
+
+.topbar-location-trigger {
+    width: 100%;
+    min-height: 38px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 0 11px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 10px;
+    color: #fff;
+    background: rgba(255, 255, 255, .04);
+    cursor: pointer;
+    text-align: left;
+    transition:
+        background-color .18s ease,
+        border-color .18s ease;
+}
+
+.topbar-location-trigger:hover,
+.topbar-location-trigger[aria-expanded="true"] {
+    border-color: rgba(255, 255, 255, .30);
+    background: rgba(255, 255, 255, .08);
+}
+
+.topbar-location-trigger:disabled {
+    cursor: default;
+    opacity: .78;
+}
+
+.topbar-location-trigger-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255, 255, 255, .72);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.topbar-location-trigger-label svg {
+    width: 15px;
+    height: 15px;
+    color: #f08a3c;
+}
+
+.topbar-location-trigger > strong {
+    min-width: 0;
+    overflow: hidden;
+    color: #fff;
     font-size: 13px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.topbar-location-chevron {
+    width: 15px;
+    height: 15px;
+    color: rgba(255, 255, 255, .68);
+    transition: transform .18s ease;
+}
+
+.topbar-location-chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.topbar-location-dropdown {
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 0;
+    z-index: 1200;
+    width: 100%;
+    min-width: 250px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, .24);
+    border-radius: 11px;
+    background: #25324c;
+    box-shadow: 0 16px 34px rgba(3, 7, 18, .30);
+}
+
+.topbar-location-dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 11px;
+    border-bottom: 1px solid rgba(148, 163, 184, .16);
+    background: rgba(255, 255, 255, .035);
+}
+
+.topbar-location-dropdown-header span {
+    color: #f8fafc;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.topbar-location-dropdown-header small {
+    color: #94a3b8;
+    font-size: 9px;
+}
+
+.topbar-location-options {
+    display: grid;
+    gap: 3px;
+    max-height: 260px;
+    padding: 5px;
+    overflow-y: auto;
+}
+
+.topbar-location-option {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 9px;
+    border: 0;
+    border-radius: 8px;
+    color: #e2e8f0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition:
+        background-color .16s ease,
+        color .16s ease;
+}
+
+.topbar-location-option:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .07);
+}
+
+.topbar-location-option.is-active {
+    color: #fff;
+    background: rgba(240, 138, 60, .10);
+}
+
+.topbar-location-option-marker {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 7px;
+    color: #94a3b8;
+    background: rgba(15, 23, 42, .28);
+}
+
+.topbar-location-option.is-active .topbar-location-option-marker {
+    color: #f08a3c;
+    border-color: rgba(240, 138, 60, .32);
+    background: rgba(240, 138, 60, .10);
+}
+
+.topbar-location-option-marker svg,
+.topbar-location-option-check svg {
+    width: 14px;
+    height: 14px;
+}
+
+.topbar-location-option-copy {
+    min-width: 0;
+}
+
+.topbar-location-option-copy strong,
+.topbar-location-option-copy small {
+    display: block;
+}
+
+.topbar-location-option-copy strong {
+    overflow: hidden;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.topbar-location-option-copy small {
+    margin-top: 1px;
+    color: #94a3b8;
+    font-size: 9px;
+}
+
+.topbar-location-option-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #86efac;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .topbar-location-selector {
+        min-width: 210px;
+    }
+
+    .topbar-location-dropdown {
+        min-width: 235px;
+    }
+}
+
+.topbar-location-selector::before,
+.topbar-location-selector::after {
+    content: none !important;
+    display: none !important;
 }

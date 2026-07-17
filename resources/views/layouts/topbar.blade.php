@@ -230,32 +230,113 @@
                 method="POST"
                 action="{{ route('active-location.update') }}"
                 class="topbar-location-selector"
+                x-data="{
+                    open: false,
+                    selectedId: '{{ $activeLocation?->id }}',
+                    selectedName: @js($activeLocation?->name ?? 'Selecionar unidade'),
+                    selectLocation(id, name) {
+                        this.selectedId = id;
+                        this.selectedName = name;
+                        this.open = false;
+        
+                        this.$nextTick(() => {
+                            this.$refs.locationInput.value = id;
+                            this.$refs.locationForm.submit();
+                        });
+                    }
+                }"
+                x-ref="locationForm"
+                @click.outside="open = false"
+                @keydown.escape.window="open = false"
             >
                 @csrf
-
-                <label for="topbarActiveLocation">
-                    <i data-lucide="map-pin"></i>
-                    <span>Unidade</span>
-                </label>
-
-                <select
-                    id="topbarActiveLocation"
+        
+                <input
+                    type="hidden"
                     name="location_id"
-                    aria-label="Unidade ativa"
-                    @if($availableLocations->count() <= 1) disabled @endif
-                    onchange="this.form.submit()"
+                    x-ref="locationInput"
+                    value="{{ $activeLocation?->id }}"
                 >
-                    @forelse($availableLocations as $location)
-                        <option
-                            value="{{ $location->id }}"
-                            @selected($activeLocation?->id === $location->id)
-                        >
-                            {{ $location->name }}
-                        </option>
-                    @empty
-                        <option>Sem unidade disponível</option>
-                    @endforelse
-                </select>
+        
+                <button
+                    type="button"
+                    class="topbar-location-trigger"
+                    @click="open = !open"
+                    :aria-expanded="open.toString()"
+                    aria-haspopup="listbox"
+                    @if($availableLocations->count() <= 1) disabled @endif
+                >
+                    <span class="topbar-location-trigger-label">
+                        <i data-lucide="map-pin"></i>
+        
+                        <span>Unidade</span>
+                    </span>
+        
+                    <strong x-text="selectedName"></strong>
+        
+                    @if($availableLocations->count() > 1)
+                        <i
+                            data-lucide="chevron-down"
+                            class="topbar-location-chevron"
+                            :class="{ 'is-open': open }"
+                        ></i>
+                    @endif
+                </button>
+        
+                @if($availableLocations->count() > 1)
+                    <div
+                        class="topbar-location-dropdown"
+                        x-show="open"
+                        x-transition.origin.top
+                        x-cloak
+                        role="listbox"
+                        aria-label="Selecionar unidade"
+                    >
+                        <div class="topbar-location-dropdown-header">
+                            <span>Trocar unidade</span>
+                            <small>{{ $availableLocations->count() }} disponíveis</small>
+                        </div>
+        
+                        <div class="topbar-location-options">
+                            @foreach($availableLocations as $location)
+                                <button
+                                    type="button"
+                                    class="topbar-location-option"
+                                    @class([
+                                        'is-active' => $activeLocation?->id === $location->id,
+                                    ])
+                                    @click="selectLocation(
+                                        '{{ $location->id }}',
+                                        @js($location->name)
+                                    )"
+                                    role="option"
+                                    :aria-selected="selectedId == '{{ $location->id }}'"
+                                >
+                                    <span class="topbar-location-option-marker">
+                                        <i data-lucide="map-pin"></i>
+                                    </span>
+        
+                                    <span class="topbar-location-option-copy">
+                                        <strong>{{ $location->name }}</strong>
+        
+                                        @if($activeLocation?->id === $location->id)
+                                            <small>Unidade ativa</small>
+                                        @else
+                                            <small>Clique para selecionar</small>
+                                        @endif
+                                    </span>
+        
+                                    <span
+                                        class="topbar-location-option-check"
+                                        x-show="selectedId == '{{ $location->id }}'"
+                                    >
+                                        <i data-lucide="check"></i>
+                                    </span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </form>
         @endif
 
