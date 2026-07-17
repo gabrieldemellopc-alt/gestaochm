@@ -203,7 +203,27 @@
 
 
 
-        @if(userHasProfile('supervisor') || userHasProfile('manager') || userHasProfile('admin'))
+        @php
+            $sidebarPermissionService = app(\App\Services\Permissions\ProfilePermissionService::class);
+            $sidebarCanPermission = function (string $permissionKey) use ($sidebarPermissionService) {
+                $sidebarCurrentUser = auth()->user();
+
+                if (! $sidebarCurrentUser) {
+                    return false;
+                }
+
+                if (userHasProfile('admin') || userHasProfile('manager')) {
+                    return true;
+                }
+
+                if (! userHasProfile('supervisor')) {
+                    return true;
+                }
+
+                return $sidebarPermissionService->allows($sidebarCurrentUser, $permissionKey);
+            };
+        @endphp
+        @if((userHasProfile('supervisor') || userHasProfile('manager') || userHasProfile('admin')) && $sidebarCanPermission('navigation.fuel'))
 
         {{-- ABASTECIMENTOS --}}
 
@@ -284,116 +304,71 @@
 
 
 
+        @if($sidebarCanPermission('navigation.workshop') || $sidebarCanPermission('navigation.tires') || $sidebarCanPermission('navigation.stock'))
         <div class="sidebar-group {{ $workshopActive ? 'open active' : '' }}" x-data="{ open: {{ $workshopActive ? 'true' : 'false' }} }">
 
-
-
             <button
-
                 type="button"
-
                 class="sidebar-link sidebar-link-dropdown {{ $workshopActive ? 'active' : '' }}"
-
                 @click="open = !open"
-
             >
-
                 <span class="sidebar-icon">
-
                     <i data-lucide="wrench"></i>
-
                 </span>
-
-
 
                 <span class="sidebar-link-text">
-
                     Oficina
-
                 </span>
-
-
 
                 <span class="sidebar-chevron" :class="{ 'rotate': open }">
-
                     <i data-lucide="chevron-down"></i>
-
                 </span>
-
             </button>
 
+            <div class="sidebar-submenu" x-show="open" x-collapse x-cloak>
+                @if($sidebarCanPermission('navigation.workshop'))
+                    <a
+                        href="{{ route('workshop.index') }}"
+                        class="sidebar-submenu-link {{ request()->routeIs('workshop.index') ? 'active' : '' }}"
+                    >
+                        <i data-lucide="layout-dashboard"></i>
+                        Visão geral
+                    </a>
+                @endif
 
+                @if($sidebarCanPermission('navigation.tires'))
+                    <a
+                        href="{{ route('workshop.tires.index') }}"
+                        class="sidebar-submenu-link {{ request()->routeIs('workshop.tires.*') ? 'active' : '' }}"
+                    >
+                        <i data-lucide="circle-dot"></i>
+                        Controle de pneus
+                    </a>
+                @endif
 
-        <div class="sidebar-submenu" x-show="open" x-collapse x-cloak>
-    
-                <a
+                @if($sidebarCanPermission('navigation.stock'))
+                    <a
+                        href="{{ route('stock.index') }}"
+                        class="sidebar-submenu-link {{ request()->routeIs('stock.*') ? 'active' : '' }}"
+                    >
+                        <i data-lucide="boxes"></i>
+                        Estoque
+                    </a>
+                @endif
 
-                    href="{{ route('workshop.index') }}"
-
-                    class="sidebar-submenu-link {{ request()->routeIs('workshop.index') ? 'active' : '' }}"
-
-                >
-
-                    <i data-lucide="layout-dashboard"></i>
-
-                    Visão geral
-
-                </a>
-
-
-
-                <a
-
-                    href="{{ route('workshop.tires.index') }}"
-
-                    class="sidebar-submenu-link {{ request()->routeIs('workshop.tires.*') ? 'active' : '' }}"
-
-                >
-
-                    <i data-lucide="circle-dot"></i>
-
-                    Controle de pneus
-
-                </a>
-
-
-
-                <a
-
-                    href="{{ route('stock.index') }}"
-
-                    class="sidebar-submenu-link {{ request()->routeIs('stock.*') ? 'active' : '' }}"
-
-                >
-
-                    <i data-lucide="boxes"></i>
-
-                    Estoque
-
-                </a>
-
-
-
-                <a
-
-                    href="{{ route('procedures.index') }}"
-
-                    class="sidebar-submenu-link {{ request()->routeIs('procedures.*') ? 'active' : '' }}"
-
-                >
-
-                    <i data-lucide="clipboard-list"></i>
-
-                    Procedimentos
-
-                </a>
-
+                @if($sidebarCanPermission('navigation.workshop'))
+                    <a
+                        href="{{ route('procedures.index') }}"
+                        class="sidebar-submenu-link {{ request()->routeIs('procedures.*') ? 'active' : '' }}"
+                    >
+                        <i data-lucide="clipboard-list"></i>
+                        Procedimentos
+                    </a>
+                @endif
             </div>
 
-
-
         </div>
-
+        @endif
 
 
         {{-- HISTÓRICO --}}
@@ -520,11 +495,11 @@
         @php
             $sidebarUser = auth()->user();
             $sidebarDivisionId = session('active_division_id');
-        
+
             $sidebarIsAdmin = false;
             $sidebarHasGlobalLocationAccess = false;
             $sidebarLocationCount = 0;
-        
+
             if ($sidebarUser && $sidebarDivisionId) {
                 $sidebarAccessQuery = $sidebarUser
                     ->divisionAccesses()
@@ -532,27 +507,27 @@
                     ->where('division_id', $sidebarDivisionId)
                     ->where('module', 'fleet')
                     ->where('active', true);
-        
+
                 $sidebarIsAdmin = (clone $sidebarAccessQuery)
                     ->where('profile', 'admin')
                     ->exists();
-        
+
                 $sidebarHasGlobalLocationAccess = (clone $sidebarAccessQuery)
                     ->whereNull('location_id')
                     ->exists();
-        
+
                 $sidebarLocationCount = (clone $sidebarAccessQuery)
                     ->whereNotNull('location_id')
                     ->distinct()
                     ->count('location_id');
             }
-        
+
             $canViewLocationsMenu =
                 $sidebarIsAdmin
                 || $sidebarHasGlobalLocationAccess
                 || $sidebarLocationCount > 1;
         @endphp
-        
+
         @if($canViewLocationsMenu)
             <a
                 href="{{ route('locations.index') }}"
@@ -565,13 +540,14 @@
                 <span class="sidebar-icon">
                     <i data-lucide="map-pin"></i>
                 </span>
-        
+
                 Cidades
             </a>
         @endif
 
 
 
+        @if($sidebarCanPermission('navigation.reports'))
         {{-- RELATÓRIOS --}}
 
         <a
@@ -605,6 +581,8 @@
 
 
         </a>
+        @endif
+
 
         @if(userHasProfile('manager') || userHasProfile('admin'))
 
@@ -641,6 +619,21 @@
 
 
 
+        @if(userHasProfile('manager') || userHasProfile('admin'))
+
+            {{-- PERMISSÕES --}}
+
+            <a
+                href="{{ route('permissions.index') }}"
+                class="sidebar-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}"
+            >
+                <span class="sidebar-icon">
+                    <i data-lucide="shield-check"></i>
+                </span>
+                Permissões
+            </a>
+
+        @endif
         @can('viewAuditLogs')
 
             {{-- AUDITORIA --}}

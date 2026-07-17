@@ -26,6 +26,8 @@ use App\Http\Controllers\FuelTankController;
 
 use App\Http\Controllers\MaintenanceController;
 
+use App\Http\Controllers\PermissionController;
+
 use App\Http\Controllers\PortalController;
 
 use App\Http\Controllers\ProcedureController;
@@ -162,6 +164,14 @@ Route::middleware('auth')->group(function () {
         FiscalDocumentController::class, 'index'
     ])
         ->name('fiscal-documents.index')
+        ->middleware('module:fleet');
+
+    Route::get('/permissions', [PermissionController::class, 'index'])
+        ->name('permissions.index')
+        ->middleware('module:fleet');
+
+    Route::patch('/permissions', [PermissionController::class, 'update'])
+        ->name('permissions.update')
         ->middleware('module:fleet');
 
 
