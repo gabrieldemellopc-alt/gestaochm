@@ -606,6 +606,39 @@
 
         </a>
 
+        @if(userHasProfile('manager') || userHasProfile('admin'))
+
+            {{-- NOTAS FISCAIS --}}
+
+            <a
+
+                href="{{ route('fiscal-documents.index') }}"
+
+                class="sidebar-link {{
+
+                    request()->routeIs('fiscal-documents.*')
+
+                    ? 'active'
+
+                    : ''
+
+                }}"
+
+            >
+
+                <span class="sidebar-icon">
+
+                    <i data-lucide="receipt-text"></i>
+
+                </span>
+
+                Notas Fiscais
+
+            </a>
+
+        @endif
+
+
 
 
         @can('viewAuditLogs')

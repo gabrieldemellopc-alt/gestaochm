@@ -20,6 +20,8 @@ use App\Http\Controllers\DailyChecklistController;
 
 use App\Http\Controllers\DashboardController;
 
+
+use App\Http\Controllers\FiscalDocumentController;
 use App\Http\Controllers\FuelTankController;
 
 use App\Http\Controllers\MaintenanceController;
@@ -155,6 +157,12 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:viewAuditLogs')
 
         ->name('audit.index');
+
+    Route::get('/fiscal-documents', [
+        FiscalDocumentController::class, 'index'
+    ])
+        ->name('fiscal-documents.index')
+        ->middleware('module:fleet');
 
 
 
