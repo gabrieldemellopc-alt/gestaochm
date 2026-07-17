@@ -8,6 +8,28 @@
     @php
         $openFuelModal = $openFuelModal ?? null;
         $selectedFuelVehicleId = $selectedFuelVehicleId ?? null;
+        $fuelPermissions = array_merge([
+            'view' => false,
+            'receive' => false,
+            'fill_internal' => false,
+            'fill_external' => false,
+            'cancel' => false,
+            'view_costs' => false,
+        ], $fuelPermissions ?? []);
+        $canReceiveFuel = (bool) $fuelPermissions['receive'];
+        $canFillInternal = (bool) $fuelPermissions['fill_internal'];
+        $canFillExternal = (bool) $fuelPermissions['fill_external'];
+        $canRegisterFilling = $canFillInternal || $canFillExternal;
+        $canViewFuelCosts = (bool) $fuelPermissions['view_costs'];
+        $defaultFuelFillingSource = old('source', $canFillInternal ? 'internal_tank' : 'external_station');
+
+        if ($defaultFuelFillingSource === 'internal_tank' && ! $canFillInternal) {
+            $defaultFuelFillingSource = $canFillExternal ? 'external_station' : 'internal_tank';
+        }
+
+        if ($defaultFuelFillingSource === 'external_station' && ! $canFillExternal) {
+            $defaultFuelFillingSource = $canFillInternal ? 'internal_tank' : 'external_station';
+        }
     @endphp
 
     <div class="fuel-page">
@@ -22,10 +44,12 @@
             </div>
 
             <div class="fuel-header-actions">
-                <button type="button" class="fuel-secondary-action" onclick="openFuelModal('filling')">
-                    <i data-lucide="truck"></i>
-                    Registrar abastecimento
-                </button>
+                @if($canRegisterFilling)
+                    <button type="button" class="fuel-secondary-action" onclick="openFuelModal('filling')">
+                        <i data-lucide="truck"></i>
+                        Registrar abastecimento
+                    </button>
+                @endif
 
                 <button type="button" class="fuel-primary-action" onclick="openFuelModal('tank')">
                     <i data-lucide="plus"></i>
@@ -74,16 +98,18 @@
                             <dd>{{ number_format((float) $tank->balance_percentage, 1, ',', '.') }}%</dd>
                         </div>
                     
-                        <div>
-                            <dt>Custo médio</dt>
-                            <dd>
-                                R$ {{ number_format((float) ($tank->average_unit_cost ?? 0), 4, ',', '.') }}/L
-                            </dd>
-                        </div>
+                        @if($canViewFuelCosts)
+                            <div>
+                                <dt>Custo m&eacute;dio</dt>
+                                <dd>
+                                    R$ {{ number_format((float) ($tank->average_unit_cost ?? 0), 4, ',', '.') }}/L
+                                </dd>
+                            </div>
+                        @endif
                     </dl>
 
                     <div class="fuel-card-actions">
-                        @if($tank->active)
+                        @if($tank->active && $canReceiveFuel)
                             <button type="button" class="fuel-secondary-action" onclick="openFuelModal('receipt-{{ $tank->id }}')">
                                 <i data-lucide="plus-circle"></i>
                                 Recebimento
@@ -132,10 +158,14 @@
                         <div>
                             <strong>{{ number_format((float) $receipt->quantity_liters, 3, ',', '.') }} L</strong>
                             <span>
-                                @if($receipt->total_cost !== null)
-                                    R$ {{ number_format((float) $receipt->total_cost, 2, ',', '.') }}
+                                @if($canViewFuelCosts)
+                                    @if($receipt->total_cost !== null)
+                                        R$ {{ number_format((float) $receipt->total_cost, 2, ',', '.') }}
+                                    @else
+                                        Sem custo informado
+                                    @endif
                                 @else
-                                    Sem custo informado
+                                    Custo restrito
                                 @endif
                             </span>
                         </div>
@@ -182,10 +212,14 @@
 
                         <div>
                             <span>
-                                @if($filling->total_cost !== null)
-                                    R$ {{ number_format((float) $filling->total_cost, 2, ',', '.') }}
+                                @if($canViewFuelCosts)
+                                    @if($filling->total_cost !== null)
+                                        R$ {{ number_format((float) $filling->total_cost, 2, ',', '.') }}
+                                    @else
+                                        Sem custo informado
+                                    @endif
                                 @else
-                                    Sem custo informado
+                                    Custo restrito
                                 @endif
                             </span>
                             <small>Motorista/Condutor: {{ $filling->driver?->name ?: 'Não informado' }}</small>
@@ -315,6 +349,7 @@
             </div>
         </div>
 
+        @if($canRegisterFilling)
         <div id="fuel-modal-filling" class="fuel-modal-overlay {{ $errors->fuelFilling->any() || $openFuelModal === 'filling' ? 'is-open' : '' }}">
             <div class="fuel-modal-card wide">
                 <div class="fuel-modal-header">
@@ -347,15 +382,19 @@
                             </div>
 
                             <div class="fuel-source-segment" role="radiogroup" aria-label="Tipo de abastecimento">
-                                <label class="fuel-source-option">
-                                    <input type="radio" name="source" value="internal_tank" @checked(old('source', 'internal_tank') !== 'external_station')>
-                                    <span>Tanque da unidade</span>
-                                </label>
+                                @if($canFillInternal)
+                                    <label class="fuel-source-option">
+                                        <input type="radio" name="source" value="internal_tank" @checked($defaultFuelFillingSource === 'internal_tank')>
+                                        <span>Tanque da unidade</span>
+                                    </label>
+                                @endif
 
-                                <label class="fuel-source-option">
-                                    <input type="radio" name="source" value="external_station" @checked(old('source') === 'external_station')>
-                                    <span>Posto externo</span>
-                                </label>
+                                @if($canFillExternal)
+                                    <label class="fuel-source-option">
+                                        <input type="radio" name="source" value="external_station" @checked($defaultFuelFillingSource === 'external_station')>
+                                        <span>Posto externo</span>
+                                    </label>
+                                @endif
                             </div>
                         </div>
 
@@ -495,8 +534,10 @@
                 </form>
             </div>
         </div>
+        @endif
 
         @foreach($tanks as $tank)
+            @if($canReceiveFuel)
             <div id="fuel-modal-receipt-{{ $tank->id }}" class="fuel-modal-overlay {{ $errors->fuelReceipt->any() && $openFuelModal === 'receipt-'.$tank->id ? 'is-open' : '' }}">
                 <div class="fuel-modal-card wide">
                     <div class="fuel-modal-header">
@@ -605,6 +646,7 @@
                     </form>
                 </div>
             </div>
+            @endif
 
             <div id="fuel-modal-edit-{{ $tank->id }}" class="fuel-modal-overlay {{ $errors->{'fuelTankEdit'.$tank->id}->any() ? 'is-open' : '' }}">
                 <div class="fuel-modal-card">

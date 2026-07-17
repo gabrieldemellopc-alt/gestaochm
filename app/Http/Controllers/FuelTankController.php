@@ -10,6 +10,7 @@ use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use App\Services\FuelService;
+use App\Services\Permissions\ProfilePermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -25,6 +26,8 @@ class FuelTankController extends Controller
         }
 
         $this->authorizeFuelManagement($context);
+        $this->authorizeFuelPermission('fuel.view', $context);
+        $fuelPermissions = $this->fuelPermissions($context);
 
         $products = FuelProduct::query()
             ->where('tenant_id', $context['tenant_id'])
@@ -58,6 +61,7 @@ class FuelTankController extends Controller
             'latestFillings' => $this->latestFillings($context),
             'openFuelModal' => request('fuel_modal') ?: session('fuel_modal'),
             'selectedFuelVehicleId' => request('fuel_vehicle_id') ?: old('vehicle_id'),
+            'fuelPermissions' => $fuelPermissions,
         ]);
     }
 
@@ -70,6 +74,7 @@ class FuelTankController extends Controller
         }
 
         $this->authorizeFuelManagement($context);
+        $this->authorizeFuelPermission('fuel.view', $context);
 
         $validated = $this->validatedData($request, $context, 'fuelTank');
 
@@ -99,6 +104,7 @@ class FuelTankController extends Controller
         }
 
         $this->authorizeFuelManagement($context);
+        $this->authorizeFuelPermission('fuel.view', $context);
         $this->ensureTankInActiveContext($tank, $context);
 
         $validated = $this->validatedData($request, $context, 'fuelTankEdit'.$tank->id);
@@ -125,6 +131,7 @@ class FuelTankController extends Controller
         }
 
         $this->authorizeFuelManagement($context);
+        $this->authorizeFuelPermission('fuel.receive', $context);
 
         try {
             $fuelService->receiveFuel($request->only([
@@ -160,6 +167,13 @@ class FuelTankController extends Controller
         }
 
         $this->authorizeFuelManagement($context);
+        $source = $request->input('source', FuelFilling::SOURCE_INTERNAL_TANK);
+        $this->authorizeFuelPermission(
+            $source === FuelFilling::SOURCE_EXTERNAL_STATION
+                ? 'fuel.fill_external'
+                : 'fuel.fill_internal',
+            $context
+        );
 
         try {
             $fuelService->registerFilling($request->only([
@@ -256,6 +270,36 @@ class FuelTankController extends Controller
         }
     }
 
+    private function authorizeFuelPermission(string $permissionKey, array $context): void
+    {
+        if ($this->canFuel($permissionKey, $context)) {
+            return;
+        }
+
+        abort(403, 'Você não tem permissão para executar esta ação.');
+    }
+
+    private function canFuel(string $permissionKey, array $context): bool
+    {
+        return app(ProfilePermissionService::class)->allows($context['user'], $permissionKey, [
+            'tenant_id' => $context['tenant_id'],
+            'division_id' => $context['division_id'],
+            'location_id' => $context['location_id'],
+            'module' => 'fleet',
+        ]);
+    }
+
+    private function fuelPermissions(array $context): array
+    {
+        return [
+            'view' => $this->canFuel('fuel.view', $context),
+            'receive' => $this->canFuel('fuel.receive', $context),
+            'fill_internal' => $this->canFuel('fuel.fill_internal', $context),
+            'fill_external' => $this->canFuel('fuel.fill_external', $context),
+            'cancel' => $this->canFuel('fuel.cancel', $context),
+            'view_costs' => $this->canFuel('fuel.view_costs', $context),
+        ];
+    }
     private function ensureTankInActiveContext(FuelTank $tank, array $context): void
     {
         if (

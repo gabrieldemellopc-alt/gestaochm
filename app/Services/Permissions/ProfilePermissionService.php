@@ -115,17 +115,21 @@ class ProfilePermissionService
             return false;
         }
 
+        if (! $this->permissionKeys()->contains($permissionKey)) {
+            return false;
+        }
+
         if ((int) $user->id === 1 || userHasProfile('admin')) {
+            return true;
+        }
+
+        if (userHasProfile('manager')) {
             return true;
         }
 
         $profile = $scope['profile'] ?? $this->currentProfile($user);
 
         if (! $profile) {
-            return false;
-        }
-
-        if (! $this->permissionKeys()->contains($permissionKey)) {
             return false;
         }
 
