@@ -1,109 +1,124 @@
 .fiscal-documents-page {
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    padding: 28px;
-    color: #e7edf7;
+    gap: 16px;
+    padding: 22px 26px 28px;
+    color: #e5edf8;
 }
 
 .fiscal-documents-hero {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: space-between;
-    gap: 20px;
-    padding: 24px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 24px;
-    background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.22), transparent 32%),
-        linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+    gap: 16px;
+    padding: 4px 2px 6px;
+}
+
+.fiscal-documents-hero > div:first-child {
+    min-width: 0;
 }
 
 .fiscal-kicker,
 .fiscal-panel-header span {
     display: inline-flex;
-    margin-bottom: 8px;
-    color: #93c5fd;
-    font-size: 0.74rem;
-    font-weight: 800;
+    margin-bottom: 5px;
+    color: #8ea2c6;
+    font-size: 0.72rem;
+    font-weight: 900;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
-.fiscal-documents-hero h1,
-.fiscal-panel-header h2 {
+.fiscal-documents-hero h1 {
     margin: 0;
     color: #f8fafc;
-    font-size: 1.85rem;
+    font-size: 1.72rem;
+    font-weight: 900;
     line-height: 1.1;
 }
 
 .fiscal-documents-hero p {
-    max-width: 720px;
-    margin: 10px 0 0;
-    color: #cbd5e1;
+    max-width: 760px;
+    margin: 6px 0 0;
+    color: #9caadb;
+    font-size: 0.92rem;
+    line-height: 1.45;
 }
 
 .fiscal-context-card {
-    min-width: 260px;
-    padding: 18px;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 20px;
-    background: rgba(15, 23, 42, 0.55);
+    display: inline-flex;
+    min-width: 0;
+    max-width: 360px;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 13px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.055);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .fiscal-context-card span,
 .fiscal-context-card small {
     display: block;
-    color: #94a3b8;
-    font-size: 0.82rem;
+    color: #8ea2c6;
+    font-size: 0.72rem;
+    font-weight: 700;
 }
 
 .fiscal-context-card strong {
     display: block;
-    margin: 6px 0;
+    overflow: hidden;
     color: #f8fafc;
-    font-size: 1.05rem;
+    font-size: 0.91rem;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .fiscal-alert {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 16px;
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    border-radius: 16px;
+    padding: 12px 14px;
+    border: 1px solid rgba(245, 158, 11, 0.32);
+    border-radius: 14px;
     color: #fef3c7;
-    background: rgba(120, 53, 15, 0.3);
+    background: rgba(120, 53, 15, 0.22);
+}
+
+.fiscal-alert svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
 }
 
 .fiscal-filter-panel,
 .fiscal-documents-panel {
-    padding: 20px;
+    padding: 16px;
     border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 22px;
-    background: rgba(15, 23, 42, 0.74);
-    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+    border-radius: 18px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.14);
 }
 
 .fiscal-filter-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(150px, 1fr));
-    gap: 14px;
+    gap: 12px;
 }
 
 .fiscal-filter-grid label {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 6px;
 }
 
 .fiscal-filter-grid span,
 .fiscal-checkbox span {
-    color: #cbd5e1;
-    font-size: 0.82rem;
-    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 800;
 }
 
 .fiscal-filter-grid input,
@@ -111,11 +126,32 @@
     width: 100%;
     min-height: 42px;
     padding: 0 12px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    border-radius: 12px;
-    color: #0f172a;
-    background: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 13px;
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.065);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     outline: none;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.fiscal-filter-grid input::placeholder {
+    color: rgba(255, 255, 255, 0.48);
+    font-weight: 600;
+}
+
+.fiscal-filter-grid input:focus,
+.fiscal-filter-grid select:focus {
+    border-color: rgba(224, 92, 102, 0.72);
+    box-shadow:
+        0 0 0 3px rgba(224, 92, 102, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.fiscal-filter-grid select option {
+    color: #0f172a;
+    background: #ffffff;
 }
 
 .fiscal-search-field {
@@ -126,19 +162,27 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: 16px;
+    gap: 14px;
+    margin-top: 13px;
 }
 
 .fiscal-checkbox {
     display: inline-flex;
     align-items: center;
     gap: 9px;
+    min-height: 38px;
+    color: #cbd5e1;
+}
+
+.fiscal-checkbox input {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
 }
 
 .fiscal-filter-actions {
     display: flex;
-    gap: 10px;
+    gap: 9px;
 }
 
 .fiscal-button,
@@ -147,56 +191,69 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 40px;
-    padding: 0 15px;
+    min-height: 38px;
+    padding: 0 14px;
     border-radius: 12px;
-    font-weight: 800;
+    font-size: 0.82rem;
+    font-weight: 900;
     text-decoration: none;
-    transition: 0.18s ease;
+    transition: all 0.18s ease;
+    cursor: pointer;
+}
+
+.fiscal-button svg {
+    width: 16px;
+    height: 16px;
 }
 
 .fiscal-button.primary {
-    border: 1px solid rgba(59, 130, 246, 0.4);
+    border: 1px solid rgba(224, 92, 102, 0.38);
     color: #ffffff;
-    background: #2563eb;
+    background: #e05c66;
+    box-shadow: 0 10px 22px rgba(224, 92, 102, 0.16);
 }
 
 .fiscal-button.secondary {
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    color: #dbeafe;
-    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    color: #c7d2fe;
+    background: rgba(255, 255, 255, 0.055);
 }
 
 .fiscal-button:hover,
 .fiscal-row-link:hover {
     transform: translateY(-1px);
+    filter: brightness(1.05);
 }
 
 .fiscal-summary-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(160px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 12px;
 }
 
 .fiscal-summary-card {
-    padding: 18px;
+    min-height: 92px;
+    padding: 14px 15px;
     border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 20px;
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.92));
+    border-radius: 18px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .fiscal-summary-card span,
 .fiscal-summary-card small {
     display: block;
-    color: #94a3b8;
-    font-size: 0.78rem;
+    color: #8ea2c6;
+    font-size: 0.74rem;
+    font-weight: 800;
 }
 
 .fiscal-summary-card strong {
     display: block;
-    margin: 8px 0 4px;
+    margin: 7px 0 3px;
     color: #f8fafc;
-    font-size: 1.35rem;
+    font-size: 1.28rem;
+    font-weight: 950;
+    line-height: 1.1;
 }
 
 .fiscal-summary-card.muted strong {
@@ -207,18 +264,31 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.fiscal-panel-header h2 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 1.16rem;
+    font-weight: 900;
+    line-height: 1.15;
 }
 
 .fiscal-panel-header small {
-    max-width: 470px;
-    color: #94a3b8;
+    max-width: 500px;
+    color: #8ea2c6;
+    font-size: 0.8rem;
+    line-height: 1.4;
     text-align: right;
 }
 
 .fiscal-table-wrap {
     overflow-x: auto;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.36);
 }
 
 .fiscal-table {
@@ -229,88 +299,104 @@
 
 .fiscal-table th,
 .fiscal-table td {
-    padding: 13px 12px;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    padding: 11px 12px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
     text-align: left;
     vertical-align: top;
 }
 
 .fiscal-table th {
-    color: #93c5fd;
-    font-size: 0.72rem;
+    color: #8ea2c6;
+    font-size: 0.69rem;
+    font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    background: rgba(15, 23, 42, 0.3);
 }
 
 .fiscal-table td {
     color: #e2e8f0;
-    font-size: 0.9rem;
+    font-size: 0.86rem;
+    font-weight: 650;
+}
+
+.fiscal-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.035);
 }
 
 .fiscal-table td small {
     display: block;
     margin-top: 3px;
-    color: #94a3b8;
+    color: #8ea2c6;
+    font-size: 0.76rem;
+    font-weight: 700;
 }
 
 .fiscal-table tr.is-missing-document {
-    background: rgba(245, 158, 11, 0.06);
+    background: rgba(245, 158, 11, 0.045);
 }
 
 .fiscal-document-number {
     display: inline-flex;
-    padding: 5px 9px;
+    padding: 4px 8px;
+    border: 1px solid rgba(59, 130, 246, 0.22);
     border-radius: 999px;
-    color: #dbeafe;
-    background: rgba(59, 130, 246, 0.16);
-    font-weight: 800;
+    color: #bfdbfe;
+    background: rgba(59, 130, 246, 0.12);
+    font-size: 0.78rem;
+    font-weight: 900;
 }
 
 .fiscal-module-badge {
     display: inline-flex;
     margin-bottom: 4px;
-    padding: 5px 9px;
+    padding: 4px 8px;
     border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 900;
+    font-size: 0.69rem;
+    font-weight: 950;
+    letter-spacing: 0.02em;
 }
 
 .fiscal-module-badge.module-fuel {
-    color: #bbf7d0;
-    background: rgba(22, 163, 74, 0.18);
+    color: #86efac;
+    background: rgba(34, 197, 94, 0.13);
+    border: 1px solid rgba(34, 197, 94, 0.28);
 }
 
 .fiscal-module-badge.module-stock {
     color: #bfdbfe;
-    background: rgba(37, 99, 235, 0.18);
+    background: rgba(37, 99, 235, 0.14);
+    border: 1px solid rgba(37, 99, 235, 0.26);
 }
 
 .fiscal-module-badge.module-tires {
-    color: #fed7aa;
-    background: rgba(234, 88, 12, 0.18);
+    color: #fdba74;
+    background: rgba(234, 88, 12, 0.13);
+    border: 1px solid rgba(234, 88, 12, 0.26);
 }
 
 .fiscal-linked-record {
-    max-width: 280px;
+    max-width: 290px;
     color: #f8fafc;
+    font-weight: 800;
 }
 
 .fiscal-muted {
-    color: #94a3b8;
+    color: #8ea2c6;
 }
 
 .fiscal-row-link {
-    min-height: 34px;
+    min-height: 32px;
     padding: 0 10px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    color: #dbeafe;
-    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    color: #c7d2fe;
+    background: rgba(255, 255, 255, 0.055);
     white-space: nowrap;
 }
 
 .fiscal-empty-state {
     display: flex;
-    min-height: 210px;
+    min-height: 180px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -319,37 +405,30 @@
     text-align: center;
 }
 
-.fiscal-empty-state i {
-    width: 38px;
-    height: 38px;
-    color: #93c5fd;
+.fiscal-empty-state svg {
+    width: 34px;
+    height: 34px;
+    color: #8ea2c6;
 }
 
 .fiscal-empty-state strong {
     color: #f8fafc;
-    font-size: 1.05rem;
+    font-size: 1rem;
 }
 
 .fiscal-empty-state p {
     max-width: 520px;
     margin: 0;
-    color: #94a3b8;
+    color: #8ea2c6;
+    line-height: 1.45;
 }
 
 [data-theme="corporate-light"] .fiscal-documents-page {
     color: #0f172a;
 }
 
-[data-theme="corporate-light"] .fiscal-documents-hero,
-[data-theme="corporate-light"] .fiscal-filter-panel,
-[data-theme="corporate-light"] .fiscal-documents-panel,
-[data-theme="corporate-light"] .fiscal-summary-card {
-    border-color: rgba(15, 23, 42, 0.08);
-    background: #ffffff;
-    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
-}
-
 [data-theme="corporate-light"] .fiscal-documents-hero h1,
+[data-theme="corporate-light"] .fiscal-context-card strong,
 [data-theme="corporate-light"] .fiscal-panel-header h2,
 [data-theme="corporate-light"] .fiscal-summary-card strong,
 [data-theme="corporate-light"] .fiscal-table td,
@@ -359,17 +438,52 @@
 }
 
 [data-theme="corporate-light"] .fiscal-documents-hero p,
+[data-theme="corporate-light"] .fiscal-kicker,
+[data-theme="corporate-light"] .fiscal-context-card span,
+[data-theme="corporate-light"] .fiscal-context-card small,
+[data-theme="corporate-light"] .fiscal-panel-header span,
 [data-theme="corporate-light"] .fiscal-panel-header small,
 [data-theme="corporate-light"] .fiscal-summary-card span,
 [data-theme="corporate-light"] .fiscal-summary-card small,
+[data-theme="corporate-light"] .fiscal-table th,
 [data-theme="corporate-light"] .fiscal-table td small,
 [data-theme="corporate-light"] .fiscal-empty-state p {
     color: #64748b;
 }
 
 [data-theme="corporate-light"] .fiscal-context-card,
+[data-theme="corporate-light"] .fiscal-filter-panel,
+[data-theme="corporate-light"] .fiscal-documents-panel,
+[data-theme="corporate-light"] .fiscal-summary-card,
+[data-theme="corporate-light"] .fiscal-table-wrap {
+    border-color: rgba(15, 23, 42, 0.08);
+    background: #ffffff;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="corporate-light"] .fiscal-filter-grid span,
+[data-theme="corporate-light"] .fiscal-checkbox span {
+    color: #334155;
+}
+
+[data-theme="corporate-light"] .fiscal-filter-grid input,
+[data-theme="corporate-light"] .fiscal-filter-grid select {
+    border-color: rgba(15, 23, 42, 0.12);
+    color: #0f172a;
+    background: #f8fafc;
+}
+
+[data-theme="corporate-light"] .fiscal-table th {
+    background: #f8fafc;
+}
+
+[data-theme="corporate-light"] .fiscal-table tbody tr:hover {
+    background: #f8fafc;
+}
+
 [data-theme="corporate-light"] .fiscal-button.secondary,
 [data-theme="corporate-light"] .fiscal-row-link {
+    color: #1e3a8a;
     background: #f8fafc;
 }
 
@@ -379,6 +493,10 @@
     .fiscal-filter-footer {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .fiscal-context-card {
+        max-width: none;
     }
 
     .fiscal-panel-header small {
@@ -397,7 +515,12 @@
 
 @media (max-width: 680px) {
     .fiscal-documents-page {
+        gap: 14px;
         padding: 16px;
+    }
+
+    .fiscal-documents-hero h1 {
+        font-size: 1.45rem;
     }
 
     .fiscal-filter-grid,
@@ -411,5 +534,9 @@
 
     .fiscal-filter-actions {
         flex-direction: column;
+    }
+
+    .fiscal-button {
+        width: 100%;
     }
 }
