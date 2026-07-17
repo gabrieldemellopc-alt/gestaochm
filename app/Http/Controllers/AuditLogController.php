@@ -7,6 +7,8 @@ use App\Models\SystemAuditLog;
 use App\Models\User;
 use App\Models\UserDivisionAccess;
 use App\Services\ActiveContextService;
+use App\Support\AuditLogPresenter;
+use App\Support\ChmLabel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -113,51 +115,13 @@ class AuditLogController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        $moduleLabels = [
-            'fleet' => 'Frota',
-            'maintenance' => 'Manutenção',
-            'stock' => 'Estoque',
-            'tires' => 'Pneus',
-            'fuel' => 'Abastecimento',
-            'checklists' => 'Checklists',
-            'access' => 'Acessos',
-            'system' => 'Sistema',
-        ];
-
-        $actionLabels = [
-            'created' => 'Criado',
-            'updated' => 'Alterado',
-            'cancelled' => 'Cancelado',
-            'deleted' => 'Excluído',
-            'reversed' => 'Estornado',
-            'restored' => 'Restaurado',
-        ];
-
-        $profileLabels = [
-            'admin' => 'Administrador',
-            'tenant-admin' => 'Administrador do tenant',
-            'manager' => 'Gestor',
-            'supervisor' => 'Supervisor',
-            'mechanic' => 'Mecânico',
-            'driver' => 'Motorista',
-        ];
-
-        $entityLabels = [
-            'Vehicle' => 'Veículo',
-            'MaintenanceRecord' => 'Ordem de manutenção',
-            'MaintenanceRecordItem' => 'Serviço da manutenção',
-            'MaintenanceRecordExtraCost' => 'Custo avulso',
-            'StockItem' => 'Item de estoque',
-            'StockMovement' => 'Movimentação de estoque',
-            'Tire' => 'Pneu',
-            'TireMeasurement' => 'Medição de pneu',
-            'VehicleOperation' => 'Operação do veículo',
-            'User' => 'Usuário',
-            'UserDivisionAccess' => 'Acesso do usuário',
-        ];
-
+        $presenter = app(AuditLogPresenter::class);
+        $auditEvents = $logs
+            ->getCollection()
+            ->map(fn (SystemAuditLog $log) => $presenter->present($log));
         return view('audit.index', [
             'logs' => $logs,
+            'auditEvents' => $auditEvents,
             'modules' => $modules,
             'actions' => $actions,
             'auditUsers' => $auditUsers,
@@ -174,10 +138,12 @@ class AuditLogController extends Controller
                 'date_to',
                 'search',
             ]),
-            'moduleLabels' => $moduleLabels,
-            'actionLabels' => $actionLabels,
-            'profileLabels' => $profileLabels,
-            'entityLabels' => $entityLabels,
+            'moduleLabels' => $modules
+                ->mapWithKeys(fn ($module) => [$module => ChmLabel::for('audit_module', $module)])
+                ->all(),
+            'actionLabels' => $actions
+                ->mapWithKeys(fn ($action) => [$action => ChmLabel::for('audit_action', $action)])
+                ->all(),
         ]);
     }
 

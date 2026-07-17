@@ -440,3 +440,295 @@ html[data-chm-theme="corporate-light"] .audit-page {
         flex-wrap: wrap;
     }
 }
+/* =========================================================
+   MODAL DE AUDITORIA HUMANIZADA
+   ========================================================= */
+.audit-detail-button {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 0.8rem;
+    border: 1px solid rgba(220, 68, 78, 0.38);
+    border-radius: 999px;
+    background: rgba(220, 68, 78, 0.12);
+    color: #fecaca;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.audit-detail-button:hover {
+    background: rgba(220, 68, 78, 0.2);
+    color: #fff;
+}
+
+.audit-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background: rgba(2, 6, 23, 0.72);
+    backdrop-filter: blur(8px);
+}
+
+.audit-modal {
+    width: min(980px, 100%);
+    max-height: min(88vh, 820px);
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    border: 1px solid var(--audit-border-strong);
+    border-radius: 20px;
+    background: linear-gradient(180deg, var(--audit-surface), #1f2a3d);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+}
+
+.audit-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--audit-border);
+    background: rgba(15, 23, 42, 0.18);
+}
+
+.audit-modal-header span,
+.audit-narrative-card span,
+.audit-reason-card span,
+.audit-fact-grid span,
+.audit-technical-grid span,
+.audit-section-title span {
+    color: var(--audit-muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.audit-modal-header h2 {
+    margin: 5px 0 4px;
+    color: var(--audit-text);
+    font-size: clamp(1.15rem, 2vw, 1.55rem);
+}
+
+.audit-modal-header p,
+.audit-narrative-card p,
+.audit-reason-card p {
+    margin: 0;
+    color: var(--audit-muted);
+    line-height: 1.55;
+}
+
+.audit-modal-header button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--audit-border);
+    border-radius: 12px;
+    background: var(--audit-card-raised);
+    color: var(--audit-text);
+    cursor: pointer;
+}
+
+.audit-modal-body {
+    overflow: auto;
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+}
+
+.audit-narrative-card,
+.audit-reason-card,
+.audit-change-panel,
+.audit-empty-inline,
+.audit-technical-details {
+    border: 1px solid var(--audit-border);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.18);
+}
+
+.audit-narrative-card,
+.audit-reason-card,
+.audit-empty-inline {
+    padding: 14px;
+}
+
+.audit-narrative-card p {
+    margin-top: 6px;
+    color: #f8fafc;
+    font-size: 1rem;
+}
+
+.audit-fact-grid,
+.audit-technical-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.audit-fact-grid > div,
+.audit-technical-grid > div {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--audit-border);
+    border-radius: 12px;
+    background: var(--audit-card);
+}
+
+.audit-fact-grid strong,
+.audit-technical-grid strong {
+    display: block;
+    margin-top: 5px;
+    color: var(--audit-text);
+    overflow-wrap: anywhere;
+}
+
+.audit-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--audit-border);
+}
+
+.audit-section-title small {
+    color: var(--audit-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.audit-change-table {
+    display: grid;
+    gap: 0;
+}
+
+.audit-change-head,
+.audit-change-line {
+    display: grid;
+    grid-template-columns: minmax(150px, 0.8fr) repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.audit-change-head {
+    color: var(--audit-muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(15, 23, 42, 0.12);
+}
+
+.audit-change-line:last-child {
+    border-bottom: 0;
+}
+
+.audit-change-line strong,
+.audit-change-line span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.audit-change-line strong {
+    color: var(--audit-text);
+}
+
+.audit-change-line span {
+    color: var(--audit-muted);
+}
+
+.audit-empty-inline {
+    color: var(--audit-muted);
+    font-size: 0.9rem;
+}
+
+.audit-technical-details {
+    overflow: hidden;
+}
+
+.audit-technical-details summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 14px;
+    cursor: pointer;
+    color: var(--audit-text);
+}
+
+.audit-technical-details summary small {
+    color: var(--audit-muted);
+    font-size: 0.76rem;
+}
+
+.audit-technical-grid {
+    padding: 14px;
+}
+
+.audit-technical-payload {
+    padding: 0 14px 14px;
+}
+
+.audit-technical-payload > strong {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--audit-muted);
+    font-size: 0.78rem;
+}
+
+.audit-technical-payload pre {
+    margin: 0;
+    max-height: 260px;
+    overflow: auto;
+    padding: 12px;
+    border: 1px solid var(--audit-border);
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.28);
+    color: #dbeafe;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+html[data-chm-theme="corporate-light"] .audit-modal {
+    background: linear-gradient(180deg, #34425b, #263249);
+}
+
+@media (max-width: 820px) {
+    .audit-modal-backdrop {
+        padding: 10px;
+    }
+
+    .audit-modal {
+        max-height: 94vh;
+        border-radius: 16px;
+    }
+
+    .audit-modal-header {
+        padding: 16px;
+    }
+
+    .audit-modal-body {
+        padding: 12px;
+    }
+
+    .audit-fact-grid,
+    .audit-technical-grid,
+    .audit-change-head,
+    .audit-change-line {
+        grid-template-columns: 1fr;
+    }
+}
