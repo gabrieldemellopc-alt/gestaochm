@@ -129,9 +129,11 @@ class FiscalDocumentIndexService
             ->get()
             ->map(function (FuelReceipt $receipt) use ($context) {
                 $productName = $receipt->product?->name ?? $receipt->tank?->product?->name ?? 'Produto não informado';
-                $linked = trim(($receipt->tank?->name ?? 'Tanque não informado') . ' · ' . $productName);
+                $tankName = $receipt->tank?->name ?? 'Tanque não informado';
+                $linked = trim($tankName . ' · ' . $productName);
 
                 return $this->documentRow(
+                    context: $context,
                     module: 'fuel',
                     type: 'fuel_receipt',
                     date: $receipt->received_at,
@@ -141,7 +143,20 @@ class FiscalDocumentIndexService
                     linkedRecord: $linked . ' · ' . $this->liters($receipt->quantity_liters),
                     responsibleName: $receipt->responsible?->name,
                     locationName: $receipt->location?->name ?? $context['location']->name,
-                    originUrl: route('fuel.tanks.index')
+                    originUrl: route('fuel.tanks.index'),
+                    details: [
+                        $this->field('Tanque', $tankName),
+                        $this->field('Produto', $productName),
+                        $this->field('Litros', $this->liters($receipt->quantity_liters)),
+                        $this->field('Custo unitário', $this->money($receipt->unit_cost, 4)),
+                        $this->field('Custo total', $this->money($receipt->total_cost)),
+                        $this->field('Fornecedor', $receipt->supplier_name),
+                        $this->field('Documento', $receipt->invoice_number),
+                        $this->field('Responsável', $receipt->responsible?->name),
+                        $this->field('Data', $this->dateTimeLabel($receipt->received_at)),
+                    ],
+                    technical: $this->technicalFields($context, 'fuel_receipts', FuelReceipt::class, $receipt->id),
+                    notes: $receipt->notes
                 );
             });
     }
@@ -149,7 +164,7 @@ class FiscalDocumentIndexService
     private function externalFuelFillings(array $context, array $filters): Collection
     {
         return FuelFilling::query()
-            ->with(['vehicle', 'product', 'tank.product', 'responsible', 'location', 'division'])
+            ->with(['vehicle', 'product', 'tank.product', 'driver', 'responsible', 'location', 'division'])
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
@@ -163,6 +178,7 @@ class FiscalDocumentIndexService
                 $product = $filling->product?->name ?? $filling->tank?->product?->name ?? 'Produto não informado';
 
                 return $this->documentRow(
+                    context: $context,
                     module: 'fuel',
                     type: 'fuel_external_filling',
                     date: $filling->filled_at,
@@ -172,7 +188,23 @@ class FiscalDocumentIndexService
                     linkedRecord: $vehicle . ' · ' . $product . ' · ' . $this->liters($filling->quantity_liters),
                     responsibleName: $filling->responsible?->name,
                     locationName: $filling->location?->name ?? $context['location']->name,
-                    originUrl: route('fuel.tanks.index')
+                    originUrl: route('fuel.tanks.index'),
+                    details: [
+                        $this->field('Veículo', $vehicle),
+                        $this->field('Motorista/Condutor', $filling->driver?->name),
+                        $this->field('Produto', $product),
+                        $this->field('Litros', $this->liters($filling->quantity_liters)),
+                        $this->field('Custo unitário', $this->money($filling->unit_cost, 4)),
+                        $this->field('Custo total', $this->money($filling->total_cost)),
+                        $this->field('Fornecedor/Posto', $filling->supplier_name),
+                        $this->field('Documento/Cupom', $filling->document_number),
+                        $this->field('KM', $this->km($filling->vehicle_km)),
+                        $this->field('Horímetro', $this->hours($filling->vehicle_hours)),
+                        $this->field('Responsável', $filling->responsible?->name),
+                        $this->field('Data', $this->dateTimeLabel($filling->filled_at)),
+                    ],
+                    technical: $this->technicalFields($context, 'fuel_fillings', FuelFilling::class, $filling->id),
+                    notes: $filling->notes
                 );
             });
     }
@@ -195,18 +227,34 @@ class FiscalDocumentIndexService
                 $type = $movement->movement_type === 'in' ? 'stock_entry' : 'stock_output';
                 $quantity = number_format((float) $movement->quantity, 2, ',', '.');
                 $unit = $movement->stockItem?->unit ?: 'un.';
+                $quantityLabel = "{$quantity} {$unit}";
 
                 return $this->documentRow(
+                    context: $context,
                     module: 'stock',
                     type: $type,
                     date: $movement->moved_at ?? $movement->created_at,
                     documentNumber: $movement->invoice_number,
                     supplierName: $movement->supplier_name,
                     amount: $movement->total_cost,
-                    linkedRecord: trim($item . ($category ? " · {$category}" : '') . " · {$quantity} {$unit}"),
+                    linkedRecord: trim($item . ($category ? " · {$category}" : '') . " · {$quantityLabel}"),
                     responsibleName: null,
                     locationName: $movement->location?->name ?? $context['location']->name,
-                    originUrl: route('stock.index')
+                    originUrl: route('stock.index'),
+                    details: [
+                        $this->field('Item/Produto', $item),
+                        $this->field('Categoria', $category),
+                        $this->field('Quantidade', $quantityLabel),
+                        $this->field('Unidade de medida', $unit),
+                        $this->field('Custo unitário', $this->money($movement->unit_cost, 4)),
+                        $this->field('Custo total', $this->money($movement->total_cost)),
+                        $this->field('Fornecedor', $movement->supplier_name),
+                        $this->field('Nota/Documento', $movement->invoice_number),
+                        $this->field('Responsável', null),
+                        $this->field('Data', $this->dateTimeLabel($movement->moved_at ?? $movement->created_at)),
+                    ],
+                    technical: $this->technicalFields($context, 'stock_movements', StockMovement::class, $movement->id),
+                    notes: $movement->description
                 );
             });
     }
@@ -230,23 +278,38 @@ class FiscalDocumentIndexService
                     $entry->model,
                     $entry->size,
                 ]);
+                $tireDescription = count($parts) ? implode(' · ', $parts) : 'Pneu sem marca/modelo/medida informados';
 
                 return $this->documentRow(
+                    context: $context,
                     module: 'tires',
                     type: 'tire_entry',
                     date: $entry->entry_date,
                     documentNumber: $entry->invoice_number,
                     supplierName: $entry->supplier_name,
                     amount: $entry->total_cost,
-                    linkedRecord: 'Entrada de ' . (int) $entry->quantity . ' pneu(s)' . (count($parts) ? ' · ' . implode(' · ', $parts) : ''),
+                    linkedRecord: 'Entrada de ' . (int) $entry->quantity . ' pneu(s)' . (count($parts) ? ' · ' . $tireDescription : ''),
                     responsibleName: $entry->creator?->name,
                     locationName: $entry->location?->name ?? $context['location']->name,
-                    originUrl: route('workshop.tires.index')
+                    originUrl: route('workshop.tires.index'),
+                    details: [
+                        $this->field('Entrada', 'Entrada de pneus'),
+                        $this->field('Quantidade de pneus', (int) $entry->quantity),
+                        $this->field('Marca/Modelo/Medida', $tireDescription),
+                        $this->field('Fornecedor', $entry->supplier_name),
+                        $this->field('Nota/Documento', $entry->invoice_number),
+                        $this->field('Valor', $this->money($entry->total_cost)),
+                        $this->field('Responsável', $entry->creator?->name),
+                        $this->field('Data', $this->dateTimeLabel($entry->entry_date)),
+                    ],
+                    technical: $this->technicalFields($context, 'tire_entries', TireEntry::class, $entry->id),
+                    notes: $entry->notes
                 );
             });
     }
 
     private function documentRow(
+        array $context,
         string $module,
         string $type,
         mixed $date,
@@ -256,25 +319,35 @@ class FiscalDocumentIndexService
         string $linkedRecord,
         ?string $responsibleName,
         string $locationName,
-        string $originUrl
+        string $originUrl,
+        array $details = [],
+        array $technical = [],
+        mixed $notes = null
     ): array {
         $documentNumber = trim((string) ($documentNumber ?? ''));
         $supplierName = trim((string) ($supplierName ?? ''));
+        $date = $date ? Carbon::parse($date) : null;
 
         $row = [
             'module' => $module,
             'module_label' => $this->modules()[$module] ?? ucfirst($module),
             'type' => $type,
             'type_label' => $this->types()[$type] ?? ucfirst(str_replace('_', ' ', $type)),
-            'date' => $date ? Carbon::parse($date) : null,
+            'date' => $date,
+            'date_label' => $this->dateTimeLabel($date),
             'document_number' => $documentNumber !== '' ? $documentNumber : 'Não informado',
             'has_document' => $documentNumber !== '',
             'supplier_name' => $supplierName !== '' ? $supplierName : 'Não informado',
             'amount' => $amount !== null ? (float) $amount : null,
+            'amount_label' => $this->money($amount),
             'linked_record' => $linkedRecord,
             'responsible_name' => $responsibleName ?: 'Não informado',
             'location_name' => $locationName,
+            'division_name' => $context['division']->name ?? 'Não informado',
             'origin_url' => $originUrl,
+            'details' => collect($details)->filter(fn (array $field) => $field['value'] !== '')->values()->all(),
+            'technical_fields' => collect($technical)->filter(fn (array $field) => $field['value'] !== '')->values()->all(),
+            'notes' => $this->displayValue($notes),
         ];
 
         $row['search_text'] = mb_strtolower(implode(' ', [
@@ -285,6 +358,7 @@ class FiscalDocumentIndexService
             $row['linked_record'],
             $row['responsible_name'],
             $row['location_name'],
+            $row['division_name'],
         ]));
 
         return $row;
@@ -347,8 +421,77 @@ class FiscalDocumentIndexService
         ];
     }
 
+    private function technicalFields(array $context, string $table, string $model, mixed $id): array
+    {
+        return [
+            $this->field('Origem técnica', $table),
+            $this->field('Registro original', '#' . $id),
+            $this->field('Modelo', class_basename($model)),
+            $this->field('Tenant', $context['tenant_id'] ?? null),
+            $this->field('Divisão', $context['division']->id ?? null),
+            $this->field('Unidade', $context['location']->id ?? null),
+        ];
+    }
+
+    private function field(string $label, mixed $value): array
+    {
+        return [
+            'label' => $label,
+            'value' => $this->displayValue($value),
+        ];
+    }
+
+    private function displayValue(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return 'Não informado';
+        }
+
+        return (string) $value;
+    }
+
+    private function money(mixed $value, int $decimals = 2): string
+    {
+        if ($value === null || $value === '') {
+            return 'Não informado';
+        }
+
+        return 'R$ ' . number_format((float) $value, $decimals, ',', '.');
+    }
+
     private function liters(mixed $value): string
     {
+        if ($value === null || $value === '') {
+            return 'Não informado';
+        }
+
         return number_format((float) $value, 2, ',', '.') . ' L';
+    }
+
+    private function km(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return 'Não informado';
+        }
+
+        return number_format((float) $value, 0, ',', '.') . ' km';
+    }
+
+    private function hours(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return 'Não informado';
+        }
+
+        return number_format((float) $value, 2, ',', '.') . ' h';
+    }
+
+    private function dateTimeLabel(mixed $value): string
+    {
+        if (! $value) {
+            return 'Não informado';
+        }
+
+        return Carbon::parse($value)->format('d/m/Y H:i');
     }
 }

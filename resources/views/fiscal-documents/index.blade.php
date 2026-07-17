@@ -1,11 +1,31 @@
 @extends('layouts.app')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/pages/fiscal-documents.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/pages/fiscal-documents.css') }}?v=2">
 @endpush
 
 @section('content')
-    <div class="fiscal-documents-page">
+    <div
+        class="fiscal-documents-page"
+        x-data="{
+            detailOpen: false,
+            selectedFiscalDocument: null,
+            openFiscalDocument(item) {
+                this.selectedFiscalDocument = item;
+                this.detailOpen = true;
+                this.$nextTick(() => {
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                });
+            },
+            closeFiscalDocument() {
+                this.detailOpen = false;
+                this.selectedFiscalDocument = null;
+            }
+        }"
+        @keydown.escape.window="closeFiscalDocument()"
+    >
         <header class="fiscal-documents-hero">
             <div>
                 <span class="fiscal-kicker">Gestão administrativa</span>
@@ -185,9 +205,14 @@
                                 <td>{{ $document['responsible_name'] }}</td>
                                 <td>{{ $document['location_name'] }}</td>
                                 <td>
-                                    <a href="{{ $document['origin_url'] }}" class="fiscal-row-link">
-                                        Ver origem
-                                    </a>
+                                    <button
+                                        type="button"
+                                        class="fiscal-row-link"
+                                        @click='openFiscalDocument(@json($document))'
+                                    >
+                                        <i data-lucide="eye"></i>
+                                        Ver detalhes
+                                    </button>
                                 </td>
                             </tr>
                         @empty
@@ -208,5 +233,115 @@
                 </table>
             </div>
         </section>
+
+        <div
+            x-cloak
+            x-show="detailOpen"
+            x-transition.opacity
+            class="fiscal-detail-backdrop"
+            @click.self="closeFiscalDocument()"
+        >
+            <article
+                x-show="detailOpen"
+                x-transition
+                class="fiscal-detail-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="fiscal-detail-title"
+            >
+                <button type="button" class="fiscal-detail-close" @click="closeFiscalDocument()" aria-label="Fechar detalhes">
+                    <i data-lucide="x"></i>
+                </button>
+
+                <template x-if="selectedFiscalDocument">
+                    <div class="fiscal-detail-content">
+                        <header class="fiscal-detail-header">
+                            <div>
+                                <span class="fiscal-kicker" x-text="selectedFiscalDocument.module_label"></span>
+                                <h2 id="fiscal-detail-title" x-text="selectedFiscalDocument.document_number"></h2>
+                                <p>
+                                    <span x-text="selectedFiscalDocument.type_label"></span>
+                                    <span> · </span>
+                                    <span x-text="selectedFiscalDocument.date_label"></span>
+                                </p>
+                            </div>
+
+                            <span class="fiscal-detail-location" x-text="selectedFiscalDocument.location_name"></span>
+                        </header>
+
+                        <section class="fiscal-detail-summary">
+                            <div>
+                                <span>Fornecedor/Posto/Prestador</span>
+                                <strong x-text="selectedFiscalDocument.supplier_name"></strong>
+                            </div>
+                            <div>
+                                <span>Valor</span>
+                                <strong x-text="selectedFiscalDocument.amount_label"></strong>
+                            </div>
+                            <div>
+                                <span>Responsável pelo lançamento</span>
+                                <strong x-text="selectedFiscalDocument.responsible_name"></strong>
+                            </div>
+                            <div>
+                                <span>Divisão</span>
+                                <strong x-text="selectedFiscalDocument.division_name"></strong>
+                            </div>
+                            <div class="full">
+                                <span>Registro vinculado</span>
+                                <strong x-text="selectedFiscalDocument.linked_record"></strong>
+                            </div>
+                        </section>
+
+                        <section class="fiscal-detail-section">
+                            <div class="fiscal-detail-section-title">
+                                <i data-lucide="file-text"></i>
+                                <h3>Detalhes do lançamento</h3>
+                            </div>
+
+                            <div class="fiscal-detail-grid">
+                                <template x-for="field in selectedFiscalDocument.details" :key="field.label">
+                                    <div class="fiscal-detail-field">
+                                        <span x-text="field.label"></span>
+                                        <strong x-text="field.value"></strong>
+                                    </div>
+                                </template>
+                            </div>
+                        </section>
+
+                        <template x-if="selectedFiscalDocument.notes && selectedFiscalDocument.notes !== 'Não informado'">
+                            <section class="fiscal-detail-notes">
+                                <span>Observações</span>
+                                <p x-text="selectedFiscalDocument.notes"></p>
+                            </section>
+                        </template>
+
+                        <details class="fiscal-technical-details">
+                            <summary>Detalhes técnicos</summary>
+                            <div class="fiscal-technical-grid">
+                                <template x-for="field in selectedFiscalDocument.technical_fields" :key="field.label">
+                                    <div>
+                                        <span x-text="field.label"></span>
+                                        <strong x-text="field.value"></strong>
+                                    </div>
+                                </template>
+                            </div>
+                        </details>
+
+                        <footer class="fiscal-detail-actions">
+                            <button type="button" class="fiscal-button secondary" @click="closeFiscalDocument()">
+                                Fechar
+                            </button>
+
+                            <template x-if="selectedFiscalDocument.origin_url">
+                                <a class="fiscal-button secondary" :href="selectedFiscalDocument.origin_url">
+                                    <i data-lucide="external-link"></i>
+                                    Abrir origem
+                                </a>
+                            </template>
+                        </footer>
+                    </div>
+                </template>
+            </article>
+        </div>
     </div>
 @endsection
