@@ -8,6 +8,7 @@
 @endpush
 
 @section('content')
+@php($maintenancePermissions = $maintenancePermissions ?? [])
 
 <div
     class="maintenance-index-page maintenance-details-page"
@@ -87,7 +88,8 @@
 
         <div class="maintenance-details-actions">
 
-            <a
+            @if($maintenancePermissions['export_pdf'] ?? false)
+<a
                 href="{{ route(
                     'vehicles.maintenance.order.pdf',
                     [$vehicle->id, $maintenance->id]
@@ -98,13 +100,15 @@
                 <i data-lucide="file-text"></i>
                 PDF da ordem
             </a>
+@endif
 
             @if(
                 $canManageMaintenance
                 && $maintenance->workflow_status === 'closed'
                 && ! $maintenance->cancelled_at
             )
-                <button
+                @if($maintenancePermissions['reopen'] ?? false)
+<button
                     type="button"
                     class="chm-page-button maintenance-reopen-button"
                     @click="reopenModal = true"
@@ -112,8 +116,10 @@
                     <i data-lucide="rotate-ccw"></i>
                     Reabrir
                 </button>
+@endif
 
-                <button
+                @if($maintenancePermissions['delete'] ?? false)
+<button
                     type="button"
                     class="chm-page-button maintenance-delete-button"
                     @click="deleteModal = true"
@@ -121,6 +127,7 @@
                     <i data-lucide="trash-2"></i>
                     Apagar
                 </button>
+@endif
             @endif
 
         </div>
@@ -141,12 +148,12 @@
         <div>
             <span>Custo total</span>
             <strong>
-                R$ {{ number_format(
+                @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format(
                     $maintenance->total_cost ?? 0,
                     2,
                     ',',
                     '.'
-                ) }}
+                ) }}@else Valor restrito @endif
             </strong>
         </div>
 
@@ -204,12 +211,12 @@
                         </div>
 
                         <div class="maintenance-open-item-cost">
-                            R$ {{ number_format(
+                            @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format(
                                 $item->total_cost ?? 0,
                                 2,
                                 ',',
                                 '.'
-                            ) }}
+                            ) }}@else Valor restrito @endif
                         </div>
 
                     </div>
@@ -331,7 +338,8 @@
                 de indisponibilidade será iniciado.
             </p>
 
-            <form
+            @if($maintenancePermissions['reopen'] ?? false)
+<form
                 method="POST"
                 action="{{ route(
                     'vehicles.maintenance.reopen',
@@ -373,6 +381,7 @@
                 </div>
 
             </form>
+@endif
 
         </div>
     </div>
@@ -392,7 +401,8 @@
                 movimentos de estoque e registros de auditoria serão preservados.
             </p>
 
-            <form
+            @if($maintenancePermissions['delete'] ?? false)
+<form
                 method="POST"
                 action="{{ route(
                     'vehicles.maintenance.destroy',
@@ -434,6 +444,7 @@
                 </div>
 
             </form>
+@endif
 
         </div>
     </div>
