@@ -5,6 +5,12 @@
 @endpush
 
 @section('content')
+    @php
+        $fiscalDocumentPermissions = $fiscalDocumentPermissions ?? [];
+        $canViewFiscalDetails = $fiscalDocumentPermissions['fiscal_documents.view_details'] ?? true;
+        $canOpenFiscalOrigin = $fiscalDocumentPermissions['fiscal_documents.open_origin'] ?? true;
+        $canViewFiscalValues = $fiscalDocumentPermissions['fiscal_documents.view_values'] ?? true;
+    @endphp
     <div
         class="fiscal-documents-page"
         x-data="{
@@ -129,7 +135,13 @@
 
             <article class="fiscal-summary-card">
                 <span>Valor vinculado</span>
-                <strong>R$ {{ number_format($summary['total_amount'], 2, ',', '.') }}</strong>
+                <strong>
+                    @if($canViewFiscalValues)
+                        R$ {{ number_format($summary['total_amount'] ?? 0, 2, ',', '.') }}
+                    @else
+                        Restrito
+                    @endif
+                </strong>
                 <small>Referência operacional</small>
             </article>
 
@@ -196,23 +208,29 @@
                                 <td>{{ $document['supplier_name'] }}</td>
                                 <td class="fiscal-linked-record">{{ $document['linked_record'] }}</td>
                                 <td>
-                                    @if($document['amount'] !== null)
+                                    @if(! $canViewFiscalValues)
+                                        <span class="fiscal-muted">Restrito</span>
+                                    @elseif($document['amount'] !== null)
                                         R$ {{ number_format($document['amount'], 2, ',', '.') }}
                                     @else
-                                        <span class="fiscal-muted">Não informado</span>
+                                        <span class="fiscal-muted">NÃ£o informado</span>
                                     @endif
                                 </td>
                                 <td>{{ $document['responsible_name'] }}</td>
                                 <td>{{ $document['location_name'] }}</td>
                                 <td>
-                                    <button
-                                        type="button"
-                                        class="fiscal-row-link"
-                                        @click='openFiscalDocument(@json($document))'
-                                    >
-                                        <i data-lucide="eye"></i>
-                                        Ver detalhes
-                                    </button>
+                                    @if($canViewFiscalDetails)
+                                        <button
+                                            type="button"
+                                            class="fiscal-row-link"
+                                            @click='openFiscalDocument(@json($document))'
+                                        >
+                                            <i data-lucide="eye"></i>
+                                            Ver detalhes
+                                        </button>
+                                    @else
+                                        <span class="fiscal-muted">Detalhes restritos</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -332,12 +350,14 @@
                                 Fechar
                             </button>
 
-                            <template x-if="selectedFiscalDocument.origin_url">
-                                <a class="fiscal-button secondary" :href="selectedFiscalDocument.origin_url">
-                                    <i data-lucide="external-link"></i>
-                                    Abrir origem
-                                </a>
-                            </template>
+                            @if($canOpenFiscalOrigin)
+                                <template x-if="selectedFiscalDocument.origin_url">
+                                    <a class="fiscal-button secondary" :href="selectedFiscalDocument.origin_url">
+                                        <i data-lucide="external-link"></i>
+                                        Abrir origem
+                                    </a>
+                                </template>
+                            @endif
                         </footer>
                     </div>
                 </template>

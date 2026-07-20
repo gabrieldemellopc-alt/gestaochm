@@ -6,6 +6,11 @@
 
 @section('content')
 @php
+    $reportPermissions = $reportPermissions ?? [];
+    $canExportReportPdf = $reportPermissions['reports.export_pdf'] ?? true;
+    $canExportReportExcel = $reportPermissions['reports.export_excel'] ?? true;
+@endphp
+@php
     $filters = $applied_filters;
     $formatDate = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y') : '-';
     $number = fn ($value, $decimals = 0) => $value !== null ? number_format((float) $value, $decimals, ',', '.') : '-';
@@ -61,7 +66,8 @@
             </a>
     
             @if($isValid && $vehicle)
-                <a
+@if($canExportReportPdf)
+<a
                     href="{{ route('reports.vehicle-dossier.pdf', request()->query()) }}"
                     class="dossier-hero-button primary"
                     target="_blank"
@@ -70,6 +76,7 @@
                     <i data-lucide="file-text"></i>
                     Gerar PDF
                 </a>
+@endif
             @endif
         </div>
     </div>

@@ -7,6 +7,7 @@ use App\Models\SystemAuditLog;
 use App\Models\User;
 use App\Models\UserDivisionAccess;
 use App\Services\ActiveContextService;
+use App\Services\Permissions\ProfilePermissionService;
 use App\Support\AuditLogPresenter;
 use App\Support\ChmLabel;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class AuditLogController extends Controller
     public function index(Request $request)
     {
         Gate::authorize('viewAuditLogs');
+        $this->authorizeAuditPermission('audit.view');
 
         $user = $request->user();
         $activeContext = app(ActiveContextService::class);
@@ -141,12 +143,38 @@ class AuditLogController extends Controller
             'moduleLabels' => $modules
                 ->mapWithKeys(fn ($module) => [$module => ChmLabel::for('audit_module', $module)])
                 ->all(),
+            'auditPermissions' => $this->auditPermissions(),
             'actionLabels' => $actions
                 ->mapWithKeys(fn ($action) => [$action => ChmLabel::for('audit_action', $action)])
                 ->all(),
         ]);
     }
 
+
+    private function authorizeAuditPermission(string $permissionKey): void
+    {
+        abort_unless($this->canAuditPermission($permissionKey), 403);
+    }
+
+    private function canAuditPermission(string $permissionKey): bool
+    {
+        return app(ProfilePermissionService::class)->allows(request()->user(), $permissionKey, [
+            'module' => 'fleet',
+        ]);
+    }
+
+    private function auditPermissions(): array
+    {
+        $keys = [
+            'audit.view',
+            'audit.view_details',
+            'audit.view_technical_details',
+        ];
+
+        return collect($keys)
+            ->mapWithKeys(fn (string $key) => [$key => $this->canAuditPermission($key)])
+            ->all();
+    }
     private function auditLocationsFor(User $user, int $divisionId)
     {
         $accesses = UserDivisionAccess::query()

@@ -6,6 +6,11 @@
 
 @section('content')
 @php
+    $reportPermissions = $reportPermissions ?? [];
+    $canExportReportPdf = $reportPermissions['reports.export_pdf'] ?? true;
+    $canExportReportExcel = $reportPermissions['reports.export_excel'] ?? true;
+@endphp
+@php
     $statusLabels = [
         'available' => 'Disponivel',
         'installed' => 'Instalado',
@@ -33,12 +38,16 @@
             <a href="{{ route('reports.tires.full', $currentQuery) }}" class="report-module-button">
                 Visualizar relatorio completo
             </a>
-            <a href="{{ route('reports.tires.export.pdf', $currentQuery) }}" class="report-module-button secondary">
+@if($canExportReportPdf)
+<a href="{{ route('reports.tires.export.pdf', $currentQuery) }}" class="report-module-button secondary">
                 Exportar PDF
             </a>
-            <a href="{{ route('reports.tires.export.excel', $currentQuery) }}" class="report-module-button secondary">
+@endif
+@if($canExportReportExcel)
+<a href="{{ route('reports.tires.export.excel', $currentQuery) }}" class="report-module-button secondary">
                 Exportar Excel
             </a>
+@endif
         </div>
     </div>
 

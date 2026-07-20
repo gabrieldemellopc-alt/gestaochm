@@ -547,7 +547,7 @@
 
 
 
-        @if($sidebarCanPermission('navigation.reports'))
+        @if($sidebarCanPermission('navigation.reports') || $sidebarCanPermission('reports.view'))
         {{-- RELATÓRIOS --}}
 
         <a
@@ -584,7 +584,7 @@
         @endif
 
 
-        @if(userHasProfile('manager') || userHasProfile('admin'))
+        @if((userHasProfile('manager') || userHasProfile('admin') || userHasProfile('supervisor')) && ($sidebarCanPermission('navigation.fiscal_documents') || $sidebarCanPermission('fiscal_documents.view')))
 
             {{-- NOTAS FISCAIS --}}
 
@@ -635,6 +635,7 @@
 
         @endif
         @can('viewAuditLogs')
+            @if($sidebarCanPermission('navigation.audit') || $sidebarCanPermission('audit.view'))
 
             {{-- AUDITORIA --}}
 
@@ -664,6 +665,7 @@
 
             </a>
 
+                    @endif
         @endcan
 
 

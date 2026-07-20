@@ -8,6 +8,7 @@ use App\Models\StockMovement;
 use App\Models\TireEntry;
 use App\Models\User;
 use App\Services\Reports\ReportContextService;
+use App\Services\Permissions\ProfilePermissionService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -81,11 +82,9 @@ class FiscalDocumentIndexService
 
     private function authorize(User $user): void
     {
-        $allowed = ((int) $user->id === 1)
-            || userHasProfile('admin')
-            || userHasProfile('manager');
-
-        abort_unless($allowed, 403);
+        abort_unless(app(ProfilePermissionService::class)->allows($user, 'fiscal_documents.view', [
+            'module' => 'fleet',
+        ]), 403);
     }
 
     private function normalizeFilters(array $filters): array

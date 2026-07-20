@@ -10,6 +10,11 @@
 @endpush
 
 @section('content')
+@php
+    $auditPermissions = $auditPermissions ?? [];
+    $canViewAuditDetails = $auditPermissions['audit.view_details'] ?? true;
+    $canViewAuditTechnicalDetails = $auditPermissions['audit.view_technical_details'] ?? true;
+@endphp
 <div class="audit-page">
     <header class="audit-header">
         <div>
@@ -151,18 +156,23 @@
                         {{ $event['location_label'] }}
                     </small>
 
-                    <button type="button" class="audit-detail-button" @click="open = true">
-                        Ver detalhes
-                    </button>
+                    @if($canViewAuditDetails)
+                        <button type="button" class="audit-detail-button" @click="open = true">
+                            Ver detalhes
+                        </button>
+                    @else
+                        <span class="audit-empty-inline">Detalhes restritos</span>
+                    @endif
                 </div>
 
-                <div
-                    class="audit-modal-backdrop"
-                    x-show="open"
-                    x-cloak
-                    x-transition.opacity
-                    @click.self="open = false"
-                >
+                @if($canViewAuditDetails)
+                    <div
+                        class="audit-modal-backdrop"
+                        x-show="open"
+                        x-cloak
+                        x-transition.opacity
+                        @click.self="open = false"
+                    >
                     <div
                         class="audit-modal"
                         role="dialog"
@@ -255,7 +265,8 @@
                                 </section>
                             @endif
 
-                            <details class="audit-technical-details">
+                            @if($canViewAuditTechnicalDetails)
+                                <details class="audit-technical-details">
                                 <summary>
                                     <span>Detalhes técnicos</span>
                                     <small>IDs, origem e payload bruto</small>
@@ -280,6 +291,8 @@
                         </div>
                     </div>
                 </div>
+                    </div>
+                @endif
             </article>
         @empty
             <div class="audit-empty">

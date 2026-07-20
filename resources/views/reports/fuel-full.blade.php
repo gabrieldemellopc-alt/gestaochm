@@ -6,6 +6,11 @@
 
 @section('content')
 @php
+    $reportPermissions = $reportPermissions ?? [];
+    $canExportReportPdf = $reportPermissions['reports.export_pdf'] ?? true;
+    $canExportReportExcel = $reportPermissions['reports.export_excel'] ?? true;
+@endphp
+@php
     $filters = $applied_filters;
     $formatDate = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y') : '-';
     $formatDateTime = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y H:i') : '-';
@@ -65,12 +70,16 @@
             <a href="{{ route('reports.fuel.index', request()->query()) }}" class="report-module-button secondary">
                 Voltar ao painel
             </a>
-            <a href="{{ route('reports.fuel.export-pdf', request()->query()) }}" class="report-module-button secondary">
+@if($canExportReportPdf)
+<a href="{{ route('reports.fuel.export-pdf', request()->query()) }}" class="report-module-button secondary">
                 Exportar PDF
             </a>
-            <a href="{{ route('reports.fuel.export-excel', request()->query()) }}" class="report-module-button secondary">
+@endif
+@if($canExportReportExcel)
+<a href="{{ route('reports.fuel.export-excel', request()->query()) }}" class="report-module-button secondary">
                 Exportar Excel
             </a>
+@endif
         </div>
     </div>
 

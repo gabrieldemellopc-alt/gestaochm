@@ -1097,7 +1097,7 @@ Route::middleware('auth')->group(function () {
 
             'module:fleet',
 
-            'profile:manager',
+            'profile:supervisor,manager',
 
         ])
 

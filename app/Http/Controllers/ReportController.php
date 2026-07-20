@@ -16,6 +16,7 @@ use App\Services\Reports\ReportContextService;
 use App\Services\Reports\StockReportService;
 use App\Services\Reports\TireReportService;
 use App\Services\Reports\VehicleDossierReportService;
+use App\Services\Permissions\ProfilePermissionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,6 +32,8 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorizeReportPermission('reports.view');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -122,6 +125,8 @@ class ReportController extends Controller
             ->orderBy('provider_name')
             ->pluck('provider_name');
 
+        $reportPermissions = $this->reportPermissions();
+
         return view('reports.index', compact(
             'vehicles',
             'maintenanceCount30',
@@ -138,12 +143,15 @@ class ReportController extends Controller
             'maintenancePreview',
             'reportVehicles',
             'procedures',
-            'providers'
+            'providers',
+            'reportPermissions'
         ));
     }
 
     public function exportMaintenance(Request $request)
     {
+        $this->authorizeReportPermission('reports.maintenance', 'reports.export_pdf');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -167,6 +175,8 @@ class ReportController extends Controller
 
     public function exportMaintenanceExcel(Request $request)
     {
+        $this->authorizeReportPermission('reports.maintenance', 'reports.export_excel');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -183,39 +193,56 @@ class ReportController extends Controller
 
     public function tires(Request $request, TireReportService $tireReport)
     {
+        $this->authorizeReportPermission('reports.tires');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
             return $this->missingActiveContextRedirect();
         }
 
-        return view('reports.tires', $tireReport->build($context, $request));
+        return view('reports.tires', [
+            ...$tireReport->build($context, $request),
+            'reportPermissions' => $this->reportPermissions(),
+        ]);
     }
 
     public function fuel(Request $request, FuelReportService $fuelReport)
     {
+        $this->authorizeReportPermission('reports.fuel');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
             return $this->missingActiveContextRedirect();
         }
 
-        return view('reports.fuel', $fuelReport->build($request->query(), $context));
+        return view('reports.fuel', [
+            ...$fuelReport->build($request->query(), $context),
+            'reportPermissions' => $this->reportPermissions(),
+        ]);
     }
 
     public function stock(Request $request, StockReportService $stockReport)
     {
+        $this->authorizeReportPermission('reports.stock');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
             return $this->missingActiveContextRedirect();
         }
 
-        return view('reports.stock', $stockReport->build($request->query(), $context));
+        return view('reports.stock', [
+            ...$stockReport->build($request->query(), $context),
+            'reportPermissions' => $this->reportPermissions(),
+        ]);
     }
 
     public function vehicleDossier(Request $request, VehicleDossierReportService $vehicleDossier)
     {
+        $this->authorizeReportPermission('reports.vehicle_dossier');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -235,17 +262,24 @@ class ReportController extends Controller
 
     public function stockFull(Request $request, StockReportService $stockReport)
     {
+        $this->authorizeReportPermission('reports.stock');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
             return $this->missingActiveContextRedirect();
         }
 
-        return view('reports.stock-full', $stockReport->build($request->query(), $context));
+        return view('reports.stock-full', [
+            ...$stockReport->build($request->query(), $context),
+            'reportPermissions' => $this->reportPermissions(),
+        ]);
     }
 
     public function exportStockPdf(Request $request, StockReportService $stockReport)
     {
+        $this->authorizeReportPermission('reports.stock', 'reports.export_pdf');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -260,6 +294,8 @@ class ReportController extends Controller
 
     public function exportStockExcel(Request $request, StockReportService $stockReport)
     {
+        $this->authorizeReportPermission('reports.stock', 'reports.export_excel');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -274,17 +310,24 @@ class ReportController extends Controller
 
     public function fuelFull(Request $request, FuelReportService $fuelReport)
     {
+        $this->authorizeReportPermission('reports.fuel');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
             return $this->missingActiveContextRedirect();
         }
 
-        return view('reports.fuel-full', $fuelReport->build($request->query(), $context));
+        return view('reports.fuel-full', [
+            ...$fuelReport->build($request->query(), $context),
+            'reportPermissions' => $this->reportPermissions(),
+        ]);
     }
 
     public function exportFuelPdf(Request $request, FuelReportService $fuelReport)
     {
+        $this->authorizeReportPermission('reports.fuel', 'reports.export_pdf');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -299,6 +342,8 @@ class ReportController extends Controller
 
     public function exportFuelExcel(Request $request, FuelReportService $fuelReport)
     {
+        $this->authorizeReportPermission('reports.fuel', 'reports.export_excel');
+
         $context = $this->reportContext->resolve();
 
         if (! $context) {
@@ -313,6 +358,8 @@ class ReportController extends Controller
 
     public function tiresFull(Request $request, TireReportService $tireReport)
     {
+        $this->authorizeReportPermission('reports.tires');
+
         $request->merge(['full_report' => true]);
 
         $context = $this->reportContext->resolve();
@@ -321,11 +368,16 @@ class ReportController extends Controller
             return $this->missingActiveContextRedirect();
         }
 
-        return view('reports.tires-full', $tireReport->build($context, $request));
+        return view('reports.tires-full', [
+            ...$tireReport->build($context, $request),
+            'reportPermissions' => $this->reportPermissions(),
+        ]);
     }
 
     public function exportTiresPdf(Request $request, TireReportService $tireReport)
     {
+        $this->authorizeReportPermission('reports.tires', 'reports.export_pdf');
+
         $request->merge(['full_report' => true]);
 
         $context = $this->reportContext->resolve();
@@ -342,6 +394,8 @@ class ReportController extends Controller
 
     public function exportTiresExcel(Request $request, TireReportService $tireReport)
     {
+        $this->authorizeReportPermission('reports.tires', 'reports.export_excel');
+
         $request->merge(['full_report' => true]);
 
         $context = $this->reportContext->resolve();
@@ -356,6 +410,41 @@ class ReportController extends Controller
         );
     }
 
+
+    private function authorizeReportPermission(string $permissionKey, ?string $exportPermissionKey = null): void
+    {
+        abort_unless($this->canReportPermission($permissionKey), 403);
+
+        if ($exportPermissionKey) {
+            abort_unless($this->canReportPermission($exportPermissionKey), 403);
+        }
+    }
+
+    private function canReportPermission(string $permissionKey): bool
+    {
+        return app(ProfilePermissionService::class)->allows(request()->user(), $permissionKey, [
+            'module' => 'fleet',
+        ]);
+    }
+
+    private function reportPermissions(): array
+    {
+        $keys = [
+            'reports.view',
+            'reports.vehicle_dossier',
+            'reports.maintenance',
+            'reports.fuel',
+            'reports.stock',
+            'reports.tires',
+            'reports.export_pdf',
+            'reports.export_excel',
+            'reports.view_costs',
+        ];
+
+        return collect($keys)
+            ->mapWithKeys(fn (string $key) => [$key => $this->canReportPermission($key)])
+            ->all();
+    }
     private function buildMaintenanceReportData(Request $request, array $context, bool $full = true): array
     {
         $filters = $this->maintenanceFilters($request, $context);
