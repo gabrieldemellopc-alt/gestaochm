@@ -91,10 +91,13 @@ return [
             'permissions' => [
                 'tires.view' => ['label' => 'Ver pneus', 'default' => ['supervisor' => true]],
                 'tires.entry' => ['label' => 'Registrar entrada', 'default' => ['supervisor' => true]],
+                'tires.manage_inventory' => ['label' => 'Gerenciar cadastro/inventario', 'default' => ['supervisor' => false]],
                 'tires.install' => ['label' => 'Instalar pneu', 'default' => ['supervisor' => true]],
                 'tires.measure' => ['label' => 'Registrar medição', 'default' => ['supervisor' => true]],
+                'tires.remove' => ['label' => 'Retirar pneu do veiculo', 'default' => ['supervisor' => true]],
                 'tires.retread' => ['label' => 'Registrar recapagem', 'default' => ['supervisor' => true]],
                 'tires.cancel' => ['label' => 'Cancelar registros de pneus', 'default' => ['supervisor' => true]],
+                'tires.view_costs' => ['label' => 'Ver custos de pneus', 'default' => ['supervisor' => true]],
             ],
         ],
 

@@ -21,6 +21,22 @@
 @endpush
 
 @section('content')
+
+@php
+    $tirePermissions = array_merge([
+        'view' => false,
+        'create_entry' => false,
+        'install' => false,
+        'remove' => false,
+        'measure' => false,
+        'retread' => false,
+        'cancel' => false,
+        'view_costs' => false,
+        'manage_inventory' => false,
+    ], $tirePermissions ?? []);
+
+    $canCancelTireRecords = (bool) $tirePermissions['cancel'];
+@endphp
 <div class="workshop-tire-history-page">
     <header class="tire-history-header">
         <div>
@@ -178,7 +194,7 @@
                                 </p>
                             @endif
 
-                            @can('cancelTireRecords')
+                            @if($canCancelTireRecords)
                                 @if(! ($event['is_cancelled'] ?? false) && in_array($event['type'], ['measurement', 'retread'], true))
                                     <form
                                         method="POST"
@@ -205,7 +221,7 @@
                                         </button>
                                     </form>
                                 @endif
-                            @endcan
+                            @endif
                         </div>
                     </article>
                 @endforeach
