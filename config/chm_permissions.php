@@ -75,6 +75,8 @@ return [
             'description' => 'Permissões para movimentações, consumo e visualização de custos de estoque.',
             'permissions' => [
                 'stock.view' => ['label' => 'Ver estoque', 'default' => ['supervisor' => true]],
+                'stock.manage_categories' => ['label' => 'Gerenciar categorias', 'default' => ['supervisor' => false]],
+                'stock.manage_items' => ['label' => 'Gerenciar itens', 'default' => ['supervisor' => false]],
                 'stock.entry' => ['label' => 'Registrar entrada', 'default' => ['supervisor' => true]],
                 'stock.manual_output' => ['label' => 'Registrar saída manual', 'default' => ['supervisor' => true]],
                 'stock.consume_maintenance' => ['label' => 'Consumir em manutenção', 'default' => ['supervisor' => true]],

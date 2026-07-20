@@ -1,1 +1,3151 @@
-@extends('layouts.app')@push('styles')<link    rel="stylesheet"    href="{{ asset('css/pages/stock.css') }}?v=3">@endpush@section('content')<div class="stock-page">    {{-- HEADER --}}    {{-- HEADER --}}    <div class="stock-header stock-header-modern">            <div>                <span class="stock-kicker">                Oficina / Estoque            </span>                <h1>                Estoque            </h1>                <p>                Controle de categorias, itens e movimentações operacionais da oficina.            </p>            </div>            <div class="stock-header-actions">                <a                href="{{ route('workshop.index') }}"                class="chm-page-button secondary"            >                <i data-lucide="arrow-left"></i>                Voltar para oficina            </a>                <button                type="button"                class="chm-page-button primary"                onclick="openCategoryModal()"            >                <i data-lucide="plus"></i>                Nova categoria            </button>            </div>        </div>    {{-- RESUMO --}}    <div class="stock-summary-grid">        <div class="stock-summary-card">            <div class="stock-summary-icon">                <i data-lucide="boxes"></i>            </div>            <div>                <span>                    Categorias                </span>                <strong>                    {{ $categories->count() }}                </strong>            </div>        </div>        <div class="stock-summary-card">            <div class="stock-summary-icon">                <i data-lucide="package"></i>            </div>            <div>                <span>                    Itens cadastrados                </span>                <strong>                    {{ $categories->sum(fn($category) => $category->items->count()) }}                </strong>            </div>        </div>        <div class="stock-summary-card warning">            <div class="stock-summary-icon">                <i data-lucide="triangle-alert"></i>            </div>            <div>                <span>                    Atenção no estoque                </span>                <strong>                    {{                        $categories->sum(function ($category) {                            return $category->items->whereIn('stock_status', ['warning', 'danger'])->count();                        })                    }}                </strong>            </div>        </div>    </div>    {{-- CATEGORIAS --}}    <div class="stock-wrapper">        @forelse($categories as $category)            <div class="stock-category-card">                <div class="stock-category-header">                    <div class="stock-category-title">                        <div class="stock-category-icon">                            <i data-lucide="folder-kanban"></i>                        </div>                        <div>                            <h2>                                {{ $category->name }}                            </h2>                            <span>                                {{ $category->items->count() }}                                item(ns) cadastrado(s)                            </span>                        </div>                    </div>                    <button                        type="button"                        class="stock-add-item-btn"                        onclick="                            openItemModal(                                {{ $category->id }},                                '{{ $category->name }}'                            )                        "                    >                        <i data-lucide="plus"></i>                        Novo item                    </button>                </div>                <div class="stock-items-grid">                    @forelse($category->items as $item)                        <div                            class="                                stock-item-card                                {{ $item->stock_status }}                            "                            onclick="openEditItemModal({{ $item->id }})"                        >                            <div class="stock-item-top">                                <div class="stock-item-icon">                                    <i data-lucide="package"></i>                                </div>                                <div>                                    <h3>                                        {{ $item->name }}                                    </h3>                                    <span>                                        {{ $item->brand ?: 'Sem marca' }}                                    </span>                                </div>                            </div>                            <div class="stock-item-values stock-item-values-clean">                                                            <div>                                    <span>Estoque atual</span>                                    <strong>                                        {{ number_format($item->quantity, 2, ',', '.') }}                                        {{ $item->unit }}                                    </strong>                                    <small>                                        Mínimo {{ number_format($item->minimum_quantity, 2, ',', '.') }}                                    </small>                                </div>                                                            <div>                                    <span>Custo médio</span>                                    <strong>                                        R$ {{ number_format($item->unit_cost, 2, ',', '.') }}                                    </strong>                                    <small>                                    Por {{ $item->unit }}                                    </small>                                </div>                                                        </div>                            <div class="stock-item-footer">                                @if($item->stock_status === 'danger')                                    <span class="stock-status-badge danger">                                        <i data-lucide="circle-alert"></i>                                        Crítico                                    </span>                                @elseif($item->stock_status === 'warning')                                    <span class="stock-status-badge warning">                                        <i data-lucide="triangle-alert"></i>                                        Atenção                                    </span>                                @else                                    <span class="stock-status-badge ok">                                        <i data-lucide="check-circle"></i>                                        Adequado                                    </span>                                @endif                                <span class="stock-details-link">                                    Ver detalhes                                    <i data-lucide="chevron-right"></i>                                </span>                            </div>                        </div>                    @empty                        <div class="empty-stock">                            <i data-lucide="package-open"></i>                            <strong>                                Nenhum item nesta categoria                            </strong>                            <p>                                Cadastre itens para controlar entrada, saída e saldo em estoque.                            </p>                            <button                                type="button"                                class="stock-empty-btn"                                onclick="                                    openItemModal(                                        {{ $category->id }},                                        '{{ $category->name }}'                                    )                                "                            >                                <i data-lucide="plus"></i>                                Adicionar item                            </button>                        </div>                    @endforelse                </div>            </div>        @empty            <div class="stock-empty-state">                <i data-lucide="boxes"></i>                <strong>                    Nenhuma categoria cadastrada                </strong>                <p>                    Comece criando uma categoria para organizar seus itens de estoque.                </p>                <button                    type="button"                    class="chm-page-button primary"                    onclick="openCategoryModal()"                >                    <i data-lucide="plus"></i>                    Criar categoria                </button>            </div>        @endforelse    </div></div><div    class="stock-modal-overlay"    id="categoryModal"    style="display:none;">    <div class="stock-category-modal-card">        <button            type="button"            onclick="closeCategoryModal()"            class="stock-modal-close"        >            <i data-lucide="x"></i>        </button>        <div class="stock-modal-header">            <div class="stock-modal-icon">                <i data-lucide="folder-plus"></i>            </div>            <div>                <span>                    Estoque                </span>                <h2>                    Nova categoria                </h2>                <p>                    Organize os itens do estoque por tipo, finalidade ou setor.                </p>            </div>        </div>        <form            method="POST"            action="{{ route('stock.categories.store') }}"            class="stock-modal-form"        >            @csrf            <div class="form-group">                <label>                    Nome da categoria                </label>                <input                    type="text"                    name="name"                    class="form-input"                    placeholder="Ex: Óleos, Filtros, Pneus..."                    required                >            </div>            <div class="stock-modal-actions">                <button                    type="button"                    class="stock-modal-cancel"                    onclick="closeCategoryModal()"                >                    Cancelar                </button>                <button                    class="chm-page-button primary"                    type="submit"                >                    <i data-lucide="save"></i>                    Salvar categoria                </button>            </div>        </form>    </div></div><div    class="stock-modal-overlay"    id="itemModal"    style="display:none;">    <div class="stock-item-modal-card">        <button            type="button"            onclick="closeItemModal()"            class="stock-modal-close"        >            <i data-lucide="x"></i>        </button>        <div class="stock-modal-header">            <div class="stock-modal-icon">                <i data-lucide="package-plus"></i>            </div>            <div>                <span>                    Estoque                </span>                <h2>                    Novo item                </h2>                <p id="itemCategoryName">                    Categoria selecionada                </p>            </div>        </div>        <form            method="POST"            action="{{ route('stock.items.store') }}"            class="stock-modal-form"        >            @csrf            <input                type="hidden"                name="stock_category_id"                id="stock_category_id"            >            <div class="stock-item-modal-grid stock-item-create-grid">                            <div class="form-group">                    <label>Nome do item</label>                    <input                        type="text"                        name="name"                        class="form-input"                        placeholder="Ex: Filtro de combustível"                        required                    >                </div>                            <div class="form-group">                    <label>Marca</label>                    <input                        type="text"                        name="brand"                        class="form-input"                        placeholder="Ex: Shell"                    >                </div>                            <div class="form-group">                    <label>Unidade</label>                    <select name="unit" class="form-input">                        <option value="UNID">Unidade</option>                        <option value="L">Litro</option>                        <option value="KG">KG</option>                    </select>                </div>                            <div class="form-group">                    <label>Estoque mínimo</label>                    <input                        type="number"                        step="0.01"                        min="0"                        name="minimum_quantity"                        class="form-input"                        value="0"                    >                    <small class="stock-field-hint">                        Quando o saldo chegar nesse limite, o sistema exibirá alerta de estoque.                    </small>                </div>                            <div class="form-group full-width">                    <label>Observação</label>                    <textarea                        name="observation"                        class="form-input"                        rows="4"                        placeholder="Informações adicionais sobre o item..."                    ></textarea>                </div>                        </div>            <div class="stock-modal-actions">                <button                    type="button"                    class="stock-modal-cancel"                    onclick="closeItemModal()"                >                    Cancelar                </button>                <button                    class="chm-page-button primary"                    type="submit"                >                    <i data-lucide="save"></i>                    Salvar item                </button>            </div>        </form>    </div></div><div    class="stock-modal-overlay"    id="editItemModal"    style="display:none;">    <div class="stock-edit-item-modal-card">        <div class="stock-edit-modal-layout">            {{-- ESQUERDA --}}            <aside class="stock-edit-sidebar">                <div class="stock-balance-card-new">                    <div class="stock-balance-icon">                        <i data-lucide="package-check"></i>                    </div>                    <span>                        Estoque atual                    </span>                    <h2 id="editStockQuantity">                        0                    </h2>                    <small id="editItemUnitBadge">                        Unidade                    </small>                </div>                <div class="stock-movement-actions-new">                    <button                        type="button"                        class="stock-movement-btn in"                        onclick="openMovementModal('in')"                    >                        <i data-lucide="plus"></i>                        Entrada                    </button>                    <button                        type="button"                        class="stock-movement-btn out"                        onclick="openMovementModal('out')"                    >                        <i data-lucide="minus"></i>                        Saída                    </button>                </div>                <div class="stock-history-card-new">                    <div class="stock-history-header-new">                        <div>                            <span>                                Histórico                            </span>                            <h3>                                Últimas movimentações                            </h3>                        </div>                        <i data-lucide="history"></i>                    </div>                    <div                        id="movementHistory"                        class="stock-movement-history-list"                    >                    </div>                </div>            </aside>            {{-- DIREITA --}}            <section class="stock-edit-content">                <div class="stock-edit-header-new">                    <div class="stock-modal-icon">                        <i data-lucide="package"></i>                    </div>                    <div>                        <span id="editItemCategory">                        </span>                        <h2 id="editItemName">                        </h2>                        <p>                            Detalhes, saldo e movimentações do item em estoque.                        </p>                    </div>                    <div>                    <button                                    type="button"                                    onclick="closeEditItemModal()"                                    class="stock-modal-close"                                >                                    <i data-lucide="x"></i>                                </button>                    </div>                </div>                <div class="stock-edit-actions-top">                    <button                        type="button"                        class="stock-edit-trigger-btn"                        onclick="enableItemEdit()"                        id="editItemBtn"                    >                        <i data-lucide="pencil"></i>                        Editar item                    </button>                </div>                {{-- VISUALIZAÇÃO --}}                <div class="details-view-mode">                    <div class="stock-details-view-grid">                        <div class="stock-detail-card">                            <span>                                Marca                            </span>                            <strong id="viewItemBrand">                            </strong>                        </div>                        <div class="stock-detail-card">                            <span>                                Unidade                            </span>                            <strong id="viewItemUnit">                            </strong>                        </div>                        <div class="stock-detail-card">                            <span>                                Estoque mínimo                            </span>                            <strong id="viewItemMinimum">                            </strong>                        </div>                        <div class="stock-detail-card">                            <span>                                Custo unitário                            </span>                            <strong id="viewItemCost">                            </strong>                        </div>                        <div class="stock-detail-card full-width">                            <span>                                Observações                            </span>                            <p id="viewItemObservation">                            </p>                        </div>                    </div>                </div>                <div id="movementDetailPanel" class="stock-movement-detail-panel" style="display:none;">                    <div class="stock-movement-detail-header">                        <div class="stock-movement-detail-title-row">                            <div id="movementDetailIcon" class="stock-modal-icon movement">                                <i data-lucide="arrow-left-right"></i>                            </div>                                                <div>                                <span>Movimentação selecionada</span>                                <h3 id="movementDetailTitle">Detalhes</h3>                            </div>                        </div>                                            <button type="button" onclick="closeMovementDetailPanel()">                            <i data-lucide="x"></i>                        </button>                    </div>                                    <div class="stock-movement-detail-grid">                        <div>                            <span>Quantidade</span>                            <strong id="movementDetailQuantity">-</strong>                        </div>                                        <div>                            <span>Custo unitário</span>                            <strong id="movementDetailUnitCost">-</strong>                        </div>                                        <div>                            <span>Custo total</span>                            <strong id="movementDetailTotalCost">-</strong>                        </div>                                                <div>                            <span>Data</span>                            <strong id="movementDetailDate">-</strong>                        </div>                                        <div>                            <span>Fornecedor</span>                            <strong id="movementDetailSupplier">-</strong>                        </div>                                        <div>                            <span>Nota fiscal</span>                            <strong id="movementDetailInvoice">-</strong>                        </div>                                        <div>                            <span>Status</span>                            <strong id="movementDetailStatus">-</strong>                        </div>                                        <div class="span-2">                            <span>Descrição / motivo</span>                            <p id="movementDetailDescription">-</p>                        </div>                                        <div class="full-width">                            <span>Cancelamento / reversão</span>                            <p id="movementDetailAudit">-</p>                        </div>                    </div>                </div>                {{-- EDIÇÃO --}}                <form                    class="details-edit-mode stock-modal-form"                    id="editItemForm"                    method="POST"                    style="display:none;"                >                    @csrf                    @method('PUT')                    <div class="stock-item-modal-grid">                        <div class="form-group">                            <label>                                Nome                            </label>                            <input                                type="text"                                id="inputItemName"                                name="name"                                class="form-input"                            >                        </div>                        <div class="form-group">                            <label>                                Marca                            </label>                            <input                                type="text"                                id="inputItemBrand"                                name="brand"                                class="form-input"                            >                        </div>                        <div class="form-group">                            <label>                                Unidade                            </label>                            <select                                id="inputItemUnit"                                name="unit"                                class="form-input"                            >                                <option value="UNID">                                    Unidade                                </option>                                <option value="L">                                    Litro                                </option>                                <option value="KG">                                    KG                                </option>                            </select>                        </div>                        <div class="form-group">                            <label>                                Estoque mínimo                            </label>                            <input                                type="number"                                step="0.01"                                min="0"                                id="inputItemMinimum"                                name="minimum_quantity"                                class="form-input"                            >                        </div>                        <div class="form-group">                            <label>                                Custo unitário                            </label>                            <input                                type="number"                                step="0.01"                                min="0"                                id="inputItemCost"                                name="unit_cost"                                class="form-input"                                readonly                            >                        </div>                        <div class="form-group full-width">                            <label>                                Observações                            </label>                            <textarea                                id="inputItemObservation"                                name="observation"                                class="form-input"                                rows="4"                            ></textarea>                        </div>                    </div>                    <div                        class="stock-modal-actions"                        id="saveItemBtn"                        style="display:none;"                    >                        <button                            type="button"                            class="stock-modal-cancel"                            onclick="disableItemEdit()"                        >                            Cancelar                        </button>                        <button                            class="chm-page-button primary"                            type="submit"                        >                            <i data-lucide="save"></i>                            Salvar alterações                        </button>                    </div>                </form>            </section>        </div>    </div></div><div    class="stock-modal-overlay"    id="movementModal"    style="display:none;">    <div class="stock-movement-modal-card">        <button            type="button"            onclick="closeMovementModal()"            class="stock-modal-close"        >            <i data-lucide="x"></i>        </button>        <div class="stock-modal-header">            <div class="stock-modal-icon movement">                <i data-lucide="arrow-left-right"></i>            </div>            <div>                <span>                    Movimentação                </span>                <h2 id="movementModalTitle">                    Nova movimentação                </h2>                <p id="movementModalItemName">                    Item selecionado                </p>            </div>        </div>        <form            id="movementForm"            method="POST"            action="{{ route('stock.movements.store') }}"            class="stock-modal-form"        >            @csrf            <input                type="hidden"                name="movement_type"                id="movementType"            >            <input                type="hidden"                name="stock_item_id"                id="movementItemId"            >        <div class="stock-movement-form-grid stock-entry-grid">                    <div class="form-group stock-span-6">                <label>Quantidade</label>                <input                    type="number"                    step="0.01"                    min="0.01"                    name="quantity"                    class="form-input"                    placeholder="Ex: 10"                    required                >            </div>                        <div class="form-group stock-span-6">                <label>Data da movimentação</label>                            <input                    type="datetime-local"                    name="moved_at"                    id="movementMovedAt"                    class="form-input"                    value="{{ now()->format('Y-m-d\TH:i') }}"                    required                >            </div>                    <div class="form-group stock-entry-only stock-span-6">                <label>Custo total</label>                <input                    type="number"                    step="0.01"                    min="0"                    name="total_cost"                    id="movementTotalCost"                    class="form-input"                    placeholder="Ex: 3500,00"                >            </div>                    <input                type="hidden"                name="unit_cost"                id="movementUnitCost"            >                    <div class="form-group stock-entry-only stock-span-6">                <label>Custo unitário calculado</label>                            <input                    type="text"                    id="movementUnitCostPreview"                    class="form-input is-readonly-calculated"                    value="R$ 0,00"                    readonly                >            </div>                    <div class="form-group stock-entry-only stock-span-6">                <label>Fornecedor</label>                <input                    type="text"                    name="supplier_name"                    class="form-input"                    placeholder="Nome do fornecedor"                >            </div>                    <div class="form-group stock-entry-only stock-span-6">                <label>Nota fiscal</label>                        <div class="input-with-badge stock-input-with-badge">                    <span>NF</span>                            <input                        type="text"                        name="invoice_number"                        maxlength="255"                        placeholder="12403"                    >                </div>            </div>                    <div class="form-group full-width stock-span-12">                <label id="movementDescriptionLabel">                    Observação                </label>                        <textarea                    name="description"                    id="movementDescription"                    rows="4"                    class="form-input"                    placeholder="Ex: Compra de item, uso em manutenção, ajuste de estoque..."                ></textarea>                <small                    id="movementDescriptionCounter"                    class="movement-description-counter"                    style="display:none;"                >                    Informe pelo menos 10 caracteres.                </small>            </div>                </div>            <div class="stock-modal-actions">                <button                    type="button"                    class="stock-modal-cancel"                    onclick="closeMovementModal()"                >                    Cancelar                </button>                <button                    class="chm-page-button primary"                    id="movementSubmitText"                    type="submit"                    onclick="return validateMovementSubmitMessage();"                >                    <i data-lucide="check"></i>                    Confirmar                </button>            </div>        </form>    </div></div><script>const canCancelStockMovements = @can('cancelStockMovements') true @else false @endcan;const canViewStockAuditDetails = @can('viewAuditLogs') true @else false @endcan;let lastOpenedItemId = null;function closeMovementModal(){    document        .getElementById('movementModal')        .style.display = 'none';    document        .getElementById('editItemModal')        .style.display = 'flex';}function enableItemEdit(){    closeMovementDetailPanel();    document        .querySelector('.details-view-mode')        .style.display = 'none';    document        .querySelector('.details-edit-mode')        .style.display = 'block';    document        .getElementById('saveItemBtn')        .style.display = 'flex';    document        .getElementById('editItemBtn')        .style.display = 'none';}function disableItemEdit(){    document        .querySelector('.details-view-mode')        .style.display = 'block';    document        .querySelector('.details-edit-mode')        .style.display = 'none';    document        .getElementById('saveItemBtn')        .style.display = 'none';    document        .getElementById('editItemBtn')        .style.display = 'inline-flex';}/* =========================   ITEM MODAL========================= */function openItemModal(    categoryId,    categoryName){    document        .getElementById('itemModal')        .style.display = 'flex';    document        .getElementById('stock_category_id')        .value = categoryId;    document        .getElementById('itemCategoryName')        .innerText = categoryName;                }function closeItemModal(){    document        .getElementById('itemModal')        .style.display = 'none';}function openCategoryModal(){    document        .getElementById('categoryModal')        .style.display = 'flex';}function closeCategoryModal(){    document        .getElementById('categoryModal')        .style.display = 'none';}let currentItemId = null;async function openEditItemModal(id){    currentItemId = id;    const response =        await fetch(`/stock/items/${id}`);    const item =        await response.json();    document        .getElementById('editItemForm')        .action =            `/stock/items/${item.id}`;    document        .getElementById('editItemModal')        .style.display = 'flex';    /* =========================       HEADER    ========================= */    document        .getElementById('editItemName')        .innerText =            item.name;    document        .getElementById('editItemCategory')        .innerText =            item.category.name;    /* =========================       ESTOQUE    ========================= */    document        .getElementById('editStockQuantity')        .innerText =            parseFloat(item.quantity)            .toFixed(2);    document        .getElementById('editItemUnitBadge')        .innerText =            item.unit;    /* =========================       VIEW MODE    ========================= */    document    .getElementById('viewItemBrand')        .innerText =            item.brand ?? '-';    document        .getElementById('viewItemUnit')        .innerText =            item.unit;    document        .getElementById('viewItemMinimum')        .innerText =            item.minimum_quantity;    document        .getElementById('viewItemCost')        .innerText =            'R$ ' +            parseFloat(item.unit_cost)            .toFixed(2);    document        .getElementById('viewItemObservation')        .innerText =            item.observation ??            'Sem observações';    /* =========================       EDIT MODE    ========================= */    document        .getElementById('inputItemName')        .value =            item.name;    document        .getElementById('inputItemBrand')        .value =            item.brand ?? '';    document        .getElementById('inputItemUnit')        .value =            item.unit;    document        .getElementById('inputItemMinimum')        .value =            item.minimum_quantity;    document        .getElementById('inputItemCost')        .value =            item.unit_cost;    document        .getElementById('inputItemObservation')        .value =            item.observation ?? '';    /* =========================       MOVIMENTAÇÕES    ========================= */    let html = '';    if (!item.movements || item.movements.length === 0) {            html = `            <div class="stock-empty-history">                <i data-lucide="history"></i>                <strong>Nenhuma movimentação</strong>                <span>Entradas e saídas aparecerão aqui.</span>            </div>        `;        } else {            item.movements.forEach(movement => {            const isCancelled = Boolean(movement.cancelled_at);            const isReversal = Boolean(movement.reversed_from_movement_id);            const isMaintenance = Boolean(movement.maintenance_record_id);            const isReverted = Boolean(movement.reversal_movement_id);            const canCancelMovement = canCancelStockMovements                && !isCancelled                && !isReversal                && !isMaintenance;            const rowClasses = [                isCancelled ? 'is-cancelled' : '',                isReversal ? 'is-reversal' : '',                isMaintenance ? 'is-maintenance' : '',            ].filter(Boolean).join(' ');            const movementBadges = [                isCancelled ? '<span class="stock-status-badge danger">Cancelada</span>' : '',                isReversal ? '<span class="stock-status-badge warning">Reversao</span>' : '',                isMaintenance ? '<span class="stock-status-badge info">Manutencao</span>' : '',                isReverted && !isCancelled ? '<span class="stock-status-badge muted">Revertida</span>' : '',            ].filter(Boolean).join('');            const auditDetails = canViewStockAuditDetails && isCancelled && movement.cancel_reason                ? `<small>Motivo: ${movement.cancel_reason}</small>`                : '';            const lockReason = !canCancelMovement                ? (isCancelled                    ? 'Movimento ja cancelado.'                    : (isReversal                        ? 'Movimento reverso nao pode ser cancelado direto.'                        : (isMaintenance                            ? 'Vinculado a manutencao; cancele pela manutencao.'                            : 'Movimento nao cancelavel.')))                : '';            const shortDate = movement.moved_at                ? new Date(movement.moved_at).toLocaleDateString('pt-BR', {                    day: '2-digit',                    month: '2-digit',                    year: '2-digit',                })                : '';                        const movementIcon = movement.movement_type === 'in'                ? 'arrow-down-left'                : 'arrow-up-right';            const movementDate = movement.moved_at            ? new Date(movement.moved_at).toLocaleString('pt-BR')            : (                movement.created_at                    ? new Date(movement.created_at).toLocaleString('pt-BR')                    : ''            );            const lockNotice = lockReason                ? `<small class="stock-movement-lock">${lockReason}</small>`                : '';            const cancelForm = canCancelMovement                ? `                    <div class="stock-cancel-box" data-cancel-box>                        <button                            type="button"                            class="stock-modal-cancel"                            onclick="showMovementCancelForm(this)"                        >                            Cancelar                        </button>                                    <form method="POST" action="/stock/movements/${movement.id}/cancel" class="stock-movement-cancel-form" style="display:none;">                            <input type="hidden" name="_token" value="{{ csrf_token() }}">                                        <textarea name="reason" rows="2" required minlength="5" placeholder="Motivo do cancelamento"></textarea>                                        <div class="stock-cancel-actions">                                <button type="submit" class="stock-modal-cancel">                                    Cancelar movimentação                                </button>                                            <button                                    type="button"                                    class="stock-cancel-dismiss"                                    onclick="hideMovementCancelForm(this)"                                    title="Desistir"                                >                                    ×                                </button>                            </div>                        </form>                    </div>                `                : '';                html += `                <div class="movement-row ${rowClasses}">                        <div class="movement-top">                        <div class="movement-type-left">                            <span class="movement-mini-icon ${movement.movement_type === 'in' ? 'is-in' : 'is-out'}">                                <i data-lucide="${movementIcon}"></i>                            </span>                                                <div>                                <strong>                                    ${movement.movement_type === 'in' ? 'Entrada' : 'Saída'}                                    <span class="stock-movement-badges">${movementBadges}</span>                                </strong>                                                    <small class="movement-qty">${movement.quantity}</small>                            </div>                        </div>                                            <small class="stock-movement-date">${shortDate}</small>                    </div>                        <small>                        ${movement.description ?? ''}                    </small>                    ${auditDetails}                    ${lockNotice}                    <button                        type="button"                        class="stock-movement-view-btn"                        onclick='showMovementDetails(${JSON.stringify(movement)})'                    >                        Ver informações                    </button>                    ${cancelForm}                    </div>            `;            });        }    document        .getElementById('movementHistory')        .innerHTML = html;            disableItemEdit();    if (window.lucide) {        lucide.createIcons();    }}function closeEditItemModal(){    closeMovementDetailPanel();    document        .querySelector('.details-view-mode')        .style.display = 'block';    document        .querySelector('.details-edit-mode')        .style.display = 'none';    document        .getElementById('saveItemBtn')        .style.display = 'none';    document        .getElementById('editItemBtn')        .style.display = 'inline-flex';    document        .getElementById('editItemModal')        .style.display = 'none';}function openMovementModal(type){    lastOpenedItemId =        currentItemId;    document        .getElementById('editItemModal')        .style.display = 'none';    const movementModal =        document.getElementById('movementModal');    const movementCard =        movementModal.querySelector('.stock-movement-modal-card');    movementCard.classList.remove(        'is-in',        'is-out'    );    movementCard.classList.add(        type === 'in'            ? 'is-in'            : 'is-out'    );    movementModal.style.display = 'flex';    document.getElementById('movementForm').reset();    document.getElementById('movementMovedAt').value = new Date().toISOString().slice(0, 16);    document.getElementById('movementType').value = type;    document.getElementById('movementItemId').value = currentItemId;    document.getElementById('movementMovedAt').value = localDateTimeValue();    document        .getElementById('movementType')        .value = type;    document        .getElementById('movementItemId')        .value = currentItemId;    document        .getElementById('movementModalItemName')        .innerText =            document                .getElementById('editItemName')                .innerText;    if(type === 'in')    {        // document.querySelectorAll('.stock-entry-only').forEach(el => el.style.display = 'block');        document.getElementById('movementDescriptionLabel').innerText = 'Observação';        document.getElementById('movementDescription').required = false;        document.getElementById('movementDescription').minLength = 0;        document.getElementById('movementDescription').placeholder = 'Ex: Compra de item, ajuste de entrada, observação opcional...';        document.getElementById('movementSubmitText').disabled = false;        document            .getElementById('movementModalTitle')            .innerText =                'Nova entrada';        document            .getElementById('movementSubmitText')            .innerHTML =                '<i data-lucide="check"></i> Confirmar entrada';    }    else    {        const counter = document.getElementById('movementDescriptionCounter');                if (counter) {            counter.style.display = 'none';            counter.classList.remove('is-ok');            counter.innerText = 'Informe pelo menos 10 caracteres.';        }        document.querySelectorAll('.stock-entry-only').forEach(el => el.style.display = 'none');        document.getElementById('movementDescriptionLabel').innerText = 'Motivo da saída';        document.getElementById('movementDescription').required = true;        document.getElementById('movementDescription').minLength = 10;        document.getElementById('movementDescription').placeholder = 'Informe obrigatoriamente o motivo da saída do estoque...';        document.getElementById('movementSubmitText').disabled = true;        document            .getElementById('movementModalTitle')            .innerText =                'Nova saída';        document            .getElementById('movementSubmitText')            .innerHTML =                '<i data-lucide="check"></i> Confirmar saída';    }    if (window.lucide) {        lucide.createIcons();    }}document.getElementById('movementDescription').addEventListener('input', function () {    const type = document.getElementById('movementType').value;    const submit = document.getElementById('movementSubmitText');    const counter = document.getElementById('movementDescriptionCounter');    if (type !== 'out') {        submit.disabled = false;        if (counter) {            counter.style.display = 'none';        }        return;    }    const length = this.value.trim().length;    const missing = Math.max(0, 10 - length);    submit.disabled = length < 10;    if (! counter) {        return;    }    if (length === 0) {        counter.style.display = 'none';        return;    }    counter.style.display = 'block';    if (missing > 0) {        counter.classList.remove('is-ok');        counter.innerText = `Faltam ${missing} caractere(s) para aceitar o motivo.`;    } else {        counter.classList.add('is-ok');        counter.innerText = '';    }});function localDateTimeValue(date = new Date()) {    const offset = date.getTimezoneOffset();    const local = new Date(date.getTime() - offset * 60000);    return local.toISOString().slice(0, 16);}function updateMovementUnitCost() {    const quantity = Number(document.querySelector('#movementForm input[name="quantity"]').value || 0);    const totalCost = Number(document.getElementById('movementTotalCost').value || 0);    const unitCost = document.getElementById('movementUnitCost');    if (!unitCost) return;    const preview = document.getElementById('movementUnitCostPreview');    if (quantity <= 0 || totalCost <= 0) {        unitCost.value = '';        if (preview) {            preview.value = 'R$ 0,00';        }        return;    }        const calculated = totalCost / quantity;        unitCost.value = calculated.toFixed(2);        if (preview) {        preview.value = calculated.toLocaleString('pt-BR', {            style: 'currency',            currency: 'BRL'        });    }}document    .querySelector('#movementForm input[name="quantity"]')    .addEventListener('input', updateMovementUnitCost);document    .getElementById('movementTotalCost')    .addEventListener('input', updateMovementUnitCost);function closeMovementModal(){    document        .getElementById('movementModal')        .style.display = 'none';    document        .getElementById('editItemModal')        .style.display = 'flex';}function validateMovementSubmitMessage() {    const type = document.getElementById('movementType').value;    const description = document.getElementById('movementDescription');    if (type === 'out' && description.value.trim().length < 10) {        alert('Informe o motivo da saída com pelo menos 10 caracteres.');        description.focus();        return false;    }    return true;}function showMovementCancelForm(button) {    const box = button.closest('[data-cancel-box]');    const form = box.querySelector('.stock-movement-cancel-form');    button.style.display = 'none';    form.style.display = 'block';    const textarea = form.querySelector('textarea');    if (textarea) {        textarea.focus();    }}function hideMovementCancelForm(button) {    const box = button.closest('[data-cancel-box]');    const form = box.querySelector('.stock-movement-cancel-form');    const trigger = box.querySelector('button[type="button"].stock-modal-cancel');    form.reset();    form.style.display = 'none';    trigger.style.display = '';    }function moneyBR(value) {    const number = Number(value || 0);    return number.toLocaleString('pt-BR', {        style: 'currency',        currency: 'BRL'    });}function showMovementDetails(movement) {    const panel = document.getElementById('movementDetailPanel');    const typeLabel = movement.movement_type === 'in' ? 'Entrada' : 'Saída';        const movementDate = movement.moved_at        ? new Date(movement.moved_at).toLocaleString('pt-BR')        : (            movement.created_at                ? new Date(movement.created_at).toLocaleString('pt-BR')                : '-'        );        document.getElementById('movementDetailDate').innerText = movementDate;        const icon = document.getElementById('movementDetailIcon');    const isIn = movement.movement_type === 'in';        icon.classList.remove('is-in', 'is-out');    icon.classList.add(isIn ? 'is-in' : 'is-out');        icon.innerHTML = isIn        ? '<i data-lucide="arrow-down-left"></i>'        : '<i data-lucide="arrow-up-right"></i>';            let status = 'Ativa';    if (movement.cancelled_at) {        status = 'Cancelada';    } else if (movement.reversed_from_movement_id) {        status = 'Reversão';    } else if (movement.reversal_movement_id) {        status = 'Revertida';    }    document        .querySelector('.stock-edit-content')        .classList        .add('is-viewing-movement');    document.getElementById('movementDetailTitle').innerText = typeLabel;    document.getElementById('movementDetailQuantity').innerText = movement.quantity ?? '-';    document.getElementById('movementDetailUnitCost').innerText = moneyBR(movement.unit_cost);    document.getElementById('movementDetailTotalCost').innerText = moneyBR(movement.total_cost);    document.getElementById('movementDetailSupplier').innerText = movement.supplier_name || '-';    document.getElementById('movementDetailInvoice').innerText = movement.invoice_number || '-';    document.getElementById('movementDetailStatus').innerText = status;    document.getElementById('movementDetailDescription').innerText = movement.description || '-';    document.getElementById('movementDetailAudit').innerText =        movement.cancelled_at            ? `Cancelada. Motivo: ${movement.cancel_reason || 'não informado'}`            : (                movement.reversed_from_movement_id                    ? `Movimento reverso da movimentação #${movement.reversed_from_movement_id}.`                    : (                        movement.reversal_movement_id                            ? `Movimento revertido pela movimentação #${movement.reversal_movement_id}.`                            : 'Sem cancelamento ou reversão.'                    )            );    panel.style.display = 'block';    if (window.lucide) {        lucide.createIcons();    }}function closeMovementDetailPanel() {    const panel = document.getElementById('movementDetailPanel');    if (panel) {        panel.style.display = 'none';    }    const content = document.querySelector('.stock-edit-content');    if (content) {        content.classList.remove('is-viewing-movement');    }}</script>@endsection
+@extends('layouts.app')
+
+
+
+@push('styles')
+
+<link
+
+    rel="stylesheet"
+
+    href="{{ asset('css/pages/stock.css') }}?v=3"
+>
+
+@endpush
+
+
+
+@section('content')
+@php
+    $stockPermissions = array_merge([
+        'view' => false,
+        'manage_categories' => false,
+        'manage_items' => false,
+        'create_entry' => false,
+        'create_manual_output' => false,
+        'cancel_movement' => false,
+        'view_costs' => false,
+    ], $stockPermissions ?? []);
+
+    $canManageStockCategories = (bool) $stockPermissions['manage_categories'];
+    $canManageStockItems = (bool) $stockPermissions['manage_items'];
+    $canCreateStockEntry = (bool) $stockPermissions['create_entry'];
+    $canCreateStockOutput = (bool) $stockPermissions['create_manual_output'];
+    $canCancelStockMovement = (bool) $stockPermissions['cancel_movement'];
+    $canViewStockCosts = (bool) $stockPermissions['view_costs'];
+@endphp
+
+<div class="stock-page">
+
+
+
+    {{-- HEADER --}}
+
+    {{-- HEADER --}}
+
+    <div class="stock-header stock-header-modern">
+
+
+
+        <div>
+
+
+
+            <span class="stock-kicker">
+
+                Oficina / Estoque
+
+            </span>
+
+
+
+            <h1>
+
+                Estoque
+
+            </h1>
+
+
+
+            <p>
+
+                Controle de categorias, itens e movimentações operacionais da oficina.
+
+            </p>
+
+
+
+        </div>
+
+
+
+        <div class="stock-header-actions">
+
+
+
+            <a
+
+                href="{{ route('workshop.index') }}"
+
+                class="chm-page-button secondary"
+
+            >
+
+                <i data-lucide="arrow-left"></i>
+
+                Voltar para oficina
+
+            </a>
+
+
+
+            @if($canManageStockCategories)
+<button
+
+                type="button"
+
+                class="chm-page-button primary"
+
+                onclick="openCategoryModal()"
+
+            >
+
+                <i data-lucide="plus"></i>
+
+                Nova categoria
+
+            </button>
+@endif
+
+
+
+        </div>
+
+
+
+    </div>
+
+    {{-- RESUMO --}}
+
+    <div class="stock-summary-grid">
+
+
+
+        <div class="stock-summary-card">
+
+
+
+            <div class="stock-summary-icon">
+
+                <i data-lucide="boxes"></i>
+
+            </div>
+
+
+
+            <div>
+
+                <span>
+
+                    Categorias
+
+                </span>
+
+
+
+                <strong>
+
+                    {{ $categories->count() }}
+
+                </strong>
+
+            </div>
+
+
+
+        </div>
+
+
+
+        <div class="stock-summary-card">
+
+
+
+            <div class="stock-summary-icon">
+
+                <i data-lucide="package"></i>
+
+            </div>
+
+
+
+            <div>
+
+                <span>
+
+                    Itens cadastrados
+
+                </span>
+
+
+
+                <strong>
+
+                    {{ $categories->sum(fn($category) => $category->items->count()) }}
+
+                </strong>
+
+            </div>
+
+
+
+        </div>
+
+
+
+        <div class="stock-summary-card warning">
+
+
+
+            <div class="stock-summary-icon">
+
+                <i data-lucide="triangle-alert"></i>
+
+            </div>
+
+
+
+            <div>
+
+                <span>
+
+                    Atenção no estoque
+
+                </span>
+
+
+
+                <strong>
+
+                    {{
+
+                        $categories->sum(function ($category) {
+
+                            return $category->items->whereIn('stock_status', ['warning', 'danger'])->count();
+
+                        })
+
+                    }}
+
+                </strong>
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+    {{-- CATEGORIAS --}}
+
+    <div class="stock-wrapper">
+
+
+
+        @forelse($categories as $category)
+
+
+
+            <div class="stock-category-card">
+
+
+
+                <div class="stock-category-header">
+
+
+
+                    <div class="stock-category-title">
+
+
+
+                        <div class="stock-category-icon">
+
+                            <i data-lucide="folder-kanban"></i>
+
+                        </div>
+
+
+
+                        <div>
+
+
+
+                            <h2>
+
+                                {{ $category->name }}
+
+                            </h2>
+
+
+
+                            <span>
+
+                                {{ $category->items->count() }}
+
+                                item(ns) cadastrado(s)
+
+                            </span>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                    @if($canManageStockItems)
+<button
+
+                        type="button"
+
+                        class="stock-add-item-btn"
+
+                        onclick="
+
+                            openItemModal(
+
+                                {{ $category->id }},
+
+                                '{{ $category->name }}'
+
+                            )
+
+                        "
+
+                    >
+
+                        <i data-lucide="plus"></i>
+
+
+
+                        Novo item
+
+                    </button>
+@endif
+
+
+
+                </div>
+
+
+
+                <div class="stock-items-grid">
+
+
+
+                    @forelse($category->items as $item)
+
+
+
+                        <div
+
+                            class="
+
+                                stock-item-card
+
+                                {{ $item->stock_status }}
+
+                            "
+
+                            onclick="openEditItemModal({{ $item->id }})"
+
+                        >
+
+
+
+                            <div class="stock-item-top">
+
+
+
+                                <div class="stock-item-icon">
+
+                                    <i data-lucide="package"></i>
+
+                                </div>
+
+
+
+                                <div>
+
+
+
+                                    <h3>
+
+                                        {{ $item->name }}
+
+                                    </h3>
+
+
+
+                                    <span>
+
+                                        {{ $item->brand ?: 'Sem marca' }}
+
+                                    </span>
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+                            <div class="stock-item-values stock-item-values-clean">
+
+                                <div>
+                                    <span>Estoque atual</span>
+                                    <strong>
+                                        {{ number_format($item->quantity, 2, ',', '.') }}
+                                        {{ $item->unit }}
+                                    </strong>
+                                    <small>
+                                        Mínimo {{ number_format($item->minimum_quantity, 2, ',', '.') }}
+                                    </small>
+                                </div>
+
+                                @if($canViewStockCosts)
+<div>
+                                    <span>Custo médio</span>
+                                    <strong>
+                                        R$ {{ number_format($item->unit_cost, 2, ',', '.') }}
+                                    </strong>
+                                    <small>
+                                    Por {{ $item->unit }}
+                                    </small>
+                                </div>
+@endif
+
+                            </div>
+
+
+                            <div class="stock-item-footer">
+
+
+
+                                @if($item->stock_status === 'danger')
+
+
+
+                                    <span class="stock-status-badge danger">
+
+                                        <i data-lucide="circle-alert"></i>
+
+                                        Crítico
+
+                                    </span>
+
+
+
+                                @elseif($item->stock_status === 'warning')
+
+
+
+                                    <span class="stock-status-badge warning">
+
+                                        <i data-lucide="triangle-alert"></i>
+
+                                        Atenção
+
+                                    </span>
+
+
+
+                                @else
+
+
+
+                                    <span class="stock-status-badge ok">
+
+                                        <i data-lucide="check-circle"></i>
+
+                                        Adequado
+
+                                    </span>
+
+
+
+                                @endif
+
+
+
+                                <span class="stock-details-link">
+
+                                    Ver detalhes
+
+                                    <i data-lucide="chevron-right"></i>
+
+                                </span>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+                    @empty
+
+
+
+                        <div class="empty-stock">
+
+
+
+                            <i data-lucide="package-open"></i>
+
+
+
+                            <strong>
+
+                                Nenhum item nesta categoria
+
+                            </strong>
+
+
+
+                            <p>
+
+                                Cadastre itens para controlar entrada, saída e saldo em estoque.
+
+                            </p>
+
+
+
+                            @if($canManageStockItems)
+<button
+
+                                type="button"
+
+                                class="stock-empty-btn"
+
+                                onclick="
+
+                                    openItemModal(
+
+                                        {{ $category->id }},
+
+                                        '{{ $category->name }}'
+
+                                    )
+
+                                "
+
+                            >
+
+                                <i data-lucide="plus"></i>
+
+
+
+                                Adicionar item
+
+                            </button>
+@endif
+
+
+
+                        </div>
+
+
+
+                    @endforelse
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        @empty
+
+
+
+            <div class="stock-empty-state">
+
+
+
+                <i data-lucide="boxes"></i>
+
+
+
+                <strong>
+
+                    Nenhuma categoria cadastrada
+
+                </strong>
+
+
+
+                <p>
+
+                    Comece criando uma categoria para organizar seus itens de estoque.
+
+                </p>
+
+
+
+                @if($canManageStockCategories)
+<button
+
+                    type="button"
+
+                    class="chm-page-button primary"
+
+                    onclick="openCategoryModal()"
+
+                >
+
+                    <i data-lucide="plus"></i>
+
+
+
+                    Criar categoria
+
+                </button>
+@endif
+
+
+
+            </div>
+
+
+
+        @endforelse
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+<div
+
+    class="stock-modal-overlay"
+
+    id="categoryModal"
+
+    style="display:none;"
+
+>
+
+
+
+    <div class="stock-category-modal-card">
+
+
+
+        <button
+
+            type="button"
+
+            onclick="closeCategoryModal()"
+
+            class="stock-modal-close"
+
+        >
+
+            <i data-lucide="x"></i>
+
+        </button>
+
+
+
+        <div class="stock-modal-header">
+
+
+
+            <div class="stock-modal-icon">
+
+                <i data-lucide="folder-plus"></i>
+
+            </div>
+
+
+
+            <div>
+
+
+
+                <span>
+
+                    Estoque
+
+                </span>
+
+
+
+                <h2>
+
+                    Nova categoria
+
+                </h2>
+
+
+
+                <p>
+
+                    Organize os itens do estoque por tipo, finalidade ou setor.
+
+                </p>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+        <form
+
+            method="POST"
+
+            action="{{ route('stock.categories.store') }}"
+
+            class="stock-modal-form"
+
+        >
+
+
+
+            @csrf
+
+
+
+            <div class="form-group">
+
+
+
+                <label>
+
+                    Nome da categoria
+
+                </label>
+
+
+
+                <input
+
+                    type="text"
+
+                    name="name"
+
+                    class="form-input"
+
+                    placeholder="Ex: Óleos, Filtros, Pneus..."
+
+                    required
+
+                >
+
+
+
+            </div>
+
+
+
+            <div class="stock-modal-actions">
+
+
+
+                <button
+
+                    type="button"
+
+                    class="stock-modal-cancel"
+
+                    onclick="closeCategoryModal()"
+
+                >
+
+                    Cancelar
+
+                </button>
+
+
+
+                <button
+
+                    class="chm-page-button primary"
+
+                    type="submit"
+
+                >
+
+                    <i data-lucide="save"></i>
+
+
+
+                    Salvar categoria
+
+                </button>
+
+
+
+            </div>
+
+
+
+        </form>
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+<div
+
+    class="stock-modal-overlay"
+
+    id="itemModal"
+
+    style="display:none;"
+
+>
+
+
+
+    <div class="stock-item-modal-card">
+
+
+
+        <button
+
+            type="button"
+
+            onclick="closeItemModal()"
+
+            class="stock-modal-close"
+
+        >
+
+            <i data-lucide="x"></i>
+
+        </button>
+
+
+
+        <div class="stock-modal-header">
+
+
+
+            <div class="stock-modal-icon">
+
+                <i data-lucide="package-plus"></i>
+
+            </div>
+
+
+
+            <div>
+
+
+
+                <span>
+
+                    Estoque
+
+                </span>
+
+
+
+                <h2>
+
+                    Novo item
+
+                </h2>
+
+
+
+                <p id="itemCategoryName">
+
+                    Categoria selecionada
+
+                </p>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+        <form
+
+            method="POST"
+
+            action="{{ route('stock.items.store') }}"
+
+            class="stock-modal-form"
+
+        >
+
+
+
+            @csrf
+
+
+
+            <input
+
+                type="hidden"
+
+                name="stock_category_id"
+
+                id="stock_category_id"
+
+            >
+
+
+
+            <div class="stock-item-modal-grid stock-item-create-grid">
+
+                <div class="form-group">
+                    <label>Nome do item</label>
+                    <input
+                        type="text"
+                        name="name"
+                        class="form-input"
+                        placeholder="Ex: Filtro de combustível"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Marca</label>
+                    <input
+                        type="text"
+                        name="brand"
+                        class="form-input"
+                        placeholder="Ex: Shell"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Unidade</label>
+                    <select name="unit" class="form-input">
+                        <option value="UNID">Unidade</option>
+                        <option value="L">Litro</option>
+                        <option value="KG">KG</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Estoque mínimo</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="minimum_quantity"
+                        class="form-input"
+                        value="0"
+                    >
+                    <small class="stock-field-hint">
+                        Quando o saldo chegar nesse limite, o sistema exibirá alerta de estoque.
+                    </small>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Observação</label>
+                    <textarea
+                        name="observation"
+                        class="form-input"
+                        rows="4"
+                        placeholder="Informações adicionais sobre o item..."
+                    ></textarea>
+                </div>
+
+            </div>
+
+
+            <div class="stock-modal-actions">
+
+
+
+                <button
+
+                    type="button"
+
+                    class="stock-modal-cancel"
+
+                    onclick="closeItemModal()"
+
+                >
+
+                    Cancelar
+
+                </button>
+
+
+
+                <button
+
+                    class="chm-page-button primary"
+
+                    type="submit"
+
+                >
+
+                    <i data-lucide="save"></i>
+
+
+
+                    Salvar item
+
+                </button>
+
+
+
+            </div>
+
+
+
+        </form>
+
+
+
+    </div>
+
+
+
+</div>
+
+<div
+
+    class="stock-modal-overlay"
+
+    id="editItemModal"
+
+    style="display:none;"
+
+>
+
+
+
+    <div class="stock-edit-item-modal-card">
+
+        <div class="stock-edit-modal-layout">
+
+
+
+            {{-- ESQUERDA --}}
+
+            <aside class="stock-edit-sidebar">
+
+
+
+                <div class="stock-balance-card-new">
+
+
+
+                    <div class="stock-balance-icon">
+
+                        <i data-lucide="package-check"></i>
+
+                    </div>
+
+
+
+                    <span>
+
+                        Estoque atual
+
+                    </span>
+
+
+
+                    <h2 id="editStockQuantity">
+
+                        0
+
+                    </h2>
+
+
+
+                    <small id="editItemUnitBadge">
+
+                        Unidade
+
+                    </small>
+
+
+
+                </div>
+
+
+
+                <div class="stock-movement-actions-new">
+
+
+
+                    @if($canCreateStockEntry)
+<button
+
+                        type="button"
+
+                        class="stock-movement-btn in"
+
+                        onclick="openMovementModal('in')"
+
+                    >
+
+                        <i data-lucide="plus"></i>
+
+
+
+                        Entrada
+
+                    </button>
+@endif
+
+
+
+                    @if($canCreateStockOutput)
+<button
+
+                        type="button"
+
+                        class="stock-movement-btn out"
+
+                        onclick="openMovementModal('out')"
+
+                    >
+
+                        <i data-lucide="minus"></i>
+
+
+
+                        Saída
+
+                    </button>
+@endif
+
+
+
+                </div>
+
+
+
+                <div class="stock-history-card-new">
+
+
+
+                    <div class="stock-history-header-new">
+
+
+
+                        <div>
+
+
+
+                            <span>
+
+                                Histórico
+
+                            </span>
+
+
+
+                            <h3>
+
+                                Últimas movimentações
+
+                            </h3>
+
+
+
+                        </div>
+
+
+
+                        <i data-lucide="history"></i>
+
+
+
+                    </div>
+
+
+
+                    <div
+
+                        id="movementHistory"
+
+                        class="stock-movement-history-list"
+
+                    >
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </aside>
+
+
+
+            {{-- DIREITA --}}
+
+            <section class="stock-edit-content">
+
+
+
+                <div class="stock-edit-header-new">
+
+
+
+                    <div class="stock-modal-icon">
+
+                        <i data-lucide="package"></i>
+
+                    </div>
+
+
+
+                    <div>
+
+
+
+                        <span id="editItemCategory">
+
+                        </span>
+
+
+
+                        <h2 id="editItemName">
+
+                        </h2>
+
+
+
+                        <p>
+
+                            Detalhes, saldo e movimentações do item em estoque.
+
+                        </p>
+
+
+
+                    </div>
+
+
+                    <div>
+
+                    <button
+
+                        type="button"
+
+                        onclick="closeEditItemModal()"
+
+                        class="stock-modal-close"
+
+                    >
+
+                        <i data-lucide="x"></i>
+
+                    </button>
+
+                    </div>
+                </div>
+
+
+
+                <div class="stock-edit-actions-top">
+
+
+
+                    @if($canManageStockItems)
+<button
+
+                        type="button"
+
+                        class="stock-edit-trigger-btn"
+
+                        onclick="enableItemEdit()"
+
+                        id="editItemBtn"
+
+                    >
+
+                        <i data-lucide="pencil"></i>
+
+
+
+                        Editar item
+
+                    </button>
+@endif
+
+
+
+                </div>
+
+
+
+                {{-- VISUALIZAÇÃO --}}
+
+                <div class="details-view-mode">
+
+
+
+                    <div class="stock-details-view-grid">
+
+
+
+                        <div class="stock-detail-card">
+
+
+
+                            <span>
+
+                                Marca
+
+                            </span>
+
+
+
+                            <strong id="viewItemBrand">
+
+                            </strong>
+
+
+
+                        </div>
+
+
+
+                        <div class="stock-detail-card">
+
+
+
+                            <span>
+
+                                Unidade
+
+                            </span>
+
+
+
+                            <strong id="viewItemUnit">
+
+                            </strong>
+
+
+
+                        </div>
+
+
+
+                        <div class="stock-detail-card">
+
+
+
+                            <span>
+
+                                Estoque mínimo
+
+                            </span>
+
+
+
+                            <strong id="viewItemMinimum">
+
+                            </strong>
+
+
+
+                        </div>
+
+
+
+                        <div class="stock-detail-card">
+
+
+
+                            <span>
+
+                                Custo unitário
+
+                            </span>
+
+
+
+                            <strong id="viewItemCost">
+
+                            </strong>
+
+
+
+                        </div>
+
+
+
+                        <div class="stock-detail-card full-width">
+
+
+
+                            <span>
+
+                                Observações
+
+                            </span>
+
+
+
+                            <p id="viewItemObservation">
+
+                            </p>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+                <div id="movementDetailPanel" class="stock-movement-detail-panel" style="display:none;">
+                    <div class="stock-movement-detail-header">
+                        <div class="stock-movement-detail-title-row">
+                            <div id="movementDetailIcon" class="stock-modal-icon movement">
+                                <i data-lucide="arrow-left-right"></i>
+                            </div>
+
+                            <div>
+                                <span>Movimentação selecionada</span>
+                                <h3 id="movementDetailTitle">Detalhes</h3>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="closeMovementDetailPanel()">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+
+                    <div class="stock-movement-detail-grid">
+                        <div>
+                            <span>Quantidade</span>
+                            <strong id="movementDetailQuantity">-</strong>
+                        </div>
+
+                        @if($canViewStockCosts)
+<div>
+                            <span>Custo unitário</span>
+                            <strong id="movementDetailUnitCost">-</strong>
+                        </div>
+@endif
+
+                        @if($canViewStockCosts)
+<div>
+                            <span>Custo total</span>
+                            <strong id="movementDetailTotalCost">-</strong>
+                        </div>
+@endif
+
+                        <div>
+                            <span>Data</span>
+                            <strong id="movementDetailDate">-</strong>
+                        </div>
+
+                        <div>
+                            <span>Fornecedor</span>
+                            <strong id="movementDetailSupplier">-</strong>
+                        </div>
+
+                        <div>
+                            <span>Nota fiscal</span>
+                            <strong id="movementDetailInvoice">-</strong>
+                        </div>
+
+                        <div>
+                            <span>Status</span>
+                            <strong id="movementDetailStatus">-</strong>
+                        </div>
+
+                        <div class="span-2">
+                            <span>Descrição / motivo</span>
+                            <p id="movementDetailDescription">-</p>
+                        </div>
+
+                        <div class="full-width">
+                            <span>Cancelamento / reversão</span>
+                            <p id="movementDetailAudit">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- EDIÇÃO --}}
+
+                <form
+
+                    class="details-edit-mode stock-modal-form"
+
+                    id="editItemForm"
+
+                    method="POST"
+
+                    style="display:none;"
+
+                >
+
+
+
+                    @csrf
+
+                    @method('PUT')
+
+
+
+                    <div class="stock-item-modal-grid">
+
+
+
+                        <div class="form-group">
+
+
+
+                            <label>
+
+                                Nome
+
+                            </label>
+
+
+
+                            <input
+
+                                type="text"
+
+                                id="inputItemName"
+
+                                name="name"
+
+                                class="form-input"
+
+                            >
+
+
+
+                        </div>
+
+
+
+                        <div class="form-group">
+
+
+
+                            <label>
+
+                                Marca
+
+                            </label>
+
+
+
+                            <input
+
+                                type="text"
+
+                                id="inputItemBrand"
+
+                                name="brand"
+
+                                class="form-input"
+
+                            >
+
+
+
+                        </div>
+
+
+
+                        <div class="form-group">
+
+
+
+                            <label>
+
+                                Unidade
+
+                            </label>
+
+
+
+                            <select
+
+                                id="inputItemUnit"
+
+                                name="unit"
+
+                                class="form-input"
+
+                            >
+
+
+
+                                <option value="UNID">
+
+                                    Unidade
+
+                                </option>
+
+
+
+                                <option value="L">
+
+                                    Litro
+
+                                </option>
+
+
+
+                                <option value="KG">
+
+                                    KG
+
+                                </option>
+
+
+
+                            </select>
+
+
+
+                        </div>
+
+
+
+                        <div class="form-group">
+
+
+
+                            <label>
+
+                                Estoque mínimo
+
+                            </label>
+
+
+
+                            <input
+
+                                type="number"
+
+                                step="0.01"
+
+                                min="0"
+
+                                id="inputItemMinimum"
+
+                                name="minimum_quantity"
+
+                                class="form-input"
+
+                            >
+
+
+
+                        </div>
+
+
+
+                        @if($canViewStockCosts)
+<div class="form-group">
+
+
+
+                            <label>
+
+                                Custo unitário
+
+                            </label>
+
+
+
+                            <input
+
+                                type="number"
+
+                                step="0.01"
+
+                                min="0"
+
+                                id="inputItemCost"
+
+                                name="unit_cost"
+
+                                class="form-input"
+
+                                readonly
+                            >
+
+
+
+                        </div>
+@endif
+
+
+
+                        <div class="form-group full-width">
+
+
+
+                            <label>
+
+                                Observações
+
+                            </label>
+
+
+
+                            <textarea
+
+                                id="inputItemObservation"
+
+                                name="observation"
+
+                                class="form-input"
+
+                                rows="4"
+
+                            ></textarea>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                    <div
+
+                        class="stock-modal-actions"
+
+                        id="saveItemBtn"
+
+                        style="display:none;"
+
+                    >
+
+
+
+                        <button
+
+                            type="button"
+
+                            class="stock-modal-cancel"
+
+                            onclick="disableItemEdit()"
+
+                        >
+
+                            Cancelar
+
+                        </button>
+
+
+
+                        <button
+
+                            class="chm-page-button primary"
+
+                            type="submit"
+
+                        >
+
+                            <i data-lucide="save"></i>
+
+
+
+                            Salvar alterações
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+                </form>
+
+
+
+            </section>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+</div>
+
+<div
+
+    class="stock-modal-overlay"
+
+    id="movementModal"
+
+    style="display:none;"
+
+>
+
+
+
+    <div class="stock-movement-modal-card">
+
+
+
+        <button
+
+            type="button"
+
+            onclick="closeMovementModal()"
+
+            class="stock-modal-close"
+
+        >
+
+            <i data-lucide="x"></i>
+
+        </button>
+
+
+
+        <div class="stock-modal-header">
+
+
+
+            <div class="stock-modal-icon movement">
+
+                <i data-lucide="arrow-left-right"></i>
+
+            </div>
+
+
+
+            <div>
+
+
+
+                <span>
+
+                    Movimentação
+
+                </span>
+
+
+
+                <h2 id="movementModalTitle">
+
+                    Nova movimentação
+
+                </h2>
+
+
+
+                <p id="movementModalItemName">
+
+                    Item selecionado
+
+                </p>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+        <form
+
+            id="movementForm"
+
+            method="POST"
+
+            action="{{ route('stock.movements.store') }}"
+
+            class="stock-modal-form"
+
+        >
+
+
+
+            @csrf
+
+
+
+            <input
+
+                type="hidden"
+
+                name="movement_type"
+
+                id="movementType"
+
+            >
+
+
+
+            <input
+
+                type="hidden"
+
+                name="stock_item_id"
+
+                id="movementItemId"
+
+            >
+
+
+
+        <div class="stock-movement-form-grid stock-entry-grid">
+
+            <div class="form-group stock-span-6">
+                <label>Quantidade</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    name="quantity"
+                    class="form-input"
+                    placeholder="Ex: 10"
+                    required
+                >
+            </div>
+
+            <div class="form-group stock-span-6">
+                <label>Data da movimentação</label>
+
+                <input
+                    type="datetime-local"
+                    name="moved_at"
+                    id="movementMovedAt"
+                    class="form-input"
+                    value="{{ now()->format('Y-m-d\TH:i') }}"
+                    required
+                >
+            </div>
+
+            <div class="form-group stock-entry-only stock-span-6">
+                <label>Custo total</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="total_cost"
+                    id="movementTotalCost"
+                    class="form-input"
+                    placeholder="Ex: 3500,00"
+                >
+            </div>
+
+            <input
+                type="hidden"
+                name="unit_cost"
+                id="movementUnitCost"
+            >
+
+            <div class="form-group stock-entry-only stock-span-6">
+                <label>Custo unitário calculado</label>
+
+                <input
+                    type="text"
+                    id="movementUnitCostPreview"
+                    class="form-input is-readonly-calculated"
+                    value="R$ 0,00"
+                    readonly
+                >
+            </div>
+
+            <div class="form-group stock-entry-only stock-span-6">
+                <label>Fornecedor</label>
+                <input
+                    type="text"
+                    name="supplier_name"
+                    class="form-input"
+                    placeholder="Nome do fornecedor"
+                >
+            </div>
+
+            <div class="form-group stock-entry-only stock-span-6">
+                <label>Nota fiscal</label>
+
+                <div class="input-with-badge stock-input-with-badge">
+                    <span>NF</span>
+
+                    <input
+                        type="text"
+                        name="invoice_number"
+                        maxlength="255"
+                        placeholder="12403"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group full-width stock-span-12">
+                <label id="movementDescriptionLabel">
+                    Observação
+                </label>
+
+                <textarea
+                    name="description"
+                    id="movementDescription"
+                    rows="4"
+                    class="form-input"
+                    placeholder="Ex: Compra de item, uso em manutenção, ajuste de estoque..."
+                ></textarea>
+                <small
+                    id="movementDescriptionCounter"
+                    class="movement-description-counter"
+                    style="display:none;"
+                >
+                    Informe pelo menos 10 caracteres.
+                </small>
+            </div>
+
+        </div>
+
+
+            <div class="stock-modal-actions">
+
+
+
+                <button
+
+                    type="button"
+
+                    class="stock-modal-cancel"
+
+                    onclick="closeMovementModal()"
+
+                >
+
+                    Cancelar
+
+                </button>
+
+
+
+                <button
+                    class="chm-page-button primary"
+                    id="movementSubmitText"
+                    type="submit"
+                    onclick="return validateMovementSubmitMessage();"
+                >
+                    <i data-lucide="check"></i>
+                    Confirmar
+                </button>
+
+
+
+
+            </div>
+
+
+
+        </form>
+
+
+
+    </div>
+
+
+
+</div>
+
+<script>
+const canManageStockCategories = @json($canManageStockCategories);
+const canManageStockItems = @json($canManageStockItems);
+const canCreateStockEntry = @json($canCreateStockEntry);
+const canCreateStockOutput = @json($canCreateStockOutput);
+const canCancelStockMovements = @json($canCancelStockMovement);
+const canViewStockCosts = @json($canViewStockCosts);
+const canViewStockAuditDetails = @can('viewAuditLogs') true @else false @endcan;
+let lastOpenedItemId = null;
+
+
+
+
+
+function closeMovementModal()
+
+{
+
+    document
+
+        .getElementById('movementModal')
+
+        .style.display = 'none';
+
+
+
+    document
+
+        .getElementById('editItemModal')
+
+        .style.display = 'flex';
+
+}
+
+function enableItemEdit()
+{
+    if (!canManageStockItems) { return; }
+    closeMovementDetailPanel();
+
+    document
+
+        .querySelector('.details-view-mode')
+
+        .style.display = 'none';
+
+
+
+    document
+
+        .querySelector('.details-edit-mode')
+
+        .style.display = 'block';
+
+
+
+    document
+
+        .getElementById('saveItemBtn')
+
+        .style.display = 'flex';
+
+
+
+    const editItemBtn = document.getElementById('editItemBtn');
+    if (editItemBtn) { editItemBtn.style.display = 'none'; }
+
+}
+
+
+
+function disableItemEdit()
+
+{
+
+    document
+
+        .querySelector('.details-view-mode')
+
+        .style.display = 'block';
+
+
+
+    document
+
+        .querySelector('.details-edit-mode')
+
+        .style.display = 'none';
+
+
+
+    document
+
+        .getElementById('saveItemBtn')
+
+        .style.display = 'none';
+
+
+
+    const editItemBtn = document.getElementById('editItemBtn');
+    if (editItemBtn) { editItemBtn.style.display = 'inline-flex'; }
+
+}
+
+
+
+/* =========================
+
+   ITEM MODAL
+
+========================= */
+
+
+
+function openItemModal(categoryId, categoryName)
+{
+    if (!canManageStockItems) { return; }
+document
+
+        .getElementById('itemModal')
+
+        .style.display = 'flex';
+
+
+
+    document
+
+        .getElementById('stock_category_id')
+
+        .value = categoryId;
+
+
+
+    document
+
+        .getElementById('itemCategoryName')
+
+        .innerText = categoryName;
+
+
+
+
+
+}
+
+
+
+function closeItemModal()
+
+{
+
+    document
+
+        .getElementById('itemModal')
+
+        .style.display = 'none';
+
+}
+
+
+
+function openCategoryModal()
+{
+    if (!canManageStockCategories) { return; }
+
+    document
+
+        .getElementById('categoryModal')
+
+        .style.display = 'flex';
+
+}
+
+
+
+function closeCategoryModal()
+
+{
+
+    document
+
+        .getElementById('categoryModal')
+
+        .style.display = 'none';
+
+}
+
+
+
+let currentItemId = null;
+
+async function openEditItemModal(id)
+
+{
+
+    currentItemId = id;
+
+    const response =
+
+        await fetch(`/stock/items/${id}`);
+
+
+
+    const item =
+
+        await response.json();
+
+
+
+    document
+
+        .getElementById('editItemForm')
+
+        .action =
+
+            `/stock/items/${item.id}`;
+
+    document
+
+        .getElementById('editItemModal')
+
+        .style.display = 'flex';
+
+
+
+    /* =========================
+
+       HEADER
+
+    ========================= */
+
+
+
+    document
+
+        .getElementById('editItemName')
+
+        .innerText =
+
+            item.name;
+
+
+
+    document
+
+        .getElementById('editItemCategory')
+
+        .innerText =
+
+            item.category.name;
+
+
+
+    /* =========================
+
+       ESTOQUE
+
+    ========================= */
+
+
+
+    document
+
+        .getElementById('editStockQuantity')
+
+        .innerText =
+
+            parseFloat(item.quantity)
+
+            .toFixed(2);
+
+
+
+    document
+
+        .getElementById('editItemUnitBadge')
+
+        .innerText =
+
+            item.unit;
+
+
+
+    /* =========================
+
+       VIEW MODE
+
+    ========================= */
+
+    document
+
+    .getElementById('viewItemBrand')
+
+        .innerText =
+
+            item.brand ?? '-';
+
+    document
+
+        .getElementById('viewItemUnit')
+
+        .innerText =
+
+            item.unit;
+
+
+
+    document
+
+        .getElementById('viewItemMinimum')
+
+        .innerText =
+
+            item.minimum_quantity;
+
+
+
+    const viewItemCost = document.getElementById('viewItemCost');
+    if (viewItemCost) {
+        viewItemCost.innerText = item.unit_cost !== null ? 'R$ ' + parseFloat(item.unit_cost).toFixed(2) : 'Custo restrito';
+    }
+
+
+
+    document
+
+        .getElementById('viewItemObservation')
+
+        .innerText =
+
+            item.observation ??
+
+            'Sem observações';
+
+
+
+    /* =========================
+
+       EDIT MODE
+
+    ========================= */
+
+
+
+    document
+
+        .getElementById('inputItemName')
+
+        .value =
+
+            item.name;
+
+
+
+    document
+
+        .getElementById('inputItemBrand')
+
+        .value =
+
+            item.brand ?? '';
+
+    document
+
+        .getElementById('inputItemUnit')
+
+        .value =
+
+            item.unit;
+
+
+
+    document
+
+        .getElementById('inputItemMinimum')
+
+        .value =
+
+            item.minimum_quantity;
+
+
+
+    const inputItemCost = document.getElementById('inputItemCost');
+    if (inputItemCost) {
+        inputItemCost.value = item.unit_cost ?? '';
+    }
+
+
+
+    document
+
+        .getElementById('inputItemObservation')
+
+        .value =
+
+            item.observation ?? '';
+
+
+
+    /* =========================
+
+       MOVIMENTAÇÕES
+
+    ========================= */
+
+
+
+    let html = '';
+
+
+
+    if (!item.movements || item.movements.length === 0) {
+
+
+
+        html = `
+
+            <div class="stock-empty-history">
+
+                <i data-lucide="history"></i>
+
+                <strong>Nenhuma movimentação</strong>
+
+                <span>Entradas e saídas aparecerão aqui.</span>
+
+            </div>
+
+        `;
+
+
+
+    } else {
+
+
+
+        item.movements.forEach(movement => {
+            const isCancelled = Boolean(movement.cancelled_at);
+            const isReversal = Boolean(movement.reversed_from_movement_id);
+            const isMaintenance = Boolean(movement.maintenance_record_id);
+            const isReverted = Boolean(movement.reversal_movement_id);
+            const canCancelMovement = canCancelStockMovements
+                && !isCancelled
+                && !isReversal
+                && !isMaintenance;
+            const rowClasses = [
+                isCancelled ? 'is-cancelled' : '',
+                isReversal ? 'is-reversal' : '',
+                isMaintenance ? 'is-maintenance' : '',
+            ].filter(Boolean).join(' ');
+            const movementBadges = [
+                isCancelled ? '<span class="stock-status-badge danger">Cancelada</span>' : '',
+                isReversal ? '<span class="stock-status-badge warning">Reversao</span>' : '',
+                isMaintenance ? '<span class="stock-status-badge info">Manutencao</span>' : '',
+                isReverted && !isCancelled ? '<span class="stock-status-badge muted">Revertida</span>' : '',
+            ].filter(Boolean).join('');
+            const auditDetails = canViewStockAuditDetails && isCancelled && movement.cancel_reason
+                ? `<small>Motivo: ${movement.cancel_reason}</small>`
+                : '';
+            const lockReason = !canCancelMovement
+                ? (isCancelled
+                    ? 'Movimento ja cancelado.'
+                    : (isReversal
+                        ? 'Movimento reverso nao pode ser cancelado direto.'
+                        : (isMaintenance
+                            ? 'Vinculado a manutencao; cancele pela manutencao.'
+                            : 'Movimento nao cancelavel.')))
+                : '';
+            const shortDate = movement.moved_at
+                ? new Date(movement.moved_at).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit',
+                })
+                : '';
+
+            const movementIcon = movement.movement_type === 'in'
+                ? 'arrow-down-left'
+                : 'arrow-up-right';
+            const movementDate = movement.moved_at
+            ? new Date(movement.moved_at).toLocaleString('pt-BR')
+            : (
+                movement.created_at
+                    ? new Date(movement.created_at).toLocaleString('pt-BR')
+                    : ''
+            );
+            const lockNotice = lockReason
+                ? `<small class="stock-movement-lock">${lockReason}</small>`
+                : '';
+            const cancelForm = canCancelMovement
+                ? `
+                    <div class="stock-cancel-box" data-cancel-box>
+                        <button
+                            type="button"
+                            class="stock-modal-cancel"
+                            onclick="showMovementCancelForm(this)"
+                        >
+                            Cancelar
+                        </button>
+
+                        <form method="POST" action="/stock/movements/${movement.id}/cancel" class="stock-movement-cancel-form" style="display:none;">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+
+                            <textarea name="reason" rows="2" required minlength="5" placeholder="Motivo do cancelamento"></textarea>
+
+                            <div class="stock-cancel-actions">
+                                <button type="submit" class="stock-modal-cancel">
+                                    Cancelar movimentação
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="stock-cancel-dismiss"
+                                    onclick="hideMovementCancelForm(this)"
+                                    title="Desistir"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `
+                : '';
+
+
+            html += `
+
+                <div class="movement-row ${rowClasses}">
+
+
+                    <div class="movement-top">
+                        <div class="movement-type-left">
+                            <span class="movement-mini-icon ${movement.movement_type === 'in' ? 'is-in' : 'is-out'}">
+                                <i data-lucide="${movementIcon}"></i>
+                            </span>
+
+                            <div>
+                                <strong>
+                                    ${movement.movement_type === 'in' ? 'Entrada' : 'Saída'}
+                                    <span class="stock-movement-badges">${movementBadges}</span>
+                                </strong>
+
+                                <small class="movement-qty">${movement.quantity}</small>
+                            </div>
+                        </div>
+
+                        <small class="stock-movement-date">${shortDate}</small>
+                    </div>
+
+
+
+                    <small>
+
+                        ${movement.description ?? ''}
+
+                    </small>
+
+                    ${auditDetails}
+
+                    ${lockNotice}
+
+                    <button
+                        type="button"
+                        class="stock-movement-view-btn"
+                        onclick='showMovementDetails(${JSON.stringify(movement)})'
+                    >
+                        Ver informações
+                    </button>
+
+                    ${cancelForm}
+
+
+                </div>
+
+            `;
+
+
+
+        });
+
+
+
+    }
+
+
+
+    document
+
+        .getElementById('movementHistory')
+
+        .innerHTML = html;
+
+
+
+    disableItemEdit();
+
+    if (window.lucide) {
+
+        lucide.createIcons();
+
+    }
+
+}
+
+
+
+
+
+function closeEditItemModal()
+{
+    closeMovementDetailPanel();
+
+    document
+        .querySelector('.details-view-mode')
+        .style.display = 'block';
+
+    document
+        .querySelector('.details-edit-mode')
+        .style.display = 'none';
+
+    document
+        .getElementById('saveItemBtn')
+        .style.display = 'none';
+
+    const editItemBtn = document.getElementById('editItemBtn');
+    if (editItemBtn) { editItemBtn.style.display = 'inline-flex'; }
+
+    document
+        .getElementById('editItemModal')
+        .style.display = 'none';
+}
+
+
+
+function openMovementModal(type)
+{
+    if ((type === 'in' && !canCreateStockEntry) || (type === 'out' && !canCreateStockOutput)) { return; }
+
+    lastOpenedItemId =
+
+        currentItemId;
+
+
+
+    document
+
+        .getElementById('editItemModal')
+
+        .style.display = 'none';
+
+
+
+    const movementModal =
+
+        document.getElementById('movementModal');
+
+
+
+    const movementCard =
+
+        movementModal.querySelector('.stock-movement-modal-card');
+
+
+
+    movementCard.classList.remove(
+
+        'is-in',
+
+        'is-out'
+
+    );
+
+
+
+    movementCard.classList.add(
+
+        type === 'in'
+
+            ? 'is-in'
+
+            : 'is-out'
+
+    );
+
+
+
+    movementModal.style.display = 'flex';
+
+    document.getElementById('movementForm').reset();
+    document.getElementById('movementMovedAt').value = new Date().toISOString().slice(0, 16);
+    document.getElementById('movementType').value = type;
+    document.getElementById('movementItemId').value = currentItemId;
+    document.getElementById('movementMovedAt').value = localDateTimeValue();
+
+    document
+
+        .getElementById('movementType')
+
+        .value = type;
+
+
+
+    document
+
+        .getElementById('movementItemId')
+
+        .value = currentItemId;
+
+
+
+    document
+
+        .getElementById('movementModalItemName')
+
+        .innerText =
+
+            document
+
+                .getElementById('editItemName')
+
+                .innerText;
+
+
+
+    if(type === 'in')
+
+    {
+        // document.querySelectorAll('.stock-entry-only').forEach(el => el.style.display = 'block');
+        document.getElementById('movementDescriptionLabel').innerText = 'Observação';
+        document.getElementById('movementDescription').required = false;
+        document.getElementById('movementDescription').minLength = 0;
+        document.getElementById('movementDescription').placeholder = 'Ex: Compra de item, ajuste de entrada, observação opcional...';
+        document.getElementById('movementSubmitText').disabled = false;
+        document
+
+            .getElementById('movementModalTitle')
+
+            .innerText =
+
+                'Nova entrada';
+
+
+
+        document
+
+            .getElementById('movementSubmitText')
+
+            .innerHTML =
+
+                '<i data-lucide="check"></i> Confirmar entrada';
+
+    }
+
+    else
+
+    {
+        const counter = document.getElementById('movementDescriptionCounter');
+
+        if (counter) {
+            counter.style.display = 'none';
+            counter.classList.remove('is-ok');
+            counter.innerText = 'Informe pelo menos 10 caracteres.';
+        }
+        document.querySelectorAll('.stock-entry-only').forEach(el => el.style.display = 'none');
+        document.getElementById('movementDescriptionLabel').innerText = 'Motivo da saída';
+        document.getElementById('movementDescription').required = true;
+        document.getElementById('movementDescription').minLength = 10;
+        document.getElementById('movementDescription').placeholder = 'Informe obrigatoriamente o motivo da saída do estoque...';
+        document.getElementById('movementSubmitText').disabled = true;
+        document
+
+            .getElementById('movementModalTitle')
+
+            .innerText =
+
+                'Nova saída';
+
+
+
+        document
+
+            .getElementById('movementSubmitText')
+
+            .innerHTML =
+
+                '<i data-lucide="check"></i> Confirmar saída';
+
+    }
+
+
+
+    if (window.lucide) {
+
+        lucide.createIcons();
+
+    }
+
+}
+
+document.getElementById('movementDescription').addEventListener('input', function () {
+    const type = document.getElementById('movementType').value;
+    const submit = document.getElementById('movementSubmitText');
+    const counter = document.getElementById('movementDescriptionCounter');
+
+    if (type !== 'out') {
+        submit.disabled = false;
+
+        if (counter) {
+            counter.style.display = 'none';
+        }
+
+        return;
+    }
+
+    const length = this.value.trim().length;
+    const missing = Math.max(0, 10 - length);
+
+    submit.disabled = length < 10;
+
+    if (! counter) {
+        return;
+    }
+
+    if (length === 0) {
+        counter.style.display = 'none';
+        return;
+    }
+
+    counter.style.display = 'block';
+
+    if (missing > 0) {
+        counter.classList.remove('is-ok');
+        counter.innerText = `Faltam ${missing} caractere(s) para aceitar o motivo.`;
+    } else {
+        counter.classList.add('is-ok');
+        counter.innerText = '';
+    }
+});
+
+function localDateTimeValue(date = new Date()) {
+    const offset = date.getTimezoneOffset();
+    const local = new Date(date.getTime() - offset * 60000);
+
+    return local.toISOString().slice(0, 16);
+}
+
+function updateMovementUnitCost() {
+    const quantity = Number(document.querySelector('#movementForm input[name="quantity"]').value || 0);
+    const totalCost = Number(document.getElementById('movementTotalCost').value || 0);
+    const unitCost = document.getElementById('movementUnitCost');
+
+    if (!unitCost) return;
+
+    const preview = document.getElementById('movementUnitCostPreview');
+
+    if (quantity <= 0 || totalCost <= 0) {
+        unitCost.value = '';
+        if (preview) {
+            preview.value = 'R$ 0,00';
+        }
+        return;
+    }
+
+    const calculated = totalCost / quantity;
+
+    unitCost.value = calculated.toFixed(2);
+
+    if (preview) {
+        preview.value = calculated.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+    }
+}
+
+document
+    .querySelector('#movementForm input[name="quantity"]')
+    .addEventListener('input', updateMovementUnitCost);
+
+document
+    .getElementById('movementTotalCost')
+    .addEventListener('input', updateMovementUnitCost);
+
+function closeMovementModal()
+
+{
+
+    document
+
+        .getElementById('movementModal')
+
+        .style.display = 'none';
+
+
+
+    document
+
+        .getElementById('editItemModal')
+
+        .style.display = 'flex';
+
+}
+
+function validateMovementSubmitMessage() {
+    const type = document.getElementById('movementType').value;
+    const description = document.getElementById('movementDescription');
+
+    if (type === 'out' && description.value.trim().length < 10) {
+        alert('Informe o motivo da saída com pelo menos 10 caracteres.');
+        description.focus();
+        return false;
+    }
+
+    return true;
+}
+
+function showMovementCancelForm(button) {
+    const box = button.closest('[data-cancel-box]');
+    const form = box.querySelector('.stock-movement-cancel-form');
+
+    button.style.display = 'none';
+    form.style.display = 'block';
+
+    const textarea = form.querySelector('textarea');
+    if (textarea) {
+        textarea.focus();
+    }
+}
+
+function hideMovementCancelForm(button) {
+    const box = button.closest('[data-cancel-box]');
+    const form = box.querySelector('.stock-movement-cancel-form');
+    const trigger = box.querySelector('button[type="button"].stock-modal-cancel');
+
+    form.reset();
+    form.style.display = 'none';
+    trigger.style.display = '';
+
+}
+
+function moneyBR(value) {
+    const number = Number(value || 0);
+
+    return number.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+}
+
+function showMovementDetails(movement) {
+    const panel = document.getElementById('movementDetailPanel');
+
+    const typeLabel = movement.movement_type === 'in' ? 'Entrada' : 'Saída';
+
+    const movementDate = movement.moved_at
+        ? new Date(movement.moved_at).toLocaleString('pt-BR')
+        : (
+            movement.created_at
+                ? new Date(movement.created_at).toLocaleString('pt-BR')
+                : '-'
+        );
+
+    document.getElementById('movementDetailDate').innerText = movementDate;
+
+    const icon = document.getElementById('movementDetailIcon');
+    const isIn = movement.movement_type === 'in';
+
+    icon.classList.remove('is-in', 'is-out');
+    icon.classList.add(isIn ? 'is-in' : 'is-out');
+
+    icon.innerHTML = isIn
+        ? '<i data-lucide="arrow-down-left"></i>'
+        : '<i data-lucide="arrow-up-right"></i>';
+
+    let status = 'Ativa';
+
+    if (movement.cancelled_at) {
+        status = 'Cancelada';
+    } else if (movement.reversed_from_movement_id) {
+        status = 'Reversão';
+    } else if (movement.reversal_movement_id) {
+        status = 'Revertida';
+    }
+    document
+        .querySelector('.stock-edit-content')
+        .classList
+        .add('is-viewing-movement');
+    document.getElementById('movementDetailTitle').innerText = typeLabel;
+    document.getElementById('movementDetailQuantity').innerText = movement.quantity ?? '-';
+    const movementDetailUnitCost = document.getElementById('movementDetailUnitCost');
+    if (movementDetailUnitCost) { movementDetailUnitCost.innerText = moneyBR(movement.unit_cost); }
+    const movementDetailTotalCost = document.getElementById('movementDetailTotalCost');
+    if (movementDetailTotalCost) { movementDetailTotalCost.innerText = moneyBR(movement.total_cost); }
+    document.getElementById('movementDetailSupplier').innerText = movement.supplier_name || '-';
+    document.getElementById('movementDetailInvoice').innerText = movement.invoice_number || '-';
+    document.getElementById('movementDetailStatus').innerText = status;
+    document.getElementById('movementDetailDescription').innerText = movement.description || '-';
+
+    document.getElementById('movementDetailAudit').innerText =
+        movement.cancelled_at
+            ? `Cancelada. Motivo: ${movement.cancel_reason || 'não informado'}`
+            : (
+                movement.reversed_from_movement_id
+                    ? `Movimento reverso da movimentação #${movement.reversed_from_movement_id}.`
+                    : (
+                        movement.reversal_movement_id
+                            ? `Movimento revertido pela movimentação #${movement.reversal_movement_id}.`
+                            : 'Sem cancelamento ou reversão.'
+                    )
+            );
+
+    panel.style.display = 'block';
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+function closeMovementDetailPanel() {
+    const panel = document.getElementById('movementDetailPanel');
+
+    if (panel) {
+        panel.style.display = 'none';
+    }
+
+    const content = document.querySelector('.stock-edit-content');
+
+    if (content) {
+        content.classList.remove('is-viewing-movement');
+    }
+}
+</script>
+
+
+
+
+
+@endsection

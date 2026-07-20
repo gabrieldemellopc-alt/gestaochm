@@ -8,6 +8,7 @@ use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
+use App\Services\Permissions\ProfilePermissionService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,9 @@ class StockController extends Controller
         if (! $activeLocation) {
             return $this->missingActiveLocationRedirect();
         }
+
+        $this->authorizeStockPermission('stock.view');
+        $stockPermissions = $this->stockPermissions();
 
         $tenantId = auth()->user()->tenant_id;
 
@@ -44,7 +48,7 @@ class StockController extends Controller
             }
         }
 
-        return view('stock.index', compact('categories'));
+        return view('stock.index', compact('categories', 'stockPermissions'));
     }
 
     public function showItem(StockItem $item)
@@ -52,6 +56,8 @@ class StockController extends Controller
         if ($redirect = $this->ensureItemInActiveContext($item)) {
             return $redirect;
         }
+
+        $this->authorizeStockPermission('stock.view');
 
         $tenantId = auth()->user()->tenant_id;
         $locationId = $item->location_id;
@@ -75,6 +81,10 @@ class StockController extends Controller
             ]);
         }
 
+        if (! $this->canStock('stock.view_costs')) {
+            $this->stripStockCostsForResponse($item);
+        }
+
         return response()->json($item);
     }
 
@@ -83,6 +93,8 @@ class StockController extends Controller
         if (! $this->activeLocation()) {
             return $this->missingActiveLocationRedirect();
         }
+
+        $this->authorizeStockPermission('stock.manage_categories');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -103,6 +115,8 @@ class StockController extends Controller
         if (! $activeLocation) {
             return $this->missingActiveLocationRedirect();
         }
+
+        $this->authorizeStockPermission('stock.manage_items');
 
         $tenantId = auth()->user()->tenant_id;
 
@@ -160,6 +174,8 @@ class StockController extends Controller
             return $redirect;
         }
 
+        $this->authorizeStockPermission('stock.manage_items');
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'brand' => ['nullable', 'string', 'max:255'],
@@ -180,7 +196,7 @@ class StockController extends Controller
         if (! $activeLocation) {
             return $this->missingActiveLocationRedirect();
         }
-    
+
         $tenantId = auth()->user()->tenant_id;
     
         $validated = $request->validate([
@@ -220,6 +236,8 @@ class StockController extends Controller
                 'max:1000',
             ],
         ]);
+
+        $this->authorizeStockMovementPermission($validated['movement_type']);
     
         $requestedItem = StockItem::findOrFail($validated['stock_item_id']);
     
@@ -317,8 +335,8 @@ class StockController extends Controller
 
     public function cancelMovement(Request $request, StockMovement $movement)
     {
-        if (Gate::denies('cancelStockMovements')) {
-            abort(403);
+        if (Gate::denies('cancelStockMovements') || ! $this->canStock('stock.cancel_movement')) {
+            abort(403, 'Você não tem permissão para executar esta ação.');
         }
 
         $validated = $request->validate([
@@ -347,6 +365,64 @@ class StockController extends Controller
         return back()->with('success', 'Movimentacao cancelada com sucesso.');
     }
 
+    private function authorizeStockPermission(string $permissionKey): void
+    {
+        if ($this->canStock($permissionKey)) {
+            return;
+        }
+
+        abort(403, 'Você não tem permissão para executar esta ação.');
+    }
+
+    private function authorizeStockMovementPermission(string $movementType): void
+    {
+        $permissionKey = $movementType === 'in'
+            ? 'stock.entry'
+            : 'stock.manual_output';
+
+        $this->authorizeStockPermission($permissionKey);
+    }
+
+    private function canStock(string $permissionKey): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return app(ProfilePermissionService::class)->allows($user, $permissionKey, [
+            'tenant_id' => $user->tenant_id,
+            'division_id' => session('active_division_id'),
+            'location_id' => session('active_location_id'),
+            'module' => 'fleet',
+        ]);
+    }
+
+    private function stockPermissions(): array
+    {
+        return [
+            'view' => $this->canStock('stock.view'),
+            'manage_categories' => $this->canStock('stock.manage_categories'),
+            'manage_items' => $this->canStock('stock.manage_items'),
+            'create_entry' => $this->canStock('stock.entry'),
+            'create_manual_output' => $this->canStock('stock.manual_output'),
+            'cancel_movement' => Gate::allows('cancelStockMovements') && $this->canStock('stock.cancel_movement'),
+            'view_costs' => $this->canStock('stock.view_costs'),
+        ];
+    }
+
+    private function stripStockCostsForResponse(StockItem $item): void
+    {
+        $item->setAttribute('unit_cost', null);
+
+        if ($item->relationLoaded('movements')) {
+            $item->movements->each(function (StockMovement $movement) {
+                $movement->setAttribute('unit_cost', null);
+                $movement->setAttribute('total_cost', null);
+            });
+        }
+    }
     private function activeLocation()
     {
         return app(ActiveContextService::class)
