@@ -375,6 +375,7 @@
                     <div class="fuel-form-grid fuel-filling-layout">
                     <input type="hidden" name="confirm_high_vehicle_km" value="0">
                     <input type="hidden" name="confirm_high_vehicle_hours" value="0">
+                        @if($canFillInternal && $canFillExternal)
                         <div class="fuel-span-12 fuel-source-toggle" data-fuel-source-toggle>
                             <div class="fuel-source-head">
                                 <span>Tipo de abastecimento</span>
@@ -397,6 +398,14 @@
                                 @endif
                             </div>
                         </div>
+                        @else
+                            <input type="hidden" name="source" value="{{ $defaultFuelFillingSource }}">
+                            <p class="fuel-source-single-note fuel-span-12" data-fuel-source-help>
+                                {{ $defaultFuelFillingSource === 'external_station'
+                                    ? 'Registra custo e consumo do veículo sem movimentar o saldo dos tanques.'
+                                    : 'Baixa o saldo do tanque selecionado e registra movimentação interna.' }}
+                            </p>
+                        @endif
 
                         <label class="fuel-span-6">
                             Veículo
@@ -772,7 +781,9 @@
         });
 
     function fuelFillingSource(form) {
-        return form.querySelector('input[name="source"]:checked')?.value || 'internal_tank';
+        return form.querySelector('input[name="source"]:checked')?.value
+            || form.querySelector('input[type="hidden"][name="source"]')?.value
+            || 'internal_tank';
     }
 
     function syncFuelFillingSource(form) {

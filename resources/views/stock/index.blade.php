@@ -1115,6 +1115,7 @@
 
 
 
+                @if($canCreateStockEntry || $canCreateStockOutput)
                 <div class="stock-movement-actions-new">
 
 

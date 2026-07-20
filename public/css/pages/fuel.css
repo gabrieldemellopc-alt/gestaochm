@@ -943,3 +943,19 @@ html[data-chm-theme="corporate-light"] .fuel-modal-close {
         width: 100%;
     }
 }
+.fuel-source-single-note {
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 0.85rem;
+    background: rgba(15, 23, 42, 0.06);
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+body.theme-corporate-dark .fuel-source-single-note,
+body.corporate-dark .fuel-source-single-note {
+    background: rgba(15, 23, 42, 0.35);
+    color: #cbd5e1;
+}
