@@ -112,7 +112,7 @@ return [
             'description' => 'Permissões para consultas gerenciais, exportações e documentos consolidados.',
             'permissions' => [
                 'reports.view' => ['label' => 'Acessar Central de Relatórios', 'default' => ['supervisor' => false]],
-                'reports.view_operational' => ['label' => 'Ver relatÃ³rios operacionais', 'default' => ['supervisor' => false]],
+                'reports.view_operational' => ['label' => 'Ver relatórios operacionais', 'default' => ['supervisor' => false]],
                 'reports.vehicle_dossier' => ['label' => 'Ver dossiê do veículo', 'default' => ['supervisor' => false]],
                 'reports.maintenance' => ['label' => 'Ver relatório de manutenções', 'default' => ['supervisor' => false]],
                 'reports.fuel' => ['label' => 'Ver relatório de abastecimentos', 'default' => ['supervisor' => false]],
