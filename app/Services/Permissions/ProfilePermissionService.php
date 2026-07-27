@@ -109,6 +109,138 @@ class ProfilePermissionService
         });
     }
 
+
+    public function resetOverrides(User $user, array $data): array
+    {
+        $scope = $this->resolveScope($user, $data);
+        $attributes = Arr::except($this->scopeAttributes($user, $scope, '__scope__'), ['permission_key']);
+
+        $deleted = 0;
+
+        DB::transaction(function () use ($attributes, &$deleted) {
+            $deleted = ProfilePermissionOverride::query()
+                ->where($attributes)
+                ->delete();
+        });
+
+        return [
+            'scope' => $scope,
+            'deleted' => $deleted,
+        ];
+    }
+
+    public function applyCurrentMatrixToDivisionLocations(User $user, array $data): array
+    {
+        $scope = $this->resolveScope($user, $data);
+
+        if (! $scope['location_id']) {
+            throw ValidationException::withMessages([
+                'location_id' => 'Selecione uma unidade específica para aplicar suas permissões às demais unidades da divisão.',
+            ]);
+        }
+
+        $sourceMatrix = $this->matrix($user, $scope);
+        $permissions = collect($sourceMatrix['groups'])
+            ->flatMap(fn (array $group) => $group['permissions'] ?? [])
+            ->keyBy('key');
+
+        $locations = $this->locationsForScope($user, [
+            ...$scope,
+            'location_id' => null,
+        ]);
+
+        DB::transaction(function () use ($user, $scope, $locations, $permissions) {
+            foreach ($locations as $location) {
+                $targetScope = [
+                    ...$scope,
+                    'location_id' => (int) $location->id,
+                ];
+
+                $this->replaceOverridesForScope($user, $targetScope, $permissions);
+            }
+        });
+
+        return [
+            'scope' => $scope,
+            'locations_count' => $locations->count(),
+        ];
+    }
+
+    public function copyOverridesFromLocation(User $user, array $data): array
+    {
+        $scope = $this->resolveScope($user, $data);
+        $sourceLocationId = (int) ($data['source_location_id'] ?? 0);
+
+        if (! $scope['location_id']) {
+            throw ValidationException::withMessages([
+                'location_id' => 'Selecione uma unidade de destino antes de copiar permissões.',
+            ]);
+        }
+
+        if (! $sourceLocationId || $sourceLocationId === (int) $scope['location_id']) {
+            throw ValidationException::withMessages([
+                'source_location_id' => 'Selecione uma unidade de origem diferente da unidade atual.',
+            ]);
+        }
+
+        $source = Location::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('division_id', $scope['division_id'])
+            ->whereKey($sourceLocationId)
+            ->first();
+
+        if (! $source || ! $this->canManageLocation($user, $scope['division_id'], $sourceLocationId)) {
+            throw ValidationException::withMessages([
+                'source_location_id' => 'Selecione uma unidade de origem válida dentro da divisão atual.',
+            ]);
+        }
+
+        $sourceScope = [
+            ...$scope,
+            'location_id' => $sourceLocationId,
+        ];
+
+        $sourceMatrix = $this->matrix($user, $sourceScope);
+        $permissions = collect($sourceMatrix['groups'])
+            ->flatMap(fn (array $group) => $group['permissions'] ?? [])
+            ->keyBy('key');
+
+        DB::transaction(function () use ($user, $scope, $permissions) {
+            $this->replaceOverridesForScope($user, $scope, $permissions);
+        });
+
+        return [
+            'scope' => $scope,
+            'source_location_id' => $sourceLocationId,
+        ];
+    }
+
+    private function replaceOverridesForScope(User $user, array $scope, Collection $permissions): void
+    {
+        $attributes = Arr::except($this->scopeAttributes($user, $scope, '__scope__'), ['permission_key']);
+
+        ProfilePermissionOverride::query()
+            ->where($attributes)
+            ->delete();
+
+        foreach ($permissions as $permission) {
+            $permissionKey = $permission['key'];
+            $allowed = (bool) ($permission['allowed'] ?? false);
+            $default = $this->defaultFor($scope['profile'], $permissionKey);
+
+            if ($allowed === $default) {
+                continue;
+            }
+
+            ProfilePermissionOverride::query()->create([
+                ...$attributes,
+                'permission_key' => $permissionKey,
+                'allowed' => $allowed,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+        }
+    }
     public function allows(?User $user, string $permissionKey, array $scope = []): bool
     {
         if (! $user) {

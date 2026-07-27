@@ -174,6 +174,18 @@ Route::middleware('auth')->group(function () {
         ->name('permissions.update')
         ->middleware('module:fleet');
 
+    Route::post('/permissions/reset', [PermissionController::class, 'reset'])
+        ->name('permissions.reset')
+        ->middleware('module:fleet');
+
+    Route::post('/permissions/apply-to-division', [PermissionController::class, 'applyToDivision'])
+        ->name('permissions.apply-to-division')
+        ->middleware('module:fleet');
+
+    Route::post('/permissions/copy-from-location', [PermissionController::class, 'copyFromLocation'])
+        ->name('permissions.copy-from-location')
+        ->middleware('module:fleet');
+
 
 
 
