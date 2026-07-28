@@ -27,8 +27,7 @@
 
 
         </div>
-
-
+        
 
         <button
 
@@ -101,6 +100,7 @@
         <a
 
             href="{{ route('dashboard') }}"
+            title="Dashboard"
 
             class="sidebar-link {{
 
@@ -137,6 +137,7 @@
         <a
 
             href="{{ route('vehicles.index') }}"
+            title="Veículos"
 
             class="sidebar-link {{
 
@@ -230,6 +231,7 @@
         <a
 
             href="{{ route('fuel.tanks.index') }}"
+            title="Abastecimentos"
 
             class="sidebar-link {{
 
@@ -259,6 +261,7 @@
         <a
 
             href="{{ route('procedures.index') }}"
+            title="Procedimentos"
 
             class="sidebar-link {{
 
@@ -309,6 +312,8 @@
 
             <button
                 type="button"
+                title="Oficina"
+
                 class="sidebar-link sidebar-link-dropdown {{ $workshopActive ? 'active' : '' }}"
                 @click="open = !open"
             >
@@ -328,6 +333,8 @@
             <div class="sidebar-submenu" x-show="open" x-collapse x-cloak>
                 @if($sidebarCanPermission('navigation.workshop'))
                     <a
+                        title="Visão geral"
+
                         href="{{ route('workshop.index') }}"
                         class="sidebar-submenu-link {{ request()->routeIs('workshop.index') ? 'active' : '' }}"
                     >
@@ -338,6 +345,8 @@
 
                 @if($sidebarCanPermission('navigation.tires'))
                     <a
+                        title="Controle de Pneus"
+
                         href="{{ route('workshop.tires.index') }}"
                         class="sidebar-submenu-link {{ request()->routeIs('workshop.tires.*') ? 'active' : '' }}"
                     >
@@ -348,6 +357,8 @@
 
                 @if($sidebarCanPermission('navigation.stock'))
                     <a
+                        title="Estoque"
+
                         href="{{ route('stock.index') }}"
                         class="sidebar-submenu-link {{ request()->routeIs('stock.*') ? 'active' : '' }}"
                     >
@@ -358,6 +369,8 @@
 
                 @if($sidebarCanPermission('navigation.workshop'))
                     <a
+                        title="Procedimentos"
+
                         href="{{ route('procedures.index') }}"
                         class="sidebar-submenu-link {{ request()->routeIs('procedures.*') ? 'active' : '' }}"
                     >
@@ -376,6 +389,7 @@
         <a
 
             href="#"
+            title="Histórico"
 
             class="sidebar-link {{
 
@@ -414,6 +428,7 @@
         <a
 
             href="{{ route('stock.index') }}"
+            title="Estoque"
 
             class="sidebar-link {{
 
@@ -458,6 +473,7 @@
         <a
 
             href="#"
+    title="Alertas"
 
             class="sidebar-link {{
 
@@ -530,6 +546,8 @@
 
         @if($canViewLocationsMenu)
             <a
+                title="Cidades"
+
                 href="{{ route('locations.index') }}"
                 class="sidebar-link {{
                     request()->routeIs('locations.*')
@@ -553,6 +571,7 @@
         <a
 
             href="{{ route('reports.index') }}"
+    title="Relatórios"
 
             class="sidebar-link {{
 
@@ -591,6 +610,7 @@
             <a
 
                 href="{{ route('fiscal-documents.index') }}"
+    title="Notas Fiscais"
 
                 class="sidebar-link {{
 
@@ -623,7 +643,8 @@
 
             {{-- PERMISSÕES --}}
 
-            <a
+            <a    title="Permissões"
+
                 href="{{ route('permissions.index') }}"
                 class="sidebar-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}"
             >
@@ -640,6 +661,7 @@
             {{-- AUDITORIA --}}
 
             <a
+    title="Auditoria"
 
                 href="{{ route('audit.index') }}"
 
@@ -710,6 +732,7 @@
         <a
 
             href="#"
+    title="Configurações"
 
             class="sidebar-link {{
 

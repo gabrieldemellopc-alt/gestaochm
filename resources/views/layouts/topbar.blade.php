@@ -135,19 +135,32 @@
             "
 
         >
-
-    
-
             <i data-lucide="menu"></i>
-
-    
-
         </button>
 
+            
     
 
     @endif
 
+    @if(($pageTitle ?? null) !== 'Portal Corporativo')
+
+        {{-- RETRAIR SIDEBAR — DESKTOP --}}
+        <button
+            type="button"
+            class="sidebar-collapse-button"
+            data-sidebar-collapse
+            aria-label="Recolher menu lateral"
+            aria-pressed="false"
+            title="Recolher menu lateral"
+        >
+            <i
+                data-lucide="panel-left-close"
+                data-sidebar-collapse-icon
+            ></i>
+        </button>
+
+    @endif
 
 
     {{-- CONTEXTO --}}

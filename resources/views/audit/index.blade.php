@@ -288,10 +288,11 @@
                                     </div>
                                 @endforeach
                             </details>
+
+                            @endif
                         </div>
                     </div>
                 </div>
-                    </div>
                 @endif
             </article>
         @empty

@@ -14491,3 +14491,267 @@ html[data-chm-theme="corporate-light"] .topbar .user-dropdown a {
     content: none !important;
     display: none !important;
 }
+
+:root {
+    --chm-sidebar-width: 265px;
+    --chm-sidebar-collapsed-width: 78px;
+    --chm-sidebar-current-width: var(--chm-sidebar-width);
+}
+
+html.sidebar-collapsed {
+    --chm-sidebar-current-width:
+        var(--chm-sidebar-collapsed-width);
+}
+@media (max-width: 1024px) {
+    :root,
+    html.sidebar-collapsed {
+        --chm-sidebar-current-width:
+            var(--chm-sidebar-width);
+    }
+
+    .sidebar-collapse-button,
+    .sidebar-inner-collapse-button {
+        display: none;
+    }
+
+    .sidebar {
+        width: var(--chm-sidebar-width);
+        min-width: var(--chm-sidebar-width);
+    }
+}
+
+@media (min-width: 1025px) {
+    .mobile-menu-button {
+        display: none;
+    }
+}
+/* =========================================================
+   SIDEBAR RECOLHÍVEL — DEFINITIVO
+   ========================================================= */
+
+:root {
+    --chm-sidebar-expanded-width: 265px;
+    --chm-sidebar-collapsed-width: 78px;
+    --chm-sidebar-current-width:
+        var(--chm-sidebar-expanded-width);
+}
+
+html.sidebar-collapsed {
+    --chm-sidebar-current-width:
+        var(--chm-sidebar-collapsed-width);
+}
+
+
+/* Sidebar fixa */
+
+.sidebar {
+    width: var(--chm-sidebar-current-width) !important;
+    min-width: var(--chm-sidebar-current-width) !important;
+    max-width: var(--chm-sidebar-current-width) !important;
+
+    transition:
+        width 0.24s ease,
+        min-width 0.24s ease,
+        max-width 0.24s ease;
+}
+
+
+/* Área principal acompanha a sidebar */
+
+.chm-main {
+    width: calc(
+        100% - var(--chm-sidebar-current-width)
+    ) !important;
+
+    transition:
+        width 0.24s ease,
+        margin-left 0.24s ease;
+}
+
+
+/* Caso a topbar tenha posição fixed */
+
+.chm-main > .topbar {
+    width: 100%;
+}
+
+
+/* =========================================================
+   BOTÃO NA TOPBAR
+   ========================================================= */
+
+.sidebar-collapse-button {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #cbd5e1;
+    background: rgba(92, 113, 147, 0.14);
+
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.sidebar-collapse-button:hover {
+    color: #ffffff;
+    background: #c7434d;
+    border-color: #d35862;
+}
+
+.sidebar-collapse-button svg {
+    width: 19px;
+    height: 19px;
+}
+
+
+/* =========================================================
+   CONTEÚDO DA SIDEBAR RECOLHIDA
+   ========================================================= */
+
+html.sidebar-collapsed .sidebar {
+    overflow-x: hidden;
+}
+
+
+/* Logo */
+
+html.sidebar-collapsed .sidebar-logo {
+    padding-left: 10px;
+    padding-right: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+html.sidebar-collapsed .sidebar-logo img {
+    width: 54px;
+    max-width: 54px;
+    height: auto;
+
+    object-fit: contain;
+}
+
+
+/* Títulos Operacional / Gestão */
+
+html.sidebar-collapsed .sidebar-section-title {
+    height: 14px;
+    margin: 5px 0;
+    padding: 0;
+
+    font-size: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+
+/*
+ * Os links possuem texto direto no Blade.
+ * font-size: 0 oculta esse texto.
+ */
+
+html.sidebar-collapsed .sidebar-link {
+    width: calc(100% - 16px);
+    min-height: 50px;
+    margin-left: 8px;
+    margin-right: 8px;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+
+    font-size: 0;
+
+    overflow: hidden;
+}
+
+
+/* Restaura tamanho dos elementos internos */
+
+html.sidebar-collapsed .sidebar-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    margin: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+html.sidebar-collapsed .sidebar-icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+
+/* Oficina */
+
+html.sidebar-collapsed .sidebar-link-text,
+html.sidebar-collapsed .sidebar-chevron {
+    display: none !important;
+}
+
+html.sidebar-collapsed .sidebar-submenu {
+    display: none !important;
+}
+
+
+/* Garante que o ativo continue visível */
+
+html.sidebar-collapsed .sidebar-link.active {
+    width: calc(100% - 16px);
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 1024px) {
+    :root,
+    html.sidebar-collapsed {
+        --chm-sidebar-current-width:
+            var(--chm-sidebar-expanded-width);
+    }
+
+    html.sidebar-collapsed .sidebar {
+        width: var(--chm-sidebar-expanded-width) !important;
+        min-width: var(--chm-sidebar-expanded-width) !important;
+        max-width: var(--chm-sidebar-expanded-width) !important;
+    }
+
+    .sidebar-collapse-button,
+    .sidebar-inner-collapse-button {
+        display: none !important;
+    }
+
+    .chm-main {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .mobile-menu-button,
+    .sidebar-mobile-header {
+        display: none !important;
+    }
+}

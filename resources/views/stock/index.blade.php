@@ -415,9 +415,14 @@
 
                                 <div>
                                     <span>Estoque atual</span>
-                                    <strong>
-                                        {{ number_format($item->quantity, 2, ',', '.') }}
-                                        {{ $item->unit }}
+                                    <strong class="stock-current-value">
+                                        <span class="stock-current-number">
+                                            {{ number_format($item->quantity, 2, ',', '.') }}
+                                        </span>
+
+                                        <span class="stock-current-unit">
+                                            {{ $item->unit }}
+                                        </span>
                                     </strong>
                                     <small>
                                         Mínimo {{ number_format($item->minimum_quantity, 2, ',', '.') }}
@@ -1223,7 +1228,7 @@
                 </div>
 
 
-
+            @endif
             </aside>
 
 

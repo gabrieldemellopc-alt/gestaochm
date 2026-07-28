@@ -5589,3 +5589,54 @@ html[data-chm-theme="corporate-light"] .stock-modal-overlay .stock-modal-form in
 .stock-item-values-clean small {
     text-transform: none;
 }
+.stock-current-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+
+    min-width: 0;
+    max-width: 100%;
+
+    line-height: 1.1;
+}
+
+.stock-current-number {
+    min-width: 0;
+
+    font-size: clamp(1.1rem, 1.5vw, 1.45rem);
+    font-weight: 800;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stock-current-unit {
+    flex: 0 0 auto;
+
+    font-size: 0.82rem;
+    font-weight: 800;
+
+    color: var(--text-muted, #b8c3d3);
+    white-space: nowrap;
+}
+.stock-item-values {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.stock-item-values > div {
+    min-width: 0;
+    overflow: hidden;
+}
+.stock-item-values > div {
+    padding: 16px 14px;
+}
+@media (max-width: 1450px) {
+    .stock-current-value {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+    }
+}
