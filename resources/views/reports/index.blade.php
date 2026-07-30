@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/pages/reports.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('css/pages/reports.css') }}?v=3">
 @endpush
 
 @section('content')
@@ -22,161 +22,504 @@
     $canOpenMaintenanceExport = $canReport('reports.maintenance') && ($canExportReportPdf || $canExportReportExcel);
 @endphp
 
-<div class="reports-page">
-    <div class="reports-hero">
-        <div class="reports-hero-badge">Central analítica da frota</div>
-        <h1>Relatórios Operacionais</h1>
-        <p>Indicadores, análises e inteligência operacional da frota</p>
-    </div>
+<div class="reports-page reports-index-page">
 
-    @if($canReport('reports.maintenance'))
-        <div class="reports-kpi-grid">
-            <div class="reports-kpi-card info">
-                <div class="reports-kpi-label">Manutenções • Últimos 30 dias</div>
-                <div class="reports-kpi-value">{{ $maintenanceCount30 }}</div>
-                <div class="reports-kpi-description">
-                    {{ $internalMaintenances30 }} internas • {{ $externalMaintenances30 }} externas
-                </div>
-                <div class="reports-kpi-trend">
-                    @if($maintenanceVariation >= 0)
-                        <span class="trend-positive">+{{ number_format($maintenanceVariation, 1, ',', '.') }}%</span>
-                    @else
-                        <span class="trend-negative">{{ number_format($maintenanceVariation, 1, ',', '.') }}%</span>
-                    @endif
-                    vs média últimos 6 meses
-                </div>
+    {{-- =====================================================
+         HEADER
+         ===================================================== --}}
+    <header class="reports-index-header">
+        <div class="reports-index-header-copy">
+            <span class="reports-index-kicker">
+                Central analítica
+            </span>
+
+            <h1>Relatórios Operacionais</h1>
+
+            <p>
+                Consulte indicadores, análises e informações consolidadas
+                da frota de {{ $context['location']->name ?? 'sua unidade' }}.
+            </p>
+        </div>
+
+        <div class="reports-index-header-meta">
+            <div class="reports-index-header-chip">
+                <i data-lucide="building-2"></i>
+
+                <span>
+                    <small>Unidade ativa</small>
+                    <strong>
+                        {{ $context['location']->name ?? 'Não informada' }}
+                    </strong>
+                </span>
             </div>
 
-            <div class="reports-kpi-card highlight">
-                <div class="reports-kpi-label">Custos • Últimos 30 dias</div>
-                <div class="reports-kpi-value">
-                    @if($canViewReportCosts)
-                        R$ {{ number_format($maintenanceCost30, 2, ',', '.') }}
-                    @else
-                        Restrito
-                    @endif
-                </div>
-                <div class="reports-kpi-description">custos operacionais acumulados</div>
-                @if($canViewReportCosts)
-                    <div class="reports-kpi-trend">
-                        @if($costVariation >= 0)
-                            <span class="trend-negative">+{{ number_format($costVariation, 1, ',', '.') }}%</span>
-                        @else
-                            <span class="trend-positive">{{ number_format($costVariation, 1, ',', '.') }}%</span>
-                        @endif
-                        vs média últimos 6 meses
-                    </div>
-                @endif
+            <div class="reports-index-header-chip">
+                <i data-lucide="calendar-range"></i>
+
+                <span>
+                    <small>Período padrão</small>
+                    <strong>Últimos 30 dias</strong>
+                </span>
             </div>
 
-            <div class="reports-kpi-card success">
-                <div class="reports-kpi-label">Custo médio por manutenção</div>
-                <div class="reports-kpi-value">
-                    @if($canViewReportCosts)
-                        R$ {{ number_format($averageMaintenanceCost, 2, ',', '.') }}
-                    @else
-                        Restrito
-                    @endif
-                </div>
-                <div class="reports-kpi-description">média operacional do período</div>
-            </div>
+            <div class="reports-index-header-chip">
+                <i data-lucide="layout-grid"></i>
 
-            <div class="reports-kpi-card warning">
-                <div class="reports-kpi-label">Veículo com maior custo</div>
-                <div class="reports-kpi-value vehicle-kpi">{{ $criticalVehicle?->name ?? '—' }}</div>
-                <div class="reports-kpi-description">
-                    @if($canViewReportCosts)
-                        R$ {{ number_format($criticalVehicle?->maintenances_sum_total_cost ?? 0, 2, ',', '.') }} acumulados
-                    @else
-                        Custos restritos
-                    @endif
-                </div>
+                <span>
+                    <small>Módulos disponíveis</small>
+                    <strong>
+                        {{
+                            collect($availableReportKeys)
+                                ->filter(fn (string $key) => $canReport($key))
+                                ->count()
+                        }}
+                    </strong>
+                </span>
             </div>
         </div>
+    </header>
+
+    {{-- =====================================================
+         FAIXA ANALÍTICA
+         ===================================================== --}}
+    @if($canReport('reports.maintenance'))
+        <section
+            class="reports-index-overview"
+            aria-label="Resumo operacional dos últimos 30 dias"
+        >
+            <div class="reports-index-overview-heading">
+                <span class="reports-index-overview-icon">
+                    <i data-lucide="activity"></i>
+                </span>
+
+                <span>
+                    Visão dos últimos 30 dias
+                </span>
+            </div>
+
+            <div class="reports-index-overview-items">
+
+                <div class="reports-index-overview-item">
+                    <span>Manutenções</span>
+
+                    <strong>
+                        {{ $maintenanceCount30 }}
+                    </strong>
+
+                    <small>
+                        {{ $internalMaintenances30 }} internas ·
+                        {{ $externalMaintenances30 }} externas
+                    </small>
+                </div>
+
+                <div class="reports-index-overview-separator"></div>
+
+                <div class="reports-index-overview-item">
+                    <span>Custo acumulado</span>
+
+                    <strong>
+                        @if($canViewReportCosts)
+                            R$ {{ number_format(
+                                $maintenanceCost30,
+                                2,
+                                ',',
+                                '.'
+                            ) }}
+                        @else
+                            Restrito
+                        @endif
+                    </strong>
+
+                    @if($canViewReportCosts)
+                        <small
+                            class="{{
+                                $costVariation > 0
+                                    ? 'is-negative'
+                                    : 'is-positive'
+                            }}"
+                        >
+                            {{
+                                $costVariation > 0
+                                    ? '+'
+                                    : ''
+                            }}{{ number_format(
+                                $costVariation,
+                                1,
+                                ',',
+                                '.'
+                            ) }}%
+                            versus média semestral
+                        </small>
+                    @else
+                        <small>Visualização sem valores financeiros</small>
+                    @endif
+                </div>
+
+                <div class="reports-index-overview-separator"></div>
+
+                <div class="reports-index-overview-item">
+                    <span>Custo médio</span>
+
+                    <strong>
+                        @if($canViewReportCosts)
+                            R$ {{ number_format(
+                                $averageMaintenanceCost,
+                                2,
+                                ',',
+                                '.'
+                            ) }}
+                        @else
+                            Restrito
+                        @endif
+                    </strong>
+
+                    <small>por manutenção no período</small>
+                </div>
+
+                <div class="reports-index-overview-separator"></div>
+
+                <div class="reports-index-overview-item vehicle">
+                    <span>Maior custo acumulado</span>
+
+                    <strong>
+                        {{ $criticalVehicle?->name ?? 'Sem registros' }}
+                    </strong>
+
+                    <small>
+                        @if($canViewReportCosts)
+                            R$ {{ number_format(
+                                $criticalVehicle?->maintenances_sum_total_cost
+                                    ?? 0,
+                                2,
+                                ',',
+                                '.'
+                            ) }}
+                        @else
+                            Custos restritos
+                        @endif
+                    </small>
+                </div>
+
+            </div>
+        </section>
     @endif
 
-    <div class="reports-grid">
-        @if($canReport('reports.maintenance'))
-            <div class="report-module-card">
-                <div class="report-module-icon"><i data-lucide="wrench"></i></div>
-                <h3>Relatório de Manutenções</h3>
-                <p>Gere relatórios completos de serviços executados, custos, procedimentos e oficinas.</p>
-                <div class="reports-kpi-description">
-                    {{ $maintenancePreview['maintenanceCount'] ?? 0 }} registros no período padrão
-                    @if($canViewReportCosts)
-                        • R$ {{ number_format($maintenancePreview['totalCost'] ?? 0, 2, ',', '.') }} operacionais
-                    @else
-                        • custos restritos
-                    @endif
-                    @if(($maintenancePreview['cancelledCount'] ?? 0) > 0)
-                        • {{ $maintenancePreview['cancelledCount'] }} cancelada(s) fora dos totais
-                    @endif
+    {{-- =====================================================
+         RELATÓRIOS PRINCIPAIS
+         ===================================================== --}}
+    @if(
+        $canReport('reports.maintenance')
+        || $canReport('reports.vehicle_dossier')
+    )
+        <section class="reports-index-section">
+            <div class="reports-index-section-header">
+                <div>
+                    <span class="reports-index-section-kicker">
+                        Principais
+                    </span>
+
+                    <h2>Análises operacionais</h2>
+
+                    <p>
+                        Relatórios consolidados para acompanhamento da frota,
+                        custos e histórico dos veículos.
+                    </p>
                 </div>
-                @if($canOpenMaintenanceExport)
-                    <div class="report-module-actions">
-                        <button class="report-module-button" onclick="openMaintenanceReportModal()">
-                            Abrir relatório
-                        </button>
-                    </div>
+            </div>
+
+            <div class="reports-index-featured-grid">
+
+                {{-- MANUTENÇÕES --}}
+                @if($canReport('reports.maintenance'))
+                    <article
+                        class="reports-index-featured-card maintenance"
+                    >
+                        <div class="reports-index-card-top">
+                            <div class="reports-index-card-icon">
+                                <i data-lucide="wrench"></i>
+                            </div>
+
+                            <span class="reports-index-card-category">
+                                Manutenção
+                            </span>
+                        </div>
+
+                        <div class="reports-index-card-content">
+                            <h3>Relatório de Manutenções</h3>
+
+                            <p>
+                                Analise serviços executados, procedimentos,
+                                oficinas, custos e registros cancelados.
+                            </p>
+
+                            <div class="reports-index-featured-metrics">
+                                <div>
+                                    <span>Registros</span>
+
+                                    <strong>
+                                        {{
+                                            $maintenancePreview[
+                                                'maintenanceCount'
+                                            ] ?? 0
+                                        }}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>Custo operacional</span>
+
+                                    <strong>
+                                        @if($canViewReportCosts)
+                                            R$ {{ number_format(
+                                                $maintenancePreview[
+                                                    'totalCost'
+                                                ] ?? 0,
+                                                2,
+                                                ',',
+                                                '.'
+                                            ) }}
+                                        @else
+                                            Restrito
+                                        @endif
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>Canceladas</span>
+
+                                    <strong>
+                                        {{
+                                            $maintenancePreview[
+                                                'cancelledCount'
+                                            ] ?? 0
+                                        }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if($canOpenMaintenanceExport)
+                            <button
+                                type="button"
+                                class="reports-index-card-action"
+                                onclick="openMaintenanceReportModal()"
+                            >
+                                <span>Abrir relatório</span>
+                                <i data-lucide="arrow-right"></i>
+                            </button>
+                        @endif
+                    </article>
                 @endif
-            </div>
-        @endif
 
-        @if($canReport('reports.tires'))
-            <div class="report-module-card">
-                <div class="report-module-icon"><i data-lucide="circle-dot"></i></div>
-                <h3>Relatório de Pneus</h3>
-                <p>Acompanhe pneus por unidade, veículo, recapagens, sulco atual e alertas críticos.</p>
-                <div class="reports-kpi-description">Inventário atual, eventos por período e pontos de atenção</div>
-                <div class="report-module-actions">
-                    <a href="{{ route('reports.tires.index') }}" class="report-module-button">Abrir relatório</a>
+                {{-- DOSSIÊ --}}
+                @if($canReport('reports.vehicle_dossier'))
+                    <a
+                        href="{{ route(
+                            'reports.vehicle-dossier.index'
+                        ) }}"
+                        class="reports-index-featured-card dossier"
+                    >
+                        <div class="reports-index-card-top">
+                            <div class="reports-index-card-icon">
+                                <i data-lucide="clipboard-list"></i>
+                            </div>
+
+                            <span class="reports-index-card-category">
+                                Veículo
+                            </span>
+                        </div>
+
+                        <div class="reports-index-card-content">
+                            <h3>Dossiê do Veículo</h3>
+
+                            <p>
+                                Consulte o prontuário operacional completo de
+                                um veículo, incluindo manutenção, combustível,
+                                pneus, utilização e alertas.
+                            </p>
+
+                            <div class="reports-index-featured-tags">
+                                <span>Manutenções</span>
+                                <span>Abastecimentos</span>
+                                <span>Pneus</span>
+                                <span>KM e horímetro</span>
+                            </div>
+                        </div>
+
+                        <div class="reports-index-card-action">
+                            <span>Abrir dossiê</span>
+                            <i data-lucide="arrow-right"></i>
+                        </div>
+                    </a>
+                @endif
+
+            </div>
+        </section>
+    @endif
+
+    {{-- =====================================================
+         RELATÓRIOS COMPLEMENTARES
+         ===================================================== --}}
+    @if(
+        $canReport('reports.tires')
+        || $canReport('reports.fuel')
+        || $canReport('reports.stock')
+    )
+        <section class="reports-index-section">
+            <div class="reports-index-section-header">
+                <div>
+                    <span class="reports-index-section-kicker">
+                        Complementares
+                    </span>
+
+                    <h2>Controles especializados</h2>
+
+                    <p>
+                        Consulte painéis específicos para pneus,
+                        abastecimentos e movimentações de estoque.
+                    </p>
                 </div>
             </div>
-        @endif
 
-        @if($canReport('reports.fuel'))
-            <div class="report-module-card">
-                <div class="report-module-icon"><i data-lucide="fuel"></i></div>
-                <h3>Relatório de Abastecimentos</h3>
-                <p>Acompanhe saldos de tanques, recebimentos, abastecimentos e consumo por veículo.</p>
-                <div class="reports-kpi-description">Diesel, ARLA, custos, alertas e movimentações por período</div>
-                <div class="report-module-actions">
-                    <a href="{{ route('reports.fuel.index') }}" class="report-module-button">Abrir painel</a>
-                </div>
-            </div>
-        @endif
+            <div class="reports-index-compact-grid">
 
-        @if($canReport('reports.vehicle_dossier'))
-            <div class="report-module-card">
-                <div class="report-module-icon"><i data-lucide="clipboard-list"></i></div>
-                <h3>Dossiê do Veículo</h3>
-                <p>Prontuário operacional individual por veículo, período, custos, pneus, abastecimentos e alertas.</p>
-                <div class="reports-kpi-description">Estrutura pronta para consolidação por período</div>
-                <div class="report-module-actions">
-                    <a href="{{ route('reports.vehicle-dossier.index') }}" class="report-module-button">Abrir dossiê</a>
-                </div>
-            </div>
-        @endif
+                {{-- PNEUS --}}
+                @if($canReport('reports.tires'))
+                    <a
+                        href="{{ route('reports.tires.index') }}"
+                        class="reports-index-compact-card tires"
+                    >
+                        <div class="reports-index-compact-head">
+                            <div class="reports-index-card-icon">
+                                <i data-lucide="circle-dot"></i>
+                            </div>
 
-        @if($canReport('reports.stock'))
-            <div class="report-module-card">
-                <div class="report-module-icon"><i data-lucide="package-search"></i></div>
-                <h3>Relatório de Estoque</h3>
-                <p>Entradas, saídas, movimentações e consumo de itens operacionais.</p>
-                <div class="report-module-actions">
-                    <a href="{{ route('reports.stock.index') }}" class="report-module-button">Abrir relatório</a>
-                </div>
+                            <span class="reports-index-card-category">
+                                Pneus
+                            </span>
+                        </div>
+
+                        <div class="reports-index-compact-content">
+                            <h3>Relatório de Pneus</h3>
+
+                            <p>
+                                Inventário, recapagens, sulcos, eventos e
+                                pontos críticos por veículo.
+                            </p>
+
+                            <div class="reports-index-compact-info">
+                                <span>Inventário atual</span>
+                                <span>Alertas críticos</span>
+                                <span>Eventos por período</span>
+                            </div>
+                        </div>
+
+                        <div class="reports-index-card-action">
+                            <span>Abrir relatório</span>
+                            <i data-lucide="arrow-right"></i>
+                        </div>
+                    </a>
+                @endif
+
+                {{-- ABASTECIMENTOS --}}
+                @if($canReport('reports.fuel'))
+                    <a
+                        href="{{ route('reports.fuel.index') }}"
+                        class="reports-index-compact-card fuel"
+                    >
+                        <div class="reports-index-compact-head">
+                            <div class="reports-index-card-icon">
+                                <i data-lucide="fuel"></i>
+                            </div>
+
+                            <span class="reports-index-card-category">
+                                Combustível
+                            </span>
+                        </div>
+
+                        <div class="reports-index-compact-content">
+                            <h3>Relatório de Abastecimentos</h3>
+
+                            <p>
+                                Saldos, recebimentos, consumo por veículo,
+                                produtos e custos do período.
+                            </p>
+
+                            <div class="reports-index-compact-info">
+                                <span>Diesel e ARLA</span>
+                                <span>Consumo por veículo</span>
+                                <span>Custos e movimentações</span>
+                            </div>
+                        </div>
+
+                        <div class="reports-index-card-action">
+                            <span>Abrir painel</span>
+                            <i data-lucide="arrow-right"></i>
+                        </div>
+                    </a>
+                @endif
+
+                {{-- ESTOQUE --}}
+                @if($canReport('reports.stock'))
+                    <a
+                        href="{{ route('reports.stock.index') }}"
+                        class="reports-index-compact-card stock"
+                    >
+                        <div class="reports-index-compact-head">
+                            <div class="reports-index-card-icon">
+                                <i data-lucide="package-search"></i>
+                            </div>
+
+                            <span class="reports-index-card-category">
+                                Estoque
+                            </span>
+                        </div>
+
+                        <div class="reports-index-compact-content">
+                            <h3>Relatório de Estoque</h3>
+
+                            <p>
+                                Analise entradas, saídas, consumo de materiais
+                                e itens abaixo do nível mínimo.
+                            </p>
+
+                            <div class="reports-index-compact-info">
+                                <span>
+                                    {{ $stockItems ?? 0 }} itens cadastrados
+                                </span>
+
+                                <span>Movimentações</span>
+                                <span>Consumo operacional</span>
+                            </div>
+                        </div>
+
+                        <div class="reports-index-card-action">
+                            <span>Abrir relatório</span>
+                            <i data-lucide="arrow-right"></i>
+                        </div>
+                    </a>
+                @endif
+
             </div>
-        @endif
-    </div>
+        </section>
+    @endif
 
     @unless($hasAvailableReports)
-        <div class="report-module-card disabled">
-            <div class="report-module-icon"><i data-lucide="lock"></i></div>
-            <h3>Nenhum relatório disponível</h3>
-            <p>Nenhum relatório disponível para o seu perfil nesta unidade.</p>
-        </div>
+        <section class="reports-index-empty">
+            <span class="reports-index-empty-icon">
+                <i data-lucide="lock"></i>
+            </span>
+
+            <div>
+                <h2>Nenhum relatório disponível</h2>
+
+                <p>
+                    Seu perfil não possui acesso a relatórios nesta unidade.
+                </p>
+            </div>
+        </section>
     @endunless
+
 </div>
 
 @if($canOpenMaintenanceExport)

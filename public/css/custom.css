@@ -13926,9 +13926,9 @@ html[data-chm-theme="corporate-light"] .topbar .topbar-location-selector {
 .topbar .topbar-brand img {
     display: block;
     width: auto;
-    max-width: 40px;
+    max-width: 90px;
     height: auto;
-    max-height: 40px;
+    max-height: 90px;
     object-fit: contain;
 }
 
@@ -14672,6 +14672,7 @@ html.sidebar-collapsed .sidebar-link {
 
     display: flex;
     align-items: center;
+    align-self: center;
     justify-content: center;
     gap: 0;
 
@@ -14707,9 +14708,6 @@ html.sidebar-collapsed .sidebar-chevron {
     display: none !important;
 }
 
-html.sidebar-collapsed .sidebar-submenu {
-    display: none !important;
-}
 
 
 /* Garante que o ativo continue visível */
@@ -14753,5 +14751,1002 @@ html.sidebar-collapsed .sidebar-link.active {
     .mobile-menu-button,
     .sidebar-mobile-header {
         display: none !important;
+    }
+}
+/* =========================================================
+   CORREÇÃO DEFINITIVA — SIDEBAR RETRAÍDA
+   Manter este bloco no FINAL do custom.css
+   ========================================================= */
+
+/* Sidebar aberta */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+/* O nav não pode assumir somente a largura do conteúdo */
+.sidebar .sidebar-nav {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+
+    flex: 1 1 auto;
+    box-sizing: border-box;
+}
+
+/* Sidebar retraída */
+html.sidebar-collapsed .sidebar {
+    width: 88px !important;
+    min-width: 88px !important;
+    max-width: 88px !important;
+
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+
+    align-items: stretch !important;
+    overflow-x: hidden !important;
+}
+
+/* Corrige exatamente os 17px mostrados no DevTools */
+html.sidebar-collapsed .sidebar .sidebar-nav {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+
+    padding: 8px 0 !important;
+    margin: 0 !important;
+
+    align-items: center !important;
+    overflow: visible !important;
+}
+
+/* Esconde títulos das seções */
+html.sidebar-collapsed .sidebar-section-title {
+    display: none !important;
+}
+
+/* Cada link vira um botão de ícone */
+html.sidebar-collapsed .sidebar-link {
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+
+    height: 52px !important;
+    min-height: 52px !important;
+
+    margin: 0 auto 6px !important;
+    padding: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 0 !important;
+    border-radius: 14px !important;
+
+    white-space: nowrap;
+    overflow: visible !important;
+}
+
+/* Ícone */
+html.sidebar-collapsed .sidebar-link .sidebar-icon {
+    width: 26px !important;
+    min-width: 26px !important;
+    height: 26px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+html.sidebar-collapsed .sidebar-link .sidebar-icon svg {
+    display: block !important;
+    width: 24px !important;
+    height: 24px !important;
+}
+
+/* Oculta texto e seta */
+html.sidebar-collapsed .sidebar-link-text,
+html.sidebar-collapsed .sidebar-chevron,
+html.sidebar-collapsed .sidebar-submenu-text {
+    display: none !important;
+}
+
+/* Grupos também ocupam toda a largura */
+html.sidebar-collapsed .sidebar-group {
+    width: 100% !important;
+    min-width: 100% !important;
+}
+
+/* Dropdown principal centralizado */
+html.sidebar-collapsed .sidebar-link-dropdown {
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+
+
+/* Item ativo */
+html.sidebar-collapsed .sidebar-link.active {
+    position: relative;
+    background: #33425e !important;
+}
+
+/* Marcador lateral */
+html.sidebar-collapsed .sidebar-link.active::before {
+    content: "";
+    position: absolute;
+
+    left: -10px;
+    top: 8px;
+    bottom: 8px;
+
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+    background: #e0525b;
+}
+html.sidebar-collapsed .sidebar-logo {
+    width: 100% !important;
+    height: 88px !important;
+    min-height: 88px !important;
+
+    padding: 14px 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    overflow: hidden !important;
+}
+
+html.sidebar-collapsed .sidebar-logo img {
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+
+    height: 52px !important;
+    object-fit: contain !important;
+    object-position: left center !important;
+}
+html.sidebar-collapsed .sidebar-logo img {
+    display: none !important;
+}
+/* =========================================================
+   MARCA COMPACTA DA SIDEBAR
+   ========================================================= */
+
+html.sidebar-collapsed .sidebar-logo {
+    width: 100% !important;
+    height: 114px !important;
+    min-height: 114px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+
+    position: relative;
+    overflow: hidden !important;
+}
+
+/* Oculta a logo CHM completa na sidebar retraída */
+html.sidebar-collapsed .sidebar-logo img {
+    display: none !important;
+}
+
+/* Pequeno retângulo horizontal da identidade CHM */
+/* =========================================================
+   MARCA CHM COMPACTA — SIDEBAR RETRAÍDA
+   ========================================================= */
+
+html.sidebar-collapsed .sidebar-logo {
+    width: 100% !important;
+    height: 118px !important;
+    min-height: 118px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+
+    position: relative;
+    overflow: hidden !important;
+}
+
+/* Oculta a logo completa */
+html.sidebar-collapsed .sidebar-logo img {
+    display: none !important;
+}
+
+/* Texto CHM */
+html.sidebar-collapsed .sidebar-logo::before {
+    content: "CHM";
+
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.4px;
+
+    white-space: nowrap;
+}
+
+/* Traço alaranjado abaixo do CHM */
+html.sidebar-collapsed .sidebar-logo::after {
+    content: "";
+
+    position: absolute;
+    top: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    width: 31px;
+    height: 5px;
+
+    border: none;
+    border-radius: 4px;
+
+    background: #FF4E46;
+    box-shadow: none;
+}
+/* =========================================================
+   SIDEBAR RETRAÍDA — ALINHAMENTOS
+   ========================================================= */
+
+/*
+ * A área da marca acompanha a mesma altura do cabeçalho
+ * principal onde aparece a logo AKSA.
+ */
+html.sidebar-collapsed .sidebar-logo {
+    width: 100% !important;
+    height: 119px !important;
+    min-height: 119px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    position: relative;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    overflow: hidden !important;
+}
+
+/* Oculta a logo CHM completa */
+html.sidebar-collapsed .sidebar-logo img {
+    display: none !important;
+}
+
+/* Texto CHM */
+html.sidebar-collapsed .sidebar-logo::before {
+    content: "CHM";
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    /*
+     * Sobe levemente o conjunto para alinhar visualmente
+     * com o centro da logo AKSA.
+     */
+    transform: translate(-50%, -13px);
+
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.35px;
+
+    white-space: nowrap;
+}
+
+/* Traço alaranjado */
+html.sidebar-collapsed .sidebar-logo::after {
+    content: "";
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, 4px);
+
+    width: 41px;
+    height: 6px;
+
+    border: 0;
+    border-radius: 4px;
+
+    background: #FF4E46;
+    box-shadow: none;
+}
+
+/*
+ * Faz o menu começar mais próximo do cabeçalho.
+ * O primeiro ícone ficará alinhado ao primeiro bloco
+ * de conteúdo do dashboard.
+ */
+html.sidebar-collapsed .sidebar .sidebar-nav {
+    width: 100% !important;
+    min-width: 100% !important;
+
+    padding-top: 40px !important;
+    padding-right: 0 !important;
+    padding-bottom: 12px !important;
+    padding-left: 0 !important;
+
+    margin: 0 !important;
+
+    align-items: center !important;
+}
+html.sidebar-collapsed .sidebar-logo::before {
+    transform: translate(-50%, -14px);
+}
+
+html.sidebar-collapsed .sidebar-logo::after {
+    transform: translate(-50%, 3px);
+}
+
+html.sidebar-collapsed .sidebar .sidebar-nav {
+    padding-top: 35px !important;
+}
+
+/* =========================================================
+   SIDEBAR RETRAÍDA — ALINHAMENTO COM TOPBAR E CONTEÚDO
+   Manter no final do custom.css
+   ========================================================= */
+
+/*
+ * Remove o espaço superior herdado da sidebar.
+ * A marca CHM passa a começar no mesmo Y do cabeçalho.
+ */
+html.sidebar-collapsed .sidebar {
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
+
+    padding-top: 0 !important;
+    padding-right: 11px !important;
+    padding-bottom: 0 !important;
+    padding-left: 11px !important;
+
+    margin: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
+/*
+ * Mesma altura visual do cabeçalho principal.
+ * Pela imagem, a linha inferior da topbar está em cerca de 98px.
+ */
+html.sidebar-collapsed .sidebar-logo {
+    width: 100% !important;
+
+    height: 98px !important;
+    min-height: 98px !important;
+    max-height: 98px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    position: relative !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* Oculta a imagem horizontal completa */
+html.sidebar-collapsed .sidebar-logo img {
+    display: none !important;
+}
+
+/* Texto CHM */
+html.sidebar-collapsed .sidebar-logo::before {
+    content: "CHM";
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    /*
+     * O conjunto texto + traço fica visualmente centralizado
+     * com a logo AKSA.
+     */
+    transform: translate(-50%, -11px);
+
+    margin: 0;
+    padding: 0;
+
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.35px;
+
+    white-space: nowrap;
+}
+
+/* Traço vermelho/alaranjado */
+html.sidebar-collapsed .sidebar-logo::after {
+    content: "";
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, 7px);
+
+    width: 42px;
+    height: 6px;
+
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+    border-radius: 4px;
+
+    background: #FF4E46;
+    box-shadow: none;
+}
+
+/*
+ * O menu começa 32px após o fim do cabeçalho:
+ *
+ * 98px do cabeçalho
+ * + 32px de espaço
+ * = primeiro botão começando em aproximadamente 130px,
+ *
+ * alinhado ao topo dos cards do dashboard.
+ */
+html.sidebar-collapsed .sidebar .sidebar-nav {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+
+    padding: 32px 0 12px !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    align-items: center !important;
+
+    gap: 8px !important;
+
+    box-sizing: border-box !important;
+}
+
+/* Títulos não ocupam espaço na retraída */
+html.sidebar-collapsed .sidebar-section-title {
+    display: none !important;
+}
+
+/* Links compactos */
+html.sidebar-collapsed .sidebar-link {
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+
+    height: 52px !important;
+    min-height: 52px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex: 0 0 52px !important;
+
+    gap: 0 !important;
+    border-radius: 15px !important;
+
+    box-sizing: border-box !important;
+}
+
+/* =========================================================
+   OFICINA — DROPDOWN ABERTO
+   ========================================================= */
+
+.sidebar-workshop-group {
+    position: relative;
+}
+
+/* Cabeçalho interno aparece somente no dropright */
+.sidebar-submenu-heading {
+    display: none;
+}
+
+
+
+/* =========================================================
+   SIDEBAR RETRAÍDA — DROPRIGHT
+   ========================================================= */
+
+/*
+ * O submenu precisa ultrapassar a largura da sidebar.
+ * Não pode haver overflow-x hidden nos ancestrais.
+ */
+html.sidebar-collapsed .sidebar,
+html.sidebar-collapsed .sidebar-nav,
+html.sidebar-collapsed .sidebar-workshop-group {
+    overflow: visible !important;
+}
+
+html.sidebar-collapsed .sidebar-workshop-group {
+    width: 100% !important;
+    position: relative !important;
+
+    display: flex;
+    justify-content: center;
+}
+
+
+
+/* Título do painel */
+html.sidebar-collapsed .sidebar-submenu-heading {
+    display: block;
+
+    padding: 5px 10px 9px;
+    margin-bottom: 3px;
+
+    color: #f1f5f9;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+/* Links internos do dropright */
+html.sidebar-collapsed .sidebar-workshop-submenu .sidebar-submenu-link {
+    width: 100%;
+    min-height: 42px;
+
+    padding: 9px 11px;
+    margin: 0;
+
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+
+    border-radius: 10px;
+
+    white-space: nowrap;
+}
+
+/* O texto precisa reaparecer dentro do dropright */
+html.sidebar-collapsed
+.sidebar-workshop-submenu
+.sidebar-submenu-text {
+    display: inline !important;
+}
+
+/* Ícones internos */
+html.sidebar-collapsed
+.sidebar-workshop-submenu
+.sidebar-submenu-link svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+}
+
+/* Hover */
+html.sidebar-collapsed
+.sidebar-workshop-submenu
+.sidebar-submenu-link:hover {
+    color: #ffffff;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+/* Item interno ativo */
+html.sidebar-collapsed
+.sidebar-workshop-submenu
+.sidebar-submenu-link.active {
+    color: #ffffff;
+    background: rgba(224, 82, 91, 0.16);
+}
+
+/* Botão Oficina aberto */
+html.sidebar-collapsed
+.sidebar-workshop-group:has(.sidebar-workshop-submenu[style*="display: block"])
+.sidebar-link-dropdown {
+    background: #33425e;
+}
+html.sidebar-collapsed .sidebar {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+}
+html:not(.sidebar-collapsed) .sidebar-nav {
+    overflow-y: auto;
+}
+
+html.sidebar-collapsed .sidebar-nav {
+    overflow: visible !important;
+}
+
+
+/* Botão Oficina enquanto aberto */
+
+html.sidebar-collapsed
+.sidebar-link-dropdown.menu-open {
+    background: #33425e !important;
+}
+
+/* Animações Alpine */
+
+.sidebar-flyout-enter {
+    transition:
+        opacity 150ms ease,
+        transform 150ms ease;
+}
+
+.sidebar-flyout-enter-start {
+    opacity: 0;
+    transform: translateX(-6px);
+}
+
+.sidebar-flyout-enter-end {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.sidebar-flyout-leave {
+    transition:
+        opacity 100ms ease,
+        transform 100ms ease;
+}
+
+.sidebar-flyout-leave-start {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.sidebar-flyout-leave-end {
+    opacity: 0;
+    transform: translateX(-6px);
+}
+/* =========================================================
+   MENU OFICINA — DROPDOWN / FLYOUT
+   ========================================================= */
+
+.sidebar-workshop-menu[hidden] {
+    display: none !important;
+}
+
+.sidebar-workshop-menu {
+    position: fixed;
+    z-index: 999999;
+
+    box-sizing: border-box;
+
+    padding: 10px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    background: #202a40;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 14px;
+
+    box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.34),
+        0 5px 16px rgba(0, 0, 0, 0.2);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transform: translateX(-6px);
+
+    transition:
+        opacity 140ms ease,
+        transform 140ms ease,
+        visibility 140ms ease;
+}
+
+.sidebar-workshop-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+/* Seta exibida somente no modo retraído */
+
+.sidebar-workshop-menu.is-flyout::before {
+    content: "";
+
+    position: absolute;
+
+    top: 18px;
+    left: -7px;
+
+    width: 13px;
+    height: 13px;
+
+    background: #202a40;
+
+    border-left: 1px solid rgba(148, 163, 184, 0.28);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+
+    transform: rotate(45deg);
+}
+
+/* Título */
+
+.sidebar-workshop-menu-title {
+    padding: 5px 10px 10px;
+    margin-bottom: 3px;
+
+    color: #f1f5f9;
+
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+/* Links */
+
+.sidebar-workshop-menu-link {
+    width: 100%;
+    min-height: 43px;
+
+    padding: 10px 11px;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 11px;
+
+    box-sizing: border-box;
+
+    color: #cbd5e1;
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+
+    text-decoration: none;
+    white-space: nowrap;
+
+    border-radius: 10px;
+
+    transition:
+        color 120ms ease,
+        background-color 120ms ease;
+}
+
+.sidebar-workshop-menu-link svg {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+}
+
+.sidebar-workshop-menu-link:hover {
+    color: #ffffff;
+    background: rgba(148, 163, 184, 0.13);
+}
+
+.sidebar-workshop-menu-link.active {
+    color: #ffffff;
+    background: rgba(224, 82, 91, 0.18);
+}
+
+/* Botão Oficina aberto */
+
+.sidebar-link-dropdown.menu-open {
+    color: #ffffff !important;
+    background: #33425e !important;
+}
+
+/* Na retraída, oculta a seta do botão principal */
+
+html.sidebar-collapsed
+.sidebar-link-dropdown
+.sidebar-chevron {
+    display: none !important;
+}
+/* =========================================================
+   SIDEBAR FIXA COM SCROLL INTERNO
+   ESTE BLOCO DEVE SER O ÚLTIMO DO custom.css
+   ========================================================= */
+
+@media (min-width: 1025px) {
+
+    /*
+     * Estas larguras correspondem ao layout atual:
+     * aberta: 265px
+     * retraída: 100px
+     */
+    :root {
+        --chm-sidebar-expanded-width: 265px;
+        --chm-sidebar-collapsed-width: 100px;
+        --chm-sidebar-current-width:
+            var(--chm-sidebar-expanded-width);
+    }
+
+    html.sidebar-collapsed {
+        --chm-sidebar-current-width:
+            var(--chm-sidebar-collapsed-width);
+    }
+
+    /* -----------------------------------------------------
+       SIDEBAR FIXA
+       ----------------------------------------------------- */
+
+    .sidebar {
+        position: fixed !important;
+
+        top: 0 !important;
+        right: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+
+        width: var(--chm-sidebar-current-width) !important;
+        min-width: var(--chm-sidebar-current-width) !important;
+        max-width: var(--chm-sidebar-current-width) !important;
+
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+
+        margin: 0 !important;
+
+        display: flex !important;
+        flex-direction: column !important;
+
+        /*
+         * A sidebar externa fica parada.
+         * Apenas o nav interno poderá rolar.
+         */
+        overflow: hidden !important;
+
+        box-sizing: border-box !important;
+        z-index: 1300 !important;
+
+        transition:
+            width 0.24s ease,
+            min-width 0.24s ease,
+            max-width 0.24s ease;
+    }
+
+    /* -----------------------------------------------------
+       CABEÇALHO/LOGO NÃO ROLA
+       ----------------------------------------------------- */
+
+    .sidebar .sidebar-logo {
+        flex: 0 0 auto !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* -----------------------------------------------------
+       MENU LATERAL COM SCROLL
+       ----------------------------------------------------- */
+
+    .sidebar .sidebar-nav,
+    html.sidebar-collapsed .sidebar .sidebar-nav {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+
+        /*
+         * min-height: 0 é essencial em filhos flex.
+         * Sem isso, o nav cresce além da viewport.
+         */
+        min-height: 0 !important;
+        height: auto !important;
+
+        flex: 1 1 0 !important;
+
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+
+        box-sizing: border-box !important;
+
+        /*
+         * Espaço no fim para que o último ícone
+         * não fique colado ao limite da tela.
+         */
+        padding-bottom: 26px !important;
+    }
+
+    /* -----------------------------------------------------
+       SCROLL FUNCIONANDO, MAS INVISÍVEL
+       ----------------------------------------------------- */
+
+    .sidebar .sidebar-nav {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+
+    .sidebar .sidebar-nav::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        display: none !important;
+    }
+
+    /* -----------------------------------------------------
+       CONTEÚDO ACOMPANHA A SIDEBAR FIXA
+       ----------------------------------------------------- */
+
+    .chm-main {
+        width: calc(
+            100% - var(--chm-sidebar-current-width)
+        ) !important;
+
+        min-width: 0 !important;
+
+        margin-left:
+            var(--chm-sidebar-current-width) !important;
+
+        padding-left: 0 !important;
+
+        box-sizing: border-box !important;
+
+        transition:
+            width 0.24s ease,
+            margin-left 0.24s ease;
+    }
+
+    /*
+     * A topbar está dentro da .chm-main.
+     * Portanto, não deve receber outro deslocamento lateral.
+     */
+    .chm-main > .topbar {
+        width: 100% !important;
+        left: auto !important;
+        right: auto !important;
+        margin-left: 0 !important;
     }
 }

@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 
 class FuelTankController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $context = $this->activeContext();
 
@@ -50,11 +50,72 @@ class FuelTankController extends Controller
                 return $tank;
             });
 
+        $fuelBalanceByProduct = $tanks
+            ->where('active', true)
+            ->groupBy('fuel_product_id')
+            ->map(function ($productTanks) {
+                $firstTank = $productTanks->first();
+
+                return [
+                    'product_id' => $firstTank->fuel_product_id,
+                    'product_name' => $firstTank->product?->name ?? 'Produto',
+                    'product_slug' => $firstTank->product?->slug ?? null,
+                    'available_liters' => (float) $productTanks->sum(
+                        fn (FuelTank $tank) => (float) $tank->current_balance_liters
+                    ),
+                    'capacity_liters' => (float) $productTanks->sum(
+                        fn (FuelTank $tank) => (float) $tank->capacity_liters
+                    ),
+                    'tanks_count' => $productTanks->count(),
+                ];
+            })
+            ->sortBy('product_name')
+            ->values();
+
+        $last30DaysStart = now()->subDays(30)->startOfDay();
+
+        $fillingsLast30DaysQuery = FuelFilling::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->whereNull('cancelled_at')
+            ->whereBetween('filled_at', [
+                $last30DaysStart,
+                now()->endOfDay(),
+            ]);
+
+        $fuelLast30Days = [
+            'liters' => (float) (clone $fillingsLast30DaysQuery)
+                ->sum('quantity_liters'),
+
+            'total_cost' => (float) (clone $fillingsLast30DaysQuery)
+                ->sum('total_cost'),
+
+            'fillings_count' => (clone $fillingsLast30DaysQuery)
+                ->count(),
+
+            'start_date' => $last30DaysStart,
+            'end_date' => now(),
+        ];
+
+        $canViewFuelReport = app(ProfilePermissionService::class)
+            ->allows(
+                $request->user(),
+                'reports.fuel',
+                [
+                    'module' => 'fleet',
+                ]
+            );
+
         return view('fuel.tanks.index', [
             'activeDivision' => $context['division'],
             'activeLocation' => $context['location'],
             'products' => $products,
             'tanks' => $tanks,
+
+            'fuelBalanceByProduct' => $fuelBalanceByProduct,
+            'fuelLast30Days' => $fuelLast30Days,
+
             'vehicles' => $this->vehiclesForContext($context),
             'drivers' => $this->driversForContext($context),
             'latestReceipts' => $this->latestReceipts($context),
@@ -62,6 +123,7 @@ class FuelTankController extends Controller
             'openFuelModal' => request('fuel_modal') ?: session('fuel_modal'),
             'selectedFuelVehicleId' => request('fuel_vehicle_id') ?: old('vehicle_id'),
             'fuelPermissions' => $fuelPermissions,
+            'canViewFuelReport' => $canViewFuelReport,
         ]);
     }
 

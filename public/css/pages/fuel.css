@@ -959,3 +959,207 @@ body.corporate-dark .fuel-source-single-note {
     background: rgba(15, 23, 42, 0.35);
     color: #cbd5e1;
 }
+
+/* =========================================================
+   FAIXA DE RESUMO — ABASTECIMENTOS
+   ========================================================= */
+
+.fuel-overview-strip {
+    min-height: 76px;
+    padding: 14px 18px;
+
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        1px
+        minmax(320px, auto);
+
+    align-items: center;
+    gap: 20px;
+
+    border: 1px solid rgba(203, 213, 225, 0.14);
+    border-radius: 14px;
+
+    background: #2d3a53;
+
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.fuel-overview-available,
+.fuel-overview-period {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.fuel-overview-available {
+    justify-content: flex-start;
+}
+
+.fuel-overview-period {
+    justify-content: space-between;
+}
+
+.fuel-overview-heading {
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    color: #aebbd0;
+
+    font-size: 0.71rem;
+    font-weight: 900;
+    line-height: 1.2;
+
+    letter-spacing: 0.065em;
+    text-transform: uppercase;
+
+    white-space: nowrap;
+}
+
+.fuel-overview-icon {
+    width: 31px;
+    height: 31px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(203, 213, 225, 0.15);
+    border-radius: 9px;
+
+    color: #d8e0ec;
+    background: rgba(15, 23, 42, 0.22);
+}
+
+.fuel-overview-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.fuel-overview-products {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fuel-overview-product {
+    min-height: 38px;
+    padding: 6px 12px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    border: 1px solid rgba(203, 213, 225, 0.12);
+    border-radius: 10px;
+
+    background: rgba(15, 23, 42, 0.18);
+
+    white-space: nowrap;
+}
+
+.fuel-overview-product-name {
+    color: #aebbd0;
+
+    font-size: 0.76rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.fuel-overview-product strong {
+    color: #ffffff;
+
+    font-size: 0.94rem;
+    font-weight: 900;
+}
+
+.fuel-overview-divider {
+    align-self: stretch;
+
+    width: 1px;
+
+    background: rgba(203, 213, 225, 0.14);
+}
+
+.fuel-overview-period-value {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 7px;
+
+    white-space: nowrap;
+}
+
+.fuel-overview-period-value strong {
+    color: #ffffff;
+
+    font-size: 1.05rem;
+    font-weight: 900;
+}
+
+.fuel-overview-period-value span {
+    color: #aebbd0;
+
+    font-size: 0.83rem;
+    font-weight: 750;
+}
+
+.fuel-overview-empty {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+@media (max-width: 1100px) {
+    .fuel-overview-strip {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .fuel-overview-divider {
+        width: 100%;
+        height: 1px;
+    }
+
+    .fuel-overview-period {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 700px) {
+    .fuel-overview-strip {
+        padding: 14px;
+    }
+
+    .fuel-overview-available,
+    .fuel-overview-period {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .fuel-overview-products {
+        width: 100%;
+    }
+
+    .fuel-overview-product {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .fuel-overview-period-value {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+}

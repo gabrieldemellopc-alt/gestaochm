@@ -98,36 +98,17 @@
         {{-- DASHBOARD --}}
 
         <a
-
             href="{{ route('dashboard') }}"
             title="Dashboard"
-
-            class="sidebar-link {{
-
-                request()->routeIs('dashboard')
-
-                ? 'active'
-
-                : ''
-
-            }}"
-
+            class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
         >
-
-
-
             <span class="sidebar-icon">
-
                 <i data-lucide="layout-dashboard"></i>
-
             </span>
 
-
-
-            Dashboard
-
-
-
+            <span class="sidebar-link-text">
+                Dashboard
+            </span>
         </a>
 
 
@@ -161,45 +142,15 @@
 
 
 
-            Veículos
+            <span class="sidebar-link-text">Veículos</span>
 
 
 
-        </a>
-
-
-
-        {{-- OEPRACIONAL --}}
-
-        <a
-
-            href="{{ route('operations.index') }}"
-
-            class="sidebar-link {{
-
-                request()->routeIs('operations.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"
-
-            style="display:none;pointer-events: none"
-
-        >
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="radio-tower"></i>
-
-            </span>
-
-
-
-            Operações
 
         </a>
+
+
+
 
 
 
@@ -251,45 +202,13 @@
 
             </span>
 
-            Abastecimentos
+            <span class="sidebar-link-text">Abastecimentos</span>
 
         </a>
 
         @endif
 
-        {{-- PROCEDIMENTOS --}}
-        <a
-
-            href="{{ route('procedures.index') }}"
-            title="Procedimentos"
-
-            class="sidebar-link {{
-
-                request()->routeIs('procedures.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"  style="display:none"
-
-        >
-
-
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="clipboard-list"></i>
-
-            </span>
-
-
-
-            Procedimentos
-
-
-
-        </a>
+        
 
 
 
@@ -307,157 +226,111 @@
 
 
 
-        @if($sidebarCanPermission('navigation.workshop') || $sidebarCanPermission('navigation.tires') || $sidebarCanPermission('navigation.stock'))
-        <div class="sidebar-group {{ $workshopActive ? 'open active' : '' }}" x-data="{ open: {{ $workshopActive ? 'true' : 'false' }} }">
+@if(
+    $sidebarCanPermission('navigation.workshop')
+    || $sidebarCanPermission('navigation.tires')
+    || $sidebarCanPermission('navigation.stock')
+)
+    <div class="sidebar-group sidebar-workshop-group">
 
-            <button
-                type="button"
-                title="Oficina"
+        <button
+            type="button"
+            id="sidebarWorkshopButton"
+            title="Oficina"
+            class="sidebar-link sidebar-link-dropdown {{
+                $workshopActive ? 'active' : ''
+            }}"
+            aria-haspopup="true"
+            aria-expanded="false"
+        >
+            <span class="sidebar-icon">
+                <i data-lucide="wrench"></i>
+            </span>
 
-                class="sidebar-link sidebar-link-dropdown {{ $workshopActive ? 'active' : '' }}"
-                @click="open = !open"
-            >
-                <span class="sidebar-icon">
-                    <i data-lucide="wrench"></i>
-                </span>
+            <span class="sidebar-link-text">
+                Oficina
+            </span>
 
-                <span class="sidebar-link-text">
-                    Oficina
-                </span>
+            <span class="sidebar-chevron">
+                <i data-lucide="chevron-down"></i>
+            </span>
+        </button>
 
-                <span class="sidebar-chevron" :class="{ 'rotate': open }">
-                    <i data-lucide="chevron-down"></i>
-                </span>
-            </button>
-
-            <div class="sidebar-submenu" x-show="open" x-collapse x-cloak>
-                @if($sidebarCanPermission('navigation.workshop'))
-                    <a
-                        title="Visão geral"
-
-                        href="{{ route('workshop.index') }}"
-                        class="sidebar-submenu-link {{ request()->routeIs('workshop.index') ? 'active' : '' }}"
-                    >
-                        <i data-lucide="layout-dashboard"></i>
-                        Visão geral
-                    </a>
-                @endif
-
-                @if($sidebarCanPermission('navigation.tires'))
-                    <a
-                        title="Controle de Pneus"
-
-                        href="{{ route('workshop.tires.index') }}"
-                        class="sidebar-submenu-link {{ request()->routeIs('workshop.tires.*') ? 'active' : '' }}"
-                    >
-                        <i data-lucide="circle-dot"></i>
-                        Controle de pneus
-                    </a>
-                @endif
-
-                @if($sidebarCanPermission('navigation.stock'))
-                    <a
-                        title="Estoque"
-
-                        href="{{ route('stock.index') }}"
-                        class="sidebar-submenu-link {{ request()->routeIs('stock.*') ? 'active' : '' }}"
-                    >
-                        <i data-lucide="boxes"></i>
-                        Estoque
-                    </a>
-                @endif
-
-                @if($sidebarCanPermission('navigation.workshop'))
-                    <a
-                        title="Procedimentos"
-
-                        href="{{ route('procedures.index') }}"
-                        class="sidebar-submenu-link {{ request()->routeIs('procedures.*') ? 'active' : '' }}"
-                    >
-                        <i data-lucide="clipboard-list"></i>
-                        Procedimentos
-                    </a>
-                @endif
+        <div
+            id="sidebarWorkshopMenu"
+            class="sidebar-workshop-menu"
+            hidden
+        >
+            <div class="sidebar-workshop-menu-title">
+                Oficina
             </div>
 
+            @if($sidebarCanPermission('navigation.workshop'))
+                <a
+                    href="{{ route('workshop.index') }}"
+                    class="sidebar-workshop-menu-link {{
+                        request()->routeIs('workshop.index')
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Visão geral</span>
+                </a>
+            @endif
+
+            @if($sidebarCanPermission('navigation.tires'))
+                <a
+                    href="{{ route('workshop.tires.index') }}"
+                    class="sidebar-workshop-menu-link {{
+                        request()->routeIs('workshop.tires.*')
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i data-lucide="circle-dot"></i>
+                    <span>Controle de pneus</span>
+                </a>
+            @endif
+
+            @if($sidebarCanPermission('navigation.stock'))
+                <a
+                    href="{{ route('stock.index') }}"
+                    class="sidebar-workshop-menu-link {{
+                        request()->routeIs('stock.*')
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i data-lucide="boxes"></i>
+                    <span>Estoque</span>
+                </a>
+            @endif
+
+            @if($sidebarCanPermission('navigation.workshop'))
+                <a
+                    href="{{ route('procedures.index') }}"
+                    class="sidebar-workshop-menu-link {{
+                        request()->routeIs('procedures.*')
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i data-lucide="clipboard-list"></i>
+                    <span>Procedimentos</span>
+                </a>
+            @endif
         </div>
-        @endif
+
+    </div>
+@endif
 
 
-        {{-- HISTÓRICO --}}
-
-        <a
-
-            href="#"
-            title="Histórico"
-
-            class="sidebar-link {{
-
-                request()->routeIs('maintenances.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"             style="display:none"
+        
 
 
 
-        >
-
-
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="history"></i>
-
-            </span>
-
-
-
-            Histórico
-
-
-
-        </a>
-
-
-
-        {{-- ESTOQUE --}}
-
-        <a
-
-            href="{{ route('stock.index') }}"
-            title="Estoque"
-
-            class="sidebar-link {{
-
-                request()->routeIs('stock.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"  style="display:none"
-
-        >
-
-
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="boxes"></i>
-
-            </span>
-
-
-
-            Estoque
-
-
-
-        </a>
-
+        
 
 
         <div class="sidebar-section-title">
@@ -468,42 +341,6 @@
 
 
 
-        {{-- ALERTAS --}}
-
-        <a
-
-            href="#"
-    title="Alertas"
-
-            class="sidebar-link {{
-
-                request()->routeIs('alerts.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"
-
-            style="display:none"
-
-        >
-
-
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="triangle-alert"></i>
-
-            </span>
-
-
-
-            Alertas
-
-
-
-        </a>
 
 
 
@@ -559,7 +396,8 @@
                     <i data-lucide="map-pin"></i>
                 </span>
 
-                Cidades
+                <span class="sidebar-link-text">Cidades</span>
+
             </a>
         @endif
 
@@ -595,7 +433,8 @@
 
 
 
-            Relatórios
+            <span class="sidebar-link-text">Relatórios</span>
+
 
 
 
@@ -630,7 +469,8 @@
 
                 </span>
 
-                Notas Fiscais
+                <span class="sidebar-link-text">Notas Fiscais</span>
+
 
             </a>
 
@@ -651,7 +491,8 @@
                 <span class="sidebar-icon">
                     <i data-lucide="shield-check"></i>
                 </span>
-                Permissões
+                <span class="sidebar-link-text">Permissões</span>
+
             </a>
 
         @endif
@@ -683,7 +524,8 @@
 
                 </span>
 
-                Auditoria
+                <span class="sidebar-link-text">Auditoria</span>
+
 
             </a>
 
@@ -692,78 +534,6 @@
 
 
 
-        {{-- CHECKLISTs --}}
-
-        <a
-
-            href="{{ route('checklists.index') }}"
-
-            class="sidebar-link {{
-
-                request()->routeIs('checklists.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"
-
-            style="display:none;pointer-events: none"
-        >
-
-
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="clipboard-check"></i>
-
-            </span>
-
-
-
-            Checklists
-
-
-
-        </a>
-
-        {{-- CONFIGURAÇÕES --}}
-
-        <a
-
-            href="#"
-    title="Configurações"
-
-            class="sidebar-link {{
-
-                request()->routeIs('settings.*')
-
-                ? 'active'
-
-                : ''
-
-            }}"
-
-            style="display:none"
-
-        >
-
-
-
-            <span class="sidebar-icon">
-
-                <i data-lucide="settings"></i>
-
-            </span>
-
-
-
-            Configurações
-
-
-
-        </a>
-
 
 
     </nav>
@@ -771,3 +541,131 @@
 
 
 </aside>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const button = document.getElementById('sidebarWorkshopButton');
+        const menu = document.getElementById('sidebarWorkshopMenu');
+
+        if (!button || !menu) {
+            return;
+        }
+
+        /*
+         * Move o menu para o body.
+         * Isso impede que overflow da sidebar/nav corte o painel.
+         */
+        document.body.appendChild(menu);
+
+        function sidebarIsCollapsed() {
+            return document.documentElement.classList.contains(
+                'sidebar-collapsed'
+            );
+        }
+
+        function positionWorkshopMenu() {
+            const rect = button.getBoundingClientRect();
+
+            if (sidebarIsCollapsed()) {
+                menu.classList.add('is-flyout');
+                menu.classList.remove('is-dropdown');
+
+                menu.style.top = `${rect.top}px`;
+                menu.style.left = `${rect.right + 12}px`;
+                menu.style.width = '230px';
+            } else {
+                menu.classList.remove('is-flyout');
+                menu.classList.add('is-dropdown');
+
+                const sidebar = document.querySelector('.sidebar');
+                const sidebarRect = sidebar
+                    ? sidebar.getBoundingClientRect()
+                    : rect;
+
+                menu.style.top = `${rect.bottom + 6}px`;
+                menu.style.left = `${sidebarRect.left + 12}px`;
+                menu.style.width = `${Math.max(
+                    sidebarRect.width - 24,
+                    220
+                )}px`;
+            }
+        }
+
+        function openWorkshopMenu() {
+            positionWorkshopMenu();
+
+            menu.hidden = false;
+            menu.classList.add('is-open');
+            button.classList.add('menu-open');
+
+            button.setAttribute('aria-expanded', 'true');
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function closeWorkshopMenu() {
+            menu.hidden = true;
+            menu.classList.remove('is-open');
+            button.classList.remove('menu-open');
+
+            button.setAttribute('aria-expanded', 'false');
+        }
+
+        function toggleWorkshopMenu(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (menu.hidden) {
+                openWorkshopMenu();
+            } else {
+                closeWorkshopMenu();
+            }
+        }
+
+        button.addEventListener('click', toggleWorkshopMenu);
+
+        menu.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        document.addEventListener('click', function () {
+            closeWorkshopMenu();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeWorkshopMenu();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (!menu.hidden) {
+                positionWorkshopMenu();
+            }
+        });
+
+        window.addEventListener(
+            'scroll',
+            function () {
+                if (!menu.hidden) {
+                    positionWorkshopMenu();
+                }
+            },
+            true
+        );
+
+        /*
+         * Observa a classe sidebar-collapsed.
+         * Reposiciona o painel ao retrair ou expandir a sidebar.
+         */
+        const observer = new MutationObserver(function () {
+            closeWorkshopMenu();
+        });
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    });
+</script>

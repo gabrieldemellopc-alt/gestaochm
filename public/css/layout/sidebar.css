@@ -525,9 +525,7 @@ body.lucide-ready .sidebar {
    SIDEBAR RECOLHIDA
    ========================================================= */
 
-html.sidebar-collapsed .sidebar {
-    overflow-x: visible;
-}
+
 
 html.sidebar-collapsed .sidebar-logo {
     padding-left: 12px;
@@ -598,11 +596,6 @@ html.sidebar-collapsed .sidebar-chevron {
 }
 
 
-/* Submenu não abre visualmente no modo recolhido. */
-
-html.sidebar-collapsed .sidebar-submenu {
-    display: none !important;
-}
 
 
 /* Item ativo mais compacto */
@@ -618,4 +611,137 @@ html.sidebar-collapsed .sidebar-link.active {
 
 html.sidebar-collapsed .sidebar-inner-collapse-button {
     right: -14px;
+}
+/* =========================================================
+   SIDEBAR RETRAÍDA
+   ========================================================= */
+
+html.sidebar-collapsed .sidebar {
+    width: 84px;
+    min-width: 84px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+html.sidebar-collapsed .sidebar-logo {
+    height: 88px;
+    padding: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+html.sidebar-collapsed .sidebar-logo img {
+    width: 48px;
+    max-width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+/* Navegação centralizada */
+
+html.sidebar-collapsed .sidebar-nav {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Esconde textos e divisores */
+
+html.sidebar-collapsed .sidebar-section-title,
+html.sidebar-collapsed .sidebar-link-text,
+html.sidebar-collapsed .sidebar-chevron,
+html.sidebar-collapsed .sidebar-submenu-text {
+    display: none !important;
+}
+
+/* Link vira botão quadrado */
+
+html.sidebar-collapsed .sidebar-link {
+    position: relative;
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    min-height: 52px;
+    margin: 0 auto 8px;
+    padding: 0;
+    gap: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 15px;
+    overflow: visible;
+}
+
+/* Ícone perfeitamente centralizado */
+
+html.sidebar-collapsed .sidebar-link .sidebar-icon {
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+    margin: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+html.sidebar-collapsed .sidebar-link .sidebar-icon svg {
+    width: 23px;
+    height: 23px;
+}
+
+/* Estado ativo semelhante ao TDA */
+
+html.sidebar-collapsed .sidebar-link.active {
+    background: #33425e;
+    color: #ffffff;
+}
+
+/* Detalhe lateral do item ativo */
+
+html.sidebar-collapsed .sidebar-link.active::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+    background: #e0525b;
+}
+
+/* Dropdown Oficina */
+
+html.sidebar-collapsed .sidebar-group {
+    width: 100%;
+}
+
+html.sidebar-collapsed .sidebar-link-dropdown {
+    width: 52px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Não mostrar submenu aberto quando retraída */
+
+.chm-main {
+    margin-left: 280px;
+    transition: margin-left 0.25s ease;
+}
+
+html.sidebar-collapsed .chm-main {
+    margin-left: 84px;
+}
+
+.topbar {
+    left: 280px;
+    transition: left 0.25s ease;
+}
+
+html.sidebar-collapsed .topbar {
+    left: 84px;
 }

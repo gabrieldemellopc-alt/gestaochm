@@ -6,6 +6,7 @@
 
 @section('content')
     @php
+
         $openFuelModal = $openFuelModal ?? null;
         $selectedFuelVehicleId = $selectedFuelVehicleId ?? null;
         $fuelPermissions = array_merge([
@@ -44,6 +45,16 @@
             </div>
 
             <div class="fuel-header-actions">
+                
+                @if($canViewFuelReport)
+                    <a
+                        href="{{ route('reports.fuel.index') }}"
+                        class="fuel-secondary-action"
+                    >
+                        <i data-lucide="bar-chart-3"></i>
+                        Relatório
+                    </a>
+                @endif
                 @if($canRegisterFilling)
                     <button type="button" class="fuel-secondary-action" onclick="openFuelModal('filling')">
                         <i data-lucide="truck"></i>
@@ -57,7 +68,84 @@
                 </button>
             </div>
         </header>
+        <section
+            class="fuel-overview-strip"
+            aria-label="Resumo de combustíveis da unidade"
+        >
+            <div class="fuel-overview-available">
+                <div class="fuel-overview-heading">
+                    <span class="fuel-overview-icon">
+                        <i data-lucide="fuel"></i>
+                    </span>
 
+                    <span>
+                        Disponível na unidade
+                    </span>
+                </div>
+
+                <div class="fuel-overview-products">
+                    @forelse($fuelBalanceByProduct as $productBalance)
+                        <div class="fuel-overview-product">
+                            <span class="fuel-overview-product-name">
+                                {{ $productBalance['product_name'] }}
+                            </span>
+
+                            <strong>
+                                {{ number_format(
+                                    (float) $productBalance['available_liters'],
+                                    3,
+                                    ',',
+                                    '.'
+                                ) }} L
+                            </strong>
+                        </div>
+                    @empty
+                        <span class="fuel-overview-empty">
+                            Nenhum combustível disponível
+                        </span>
+                    @endforelse
+                </div>
+            </div>
+
+            <div
+                class="fuel-overview-divider"
+                aria-hidden="true"
+            ></div>
+
+            <div class="fuel-overview-period">
+                <div class="fuel-overview-heading">
+                    <span class="fuel-overview-icon">
+                        <i data-lucide="calendar-days"></i>
+                    </span>
+
+                    <span>
+                        Abastecidos nos últimos 30 dias
+                    </span>
+                </div>
+
+                <div class="fuel-overview-period-value">
+                    <strong>
+                        {{ number_format(
+                            (float) ($fuelLast30Days['liters'] ?? 0),
+                            2,
+                            ',',
+                            '.'
+                        ) }} L
+                    </strong>
+
+                    @if($canViewFuelCosts)
+                        <span>
+                            (R$ {{ number_format(
+                                (float) ($fuelLast30Days['total_cost'] ?? 0),
+                                2,
+                                ',',
+                                '.'
+                            ) }})
+                        </span>
+                    @endif
+                </div>
+            </div>
+        </section>
         <section class="fuel-summary-grid" aria-label="Resumo dos tanques">
             @forelse($tanks as $tank)
                 <article class="fuel-tank-card {{ $tank->balance_status }}">
@@ -102,7 +190,7 @@
                             <div>
                                 <dt>Custo m&eacute;dio</dt>
                                 <dd>
-                                    R$ {{ number_format((float) ($tank->average_unit_cost ?? 0), 4, ',', '.') }}/L
+                                    R$ {{ number_format((float) ($tank->average_unit_cost ?? 0), 2, ',', '.') }}/L
                                 </dd>
                             </div>
                         @endif
