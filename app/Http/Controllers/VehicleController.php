@@ -1929,6 +1929,9 @@ class VehicleController extends Controller
             $availabilitySubtext = $availableHours . 'h ' . $availableRemainingMinutes . 'min'
                 . ' (' . $availabilityRate . '%)';
         }
+        $canCorrectReadings = app(ProfilePermissionService::class)
+            ->allows(auth()->user(), 'vehicles.correct_readings');
+
         return view(
 
             'vehicle.details',
@@ -1948,7 +1951,8 @@ class VehicleController extends Controller
                 'totalDowntimeSubtext',
                 'availabilityRate',
                 'availabilityText',
-                'availabilitySubtext'
+                'availabilitySubtext',
+                'canCorrectReadings'
 
             )
 

@@ -86,6 +86,7 @@ return [
         'maintenance_open' => 'Abertura de manutenção',
         'tire_measurement' => 'Medição de pneus',
         'tire_removal' => 'Remoção de pneu',
+        'reading_correction' => 'Correção manual de leitura',
     ],
     'audit_action' => [
         'created' => 'Criou',

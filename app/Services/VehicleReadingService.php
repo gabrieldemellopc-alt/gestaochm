@@ -23,6 +23,16 @@ class VehicleReadingService
         return $this->analyzeReading($vehicle->current_hours, $value, self::MAX_HOURS_JUMP);
     }
 
+    public function correctKm(Vehicle $vehicle, float|int $value, User $user, string $reason): bool
+    {
+        return $this->correctReading($vehicle, 'current_km', 'last_km_update_at', 'km', $value, $user, $reason);
+    }
+
+    public function correctHours(Vehicle $vehicle, float|int $value, User $user, string $reason): bool
+    {
+        return $this->correctReading($vehicle, 'current_hours', 'last_hours_update_at', 'hours', $value, $user, $reason);
+    }
+
     public function updateKm(
         Vehicle $vehicle,
         float|int $value,
@@ -148,5 +158,40 @@ class VehicleReadingService
             'suspicious' => $difference !== null && $difference > $threshold,
             'threshold' => $threshold,
         ];
+    }
+
+    private function correctReading(
+        Vehicle $vehicle,
+        string $field,
+        string $updatedAtField,
+        string $type,
+        float|int $value,
+        User $user,
+        string $reason
+    ): bool {
+        $oldValue = $vehicle->{$field};
+
+        if ($oldValue !== null && (float) $oldValue === (float) $value) {
+            return false;
+        }
+
+        $vehicle->update([
+            $field => $value,
+            $updatedAtField => now(),
+        ]);
+
+        VehicleUpdateLog::create([
+            'vehicle_id' => $vehicle->id,
+            'user_id' => $user->id,
+            'division_id' => $vehicle->division_id,
+            'location_id' => $vehicle->location_id,
+            'type' => $type,
+            'source' => 'reading_correction',
+            'old_value' => $oldValue,
+            'new_value' => $value,
+            'observation' => 'Motivo da correção: '.$reason,
+        ]);
+
+        return true;
     }
 }
