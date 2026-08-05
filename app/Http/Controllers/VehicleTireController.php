@@ -306,7 +306,9 @@ class VehicleTireController extends Controller
 
                 'positions',
 
-                'availableTires'
+                'availableTires',
+
+                'tirePermissions'
 
             )
 

@@ -15763,8 +15763,9 @@ html.sidebar-collapsed
 }
 
 .modal-overlay,
-.operation-modal-backdrop {
+.operation-modal-backdrop,
+.fuel-modal-overlay {
     position: fixed;
     inset: 0;
-    z-index: 5000;
+    z-index: 1000000 !important;
 }

@@ -28,6 +28,10 @@
 @section('content')
 
 @php
+    $hasFullTireAccess = (int) auth()->id() === 1
+        || userHasProfile('admin')
+        || userHasProfile('manager');
+
     $tirePermissions = array_merge([
         'view' => false,
         'create_entry' => false,
@@ -40,9 +44,9 @@
         'manage_inventory' => false,
     ], $tirePermissions ?? []);
 
-    $canInstallTires = (bool) $tirePermissions['install'];
-    $canRemoveTires = (bool) $tirePermissions['remove'];
-    $canMeasureTires = (bool) $tirePermissions['measure'];
+    $canInstallTires = $hasFullTireAccess || (bool) $tirePermissions['install'];
+    $canRemoveTires = $hasFullTireAccess || (bool) $tirePermissions['remove'];
+    $canMeasureTires = $hasFullTireAccess || (bool) $tirePermissions['measure'];
 @endphp
 
 
@@ -462,7 +466,8 @@
 
 
 
-<form
+                    @if($canMeasureTires)
+                    <form
 
                         method="POST"
 
@@ -603,7 +608,8 @@
 
 
 
-<button
+                            @if($canRemoveTires)
+                            <button
 
                                 type="button"
 
@@ -630,6 +636,7 @@
                                 Remover / trocar pneu
 
                             </button>
+                            @endif
 
 
 
@@ -652,6 +659,24 @@
                         </div>
 
                     </form>
+                    @elseif($canRemoveTires)
+                        <div class="tire-measure-actions">
+                            <button
+                                type="button"
+                                class="tire-remove-action"
+                                @click='openRemoveTireModal(
+                                    @json($position["code"]),
+                                    @json($position["label"]),
+                                    @json($tire->id),
+                                    @json($tire->code),
+                                    @json($vehicle->current_km ?? 0)
+                                )'
+                            >
+                                <i data-lucide="refresh-cw"></i>
+                                Remover / trocar pneu
+                            </button>
+                        </div>
+                    @endif
 
                 @else
 
@@ -673,11 +698,13 @@
 
 
 
-                        <p>
+                        @if($canInstallTires)
+                            <p>
 
-                            Instale um pneu disponível nesta posição para iniciar o acompanhamento.
+                                Instale um pneu disponível nesta posição para iniciar o acompanhamento.
 
-                        </p>
+                            </p>
+                        @endif
 
 
 
@@ -685,6 +712,7 @@
 
 
 
+                    @if($canInstallTires)
                     <div class="tire-install-box">
 
 
@@ -748,6 +776,7 @@
 
 
                     </div>
+                    @endif
 
                 @endif
 
@@ -768,6 +797,7 @@
 
 
 {{-- MODAL: SELEÇÃO DE PNEU --}}
+@if($canInstallTires)
 
 <div
 
@@ -1215,7 +1245,10 @@
 
 
 
+@endif
+
 {{-- MODAL: REMOVER / TROCAR PNEU --}}
+@if($canRemoveTires)
 
 <div
 
@@ -1595,6 +1628,7 @@
 
 
 
+@endif
 </div>
 
 <script>

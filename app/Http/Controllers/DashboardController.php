@@ -22,6 +22,7 @@ use App\Models\VehicleOperation;
 
 use App\Models\UserDivisionAccess;
 use App\Services\ActiveContextService;
+use App\Services\OperationalDashboardService;
 
 
 class DashboardController extends Controller
@@ -956,6 +957,15 @@ class DashboardController extends Controller
 
             ->first();
 
+        $operationalIndicators = app(OperationalDashboardService::class)
+            ->indicators(auth()->user());
+
+        $fuelConsumptionRanking = $operationalIndicators['fuel_consumption_ranking'];
+        $vehicleFuelAverages = $operationalIndicators['vehicle_fuel_averages'];
+        $longestStoppedVehicles = $operationalIndicators['longest_stopped_vehicles'];
+        $sixMonthCostSeries = $operationalIndicators['six_month_cost_series'];
+        $canViewDashboardCosts = $operationalIndicators['can_view_dashboard_costs'];
+
 
 
         
@@ -1018,6 +1028,16 @@ class DashboardController extends Controller
             'operationDrivers',
 
             'myOpenOperation',
+
+            'fuelConsumptionRanking',
+
+            'vehicleFuelAverages',
+
+            'longestStoppedVehicles',
+
+            'sixMonthCostSeries',
+
+            'canViewDashboardCosts',
 
             'criticalFuelTanks',
             'warningFuelTanks',
