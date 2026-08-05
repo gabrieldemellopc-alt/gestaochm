@@ -97,6 +97,10 @@ class MaintenanceController extends Controller
 
         $data = $request->validate([
             'reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ], [
+            'reason.required' => 'Informe o motivo do cancelamento.',
+            'reason.min' => 'Informe um motivo com pelo menos :min caracteres.',
+            'reason.max' => 'O motivo do cancelamento não pode ter mais que :max caracteres.',
         ]);
 
         $cancelled = MaintenanceService::cancel(
