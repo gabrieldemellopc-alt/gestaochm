@@ -182,6 +182,12 @@ class MaintenanceService
     public static function create(array $data, Vehicle $vehicle): array
     {
         return DB::transaction(function () use ($data, $vehicle) {
+            $vehicle = Vehicle::query()
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->whereKey($vehicle->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $existingOpenMaintenance = MaintenanceRecord::query()
                 ->where('tenant_id', $vehicle->tenant_id)
                 ->where('vehicle_id', $vehicle->id)
@@ -203,6 +209,30 @@ class MaintenanceService
                 throw ValidationException::withMessages([
                     'service_status' => 'Status de manutenção inválido.',
                 ]);
+            }
+
+            $readingService = app(VehicleReadingService::class);
+
+            if (array_key_exists('performed_km', $data) && $data['performed_km'] !== null) {
+                $readingService->updateKm(
+                    $vehicle,
+                    $data['performed_km'],
+                    auth()->user(),
+                    'maintenance_open',
+                    'KM atualizado na abertura de manutenção.',
+                    'performed_km'
+                );
+            }
+
+            if (array_key_exists('performed_hours', $data) && $data['performed_hours'] !== null) {
+                $readingService->updateHours(
+                    $vehicle,
+                    $data['performed_hours'],
+                    auth()->user(),
+                    'maintenance_open',
+                    'Horímetro atualizado na abertura de manutenção.',
+                    'performed_hours'
+                );
             }
     
             $startedAt = $data['started_at']

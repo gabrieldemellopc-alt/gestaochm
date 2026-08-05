@@ -25,6 +25,7 @@ use App\Services\PreventiveService;
 use App\Models\StockItem;
 use App\Services\ActiveContextService;
 use App\Services\Permissions\ProfilePermissionService;
+use App\Services\VehicleReadingService;
 use App\Models\VehicleDowntimePeriod;
 
 class VehicleController extends Controller
@@ -2135,84 +2136,13 @@ class VehicleController extends Controller
             return $redirect;
         }
 
-        $oldKm = $vehicle->current_km;
-        if (
-
-            $oldKm !== null
-
-            &&
-
-            (float) $request->km < (float) $oldKm
-
-        ) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' => 'O novo hodômetro não pode ser menor que o atual.'
-
-            ], 422);
-
-        }
-
-        $vehicle->update([
-
-
-
-            'current_km' =>
-
-                $request->km,
-
-
-
-            'last_km_update_at' =>
-
-                now()
-
-
-
-        ]);
-
-
-
-        VehicleUpdateLog::create([
-
-
-
-            'vehicle_id' => $vehicle->id,
-
-
-
-            'user_id' => auth()->id(),
-
-
-
-            'division_id' => $vehicle->division_id,
-
-
-
-            'location_id' => $vehicle->location_id,
-
-
-
-            'type' => 'km',
-
-
-
-            'old_value' => $oldKm,
-
-            'source' => 'dashboard_quick_update',
-
-
-
-            'observation' => 'Hodômetro atualizado manualmente pelo painel rápido.',
-
-            'new_value' => $request->km,
-
-
-
-        ]);
+        app(VehicleReadingService::class)->updateKm(
+            $vehicle,
+            $request->km,
+            auth()->user(),
+            'dashboard_quick_update',
+            'Hodômetro atualizado manualmente pelo painel rápido.'
+        );
 
 
 
@@ -2265,88 +2195,13 @@ class VehicleController extends Controller
             return $redirect;
         }
 
-        $oldHours = $vehicle->current_hours;
-        if (
-
-            $oldHours !== null
-
-            &&
-
-            (float) $request->hours < (float) $oldHours
-
-        ) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' => 'O novo horímetro não pode ser menor que o atual.'
-
-            ], 422);
-
-        }
-
-        $vehicle->update([
-
-
-
-            'current_hours' =>
-
-                $request->hours,
-
-
-
-            'last_hours_update_at' =>
-
-                now()
-
-
-
-        ]);
-
-
-
-        VehicleUpdateLog::create([
-
-
-
-            'vehicle_id' => $vehicle->id,
-
-
-
-            'user_id' => auth()->id(),
-
-
-
-            'division_id' => $vehicle->division_id,
-
-
-
-            'location_id' => $vehicle->location_id,
-
-
-
-            'type' => 'hours',
-
-
-
-            'source' => 'dashboard_quick_update',
-
-
-
-            'old_value' => $oldHours,
-
-
-
-            'new_value' => $request->hours,
-
-
-
-            'observation' => 'Horímetro atualizado manualmente pelo painel rápido.',
-
-
-
-        ]);
+        app(VehicleReadingService::class)->updateHours(
+            $vehicle,
+            $request->hours,
+            auth()->user(),
+            'dashboard_quick_update',
+            'Horímetro atualizado manualmente pelo painel rápido.'
+        );
 
 
 

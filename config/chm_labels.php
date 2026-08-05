@@ -83,6 +83,7 @@ return [
         'fuel_filling' => 'Abastecimento',
         'manual' => 'Manual',
         'maintenance' => 'Manutenção',
+        'maintenance_open' => 'Abertura de manutenção',
         'tire_measurement' => 'Medição de pneus',
     ],
     'audit_action' => [
