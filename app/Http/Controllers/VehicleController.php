@@ -2461,7 +2461,7 @@ class VehicleController extends Controller
 
             ->where('tenant_id', auth()->user()->tenant_id)
             ->where('location_id', $activeLocation->id)
-            ->orderBy('plate')
+            ->orderBy('name')
             ->get();
 
 

@@ -462,7 +462,6 @@
 
 
 
-                    @if($canMeasureTires)
 <form
 
                         method="POST"
@@ -604,7 +603,6 @@
 
 
 
-                            @if($canRemoveTires)
 <button
 
                                 type="button"
@@ -632,7 +630,6 @@
                                 Remover / trocar pneu
 
                             </button>
-@endif
 
 
 
@@ -655,7 +652,6 @@
                         </div>
 
                     </form>
-@endif
 
                 @else
 
@@ -725,7 +721,6 @@
 
 
 
-                        @if($canInstallTires)
 <button
 
                             type="button"
@@ -749,7 +744,6 @@
                             Selecionar pneu do estoque
 
                         </button>
-@endif
 
 
 

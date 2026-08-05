@@ -15750,3 +15750,21 @@ html.sidebar-collapsed
         margin-left: 0 !important;
     }
 }
+/* =========================================================
+   CAMADAS GLOBAIS
+========================================================= */
+
+.sidebar {
+    z-index: 100;
+}
+
+.topbar {
+    z-index: 200;
+}
+
+.modal-overlay,
+.operation-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+}

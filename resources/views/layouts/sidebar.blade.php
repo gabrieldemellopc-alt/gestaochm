@@ -326,22 +326,6 @@
 @endif
 
 
-        
-
-
-
-        
-
-
-        <div class="sidebar-section-title">
-
-            GESTÃO
-
-        </div>
-
-
-
-
 
 
         {{-- CIDADES --}}
@@ -380,6 +364,32 @@
                 || $sidebarHasGlobalLocationAccess
                 || $sidebarLocationCount > 1;
         @endphp
+        
+
+        @if(
+            $canViewLocationsMenu
+            || $sidebarCanPermission('navigation.reports')
+            || $sidebarCanPermission('reports.view')
+            || (
+                (
+                    userHasProfile('manager')
+                    || userHasProfile('admin')
+                    || userHasProfile('supervisor')
+                )
+                && (
+                    $sidebarCanPermission('navigation.fiscal_documents')
+                    || $sidebarCanPermission('fiscal_documents.view')
+                )
+            )
+            || userHasProfile('manager')
+            || userHasProfile('admin')
+            || auth()->user()?->can('viewAuditLogs')
+        )
+            <div class="sidebar-section-title">
+                GESTÃO
+            </div>
+        @endif
+
 
         @if($canViewLocationsMenu)
             <a
