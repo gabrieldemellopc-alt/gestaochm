@@ -220,7 +220,8 @@ class MaintenanceService
                     auth()->user(),
                     'maintenance_open',
                     'KM atualizado na abertura de manutenção.',
-                    'performed_km'
+                    'performed_km',
+                    ! empty($data['km_reading_confirmed'])
                 );
             }
 
@@ -231,7 +232,8 @@ class MaintenanceService
                     auth()->user(),
                     'maintenance_open',
                     'Horímetro atualizado na abertura de manutenção.',
-                    'performed_hours'
+                    'performed_hours',
+                    ! empty($data['hours_reading_confirmed'])
                 );
             }
     

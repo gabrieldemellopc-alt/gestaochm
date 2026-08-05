@@ -361,6 +361,7 @@
                     onsubmit="return confirmLargeKmUpdate(this, {{ (float) ($vehicle->current_km ?? 0) }});"
                 >
                     @csrf
+                    <input type="hidden" name="km_reading_confirmed" value="0">
 
                     <label>Hodômetro atual</label>
 
@@ -388,6 +389,7 @@
                     onsubmit="return confirmLargeHoursUpdate(this, {{ (float) ($vehicle->current_hours ?? 0) }});"
                 >
                     @csrf
+                    <input type="hidden" name="hours_reading_confirmed" value="0">
 
                     <label>Horímetro atual</label>
 
@@ -900,6 +902,8 @@
     });
     function confirmLargeKmUpdate(form, originalKm) {
         const input = form.querySelector('input[name="km"]');
+        const confirmation = form.querySelector('input[name="km_reading_confirmed"]');
+        confirmation.value = '0';
         const currentKm = Number(input.value);
         const diffKm = currentKm - Number(originalKm);
 
@@ -909,13 +913,15 @@
             return false;
         }
 
-        if (diffKm > 1000) {
-            return confirm(
+        if (diffKm > 500) {
+            const confirmed = confirm(
                 `Atenção: você está aumentando o hodômetro em ${diffKm.toLocaleString('pt-BR')} km.\n\n` +
                 `KM atual: ${Number(originalKm).toLocaleString('pt-BR')}\n` +
                 `Novo KM: ${currentKm.toLocaleString('pt-BR')}\n\n` +
                 `Deseja confirmar esta atualização?`
             );
+            confirmation.value = confirmed ? '1' : '0';
+            return confirmed;
         }
 
         return true;
@@ -923,6 +929,8 @@
 
     function confirmLargeHoursUpdate(form, originalHours) {
         const input = form.querySelector('input[name="hours"]');
+        const confirmation = form.querySelector('input[name="hours_reading_confirmed"]');
+        confirmation.value = '0';
         const currentHours = Number(input.value);
         const diffHours = currentHours - Number(originalHours);
 
@@ -933,12 +941,14 @@
         }
 
         if (diffHours > 24) {
-            return confirm(
+            const confirmed = confirm(
                 `Atenção: você está aumentando o horímetro em ${diffHours.toLocaleString('pt-BR')} hora(s).\n\n` +
                 `Horímetro atual: ${Number(originalHours).toLocaleString('pt-BR')}\n` +
                 `Novo horímetro: ${currentHours.toLocaleString('pt-BR')}\n\n` +
                 `Deseja confirmar esta atualização?`
             );
+            confirmation.value = confirmed ? '1' : '0';
+            return confirmed;
         }
 
         return true;

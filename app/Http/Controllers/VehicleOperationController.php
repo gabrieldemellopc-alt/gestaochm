@@ -9,16 +9,15 @@ namespace App\Http\Controllers;
 use App\Models\Vehicle;
 
 use App\Models\VehicleOperation;
-use App\Models\VehicleUpdateLog;
 use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
+use App\Services\VehicleReadingService;
 use Carbon\Carbon;
 
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\DB;
 
-use Illuminate\Support\Facades\Schema;
 
 
 
@@ -344,6 +343,8 @@ class VehicleOperationController extends Controller
             'start_datetime_reported' => ['required', 'date'],
 
             'start_observation' => ['nullable', 'string', 'max:3000'],
+            'km_reading_confirmed' => ['nullable', 'boolean'],
+            'hours_reading_confirmed' => ['nullable', 'boolean'],
 
         ];
 
@@ -505,6 +506,8 @@ class VehicleOperationController extends Controller
 
 
 
+        DB::transaction(function () use ($vehicle, $driverId, $validated, $reportedStart, $systemNow, $startDelayMinutes) {
+        $vehicle = Vehicle::query()->whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
         $operation = VehicleOperation::create([
 
             'tenant_id' => auth()->user()->tenant_id ?? null,
@@ -555,7 +558,9 @@ class VehicleOperationController extends Controller
 
             'operation_start',
 
-            'KM/HR atualizado automaticamente na abertura da operação.'
+            'KM/HR atualizado automaticamente na abertura da operação.',
+            ! empty($validated['km_reading_confirmed']),
+            ! empty($validated['hours_reading_confirmed'])
 
         );
 
@@ -572,6 +577,7 @@ class VehicleOperationController extends Controller
                 'action_context' => 'operation_start',
             ],
         ]);
+        });
 
 
 
@@ -708,6 +714,8 @@ class VehicleOperationController extends Controller
             'end_datetime_reported' => ['required', 'date', 'before_or_equal:now'],
 
             'end_observation' => ['nullable', 'string', 'max:3000'],
+            'km_reading_confirmed' => ['nullable', 'boolean'],
+            'hours_reading_confirmed' => ['nullable', 'boolean'],
 
         ];
 
@@ -734,6 +742,7 @@ class VehicleOperationController extends Controller
         DB::transaction(function () use ($operation, $validated, $reportedEnd, $systemNow, $endDelayMinutes) {
 
             $before = $operation->toArray();
+            $vehicle = Vehicle::query()->whereKey($operation->vehicle_id)->lockForUpdate()->firstOrFail();
 
             $operation->update([
 
@@ -771,15 +780,17 @@ class VehicleOperationController extends Controller
 
             $this->tryUpdateVehicleCounters(
 
-            $operation->vehicle,
+            $vehicle,
 
             $validated['end_vehicle_km'],
 
             $validated['end_vehicle_hours'] ?? null,
 
-            'operation_finish',
+            'operation_close',
 
-            'KM/HR atualizado automaticamente no encerramento da operação.'
+            'KM/HR atualizado automaticamente no encerramento da operação.',
+            ! empty($validated['km_reading_confirmed']),
+            ! empty($validated['hours_reading_confirmed'])
 
         );
 
@@ -905,130 +916,32 @@ class VehicleOperationController extends Controller
         $km,
         $hours = null,
         string $source = 'vehicle_operation',
-        ?string $observation = null
+        ?string $observation = null,
+        bool $kmReadingConfirmed = false,
+        bool $hoursReadingConfirmed = false
     ): void {
+        $readingService = app(VehicleReadingService::class);
 
-        $updates = [];
-
-        /*
-        |--------------------------------------------------------------------------
-        | HODÔMETRO
-        |--------------------------------------------------------------------------
-        */
-
-        $kmColumn = null;
-
-        if (Schema::hasColumn('vehicles', 'current_km')) {
-            $kmColumn = 'current_km';
-        } elseif (Schema::hasColumn('vehicles', 'odometer')) {
-            $kmColumn = 'odometer';
-        } elseif (Schema::hasColumn('vehicles', 'mileage')) {
-            $kmColumn = 'mileage';
-        }
-
-        if ($kmColumn) {
-
-            $oldKm = $vehicle->{$kmColumn};
-            $newKm = $km;
-
-            if ((float) $oldKm !== (float) $newKm) {
-
-                $updates[$kmColumn] = $newKm;
-
-                VehicleUpdateLog::create([
-
-                    'vehicle_id' => $vehicle->id,
-
-                    'user_id' => auth()->id(),
-
-                    'division_id' => $vehicle->division_id,
-
-                    'location_id' => $vehicle->location_id,
-
-                    'type' => 'km',
-
-                    'source' => $source,
-
-                    'old_value' => $oldKm,
-
-                    'new_value' => $newKm,
-
-                    'observation' => $observation
-                        ?? 'Hodômetro atualizado automaticamente pela operação do veículo.',
-
-                ]);
-            }
-
-            if (Schema::hasColumn('vehicles', 'last_km_update_at')) {
-                $updates['last_km_update_at'] = now();
-            }
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | HORÍMETRO
-        |--------------------------------------------------------------------------
-        */
+        $readingService->updateKm(
+            $vehicle,
+            $km,
+            auth()->user(),
+            $source,
+            $observation,
+            str_starts_with($source, 'operation_start') ? 'start_vehicle_km' : 'end_vehicle_km',
+            $kmReadingConfirmed
+        );
 
         if ($hours !== null) {
-
-            $hoursColumn = null;
-
-            if (Schema::hasColumn('vehicles', 'current_hours')) {
-                $hoursColumn = 'current_hours';
-            } elseif (Schema::hasColumn('vehicles', 'hourmeter')) {
-                $hoursColumn = 'hourmeter';
-            } elseif (Schema::hasColumn('vehicles', 'engine_hours')) {
-                $hoursColumn = 'engine_hours';
-            }
-
-            if ($hoursColumn) {
-
-                $oldHours = $vehicle->{$hoursColumn};
-                $newHours = $hours;
-
-                if ((float) $oldHours !== (float) $newHours) {
-
-                    $updates[$hoursColumn] = $newHours;
-
-                    VehicleUpdateLog::create([
-
-                        'vehicle_id' => $vehicle->id,
-
-                        'user_id' => auth()->id(),
-
-                        'division_id' => $vehicle->division_id,
-
-                        'location_id' => $vehicle->location_id,
-
-                        'type' => 'hours',
-
-                        'source' => $source,
-
-                        'old_value' => $oldHours,
-
-                        'new_value' => $newHours,
-
-                        'observation' => $observation
-                            ?? 'Horímetro atualizado automaticamente pela operação do veículo.',
-
-                    ]);
-                }
-
-                if (Schema::hasColumn('vehicles', 'last_hours_update_at')) {
-                    $updates['last_hours_update_at'] = now();
-                }
-            }
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | ATUALIZA VEÍCULO
-        |--------------------------------------------------------------------------
-        */
-
-        if (!empty($updates)) {
-            $vehicle->update($updates);
+            $readingService->updateHours(
+                $vehicle,
+                $hours,
+                auth()->user(),
+                $source,
+                $observation,
+                str_starts_with($source, 'operation_start') ? 'start_vehicle_hours' : 'end_vehicle_hours',
+                $hoursReadingConfirmed
+            );
         }
     }
 

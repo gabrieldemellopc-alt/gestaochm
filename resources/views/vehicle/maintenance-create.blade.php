@@ -269,11 +269,15 @@
         method="POST"
         action="{{ route('vehicles.maintenance.store', $vehicle->id) }}"
         class="maintenance-form"
+        onsubmit="return confirmMaintenanceReadings(this);"
     >
 
 
 
         @csrf
+
+        <input type="hidden" name="km_reading_confirmed" value="0">
+        <input type="hidden" name="hours_reading_confirmed" value="0">
 
 
         <div class="maintenance-layout">
@@ -504,6 +508,7 @@
                                 min="{{ $vehicle->current_km ?? 0 }}"
 
                                 name="performed_km"
+                                data-current-reading="{{ $vehicle->current_km ?? 0 }}"
 
                                 class="form-input"
 
@@ -539,6 +544,7 @@
                                 min="{{ $vehicle->current_hours ?? 0 }}"
 
                                 name="performed_hours"
+                                data-current-reading="{{ $vehicle->current_hours ?? 0 }}"
                                 class="form-input"
 
                                 value="{{ old('performed_hours', $vehicle->current_hours ?? 0) }}"
@@ -755,7 +761,38 @@
 </div>
 
 <script>
+    function confirmMaintenanceReadings(form) {
+        const checks = [
+            ['performed_km', 'km_reading_confirmed', 500, 'KM'],
+            ['performed_hours', 'hours_reading_confirmed', 24, 'horímetro'],
+        ];
 
+        for (const [field, confirmationField, threshold, label] of checks) {
+            const input = form.querySelector(`[name="${field}"]`);
+            const confirmation = form.querySelector(`[name="${confirmationField}"]`);
+            confirmation.value = '0';
+
+            if (! input || input.value === '') {
+                continue;
+            }
+
+            const current = Number(input.dataset.currentReading || 0);
+            const informed = Number(input.value);
+
+            if (informed - current <= threshold) {
+                continue;
+            }
+
+            if (! confirm(`O ${label} informado está muito acima da leitura atual. Confirma que a leitura está correta?`)) {
+                input.focus();
+                return false;
+            }
+
+            confirmation.value = '1';
+        }
+
+        return true;
+    }
 </script>
 
 @endsection

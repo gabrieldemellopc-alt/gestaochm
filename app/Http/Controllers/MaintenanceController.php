@@ -33,6 +33,8 @@ class MaintenanceController extends Controller
             'started_at' => ['required', 'date'],
             'performed_km' => ['nullable', 'integer', 'min:0'],
             'performed_hours' => ['nullable', 'integer', 'min:0'],
+            'km_reading_confirmed' => ['nullable', 'boolean'],
+            'hours_reading_confirmed' => ['nullable', 'boolean'],
 
             'reason' => ['nullable', 'in:preventive,corrective,inspection,other'],
             'extra_cost' => ['nullable', 'numeric', 'min:0'],

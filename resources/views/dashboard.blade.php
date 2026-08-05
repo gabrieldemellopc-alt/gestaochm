@@ -641,6 +641,8 @@
                                 data-start-km="{{ $vehicle->open_operation->start_vehicle_km }}"
 
                                 data-start-hours="{{ $vehicle->open_operation->start_vehicle_hours }}"
+                                data-current-km="{{ $vehicle->current_km }}"
+                                data-current-hours="{{ $vehicle->current_hours }}"
 
                                 data-start-datetime="{{ $vehicle->operation_started_at_formatted }}"
 
@@ -3153,9 +3155,11 @@
 
 
 
-        <form method="POST" id="startOperationForm">
+        <form method="POST" id="startOperationForm" onsubmit="return confirmDashboardOperationReadings(this, 'start');">
 
             @csrf
+            <input type="hidden" name="km_reading_confirmed" value="0">
+            <input type="hidden" name="hours_reading_confirmed" value="0">
 
 
 
@@ -3447,11 +3451,13 @@
 
 
 
-        <form method="POST" id="closeOperationForm">
+        <form method="POST" id="closeOperationForm" onsubmit="return confirmDashboardOperationReadings(this, 'end');">
 
             @csrf
 
             @method('PUT')
+            <input type="hidden" name="km_reading_confirmed" value="0">
+            <input type="hidden" name="hours_reading_confirmed" value="0">
 
 
 
@@ -3704,6 +3710,8 @@
             start_hours: button.dataset.startHours,
 
             start_datetime: button.dataset.startDatetime,
+            current_km: button.dataset.currentKm,
+            current_hours: button.dataset.currentHours,
 
         });
 
@@ -3830,8 +3838,10 @@
 
 
         document.getElementById('startOperationKm').value = vehicle.current_km ?? '';
+        document.getElementById('startOperationKm').dataset.currentReading = vehicle.current_km ?? 0;
 
         document.getElementById('startOperationHours').value = vehicle.current_hours ?? '';
+        document.getElementById('startOperationHours').dataset.currentReading = vehicle.current_hours ?? 0;
 
         filterOperationDriversByLocation(vehicle.location_id, vehicle.location_name);
 
@@ -3893,6 +3903,9 @@
 
             operation.start_hours ?? '-';
 
+        form.querySelector('[name="end_vehicle_km"]').dataset.currentReading = operation.current_km ?? 0;
+        form.querySelector('[name="end_vehicle_hours"]').dataset.currentReading = operation.current_hours ?? 0;
+
 
 
         modal.style.display = 'flex';
@@ -3921,6 +3934,31 @@
 
         if (closeModal) closeModal.style.display = 'none';
 
+    }
+
+    function confirmDashboardOperationReadings(form, prefix) {
+        const checks = [
+            [`${prefix}_vehicle_km`, 'km_reading_confirmed', 500, 'KM'],
+            [`${prefix}_vehicle_hours`, 'hours_reading_confirmed', 24, 'horímetro'],
+        ];
+
+        for (const [field, flag, threshold, label] of checks) {
+            const input = form.querySelector(`[name="${field}"]`);
+            const confirmation = form.querySelector(`[name="${flag}"]`);
+            confirmation.value = '0';
+
+            if (! input || input.value === '') continue;
+
+            if (Number(input.value) - Number(input.dataset.currentReading || 0) > threshold) {
+                if (! confirm(`O ${label} informado está muito acima da leitura atual. Confirma que a leitura está correta?`)) {
+                    input.focus();
+                    return false;
+                }
+                confirmation.value = '1';
+            }
+        }
+
+        return true;
     }
 
 
@@ -4967,7 +5005,9 @@ function dashboardFleet() {
                 return;
             }
         
-            if (diffKm > 1000) {
+            let kmReadingConfirmed = false;
+
+            if (diffKm > 500) {
                 const confirmed = confirm(
                     `Atenção: você está aumentando o hodômetro em ${diffKm.toLocaleString('pt-BR')} km.\n\n` +
                     `KM atual: ${originalKm.toLocaleString('pt-BR')}\n` +
@@ -4979,6 +5019,8 @@ function dashboardFleet() {
                     this.vehicle.current_km = this.originalKm;
                     return;
                 }
+
+                kmReadingConfirmed = true;
             }
         
             const response = await fetch(
@@ -4994,7 +5036,8 @@ function dashboardFleet() {
                                 .content
                     },
                     body: JSON.stringify({
-                        km: currentKm
+                        km: currentKm,
+                        km_reading_confirmed: kmReadingConfirmed
                     })
                 }
             );
@@ -5029,6 +5072,8 @@ function dashboardFleet() {
                 return;
             }
         
+            let hoursReadingConfirmed = false;
+
             if (diffHours > 24) {
                 const confirmed = confirm(
                     `Atenção: você está aumentando o horímetro em ${diffHours.toLocaleString('pt-BR')} hora(s).\n\n` +
@@ -5041,6 +5086,8 @@ function dashboardFleet() {
                     this.vehicle.current_hours = this.originalHours;
                     return;
                 }
+
+                hoursReadingConfirmed = true;
             }
         
             const response = await fetch(
@@ -5056,7 +5103,8 @@ function dashboardFleet() {
                                 .content
                     },
                     body: JSON.stringify({
-                        hours: currentHours
+                        hours: currentHours,
+                        hours_reading_confirmed: hoursReadingConfirmed
                     })
                 }
             );

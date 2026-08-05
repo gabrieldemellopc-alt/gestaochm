@@ -100,6 +100,8 @@
         onsubmit="return confirmBulkOperationalUpdate(this);"
     >
         @csrf
+        <input type="hidden" name="km_reading_confirmed" value="0">
+        <input type="hidden" name="hours_reading_confirmed" value="0">
 
         <div class="quick-update-card quick-update-card-v2">
             <div class="quick-update-card-header quick-update-card-header-v2">
@@ -264,6 +266,11 @@
 <script>
     function confirmBulkOperationalUpdate(form) {
         const suspiciousChanges = [];
+        let hasSuspiciousKm = false;
+        let hasSuspiciousHours = false;
+
+        form.querySelector('[name="km_reading_confirmed"]').value = '0';
+        form.querySelector('[name="hours_reading_confirmed"]').value = '0';
 
         form.querySelectorAll('.quick-input').forEach((input) => {
             const original = Number(input.dataset.original || 0);
@@ -274,13 +281,15 @@
                 return;
             }
 
-            if (input.dataset.type === 'km' && diff > 1000) {
+            if (input.dataset.type === 'km' && diff > 500) {
+                hasSuspiciousKm = true;
                 suspiciousChanges.push(
                     `${input.dataset.vehicle}: +${diff.toLocaleString('pt-BR')} km`
                 );
             }
 
             if (input.dataset.type === 'hours' && diff > 24) {
+                hasSuspiciousHours = true;
                 suspiciousChanges.push(
                     `${input.dataset.vehicle}: +${diff.toLocaleString('pt-BR')} h`
                 );
@@ -291,11 +300,18 @@
             return true;
         }
 
-        return confirm(
+        const confirmed = confirm(
             'Atenção: foram encontradas atualizações operacionais altas:\n\n' +
             suspiciousChanges.join('\n') +
             '\n\nDeseja confirmar o envio dessas alterações?'
         );
+
+        if (confirmed) {
+            form.querySelector('[name="km_reading_confirmed"]').value = hasSuspiciousKm ? '1' : '0';
+            form.querySelector('[name="hours_reading_confirmed"]').value = hasSuspiciousHours ? '1' : '0';
+        }
+
+        return confirmed;
     }
 </script>
 @endsection

@@ -461,8 +461,8 @@
                 <form method="POST" action="{{ route('fuel.fillings.store') }}" class="fuel-form fuel-filling-form"     onsubmit="return validateFuelFillingCounters(this);">
                     @csrf
                     <div class="fuel-form-grid fuel-filling-layout">
-                    <input type="hidden" name="confirm_high_vehicle_km" value="0">
-                    <input type="hidden" name="confirm_high_vehicle_hours" value="0">
+                    <input type="hidden" name="km_reading_confirmed" value="0">
+                    <input type="hidden" name="hours_reading_confirmed" value="0">
                         @if($canFillInternal && $canFillExternal)
                         <div class="fuel-span-12 fuel-source-toggle" data-fuel-source-toggle>
                             <div class="fuel-source-head">
@@ -1036,8 +1036,8 @@
         const vehicleSelect = form.querySelector('select[name="vehicle_id"]');
         const kmInput = form.querySelector('[data-vehicle-km-input]');
         const hoursInput = form.querySelector('[data-vehicle-hours-input]');
-        const confirmKmInput = form.querySelector('[name="confirm_high_vehicle_km"]');
-        const confirmHoursInput = form.querySelector('[name="confirm_high_vehicle_hours"]');
+        const confirmKmInput = form.querySelector('[name="km_reading_confirmed"]');
+        const confirmHoursInput = form.querySelector('[name="hours_reading_confirmed"]');
     
         confirmKmInput.value = '0';
         confirmHoursInput.value = '0';
@@ -1078,24 +1078,24 @@
         
         const newKm = Number(kmInput.value || 0);
         
-        if (currentKm && newKm && newKm - currentKm > 500) {
+        if (informedKm !== null && informedKm - currentKm > 500) {
             if (!confirm(`O KM informado está ${newKm - currentKm} km acima do atual. Deseja continuar?`)) {
                 kmInput.focus();
                 return false;
             }
         
-            form.querySelector('[name="confirm_high_vehicle_km"]').value = 1;
+            confirmKmInput.value = 1;
         }
         
         const newHours = Number(hoursInput.value || 0);
         
-        if (currentHours && newHours && newHours - currentHours > 24) {
+        if (informedHours !== null && informedHours - currentHours > 24) {
             if (!confirm(`O horímetro informado está ${newHours - currentHours} horas acima do atual. Deseja continuar?`)) {
                 hoursInput.focus();
                 return false;
             }
         
-            form.querySelector('[name="confirm_high_vehicle_hours"]').value = 1;
+            confirmHoursInput.value = 1;
         }
     
         return true;

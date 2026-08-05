@@ -51,9 +51,11 @@
 
 
 
-    <form method="POST" action="{{ route('vehicles.operations.store', $vehicle->id) }}" class="operation-form-card">
+    <form method="POST" action="{{ route('vehicles.operations.store', $vehicle->id) }}" class="operation-form-card" onsubmit="return confirmOperationReadings(this);">
 
         @csrf
+        <input type="hidden" name="km_reading_confirmed" value="0">
+        <input type="hidden" name="hours_reading_confirmed" value="0">
 
         <input
             type="hidden"
@@ -76,6 +78,7 @@
                     step="0.01"
 
                     name="start_vehicle_km"
+                    data-current-reading="{{ $vehicle->current_km ?? 0 }}"
 
                     value="{{ old('start_vehicle_km') }}"
 
@@ -104,6 +107,7 @@
                     step="0.01"
 
                     name="start_vehicle_hours"
+                    data-current-reading="{{ $vehicle->current_hours ?? 0 }}"
 
                     value="{{ old('start_vehicle_hours') }}"
 
@@ -286,3 +290,32 @@
 
 
 @endsection
+
+@push('scripts')
+<script>
+function confirmOperationReadings(form) {
+    const checks = [
+        ['start_vehicle_km', 'km_reading_confirmed', 500, 'KM'],
+        ['start_vehicle_hours', 'hours_reading_confirmed', 24, 'horímetro'],
+    ];
+
+    for (const [field, flag, threshold, label] of checks) {
+        const input = form.querySelector(`[name="${field}"]`);
+        const confirmation = form.querySelector(`[name="${flag}"]`);
+        confirmation.value = '0';
+
+        if (! input || input.value === '') continue;
+
+        if (Number(input.value) - Number(input.dataset.currentReading || 0) > threshold) {
+            if (! confirm(`O ${label} informado está muito acima da leitura atual. Confirma que a leitura está correta?`)) {
+                input.focus();
+                return false;
+            }
+            confirmation.value = '1';
+        }
+    }
+
+    return true;
+}
+</script>
+@endpush

@@ -474,12 +474,14 @@
                         action="{{ route('vehicles.tires.measurement', $vehicle) }}"
 
                         class="tire-form"
+                        onsubmit="return confirmTireKmReading(this, 'vehicle_km');"
 
                     >
 
 
 
                         @csrf
+                        <input type="hidden" name="km_reading_confirmed" value="0">
 
 
 
@@ -532,6 +534,7 @@
                                 type="number"
 
                                 name="vehicle_km"
+                                data-current-reading="{{ $vehicle->current_km ?? 0 }}"
 
                                 value="{{ old('vehicle_km', $vehicle->current_km ?? 0) }}"
 
@@ -1343,10 +1346,12 @@
             action="{{ route('vehicles.tires.remove', $vehicle) }}"
 
             class="tire-remove-form"
+            onsubmit="return confirmTireKmReading(this, 'removed_km');"
 
         >
 
             @csrf
+            <input type="hidden" name="km_reading_confirmed" value="0">
 
 
 
@@ -1393,6 +1398,7 @@
                         type="number"
 
                         name="removed_km"
+                        data-current-reading="{{ $vehicle->current_km ?? 0 }}"
 
                         x-model="removeKm"
 
@@ -1632,6 +1638,24 @@
 </div>
 
 <script>
+function confirmTireKmReading(form, field) {
+    const input = form.querySelector(`[name="${field}"]`);
+    const confirmation = form.querySelector('[name="km_reading_confirmed"]');
+    confirmation.value = '0';
+
+    if (! input || input.value === '') return true;
+
+    if (Number(input.value) - Number(input.dataset.currentReading || 0) <= 500) {
+        return true;
+    }
+
+    const confirmed = confirm('O KM informado está muito acima da leitura atual. Confirma que a leitura está correta?');
+    confirmation.value = confirmed ? '1' : '0';
+
+    if (! confirmed) input.focus();
+
+    return confirmed;
+}
 
 function vehicleTiresPage() {
 

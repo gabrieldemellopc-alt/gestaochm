@@ -2124,7 +2124,9 @@ class VehicleController extends Controller
 
                 'min:0'
 
-            ]
+            ],
+
+            'km_reading_confirmed' => ['nullable', 'boolean'],
 
 
 
@@ -2141,7 +2143,9 @@ class VehicleController extends Controller
             $request->km,
             auth()->user(),
             'dashboard_quick_update',
-            'Hodômetro atualizado manualmente pelo painel rápido.'
+            'Hodômetro atualizado manualmente pelo painel rápido.',
+            'km',
+            $request->boolean('km_reading_confirmed')
         );
 
 
@@ -2183,7 +2187,9 @@ class VehicleController extends Controller
 
                 'min:0'
 
-            ]
+            ],
+
+            'hours_reading_confirmed' => ['nullable', 'boolean'],
 
 
 
@@ -2200,7 +2206,9 @@ class VehicleController extends Controller
             $request->hours,
             auth()->user(),
             'dashboard_quick_update',
-            'Horímetro atualizado manualmente pelo painel rápido.'
+            'Horímetro atualizado manualmente pelo painel rápido.',
+            'hours',
+            $request->boolean('hours_reading_confirmed')
         );
 
 
@@ -2447,7 +2455,56 @@ class VehicleController extends Controller
 
             ],
 
+            'km_reading_confirmed' => ['nullable', 'boolean'],
+            'hours_reading_confirmed' => ['nullable', 'boolean'],
+
         ]);
+
+        $readingService = app(VehicleReadingService::class);
+
+        foreach ($data['vehicles'] as $vehicleData) {
+            $vehicle = Vehicle::query()
+                ->where('tenant_id', auth()->user()->tenant_id)
+                ->where('division_id', $activeDivisionId)
+                ->where('location_id', $activeLocation->id)
+                ->find($vehicleData['id']);
+
+            if (! $vehicle) {
+                continue;
+            }
+
+            if (isset($vehicleData['current_km'])) {
+                $analysis = $readingService->analyzeKmReading($vehicle, $vehicleData['current_km']);
+
+                if ($analysis['regressive']) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'vehicles.'.$vehicleData['id'].'.current_km' => 'O KM informado não pode ser menor que o KM atual do veículo.',
+                    ]);
+                }
+
+                if ($analysis['suspicious'] && empty($data['km_reading_confirmed'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'vehicles.'.$vehicleData['id'].'.current_km' => 'O KM informado parece muito acima da leitura atual. Confirme para continuar.',
+                    ]);
+                }
+            }
+
+            if (isset($vehicleData['current_hours'])) {
+                $analysis = $readingService->analyzeHoursReading($vehicle, $vehicleData['current_hours']);
+
+                if ($analysis['regressive']) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'vehicles.'.$vehicleData['id'].'.current_hours' => 'O horímetro informado não pode ser menor que o horímetro atual do veículo.',
+                    ]);
+                }
+
+                if ($analysis['suspicious'] && empty($data['hours_reading_confirmed'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'vehicles.'.$vehicleData['id'].'.current_hours' => 'O horímetro informado parece muito acima da leitura atual. Confirme para continuar.',
+                    ]);
+                }
+            }
+        }
 
 
 
@@ -2676,6 +2733,8 @@ class VehicleController extends Controller
 
                         'type' => $log['type'],
 
+                        'source' => 'dashboard_quick_update',
+
 
 
                         'old_value' => $log['old_value'],
@@ -2683,6 +2742,8 @@ class VehicleController extends Controller
 
 
                         'new_value' => $log['new_value'],
+
+                        'observation' => 'Leitura atualizada pela atualização rápida em lote.',
 
                     ]);
 

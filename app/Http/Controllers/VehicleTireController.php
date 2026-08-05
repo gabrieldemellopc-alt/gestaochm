@@ -10,9 +10,9 @@ use App\Models\Tire;
 
 use App\Models\TireInstallation;
 
-use App\Models\VehicleUpdateLog;
 
 use App\Models\Vehicle;
+use App\Services\VehicleReadingService;
 
 use App\Models\Division;
 
@@ -803,6 +803,8 @@ class VehicleTireController extends Controller
 
                 ],
 
+                'km_reading_confirmed' => ['nullable', 'boolean'],
+
 
 
                 'current_tread' => [
@@ -874,6 +876,22 @@ class VehicleTireController extends Controller
             $oldKm
 
         ) {
+
+            $vehicle = Vehicle::query()
+                ->whereKey($vehicle->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            app(VehicleReadingService::class)->updateKm(
+                $vehicle,
+                $data['vehicle_km'],
+                $authUser,
+                'tire_measurement',
+                'Hodômetro atualizado automaticamente a partir de medição de pneu.',
+                'vehicle_km',
+                ! empty($data['km_reading_confirmed'])
+            );
+
 
 
 
@@ -1018,105 +1036,6 @@ class VehicleTireController extends Controller
             ]);
 
 
-            /*
-
-            |--------------------------------------------------------------------------
-
-            | ATUALIZA HODÔMETRO DO VEÍCULO, SE NECESSÁRIO
-
-            |--------------------------------------------------------------------------
-
-            */
-
-
-
-            if (
-
-                $oldKm === null
-
-                ||
-
-                (float) $data['vehicle_km'] > (float) $oldKm
-
-            ) {
-
-                $vehicle->update([
-
-                    'current_km' =>
-
-                        $data['vehicle_km'],
-
-
-
-                    'last_km_update_at' =>
-
-                        now(),
-
-                ]);
-
-
-
-                VehicleUpdateLog::create([
-
-
-
-                    'vehicle_id' =>
-
-                        $vehicle->id,
-
-
-
-                    'user_id' =>
-
-                        $authUser->id,
-
-
-
-                    'division_id' =>
-
-                        $vehicle->division_id,
-
-
-
-                    'location_id' =>
-
-                        $vehicle->location_id,
-
-
-
-                    'type' =>
-
-                        'km',
-
-
-
-                    'source' =>
-
-                        'tire_measurement',
-
-
-
-                    'old_value' =>
-
-                        $oldKm,
-
-
-
-                    'new_value' =>
-
-                        $data['vehicle_km'],
-
-
-
-                    'observation' =>
-
-                        'Hodômetro atualizado automaticamente a partir de medição de pneu.',
-
-
-
-                ]);
-
-            }
 
         });
 
@@ -2263,6 +2182,8 @@ class VehicleTireController extends Controller
 
                 ],
 
+                'km_reading_confirmed' => ['nullable', 'boolean'],
+
 
 
                 'destination' => [
@@ -2345,6 +2266,22 @@ class VehicleTireController extends Controller
 
         ) {
 
+            $vehicle = Vehicle::query()
+                ->whereKey($vehicle->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            app(VehicleReadingService::class)->updateKm(
+                $vehicle,
+                $data['removed_km'],
+                $authUser,
+                'tire_removal',
+                'Hodômetro atualizado automaticamente a partir da remoção/troca de pneu.',
+                'removed_km',
+                ! empty($data['km_reading_confirmed'])
+            );
+
+
             $installation =
 
                 TireInstallation::where('tenant_id', $vehicle->tenant_id)
@@ -2409,89 +2346,6 @@ class VehicleTireController extends Controller
 
 
 
-            if (
-
-                $oldKm === null
-
-                ||
-
-                (float) $data['removed_km'] > (float) $oldKm
-
-            ) {
-
-                $vehicle->update([
-
-                    'current_km' =>
-
-                        $data['removed_km'],
-
-
-
-                    'last_km_update_at' =>
-
-                        now(),
-
-                ]);
-
-
-
-                VehicleUpdateLog::create([
-
-                    'vehicle_id' =>
-
-                        $vehicle->id,
-
-
-
-                    'user_id' =>
-
-                        $authUser->id,
-
-
-
-                    'division_id' =>
-
-                        $vehicle->division_id,
-
-
-
-                    'location_id' =>
-
-                        $vehicle->location_id,
-
-
-
-                    'type' =>
-
-                        'km',
-
-
-
-                    'source' =>
-
-                        'tire_removal',
-
-
-
-                    'old_value' =>
-
-                        $oldKm,
-
-
-
-                    'new_value' =>
-
-                        $data['removed_km'],
-
-
-
-                    'observation' =>
-
-                        'Hodômetro atualizado automaticamente a partir da remoção/troca de pneu.',
-
-                ]);
-
-            }
 
         });
 

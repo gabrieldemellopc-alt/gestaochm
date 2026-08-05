@@ -253,8 +253,8 @@ class FuelTankController extends Controller
                 'supplier_name',
                 'document_number',
                 'notes',
-                'confirm_high_vehicle_km',
-                'confirm_high_vehicle_hours',
+                'km_reading_confirmed',
+                'hours_reading_confirmed',
             ]));
         } catch (ValidationException $exception) {
             return back()

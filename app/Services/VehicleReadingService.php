@@ -9,13 +9,28 @@ use Illuminate\Validation\ValidationException;
 
 class VehicleReadingService
 {
+    public const MAX_KM_JUMP = 500;
+
+    public const MAX_HOURS_JUMP = 24;
+
+    public function analyzeKmReading(Vehicle $vehicle, float|int $value): array
+    {
+        return $this->analyzeReading($vehicle->current_km, $value, self::MAX_KM_JUMP);
+    }
+
+    public function analyzeHoursReading(Vehicle $vehicle, float|int $value): array
+    {
+        return $this->analyzeReading($vehicle->current_hours, $value, self::MAX_HOURS_JUMP);
+    }
+
     public function updateKm(
         Vehicle $vehicle,
         float|int $value,
         User $user,
         string $source,
         ?string $observation = null,
-        string $errorField = 'km'
+        string $errorField = 'km',
+        bool $confirmedSuspicious = false
     ): bool {
         return $this->updateReading(
             $vehicle,
@@ -27,7 +42,10 @@ class VehicleReadingService
             $source,
             $observation,
             $errorField,
-            'O KM informado não pode ser menor que o KM atual do veículo.'
+            'O KM informado não pode ser menor que o KM atual do veículo.',
+            'O KM informado parece muito acima da leitura atual. Confirme para continuar.',
+            self::MAX_KM_JUMP,
+            $confirmedSuspicious
         );
     }
 
@@ -37,7 +55,8 @@ class VehicleReadingService
         User $user,
         string $source,
         ?string $observation = null,
-        string $errorField = 'hours'
+        string $errorField = 'hours',
+        bool $confirmedSuspicious = false
     ): bool {
         return $this->updateReading(
             $vehicle,
@@ -49,7 +68,10 @@ class VehicleReadingService
             $source,
             $observation,
             $errorField,
-            'O horímetro informado não pode ser menor que o horímetro atual do veículo.'
+            'O horímetro informado não pode ser menor que o horímetro atual do veículo.',
+            'O horímetro informado parece muito acima da leitura atual. Confirme para continuar.',
+            self::MAX_HOURS_JUMP,
+            $confirmedSuspicious
         );
     }
 
@@ -63,7 +85,10 @@ class VehicleReadingService
         string $source,
         ?string $observation,
         string $errorField,
-        string $lowerValueMessage
+        string $lowerValueMessage,
+        string $suspiciousValueMessage,
+        float|int $suspiciousThreshold,
+        bool $confirmedSuspicious
     ): bool {
         $oldValue = $vehicle->{$field};
         $numericValue = (float) $value;
@@ -76,6 +101,16 @@ class VehicleReadingService
 
         if ($oldValue !== null && $numericValue === (float) $oldValue) {
             return false;
+        }
+
+        if (
+            $oldValue !== null
+            && $numericValue - (float) $oldValue > $suspiciousThreshold
+            && ! $confirmedSuspicious
+        ) {
+            throw ValidationException::withMessages([
+                $errorField => $suspiciousValueMessage,
+            ]);
         }
 
         $vehicle->update([
@@ -96,5 +131,22 @@ class VehicleReadingService
         ]);
 
         return true;
+    }
+
+    private function analyzeReading(mixed $currentValue, float|int $value, float|int $threshold): array
+    {
+        $newValue = (float) $value;
+        $oldValue = $currentValue !== null ? (float) $currentValue : null;
+        $difference = $oldValue !== null ? $newValue - $oldValue : null;
+
+        return [
+            'current' => $oldValue,
+            'new' => $newValue,
+            'difference' => $difference,
+            'regressive' => $oldValue !== null && $newValue < $oldValue,
+            'unchanged' => $oldValue !== null && $newValue === $oldValue,
+            'suspicious' => $difference !== null && $difference > $threshold,
+            'threshold' => $threshold,
+        ];
     }
 }
