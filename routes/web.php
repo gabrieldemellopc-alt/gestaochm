@@ -39,6 +39,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockController;
 
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\VehicleReadingCorrectionController;
 
 use App\Http\Controllers\VehicleTireController;
 
@@ -416,6 +417,12 @@ Route::middleware('auth')->group(function () {
         [VehicleController::class, 'updateHours']
 
     )->name('vehicles.update-hours');
+
+    Route::post('/vehicles/{vehicle}/reading-correction/preview', [VehicleReadingCorrectionController::class, 'preview'])
+        ->name('vehicles.reading-correction.preview');
+
+    Route::post('/vehicles/{vehicle}/reading-correction', [VehicleReadingCorrectionController::class, 'store'])
+        ->name('vehicles.reading-correction.store');
 
 
 

@@ -23,6 +23,7 @@
 
     href="{{ asset('css/pages/vehicle-center.css') }}?v=4"
 >
+<link rel="stylesheet" href="{{ asset('css/pages/vehicle-reading-correction.css') }}?v=1">
 
 @endpush
 
@@ -225,6 +226,12 @@
                 <span>Editar</span>
 
             </a>
+            @if($canCorrectReadings)
+                <button type="button" class="vehicle-center-action" onclick="openReadingCorrectionModal()">
+                    <i data-lucide="undo-2"></i>
+                    <span>Corrigir KM/HR</span>
+                </button>
+            @endif
             <button
                 id="vehicleReportModalButton"
                 type="button"
@@ -719,6 +726,64 @@
 </div>
 
 
+@if($canCorrectReadings)
+<div id="readingCorrectionModal" class="reading-correction-overlay" style="display:none;" onclick="if(event.target === this) closeReadingCorrectionModal()">
+    <div class="reading-correction-modal" role="dialog" aria-modal="true" aria-labelledby="readingCorrectionTitle">
+        <div class="reading-correction-header">
+            <div>
+                <small>Ação administrativa</small>
+                <h3 id="readingCorrectionTitle">Corrigir KM/horímetro</h3>
+                <p>Use somente para corrigir uma leitura lançada incorretamente.</p>
+            </div>
+            <button type="button" onclick="closeReadingCorrectionModal()"><i data-lucide="x"></i></button>
+        </div>
+
+        <form method="POST" action="{{ route('vehicles.reading-correction.store', $vehicle) }}" class="reading-correction-form" id="readingCorrectionForm">
+            @csrf
+            <div class="reading-correction-body">
+            <div class="reading-correction-current">
+                <span>Leitura atual</span>
+                <strong>{{ number_format((float) $vehicle->current_km, 0, ',', '.') }} KM</strong>
+                <strong>{{ number_format((float) $vehicle->current_hours, 1, ',', '.') }} h</strong>
+            </div>
+
+            <div class="reading-correction-grid">
+                <div class="reading-correction-field">
+                    <label>Novo KM <span>opcional</span></label>
+                    <input type="number" min="0" step="1" name="new_km" value="{{ old('new_km') }}">
+                </div>
+                <div class="reading-correction-field">
+                    <label>Novo horímetro <span>opcional</span></label>
+                    <input type="number" min="0" step="0.1" name="new_hours" value="{{ old('new_hours') }}">
+                </div>
+            </div>
+
+            <div class="reading-correction-field">
+                <label>Motivo da correção</label>
+                <textarea name="reason" minlength="10" required rows="3" placeholder="Explique o lançamento incorreto e a leitura correta.">{{ old('reason') }}</textarea>
+            </div>
+
+            <button type="button" class="reading-correction-analyze" onclick="previewReadingCorrection()">
+                <i data-lucide="scan-search"></i>
+                Analisar impactos
+            </button>
+            <div id="readingCorrectionImpacts" class="reading-correction-impact" aria-live="polite"></div>
+
+            <label id="readingCorrectionConfirmation" class="reading-correction-warning" style="display:none;">
+                <input type="checkbox" name="impact_confirmed" value="1" required>
+                <span>Confirmo que esta correção pode afetar a interpretação de lançamentos já registrados.</span>
+            </label>
+            </div>
+
+            <div class="reading-correction-actions">
+                <button type="button" onclick="closeReadingCorrectionModal()">Cancelar</button>
+                <button type="submit" id="readingCorrectionSubmit" disabled>Confirmar correção</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
 <div
     id="vehicleReportModal"
     class="vehicle-report-modal-backdrop"
@@ -830,6 +895,56 @@
     </div>
 </div>
 <script>
+@if($canCorrectReadings)
+    function openReadingCorrectionModal() {
+        document.getElementById('readingCorrectionModal').style.display = 'flex';
+        document.body.classList.add('reading-correction-open');
+    }
+
+    function closeReadingCorrectionModal() {
+        document.getElementById('readingCorrectionModal').style.display = 'none';
+        document.body.classList.remove('reading-correction-open');
+    }
+
+    async function previewReadingCorrection() {
+        const form = document.getElementById('readingCorrectionForm');
+        const target = document.getElementById('readingCorrectionImpacts');
+        const response = await fetch(@json(route('vehicles.reading-correction.preview', $vehicle)), {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value },
+            body: new FormData(form),
+        });
+        const data = await response.json();
+
+        if (! response.ok) {
+            const errors = data.errors ? Object.values(data.errors).flat() : [data.message || 'Não foi possível analisar os impactos.'];
+            target.innerHTML = `<div class="reading-correction-impact-state is-error">${errors.map(message => `<p>${escapeReadingCorrectionHtml(message)}</p>`).join('')}</div>`;
+            return;
+        }
+
+        const impacts = data.impacts || [];
+        target.innerHTML = impacts.length
+            ? `<div class="reading-correction-impact-header"><div><strong>Lançamentos potencialmente afetados</strong><p>Eles não serão alterados automaticamente, mas podem precisar de conferência.</p></div><span>${impacts.length} registro${impacts.length === 1 ? '' : 's'}</span></div><div class="reading-correction-impact-list">${impacts.map(item => `<article class="reading-correction-impact-item"><div><strong>${escapeReadingCorrectionHtml(item.type)}</strong><small>${escapeReadingCorrectionHtml(item.date)}</small></div><b>${escapeReadingCorrectionHtml(item.value)}</b><span>${escapeReadingCorrectionHtml(item.reference)}</span></article>`).join('')}</div>`
+            : '<div class="reading-correction-impact-state is-success"><i data-lucide="circle-check"></i><div><strong>Nenhum impacto localizado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
+        if (window.lucide) lucide.createIcons();
+        document.getElementById('readingCorrectionConfirmation').style.display = 'block';
+        document.getElementById('readingCorrectionSubmit').disabled = false;
+    }
+
+    document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"]')
+        .forEach(input => input.addEventListener('input', () => {
+            document.getElementById('readingCorrectionConfirmation').style.display = 'none';
+            document.getElementById('readingCorrectionConfirmation').querySelector('input').checked = false;
+            document.getElementById('readingCorrectionSubmit').disabled = true;
+            document.getElementById('readingCorrectionImpacts').innerHTML = '<p>Analise novamente os impactos após alterar os dados.</p>';
+        }));
+
+    function escapeReadingCorrectionHtml(value) {
+        const element = document.createElement('div');
+        element.textContent = String(value ?? '');
+        return element.innerHTML;
+    }
+@endif
     const vehicleReportModal = document.getElementById('vehicleReportModal');
     const vehicleReportModalButton = document.getElementById('vehicleReportModalButton');
     const vehicleReportStartDate = document.getElementById('vehicleReportStartDate');

@@ -39,6 +39,7 @@ return [
                 'vehicles.create' => ['label' => 'Criar veículo', 'default' => ['supervisor' => false]],
                 'vehicles.update' => ['label' => 'Editar veículo', 'default' => ['supervisor' => false]],
                 'vehicles.update_km_hours' => ['label' => 'Atualizar KM/Horímetro', 'default' => ['supervisor' => true]],
+                'vehicles.correct_readings' => ['label' => 'Corrigir KM/horímetro', 'default' => ['supervisor' => false]],
                 'vehicles.view_dossier' => ['label' => 'Ver dossiê do veículo', 'default' => ['supervisor' => false]],
             ],
         ],
