@@ -31,7 +31,9 @@ class MaintenanceCancelledSheet implements FromArray, WithTitle
                 $maintenance['vehicle'],
                 $maintenance['plate'],
                 $maintenance['procedure'],
-                $maintenance['total_cost'] ?? 0,
+                ! empty($this->data['canViewCosts'])
+                    ? $maintenance['total_cost']
+                    : 'Restrito',
                 'Não',
                 $maintenance['cancelled_by'],
                 $maintenance['reason'],

@@ -105,10 +105,10 @@ class StockReportExport implements WithMultipleSheets
             ['Itens ativos', $this->data['inventory_summary']['active_items']],
             ['Itens abaixo do minimo', $this->data['inventory_summary']['low_stock']],
             ['Itens zerados', $this->data['inventory_summary']['zero_stock']],
-            ['Valor estimado do estoque', (float) $this->data['estimated_inventory_value']],
+            ['Valor estimado do estoque', $this->costCell($this->data['estimated_inventory_value'])],
             ['Entradas', (float) $this->data['total_entries_quantity']],
             ['Saidas manuais', (float) $this->data['total_outputs_quantity']],
-            ['Consumo por manutencao', (float) $this->data['total_consumed_cost']],
+            ['Consumo por manutencao', $this->costCell($this->data['total_consumed_cost'])],
             ['Reversoes', $this->data['reversal_movements']->count()],
             ['Itens sem movimentacao recente', $this->data['stale_items']->count()],
             [],
@@ -141,7 +141,7 @@ class StockReportExport implements WithMultipleSheets
                 $this->stockStatus($row['status']),
                 $this->dateTime($row['last_movement']?->created_at),
                 $row['days_without_movement'],
-                (float) $row['estimated_value'],
+                $this->costCell($row['estimated_value']),
                 'Sim',
             ];
         }
@@ -208,8 +208,8 @@ class StockReportExport implements WithMultipleSheets
                 $movement['procedure_name'] ?? $movement['procedure']?->name,
                 $movement['item_name'],
                 (float) $movement['quantity'],
-                (float) $movement['unit_cost'],
-                (float) $movement['total_cost'],
+                $this->costCell($movement['unit_cost']),
+                $this->costCell($movement['total_cost']),
                 $movement['cost_is_estimated'] ? 'Sim' : 'Nao',
             ];
         }
@@ -235,7 +235,7 @@ class StockReportExport implements WithMultipleSheets
                 $movement['item_name'],
                 trim($movement['classification_label'] . ($movement['reversed_from_movement_id'] ? ' de #' . $movement['reversed_from_movement_id'] : '')),
                 (float) $movement['quantity'],
-                (float) $movement['total_cost'],
+                $this->costCell($movement['total_cost']),
                 $movement['responsible'],
                 $movement['description'],
             ];
@@ -263,7 +263,7 @@ class StockReportExport implements WithMultipleSheets
                 $row['category']?->name,
                 (float) $row['current_quantity'],
                 (float) $row['minimum_quantity'],
-                (float) $row['estimated_value'],
+                $this->costCell($row['estimated_value']),
                 'Abaixo do estoque minimo',
             ];
         }
@@ -275,7 +275,7 @@ class StockReportExport implements WithMultipleSheets
                 $row['category']?->name,
                 (float) $row['current_quantity'],
                 (float) $row['minimum_quantity'],
-                (float) $row['estimated_value'],
+                $this->costCell($row['estimated_value']),
                 'Saldo zerado',
             ];
         }
@@ -287,7 +287,7 @@ class StockReportExport implements WithMultipleSheets
                 $row['category']?->name,
                 (float) $row['current_quantity'],
                 $row['days_without_movement'],
-                (float) $row['estimated_value'],
+                $this->costCell($row['estimated_value']),
                 'Item sem movimentacao dentro do criterio do relatorio',
             ];
         }
@@ -299,7 +299,7 @@ class StockReportExport implements WithMultipleSheets
                 $row['category_name'],
                 (float) $row['quantity'],
                 null,
-                (float) $row['total_cost'],
+                $this->costCell($row['total_cost']),
                 $row['cost_has_estimates'] ? 'Possui custo estimado por fallback' : 'Consumo por manutencao',
             ];
         }
@@ -311,7 +311,7 @@ class StockReportExport implements WithMultipleSheets
                 $movement['category_name'],
                 (float) $movement['quantity'],
                 null,
-                (float) $movement['total_cost'],
+                $this->costCell($movement['total_cost']),
                 $movement['cost_note'],
             ];
         }
@@ -339,8 +339,8 @@ class StockReportExport implements WithMultipleSheets
                 $movement['classification_label'],
                 $movement['item_name'],
                 (float) $movement['quantity'],
-                (float) $movement['unit_cost'],
-                (float) $movement['total_cost'],
+                $this->costCell($movement['unit_cost']),
+                $this->costCell($movement['total_cost']),
                 $movement['cancel_reason'],
                 $movement['cancelled_by'],
                 'Nao',
@@ -370,8 +370,8 @@ class StockReportExport implements WithMultipleSheets
                 $movement['item_name'],
                 $movement['category_name'],
                 (float) $movement['quantity'],
-                (float) $movement['unit_cost'],
-                (float) $movement['total_cost'],
+                $this->costCell($movement['unit_cost']),
+                $this->costCell($movement['total_cost']),
                 $movement['responsible'],
                 $movement['description'],
                 $movement['cost_is_estimated'] ? 'Sim' : 'Nao',
@@ -389,8 +389,8 @@ class StockReportExport implements WithMultipleSheets
             $movement['item_name'],
             $movement['category_name'],
             (float) $movement['quantity'],
-            (float) $movement['unit_cost'],
-            (float) $movement['total_cost'],
+            $this->costCell($movement['unit_cost']),
+            $this->costCell($movement['total_cost']),
             $movement['responsible'],
             $movement['description'],
             $movement['maintenance_id'] ? '#' . $movement['maintenance_id'] : null,
@@ -403,6 +403,15 @@ class StockReportExport implements WithMultipleSheets
     private function date($date): string
     {
         return $date ? Carbon::parse($date)->format('d/m/Y') : '-';
+    }
+
+    private function costCell(mixed $value): float|string|null
+    {
+        if (empty($this->data['context']['can_view_costs'])) {
+            return 'Restrito';
+        }
+
+        return $value !== null ? (float) $value : null;
     }
 
     private function dateTime($date): string

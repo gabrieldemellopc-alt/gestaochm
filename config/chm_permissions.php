@@ -122,6 +122,8 @@ return [
                 'reports.export_pdf' => ['label' => 'Exportar PDF', 'default' => ['supervisor' => false]],
                 'reports.export_excel' => ['label' => 'Exportar Excel', 'default' => ['supervisor' => false]],
                 'reports.view_costs' => ['label' => 'Ver custos nos relatórios', 'default' => ['supervisor' => false]],
+                'reports.view_cancelled' => ['label' => 'Ver cancelamentos nos relatórios', 'default' => ['supervisor' => false]],
+                'reports.view_changes' => ['label' => 'Ver alterações nos relatórios', 'default' => ['supervisor' => false]],
                 'fiscal_documents.view' => ['label' => 'Ver notas fiscais', 'default' => ['supervisor' => false]],
                 'fiscal_documents.view_details' => ['label' => 'Ver detalhes de notas fiscais', 'default' => ['supervisor' => false]],
                 'fiscal_documents.open_origin' => ['label' => 'Abrir origem da nota fiscal', 'default' => ['supervisor' => false]],

@@ -18,10 +18,10 @@ use App\Support\ChmLabel;
 class VehicleDossierReportService
 {
     public function __construct(
-        private readonly ReportContextService $reportContext
+        private readonly ReportContextService $reportContext,
+        private readonly ReportPayloadSanitizer $sanitizer
     ) {
     }
-
     public function build(array $filters = []): array
     {
         $context = $this->reportContext->resolve();
@@ -60,7 +60,7 @@ class VehicleDossierReportService
         $tireEvents = $this->tireEvents($context, $vehicle, $appliedFilters);
         $tireMeasurements = $this->tireMeasurements($context, $vehicle, $appliedFilters);
         $kmHrLogs = $this->kmHrLogs($context, $vehicle, $appliedFilters);
-        return [
+        return $this->sanitizer->costs([
             'context' => $this->contextPayload($context),
             'applied_filters' => $appliedFilters,
             'validation' => [
@@ -83,7 +83,7 @@ class VehicleDossierReportService
             'alerts' => collect(),
             'cancelled_records' => $cancelledRecords,
             'audit_records' => collect(),
-        ];
+        ], $context['can_view_costs']);
     }
 
     private function filters(array $filters, array $context): array
@@ -102,7 +102,7 @@ class VehicleDossierReportService
                 : null,
             'include_cancelled' => $context['can_view_cancelled']
                 && filter_var($filters['include_cancelled'] ?? false, FILTER_VALIDATE_BOOLEAN),
-            'include_audit' => $context['can_view_cancelled']
+            'include_audit' => $context['can_view_audit']
                 && filter_var($filters['include_audit'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'include_drafts' => filter_var($filters['include_drafts'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'include_events_without_cost' => filter_var($filters['include_events_without_cost'] ?? false, FILTER_VALIDATE_BOOLEAN),
@@ -207,7 +207,7 @@ class VehicleDossierReportService
             'location' => $context['location'],
             'location_ids' => $context['location_ids'],
             'can_view_cancelled' => $context['can_view_cancelled'],
-            'can_view_audit' => $context['can_view_cancelled'],
+            'can_view_audit' => $context['can_view_audit'],
         ];
     }
 
@@ -452,7 +452,7 @@ class VehicleDossierReportService
 
     private function maintenances(array $context, Vehicle $vehicle, array $filters): Collection
     {
-        return $this->maintenanceBaseQuery($context, $vehicle, $filters, false)
+        $rows = $this->maintenanceBaseQuery($context, $vehicle, $filters, false)
             ->with([
                 'procedure',
                 'values.field',
@@ -468,6 +468,16 @@ class VehicleDossierReportService
             ->get()
             ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceRow($maintenance))
             ->values();
+
+        if (! $filters['include_audit']) {
+            return $rows->map(fn (array $row) => [
+                ...$row,
+                'status_logs' => collect(),
+                'cancelled_by_name' => null,
+            ]);
+        }
+
+        return $rows;
     }
 
     private function cancelledRecords(array $context, Vehicle $vehicle, array $filters): Collection

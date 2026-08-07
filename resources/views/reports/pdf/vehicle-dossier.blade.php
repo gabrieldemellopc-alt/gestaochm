@@ -314,7 +314,7 @@
 
     $formatDate = fn ($date) => $date
         ? \Carbon\Carbon::parse($date)->format('d/m/Y')
-        : '-';
+        : 'Restrito';
 
     $number = fn ($value, $decimals = 0) => $value !== null
         ? number_format((float) $value, $decimals, ',', '.')

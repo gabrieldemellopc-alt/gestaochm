@@ -106,9 +106,9 @@ class FuelReportExport implements WithMultipleSheets
             ['Tanques abaixo do minimo', $this->data['low_tanks']->count()],
             ['Litros recebidos', (float) $this->data['total_received_liters']],
             ['Litros abastecidos', (float) $this->data['total_filled_liters']],
-            ['Custo recebido', (float) $this->data['total_received_cost']],
-            ['Custo abastecido', (float) $this->data['total_filled_cost']],
-            ['Custo medio por litro', $this->data['average_cost_per_liter']],
+            ['Custo recebido', $this->costCell($this->data['total_received_cost'])],
+            ['Custo abastecido', $this->costCell($this->data['total_filled_cost'])],
+            ['Custo medio por litro', $this->costCell($this->data['average_cost_per_liter'])],
             ['Veiculos abastecidos', $this->data['vehicles_filled_count']],
             ['Abastecimentos sem KM/HR', $this->data['fillings_without_km_hr']->count()],
         ];
@@ -168,8 +168,8 @@ class FuelReportExport implements WithMultipleSheets
                 $receipt->supplier_name,
                 $receipt->invoice_number,
                 (float) $receipt->quantity_liters,
-                $receipt->unit_cost !== null ? (float) $receipt->unit_cost : null,
-                $receipt->total_cost !== null ? (float) $receipt->total_cost : null,
+                $this->costCell($receipt->unit_cost),
+                $this->costCell($receipt->total_cost),
                 $receipt->responsible?->name ?? 'Não informado',
                 $receipt->notes,
             ];
@@ -209,8 +209,8 @@ class FuelReportExport implements WithMultipleSheets
                 $filling->vehicle_km !== null ? (float) $filling->vehicle_km : null,
                 $filling->vehicle_hours !== null ? (float) $filling->vehicle_hours : null,
                 (float) $filling->quantity_liters,
-                $filling->unit_cost !== null ? (float) $filling->unit_cost : null,
-                $filling->total_cost !== null ? (float) $filling->total_cost : null,
+                $this->costCell($filling->unit_cost),
+                $this->costCell($filling->total_cost),
                 $filling->responsible?->name ?? 'Não informado',
                 $filling->notes,
             ];
@@ -277,7 +277,7 @@ class FuelReportExport implements WithMultipleSheets
                 $row['product']?->name,
                 $row['fillings_count'],
                 (float) $row['total_liters'],
-                (float) $row['total_cost'],
+                $this->costCell($row['total_cost']),
                 $row['km_consumption']['initial'],
                 $row['km_consumption']['final'],
                 $row['hours_consumption']['initial'],
@@ -361,7 +361,7 @@ class FuelReportExport implements WithMultipleSheets
                 $record['type'],
                 $record['record'],
                 (float) $record['quantity_liters'],
-                $record['total_cost'] !== null ? (float) $record['total_cost'] : null,
+                $this->costCell($record['total_cost']),
                 $record['reason'],
                 $record['user'],
                 'Nao',
@@ -375,6 +375,15 @@ class FuelReportExport implements WithMultipleSheets
     {
         return $this->data['product_balances']
             ->first(fn (array $item) => str_contains(mb_strtolower((string) ($item['slug'] ?: $item['name'])), $needle));
+    }
+
+    private function costCell(mixed $value): float|string|null
+    {
+        if (empty($this->data['context']['can_view_costs'])) {
+            return 'Restrito';
+        }
+
+        return $value !== null ? (float) $value : null;
     }
 
     private function date($date): string

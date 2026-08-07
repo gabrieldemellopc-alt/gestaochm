@@ -36,7 +36,9 @@ class MaintenanceDetailsSheet implements FromArray, ShouldAutoSize, WithTitle
                 $maintenance['procedure_summary'] ?? $maintenance['procedure_name'] ?? '-',
                 $this->maintenanceTypeLabel($maintenance['maintenance_type_summary'] ?? $maintenance['maintenance_type'] ?? null),
                 $maintenance['items_count'] ?? 1,
-                (float) ($maintenance['total_cost'] ?? 0),
+                ! empty($this->data['canViewCosts'])
+                    ? ($maintenance['total_cost'] !== null ? (float) $maintenance['total_cost'] : null)
+                    : 'Restrito',
                 $maintenance['opened_by_name'] ?? 'Não informado',
                 $maintenance['closed_by_name'] ?? '-',
             ];

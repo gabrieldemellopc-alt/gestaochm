@@ -15,7 +15,8 @@ use Illuminate\Support\Collection;
 class FuelReportService
 {
     public function __construct(
-        private readonly ReportContextService $reportContext
+        private readonly ReportContextService $reportContext,
+        private readonly ReportPayloadSanitizer $sanitizer
     ) {
     }
 
@@ -44,7 +45,7 @@ class FuelReportService
                 ->values();
         }
 
-        return [
+        return $this->sanitizer->costs([
             'context' => $context,
             'applied_filters' => $filters,
             'vehicles' => $this->vehicles($context),
@@ -75,7 +76,7 @@ class FuelReportService
             'latest_receipts' => $this->latestReceipts($context, $filters),
             'latest_fillings' => $this->latestFillings($context, $filters),
             'cancelled_records' => $this->cancelledRecords($context, $filters),
-        ];
+        ], $context['can_view_costs']);
     }
 
     private function filters(array $filters, array $context): array

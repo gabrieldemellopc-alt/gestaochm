@@ -17,6 +17,11 @@ class TireReportService
 {
     private const NO_RECENT_MEASUREMENT_DAYS = 60;
 
+    public function __construct(
+        private readonly ReportPayloadSanitizer $sanitizer
+    ) {
+    }
+
     public function build(array $context, Request $request): array
     {
         $filters = $this->filters($context, $request);
@@ -33,7 +38,7 @@ class TireReportService
             ->sortBy(fn (Tire $tire) => optional($tire->latestMeasurement?->measured_at)->timestamp ?? 0)
             ->values();
 
-        return [
+        return $this->sanitizer->costs([
             'context' => $context,
             'filters' => $filters,
             'vehicles' => $vehicles,
@@ -55,7 +60,7 @@ class TireReportService
             'events' => $events = $this->events($context, $filters),
             'eventSummary' => $this->eventSummary($events),
             'cancelledRecords' => $this->cancelledRecords($context, $filters),
-        ];
+        ], $context['can_view_costs']);
     }
 
     private function filters(array $context, Request $request): array

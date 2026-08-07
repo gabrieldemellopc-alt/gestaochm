@@ -15,7 +15,8 @@ class StockReportService
     private const STALE_MOVEMENT_DAYS = 90;
 
     public function __construct(
-        private readonly ReportContextService $reportContext
+        private readonly ReportContextService $reportContext,
+        private readonly ReportPayloadSanitizer $sanitizer
     ) {
     }
 
@@ -40,7 +41,7 @@ class StockReportService
         $reversalMovements = $this->reversalMovements($movements);
         $cancelledRecords = $this->cancelledRecords($context, $filters);
 
-        return [
+        return $this->sanitizer->costs([
             'context' => $context,
             'applied_filters' => $filters,
             'items' => $items,
@@ -70,7 +71,7 @@ class StockReportService
             'total_outputs_quantity' => $this->sumQuantity($manualOutputs),
             'total_consumed_cost' => round($maintenanceConsumption->sum('total_cost'), 2),
             'latest_movements' => $this->latestMovements($context, $filters),
-        ];
+        ], $context['can_view_costs']);
     }
 
     private function filters(array $filters, array $context): array

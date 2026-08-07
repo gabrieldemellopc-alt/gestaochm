@@ -174,7 +174,7 @@
     $formatDate = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y') : '-';
     $formatDateTime = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y H:i') : '-';
     $qty = fn ($value) => number_format((float) $value, 2, ',', '.');
-    $money = fn ($value) => 'R$ ' . number_format((float) $value, 2, ',', '.');
+    $money = fn ($value) => $value !== null ? 'R$ ' . number_format((float) $value, 2, ',', '.') : 'Restrito';
     $statusLabels = [
         'normal' => 'Normal',
         'low' => 'Baixo',

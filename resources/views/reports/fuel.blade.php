@@ -14,7 +14,7 @@
     $filters = $applied_filters;
     $formatDate = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y') : '-';
     $liters = fn ($value) => number_format((float) $value, 1, ',', '.') . ' L';
-    $money = fn ($value) => 'R$ ' . number_format((float) $value, 2, ',', '.');
+    $money = fn ($value) => $value !== null ? 'R$ ' . number_format((float) $value, 2, ',', '.') : 'Restrito';
     $diesel = $product_balances->first(fn ($item) => str_contains(mb_strtolower(($item['slug'] ?: $item['name'])), 'diesel'));
     $arla = $product_balances->first(fn ($item) => str_contains(mb_strtolower(($item['slug'] ?: $item['name'])), 'arla'));
 @endphp

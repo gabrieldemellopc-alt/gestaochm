@@ -14,7 +14,7 @@
     $filters = $applied_filters;
     $formatDate = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y') : '-';
     $number = fn ($value, $decimals = 0) => $value !== null ? number_format((float) $value, $decimals, ',', '.') : '-';
-    $money = fn ($value) => $value !== null ? 'R$ ' . number_format((float) $value, 2, ',', '.') : 'Em preparacao';
+    $money = fn ($value) => $value !== null ? 'R$ ' . number_format((float) $value, 2, ',', '.') : 'Restrito';
     $hasAnyFilter = request()->filled('vehicle_id') || request()->filled('start_date') || request()->filled('end_date');
     $isValid = $validation['is_valid'] ?? false;
     $summary = $executive_summary;
@@ -126,10 +126,12 @@
                     Incluir cancelados em seção separada
                 </label>
 
-                <label>
-                    <input type="checkbox" name="include_audit" value="1" @checked($filters['include_audit'])>
-                    Incluir auditoria quando disponível
-                </label>
+                @if($context['can_view_audit'])
+                    <label>
+                        <input type="checkbox" name="include_audit" value="1" @checked($filters['include_audit'])>
+                        Incluir auditoria quando disponível
+                    </label>
+                @endif
             @endif
 
             <label>

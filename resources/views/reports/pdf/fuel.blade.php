@@ -173,7 +173,7 @@
     $formatDate = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y') : '-';
     $formatDateTime = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y H:i') : '-';
     $liters = fn ($value) => number_format((float) $value, 1, ',', '.') . ' L';
-    $money = fn ($value) => $value !== null ? 'R$ ' . number_format((float) $value, 2, ',', '.') : '-';
+    $money = fn ($value) => $value !== null ? 'R$ ' . number_format((float) $value, 2, ',', '.') : 'Restrito';
     $decimal = fn ($value, $places = 1) => $value !== null ? number_format((float) $value, $places, ',', '.') : '-';
     $statusLabels = [
         'normal' => 'Normal',

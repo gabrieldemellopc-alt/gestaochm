@@ -6,16 +6,17 @@ use App\Models\Division;
 use App\Models\MaintenanceRecord;
 use App\Models\StockMovement;
 use App\Models\User;
-use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Models\VehicleUpdateLog;
 use App\Services\ActiveContextService;
+use App\Services\Permissions\ProfilePermissionService;
 use Illuminate\Database\Eloquent\Builder;
 
 class ReportContextService
 {
     public function __construct(
-        private readonly ActiveContextService $activeContext
+        private readonly ActiveContextService $activeContext,
+        private readonly ProfilePermissionService $permissions
     ) {
     }
 
@@ -43,13 +44,28 @@ class ReportContextService
             return null;
         }
 
+        $permissionScope = [
+            'division_id' => (int) $division->id,
+            'location_id' => (int) $location->id,
+            'module' => 'fleet',
+        ];
+
+        $canViewCancelled = $this->permissions->allows($user, 'reports.view_cancelled', $permissionScope);
+        $canViewChanges = $this->permissions->allows($user, 'reports.view_changes', $permissionScope);
+        $canViewAudit = $canViewCancelled
+            && $this->permissions->allows($user, 'audit.view_details', $permissionScope);
+
         return [
             'user' => $user,
             'tenant_id' => (int) $user->tenant_id,
             'division' => $division,
             'location' => $location,
             'location_ids' => [(int) $location->id],
-            'can_view_cancelled' => $this->canViewCancelled($user, (int) $division->id, (int) $location->id),
+            'can_view_costs' => $this->permissions->allows($user, 'reports.view_costs', $permissionScope),
+            'can_view_cancelled' => $canViewCancelled,
+            'can_view_changes' => $canViewChanges,
+            'can_view_audit' => $canViewAudit,
+            'is_managerial_report' => $canViewCancelled || $canViewChanges || $canViewAudit,
         ];
     }
 
@@ -94,24 +110,4 @@ class ReportContextService
             ->where('location_id', $context['location']->id);
     }
 
-    private function canViewCancelled(User $user, int $divisionId, int $locationId): bool
-    {
-        if ((int) $user->id === 1) {
-            return true;
-        }
-
-        return UserDivisionAccess::query()
-            ->where('tenant_id', $user->tenant_id)
-            ->where('user_id', $user->id)
-            ->where('division_id', $divisionId)
-            ->where('module', 'fleet')
-            ->whereIn('profile', ['manager', 'admin'])
-            ->where('active', true)
-            ->where(function ($query) use ($locationId) {
-                $query
-                    ->where('location_id', $locationId)
-                    ->orWhereNull('location_id');
-            })
-            ->exists();
-    }
 }

@@ -13,6 +13,7 @@ use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\Reports\FuelReportService;
 use App\Services\Reports\ReportContextService;
+use App\Services\Reports\ReportPayloadSanitizer;
 use App\Services\Reports\StockReportService;
 use App\Services\Reports\TireReportService;
 use App\Services\Reports\VehicleDossierReportService;
@@ -26,7 +27,8 @@ use Maatwebsite\Excel\Facades\Excel;
 class ReportController extends Controller
 {
     public function __construct(
-        private readonly ReportContextService $reportContext
+        private readonly ReportContextService $reportContext,
+        private readonly ReportPayloadSanitizer $reportSanitizer
     ) {
     }
 
@@ -168,7 +170,11 @@ class ReportController extends Controller
             ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceForPdf($maintenance))
             ->values();
 
-        $pdf = Pdf::loadView('reports.pdf.maintenance', $pdfData)
+        $pdfView = $context['can_view_costs']
+            ? 'reports.pdf.maintenance'
+            : 'reports.pdf.maintenance-operational';
+
+        $pdf = Pdf::loadView($pdfView, $pdfData)
             ->setPaper('a4', 'landscape');
         return $pdf->download('relatorio-manutencoes.pdf');
     }
@@ -439,6 +445,8 @@ class ReportController extends Controller
             'reports.export_pdf',
             'reports.export_excel',
             'reports.view_costs',
+            'reports.view_cancelled',
+            'reports.view_changes',
         ];
 
         return collect($keys)
@@ -547,13 +555,29 @@ class ReportController extends Controller
             ->sortByDesc('total')
             ->values();
 
-        return [
+        if (! $context['can_view_costs']) {
+            $procedureStats = $procedureStats->map(fn (array $row) => [
+                ...$row,
+                'total' => null,
+                'average' => null,
+            ]);
+            $vehicleCosts = $vehicleCosts->map(fn (array $row) => [
+                ...$row,
+                'maintenance_total' => null,
+                'stock_total' => null,
+                'total' => null,
+            ]);
+        }
+
+        return $this->reportSanitizer->costs([
             'filters' => $filters,
             'startDate' => $filters['start_date'],
             'endDate' => $filters['end_date'],
             'division' => $context['division'],
             'location' => $context['location'],
             'canViewCancelled' => $context['can_view_cancelled'],
+            'canViewCosts' => $context['can_view_costs'],
+            'canViewCosts' => $context['can_view_costs'],
             'maintenances_raw' => $displayMaintenances,
             'operational_maintenances_raw' => $operationalMaintenances,
             'maintenances' => $displayMaintenances
@@ -579,7 +603,9 @@ class ReportController extends Controller
                     'item' => $movement->stockItem?->name ?? '-',
                     'quantity' => $movement->quantity,
                     'unit_cost' => $movement->unit_cost,
-                    'total' => (float) $movement->quantity * (float) $movement->unit_cost,
+                    'total' => $context['can_view_costs']
+                        ? (float) $movement->quantity * (float) $movement->unit_cost
+                        : null,
                 ])
                 ->toArray(),
             'cancelledMaintenances' => $context['can_view_cancelled']
@@ -593,7 +619,7 @@ class ReportController extends Controller
                     'cancelled_by' => $maintenance->canceller?->name,
                 ])->toArray()
                 : [],
-        ];
+        ], $context['can_view_costs']);
     }
 
     private function maintenanceFilters(Request $request, array $context): array
