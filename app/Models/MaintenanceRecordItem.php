@@ -49,4 +49,9 @@ class MaintenanceRecordItem extends Model
     {
         return $this->hasMany(MaintenanceRecordItemValue::class);
     }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class, 'maintenance_record_item_id');
+    }
 }

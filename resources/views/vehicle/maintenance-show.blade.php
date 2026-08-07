@@ -3,18 +3,37 @@
 @push('styles')
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/maintenance.css') }}?v=6"
+    href="{{ asset('css/pages/maintenance.css') }}?v=7"
 >
 @endpush
 
 @section('content')
 @php($maintenancePermissions = $maintenancePermissions ?? [])
+@php($canEditItems = $canEditItems ?? false)
+@php($canEditExtraCosts = $canEditExtraCosts ?? false)
+@php($canViewCosts = $canViewCosts ?? false)
 
 <div
     class="maintenance-index-page maintenance-details-page"
     x-data="{
         reopenModal: false,
-        deleteModal: false
+        deleteModal: false,
+        itemModal: false,
+        extraCostModal: false,
+        itemAction: '',
+        extraCostAction: '',
+        itemForm: {},
+        extraCostForm: {},
+        editItem(item, action) {
+            this.itemForm = item;
+            this.itemAction = action;
+            this.itemModal = true;
+        },
+        editExtraCost(cost, action) {
+            this.extraCostForm = cost;
+            this.extraCostAction = action;
+            this.extraCostModal = true;
+        }
     }"
 >
 
@@ -211,12 +230,33 @@
                         </div>
 
                         <div class="maintenance-open-item-cost">
-                            @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format(
+                            @if($canViewCosts)R$ {{ number_format(
                                 $item->total_cost ?? 0,
                                 2,
                                 ',',
                                 '.'
                             ) }}@else Valor restrito @endif
+
+                            @if(
+                                $canEditItems
+                                && $maintenance->workflow_status === 'open'
+                                && ! $maintenance->cancelled_at
+                            )
+                                <button
+                                    type="button"
+                                    class="maintenance-inline-edit-button"
+                                    @click="editItem(@js([
+                                        "maintenance_type" => $item->maintenance_type,
+                                        "performed_at" => optional($item->performed_at)->format("Y-m-d"),
+                                        "provider_name" => $item->provider_name,
+                                        "notes" => $item->notes,
+                                        "extra_cost" => (float) ($item->extra_cost ?? 0),
+                                    ]), @js(route("vehicles.maintenance.items.update", [$vehicle->id, $maintenance->id, $item->id])))"
+                                >
+                                    <i data-lucide="pencil"></i>
+                                    Editar
+                                </button>
+                            @endif
                         </div>
 
                     </div>
@@ -231,6 +271,58 @@
 
             @endforelse
 
+        </section>
+
+        <section class="maintenance-services-card maintenance-extra-costs-card">
+            <div class="maintenance-open-items-header">
+                <div>
+                    <span>Composição da ordem</span>
+                    <h3>Custos avulsos lançados</h3>
+                </div>
+                <strong>{{ $maintenance->extraCosts->count() }} registro(s)</strong>
+            </div>
+
+            @forelse($maintenance->extraCosts as $extraCost)
+                <div class="maintenance-open-item-row">
+                    <div class="maintenance-open-item-main">
+                        <div>
+                            <strong>{{ $extraCost->description }}</strong>
+                            <span>
+                                {{ optional($extraCost->created_at)->format('d/m/Y H:i') }}
+                                · {{ $extraCost->creator?->name ?? 'Responsável não informado' }}
+                            </span>
+                        </div>
+                        <div class="maintenance-open-item-cost">
+                            @if($canViewCosts)
+                                R$ {{ number_format($extraCost->amount, 2, ',', '.') }}
+                            @else
+                                Valor restrito
+                            @endif
+
+                            @if(
+                                $canEditExtraCosts
+                                && $canViewCosts
+                                && $maintenance->workflow_status === 'open'
+                                && ! $maintenance->cancelled_at
+                            )
+                                <button
+                                    type="button"
+                                    class="maintenance-inline-edit-button"
+                                    @click="editExtraCost(@js([
+                                        "description" => $extraCost->description,
+                                        "amount" => (float) $extraCost->amount,
+                                    ]), @js(route("vehicles.maintenance.extra-costs.update", [$vehicle->id, $maintenance->id, $extraCost->id])))"
+                                >
+                                    <i data-lucide="pencil"></i>
+                                    Editar
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="maintenance-open-items-empty">Nenhum custo avulso registrado.</div>
+            @endforelse
         </section>
 
         <section class="maintenance-timeline-card">
@@ -322,6 +414,99 @@
         </div>
 
     </section>
+
+    <div
+        x-show="itemModal"
+        x-cloak
+        class="maintenance-modal-backdrop"
+        @click.self="itemModal = false"
+    >
+        <div class="maintenance-close-modal">
+            <h3>Editar serviço</h3>
+            <p>Corrija os dados operacionais. Campos dinâmicos e consumo de estoque não serão alterados.</p>
+
+            <form method="POST" :action="itemAction">
+                @csrf
+                @method('PATCH')
+
+                <div class="form-group">
+                    <label>Tipo de execução</label>
+                    <select name="maintenance_type" class="form-input" x-model="itemForm.maintenance_type" required>
+                        <option value="internal">Oficina interna</option>
+                        <option value="external">Terceirizado</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Data de execução</label>
+                    <input type="date" name="performed_at" class="form-input" x-model="itemForm.performed_at" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Prestador</label>
+                    <input type="text" name="provider_name" class="form-input" maxlength="255" x-model="itemForm.provider_name">
+                </div>
+
+                @if($canViewCosts)
+                    <div class="form-group">
+                        <label>Custo adicional do serviço</label>
+                        <input type="number" name="extra_cost" class="form-input" min="0" step="0.01" x-model="itemForm.extra_cost" required>
+                    </div>
+                @endif
+
+                <div class="form-group">
+                    <label>Observação</label>
+                    <textarea name="notes" rows="3" class="form-input" maxlength="2000" x-model="itemForm.notes"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Motivo da alteração</label>
+                    <textarea name="change_reason" rows="3" class="form-input" minlength="10" maxlength="2000" required></textarea>
+                </div>
+
+                <div class="maintenance-modal-actions">
+                    <button type="button" class="maintenance-cancel-btn" @click="itemModal = false">Cancelar</button>
+                    <button type="submit" class="chm-page-button">Salvar alteração</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div
+        x-show="extraCostModal"
+        x-cloak
+        class="maintenance-modal-backdrop"
+        @click.self="extraCostModal = false"
+    >
+        <div class="maintenance-close-modal">
+            <h3>Editar custo avulso</h3>
+
+            <form method="POST" :action="extraCostAction">
+                @csrf
+                @method('PATCH')
+
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" name="description" class="form-input" maxlength="255" x-model="extraCostForm.description" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Valor</label>
+                    <input type="number" name="amount" class="form-input" min="0" step="0.01" x-model="extraCostForm.amount" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Motivo da alteração</label>
+                    <textarea name="change_reason" rows="3" class="form-input" minlength="10" maxlength="2000" required></textarea>
+                </div>
+
+                <div class="maintenance-modal-actions">
+                    <button type="button" class="maintenance-cancel-btn" @click="extraCostModal = false">Cancelar</button>
+                    <button type="submit" class="chm-page-button">Salvar alteração</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div
         x-show="reopenModal"

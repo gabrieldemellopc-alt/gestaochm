@@ -497,6 +497,11 @@ Route::middleware('auth')->group(function () {
         [MaintenanceController::class, 'storeItem']
     )->name('vehicles.maintenance.items.store');
 
+    Route::patch(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/items/{item}',
+        [MaintenanceController::class, 'updateItem']
+    )->name('vehicles.maintenance.items.update');
+
 
     Route::post(
         '/vehicles/{vehicle}/maintenance/{maintenance}/close',
@@ -512,6 +517,11 @@ Route::middleware('auth')->group(function () {
         '/vehicles/{vehicle}/maintenance/{maintenance}/extra-costs',
         [MaintenanceController::class, 'storeExtraCost']
     )->name('vehicles.maintenance.extra-costs.store');
+
+    Route::patch(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/extra-costs/{extraCost}',
+        [MaintenanceController::class, 'updateExtraCost']
+    )->name('vehicles.maintenance.extra-costs.update');
     
     Route::get(
         '/vehicles/{vehicle}/maintenance/{maintenance}/pdf',

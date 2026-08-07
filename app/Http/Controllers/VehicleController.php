@@ -2931,6 +2931,7 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'statusLogs.user',
             'items.procedure',
             'items.values.field',
+            'items.stockMovements.stockItem',
             'extraCosts.creator',
         ])
         ->where('workflow_status', 'open')
@@ -2954,27 +2955,22 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
         ->get();
 
 
-    $maintenancePermissions = $this->maintenancePermissions();
+    $maintenancePermissions = $this->maintenancePermissions($vehicle);
+    $canEditItems = $maintenancePermissions['edit_items'];
+    $canEditExtraCosts = $maintenancePermissions['edit_extra_costs'];
+    $canViewCosts = $maintenancePermissions['view_costs'];
 
-    return view(
-
-        'vehicle.maintenance-index',
-
-        compact(
-
-            'vehicle',
-
-            'procedures',
-            'openMaintenance',
-            'alertProcedures',
-            'recentMaintenances'
-
-        ,
-            'maintenancePermissions'
-
-        )
-
-    );
+    return view('vehicle.maintenance-index', compact(
+        'vehicle',
+        'procedures',
+        'openMaintenance',
+        'alertProcedures',
+        'recentMaintenances',
+        'maintenancePermissions',
+        'canEditItems',
+        'canEditExtraCosts',
+        'canViewCosts'
+    ));
 
 }
 
@@ -3005,24 +3001,36 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
         ]);
     }
 
-    private function maintenancePermissions(): array
+    private function maintenancePermissions(?Vehicle $vehicle = null): array
     {
+        $user = auth()->user();
+        $scope = [
+            'tenant_id' => $user->tenant_id,
+            'division_id' => $vehicle?->division_id ?? session('active_division_id'),
+            'location_id' => $vehicle?->location_id ?? session('active_location_id'),
+            'module' => 'fleet',
+        ];
+        $can = fn (string $permission) => app(ProfilePermissionService::class)
+            ->allows($user, $permission, $scope);
+
         return [
-            'view' => $this->canMaintenance('maintenance.view'),
-            'open' => $this->canMaintenance('maintenance.open'),
-            'add_items' => $this->canMaintenance('maintenance.add_items'),
-            'consume_stock' => $this->canMaintenance('maintenance.consume_stock'),
-            'add_extra_costs' => $this->canMaintenance('maintenance.add_extra_costs'),
-            'change_status' => $this->canMaintenance('maintenance.change_status'),
-            'close' => $this->canMaintenance('maintenance.close'),
+            'view' => $can('maintenance.view'),
+            'open' => $can('maintenance.open'),
+            'add_items' => $can('maintenance.add_items'),
+            'edit_items' => $can('maintenance.edit_items'),
+            'consume_stock' => $can('maintenance.consume_stock'),
+            'add_extra_costs' => $can('maintenance.add_extra_costs'),
+            'edit_extra_costs' => $can('maintenance.edit_extra_costs'),
+            'change_status' => $can('maintenance.change_status'),
+            'close' => $can('maintenance.close'),
             'cancel' => \Illuminate\Support\Facades\Gate::allows('cancelMaintenanceRecords')
-                && $this->canMaintenance('maintenance.cancel'),
-            'reopen' => $this->canMaintenance('maintenance.reopen'),
-            'delete' => $this->canMaintenance('maintenance.delete'),
-            'view_costs' => $this->canMaintenance('maintenance.view_costs'),
-            'export_pdf' => $this->canMaintenance('maintenance.export_pdf'),
+                && $can('maintenance.cancel'),
+            'reopen' => $can('maintenance.reopen'),
+            'delete' => $can('maintenance.delete'),
+            'view_costs' => $can('maintenance.view_costs'),
+            'export_pdf' => $can('maintenance.export_pdf'),
             'view_cancellation_details' => \Illuminate\Support\Facades\Gate::allows('viewAuditLogs')
-                && $this->canMaintenance('maintenance.view_cancellation_details'),
+                && $can('maintenance.view_cancellation_details'),
         ];
     }
 }

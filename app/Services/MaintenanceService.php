@@ -560,6 +560,92 @@ class MaintenanceService
         });
     }
 
+    public static function updateItem(
+        MaintenanceRecord $maintenance,
+        MaintenanceRecordItem $item,
+        array $data,
+        User $user
+    ): MaintenanceRecordItem {
+        return DB::transaction(function () use ($maintenance, $item, $data, $user) {
+            $maintenance = self::editableMaintenance($maintenance);
+            $item = MaintenanceRecordItem::query()
+                ->where('maintenance_record_id', $maintenance->id)
+                ->whereKey($item->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $auditableFields = [
+                'maintenance_type',
+                'performed_at',
+                'provider_name',
+                'extra_cost',
+                'total_cost',
+                'notes',
+            ];
+            $before = $item->only($auditableFields);
+            $hasStockConsumption = StockMovement::query()
+                ->where('maintenance_record_item_id', $item->id)
+                ->where('movement_type', 'out')
+                ->whereNull('cancelled_at')
+                ->whereNull('reversed_from_movement_id')
+                ->exists();
+
+            if (
+                $hasStockConsumption
+                && $data['maintenance_type'] !== $item->maintenance_type
+            ) {
+                throw ValidationException::withMessages([
+                    'maintenance_type' => 'O tipo de execução não pode ser alterado porque este serviço possui consumo de estoque vinculado.',
+                ]);
+            }
+
+            $updates = [
+                'maintenance_type' => $data['maintenance_type'],
+                'performed_at' => $data['performed_at'],
+                'provider_name' => $data['maintenance_type'] === 'external'
+                    ? ($data['provider_name'] ?? null)
+                    : null,
+                'notes' => $data['notes'] ?? null,
+            ];
+
+            if (array_key_exists('extra_cost', $data)) {
+                $updates['extra_cost'] = (float) $data['extra_cost'];
+                $stockCost = StockMovement::query()
+                    ->where('maintenance_record_item_id', $item->id)
+                    ->where('movement_type', 'out')
+                    ->whereNull('cancelled_at')
+                    ->whereNull('reversed_from_movement_id')
+                    ->sum('total_cost');
+                $updates['total_cost'] = (float) $stockCost + (float) $data['extra_cost'];
+            }
+
+            $item->update($updates);
+            self::recalculateTotalCost($maintenance);
+            $after = $item->fresh();
+
+            app(AuditLogService::class)->updated($after, [
+                'tenant_id' => $maintenance->tenant_id,
+                'division_id' => $maintenance->vehicle->division_id,
+                'location_id' => $maintenance->vehicle->location_id,
+                'module' => 'maintenance',
+                'summary' => 'Serviço da manutenção #'.$maintenance->id.' alterado.',
+                'before_data' => $before,
+                'after_data' => $after->only($auditableFields),
+                'reason' => $data['change_reason'],
+                'metadata' => [
+                    'event' => 'maintenance_item_updated',
+                    'maintenance_record_id' => $maintenance->id,
+                    'maintenance_record_item_id' => $after->id,
+                    'vehicle_id' => $maintenance->vehicle_id,
+                    'changed_by' => $user->id,
+                    'stock_consumption_preserved' => $hasStockConsumption,
+                ],
+            ]);
+
+            return $after;
+        });
+    }
+
     private static function collectStockUsage(Collection $fields, array $data): Collection
     {
         $fieldValues = $data['fields'] ?? [];
@@ -888,6 +974,90 @@ class MaintenanceService
             return $extraCost;
         });
     }    
+
+    public static function updateExtraCost(
+        MaintenanceRecord $maintenance,
+        MaintenanceRecordExtraCost $extraCost,
+        array $data,
+        User $user
+    ): MaintenanceRecordExtraCost {
+        return DB::transaction(function () use ($maintenance, $extraCost, $data, $user) {
+            $maintenance = self::editableMaintenance($maintenance);
+            $extraCost = MaintenanceRecordExtraCost::query()
+                ->where('maintenance_record_id', $maintenance->id)
+                ->whereKey($extraCost->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $before = $extraCost->toArray();
+
+            $extraCost->update([
+                'description' => $data['description'],
+                'amount' => (float) $data['amount'],
+            ]);
+            self::recalculateTotalCost($maintenance);
+            $after = $extraCost->fresh();
+
+            app(AuditLogService::class)->updated($after, [
+                'tenant_id' => $maintenance->tenant_id,
+                'division_id' => $maintenance->vehicle->division_id,
+                'location_id' => $maintenance->vehicle->location_id,
+                'module' => 'maintenance',
+                'summary' => 'Custo avulso da manutenção #'.$maintenance->id.' alterado.',
+                'before_data' => $before,
+                'after_data' => $after->toArray(),
+                'reason' => $data['change_reason'],
+                'metadata' => [
+                    'event' => 'maintenance_extra_cost_updated',
+                    'maintenance_record_id' => $maintenance->id,
+                    'maintenance_extra_cost_id' => $after->id,
+                    'vehicle_id' => $maintenance->vehicle_id,
+                    'changed_by' => $user->id,
+                ],
+            ]);
+
+            return $after;
+        });
+    }
+
+    public static function recalculateTotalCost(MaintenanceRecord $maintenance): MaintenanceRecord
+    {
+        $itemsTotal = MaintenanceRecordItem::query()
+            ->where('maintenance_record_id', $maintenance->id)
+            ->sum('total_cost');
+        $extraCostsTotal = MaintenanceRecordExtraCost::query()
+            ->where('maintenance_record_id', $maintenance->id)
+            ->sum('amount');
+
+        $maintenance->update([
+            'total_cost' => (float) $itemsTotal + (float) $extraCostsTotal,
+        ]);
+
+        return $maintenance->fresh();
+    }
+
+    private static function editableMaintenance(MaintenanceRecord $maintenance): MaintenanceRecord
+    {
+        $maintenance = MaintenanceRecord::query()
+            ->with('vehicle')
+            ->whereKey($maintenance->id)
+            ->whereNull('deleted_at')
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($maintenance->cancelled_at) {
+            throw ValidationException::withMessages([
+                'maintenance' => 'Manutenções canceladas não podem ser editadas.',
+            ]);
+        }
+
+        if ($maintenance->workflow_status !== 'open') {
+            throw ValidationException::withMessages([
+                'maintenance' => 'Somente manutenções abertas podem ser editadas. Reabra a ordem antes de corrigir seus lançamentos.',
+            ]);
+        }
+
+        return $maintenance;
+    }
 
     public static function reopen(
         MaintenanceRecord $maintenance,

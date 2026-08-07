@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 use App\Models\Procedure;
 use App\Models\MaintenanceRecord;
+use App\Models\MaintenanceRecordExtraCost;
+use App\Models\MaintenanceRecordItem;
 use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
@@ -291,6 +293,51 @@ class MaintenanceController extends Controller
             ->with('success', 'Procedimento adicionado à manutenção.');
     }
 
+    public function updateItem(
+        Request $request,
+        Vehicle $vehicle,
+        MaintenanceRecord $maintenance,
+        MaintenanceRecordItem $item
+    ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        abort_unless((int) $item->maintenance_record_id === (int) $maintenance->id, 404);
+        $this->authorizeMaintenancePermission('maintenance.edit_items');
+
+        $rules = [
+            'maintenance_type' => ['required', 'in:internal,external'],
+            'performed_at' => ['required', 'date'],
+            'provider_name' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
+            'procedure_id' => ['prohibited'],
+            'performed_km' => ['prohibited'],
+            'performed_hours' => ['prohibited'],
+            'reason' => ['prohibited'],
+            'fields' => ['prohibited'],
+            'stock_item_id' => ['prohibited'],
+            'quantity' => ['prohibited'],
+        ];
+
+        if ($this->canMaintenance('maintenance.view_costs')) {
+            $rules['extra_cost'] = ['required', 'numeric', 'min:0'];
+        }
+
+        $data = $request->validate($rules, [
+            'change_reason.required' => 'Informe o motivo da alteração.',
+            'change_reason.min' => 'O motivo da alteração deve ter pelo menos :min caracteres.',
+            'extra_cost.min' => 'O custo do serviço não pode ser negativo.',
+            '*.prohibited' => 'Este dado não pode ser alterado pela edição simples do serviço.',
+        ]);
+
+        MaintenanceService::updateItem($maintenance, $item, $data, auth()->user());
+
+        return back()->with('success', 'Serviço atualizado com sucesso.');
+    }
+
     public function show(
         Vehicle $vehicle,
         MaintenanceRecord $maintenance
@@ -329,12 +376,18 @@ class MaintenanceController extends Controller
 
         $maintenancePermissions = $this->maintenancePermissions($vehicle);
         $canManageMaintenance = $maintenancePermissions['cancel'];
+        $canEditItems = $maintenancePermissions['edit_items'];
+        $canEditExtraCosts = $maintenancePermissions['edit_extra_costs'];
+        $canViewCosts = $maintenancePermissions['view_costs'];
 
         return view('vehicle.maintenance-show', compact(
             'vehicle',
             'maintenance',
             'canManageMaintenance',
-            'maintenancePermissions'
+            'maintenancePermissions',
+            'canEditItems',
+            'canEditExtraCosts',
+            'canViewCosts'
         ));
     }
 
@@ -431,6 +484,12 @@ class MaintenanceController extends Controller
         return null;
     }
 
+    private function assertMaintenanceRelation(Vehicle $vehicle, MaintenanceRecord $maintenance): void
+    {
+        abort_unless((int) $maintenance->vehicle_id === (int) $vehicle->id, 404);
+        abort_unless((int) $maintenance->tenant_id === (int) auth()->user()->tenant_id, 403);
+    }
+
     private function authorizeMaintenancePermission(string $permissionKey): void
     {
         if ($this->canMaintenance($permissionKey)) {
@@ -458,21 +517,33 @@ class MaintenanceController extends Controller
 
     private function maintenancePermissions(?Vehicle $vehicle = null): array
     {
+        $user = auth()->user();
+        $scope = [
+            'tenant_id' => $user->tenant_id,
+            'division_id' => $vehicle?->division_id ?? session('active_division_id'),
+            'location_id' => $vehicle?->location_id ?? session('active_location_id'),
+            'module' => 'fleet',
+        ];
+        $can = fn (string $permission) => app(ProfilePermissionService::class)
+            ->allows($user, $permission, $scope);
+
         return [
-            'view' => $this->canMaintenance('maintenance.view'),
-            'open' => $this->canMaintenance('maintenance.open'),
-            'add_items' => $this->canMaintenance('maintenance.add_items'),
-            'consume_stock' => $this->canMaintenance('maintenance.consume_stock'),
-            'add_extra_costs' => $this->canMaintenance('maintenance.add_extra_costs'),
-            'change_status' => $this->canMaintenance('maintenance.change_status'),
-            'close' => $this->canMaintenance('maintenance.close'),
-            'cancel' => $this->userCanCancelMaintenance($vehicle) && $this->canMaintenance('maintenance.cancel'),
-            'reopen' => $this->canMaintenance('maintenance.reopen'),
-            'delete' => $this->canMaintenance('maintenance.delete'),
-            'view_costs' => $this->canMaintenance('maintenance.view_costs'),
-            'export_pdf' => $this->canMaintenance('maintenance.export_pdf'),
+            'view' => $can('maintenance.view'),
+            'open' => $can('maintenance.open'),
+            'add_items' => $can('maintenance.add_items'),
+            'edit_items' => $can('maintenance.edit_items'),
+            'consume_stock' => $can('maintenance.consume_stock'),
+            'add_extra_costs' => $can('maintenance.add_extra_costs'),
+            'edit_extra_costs' => $can('maintenance.edit_extra_costs'),
+            'change_status' => $can('maintenance.change_status'),
+            'close' => $can('maintenance.close'),
+            'cancel' => $this->userCanCancelMaintenance($vehicle) && $can('maintenance.cancel'),
+            'reopen' => $can('maintenance.reopen'),
+            'delete' => $can('maintenance.delete'),
+            'view_costs' => $can('maintenance.view_costs'),
+            'export_pdf' => $can('maintenance.export_pdf'),
             'view_cancellation_details' => Gate::allows('viewAuditLogs')
-                && $this->canMaintenance('maintenance.view_cancellation_details'),
+                && $can('maintenance.view_cancellation_details'),
         ];
     }
 
@@ -583,6 +654,40 @@ class MaintenanceController extends Controller
         MaintenanceService::addExtraCost($maintenance, $data);
 
         return back()->with('success', 'Custo avulso lançado com sucesso.');
+    }
+
+    public function updateExtraCost(
+        Request $request,
+        Vehicle $vehicle,
+        MaintenanceRecord $maintenance,
+        MaintenanceRecordExtraCost $extraCost
+    ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        abort_unless((int) $extraCost->maintenance_record_id === (int) $maintenance->id, 404);
+        $this->authorizeMaintenancePermission('maintenance.edit_extra_costs');
+        abort_unless(
+            $this->canMaintenance('maintenance.view_costs'),
+            403,
+            'Você não tem permissão para visualizar ou editar custos.'
+        );
+
+        $data = $request->validate([
+            'description' => ['required', 'string', 'max:255'],
+            'amount' => ['required', 'numeric', 'min:0'],
+            'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
+        ], [
+            'change_reason.required' => 'Informe o motivo da alteração.',
+            'change_reason.min' => 'O motivo da alteração deve ter pelo menos :min caracteres.',
+            'amount.min' => 'O valor do custo avulso não pode ser negativo.',
+        ]);
+
+        MaintenanceService::updateExtraCost($maintenance, $extraCost, $data, auth()->user());
+
+        return back()->with('success', 'Custo avulso atualizado com sucesso.');
     }
 
     public function exportOrderPdf(

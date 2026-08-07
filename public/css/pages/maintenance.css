@@ -3071,8 +3071,42 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
 }
 
 .maintenance-open-item-cost {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     font-weight: 800;
     white-space: nowrap;
+}
+
+.maintenance-inline-edit-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.55rem;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid rgba(148, 163, 184, .34);
+    border-radius: 0.5rem;
+    background: rgba(15, 23, 42, .42);
+    color: #cbd5e1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.maintenance-inline-edit-button:hover {
+    border-color: rgba(96, 165, 250, .58);
+    background: rgba(30, 64, 175, .22);
+    color: #dbeafe;
+}
+
+.maintenance-inline-edit-button:focus-visible {
+    outline: 2px solid rgba(96, 165, 250, .72);
+    outline-offset: 2px;
+}
+
+.maintenance-inline-edit-button svg {
+    width: 0.85rem;
+    height: 0.85rem;
 }
 
 .maintenance-open-items-empty {
@@ -3477,6 +3511,8 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
 .maintenance-modal-backdrop {
     position: fixed;
     inset: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 9999;
     background: rgba(10, 18, 32, .72);
     backdrop-filter: blur(4px);
@@ -3484,6 +3520,8 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     align-items: center;
     justify-content: center;
     padding: 24px;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .maintenance-close-modal {
@@ -3494,6 +3532,146 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     border-radius: 18px;
     padding: 24px;
     box-shadow: 0 24px 80px rgba(0,0,0,.35);
+}
+
+.maintenance-edit-modal {
+    max-height: calc(100vh - 48px);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.maintenance-edit-modal-header {
+    flex: 0 0 auto;
+    padding: 24px 24px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+.maintenance-edit-modal-header p {
+    margin: 6px 0 0;
+}
+
+.maintenance-edit-modal-form {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.maintenance-edit-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 20px 24px;
+    scrollbar-color: rgba(148, 163, 184, .55) transparent;
+    scrollbar-width: thin;
+}
+
+.maintenance-edit-modal-actions {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: 18px 24px 24px;
+    border-top: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(15, 23, 42, .16);
+}
+
+.maintenance-stock-linked-notice {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border: 1px solid rgba(245, 158, 11, .34);
+    border-radius: 12px;
+    background: rgba(120, 53, 15, .2);
+    color: #fde68a;
+}
+
+.maintenance-stock-linked-notice p {
+    margin: 5px 0 0;
+    color: #fef3c7;
+    font-size: .84rem;
+    line-height: 1.45;
+}
+
+.maintenance-field-help {
+    display: block;
+    margin-top: 6px;
+    color: #cbd5e1;
+    font-size: .78rem;
+}
+
+.maintenance-stock-readonly {
+    margin: 4px 0 18px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .2);
+}
+
+.maintenance-stock-readonly-title {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, .18);
+    color: #cbd5e1;
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.maintenance-stock-readonly-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    color: #e2e8f0;
+}
+
+.maintenance-stock-readonly-row + .maintenance-stock-readonly-row {
+    border-top: 1px solid rgba(148, 163, 184, .12);
+}
+
+.maintenance-stock-readonly-row div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.maintenance-stock-readonly-row span {
+    color: #cbd5e1;
+    font-size: .82rem;
+}
+
+@media (max-width: 640px) {
+    .maintenance-modal-backdrop {
+        padding: 12px;
+        align-items: stretch;
+    }
+
+    .maintenance-edit-modal {
+        max-height: calc(100vh - 24px);
+        margin: auto 0;
+    }
+
+    .maintenance-edit-modal-header,
+    .maintenance-edit-modal-body {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .maintenance-edit-modal-actions {
+        padding: 14px 18px 18px;
+    }
+}
+
+.maintenance-close-modal h3 {
+    margin: 0 0 6px;
+    color: #f8fafc;
+}
+
+.maintenance-close-modal p,
+.maintenance-close-modal label {
+    color: #cbd5e1;
 }
 
 .maintenance-modal-actions {

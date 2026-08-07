@@ -8,7 +8,7 @@
 
     rel="stylesheet"
 
-    href="{{ asset('css/pages/maintenance.css') }}?v=5"
+    href="{{ asset('css/pages/maintenance.css') }}?v=10"
 >
 
 @endpush
@@ -17,10 +17,16 @@
 
 @section('content')
 @php($maintenancePermissions = $maintenancePermissions ?? [])
+@php($canEditItems = $canEditItems ?? false)
+@php($canEditExtraCosts = $canEditExtraCosts ?? false)
+@php($canViewCosts = $canViewCosts ?? false)
 
 
 
-<div class="maintenance-index-page">
+<div
+    class="maintenance-index-page"
+    x-data="{}"
+>
 
 
 
@@ -842,7 +848,44 @@
                                         </div>
 
                                         <div class="maintenance-open-item-cost">
-                                            @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format($item->total_cost ?? 0, 2, ',', '.') }}@else Valor restrito @endif
+                                            @if($canViewCosts)R$ {{ number_format($item->total_cost ?? 0, 2, ',', '.') }}@else Valor restrito @endif
+
+                                            @if($canEditItems)
+                                                <button
+                                                    type="button"
+                                                    class="maintenance-inline-edit-button"
+                                                    @click.stop="$dispatch('edit-maintenance-item', {
+                                                        item: @js([
+                                                            'maintenance_type' => $item->maintenance_type,
+                                                            'performed_at' => optional($item->performed_at)->format('Y-m-d'),
+                                                            'provider_name' => $item->provider_name,
+                                                            'notes' => $item->notes,
+                                                            'extra_cost' => (float) ($item->extra_cost ?? 0),
+                                                            'has_stock_consumption' => $item->stockMovements
+                                                                ->where('movement_type', 'out')
+                                                                ->whereNull('cancelled_at')
+                                                                ->whereNull('reversed_from_movement_id')
+                                                                ->isNotEmpty(),
+                                                            'stock_consumptions' => $item->stockMovements
+                                                                ->where('movement_type', 'out')
+                                                                ->whereNull('cancelled_at')
+                                                                ->whereNull('reversed_from_movement_id')
+                                                                ->map(fn ($movement) => [
+                                                                    'item' => $movement->stockItem?->name ?? 'Item de estoque',
+                                                                    'quantity' => (float) $movement->quantity,
+                                                                    'unit' => $movement->stockItem?->unit,
+                                                                    'total_cost' => $canViewCosts
+                                                                        ? (float) $movement->total_cost
+                                                                        : null,
+                                                                ])->values(),
+                                                        ]),
+                                                        action: @js(route('vehicles.maintenance.items.update', [$vehicle->id, $openMaintenance->id, $item->id]))
+                                                    })"
+                                                >
+                                                    <i data-lucide="pencil"></i>
+                                                    Editar
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
 
@@ -890,6 +933,66 @@
 
                     </section>
                 </div>
+
+                @if(
+                    $openMaintenance->extraCosts->isNotEmpty()
+                    || ($maintenancePermissions['add_extra_costs'] ?? false)
+                    || $canEditExtraCosts
+                )
+                    <section class="maintenance-services-card maintenance-extra-costs-card" x-data="{}">
+                        <div class="maintenance-open-items-header">
+                            <div>
+                                <span>Composição da ordem</span>
+                                <h3>Custos avulsos lançados</h3>
+                            </div>
+                            <strong>{{ $openMaintenance->extraCosts->count() }} registro(s)</strong>
+                        </div>
+
+                        @forelse($openMaintenance->extraCosts as $extraCost)
+                            <div class="maintenance-open-item-row">
+                                <div class="maintenance-open-item-main">
+                                    <div>
+                                        <strong>{{ $extraCost->description }}</strong>
+                                        <span>
+                                            {{ optional($extraCost->created_at)->format('d/m/Y H:i') }}
+                                            · {{ $extraCost->creator?->name ?? 'Responsável não informado' }}
+                                        </span>
+                                    </div>
+                                    <div class="maintenance-open-item-cost">
+                                        @if($canViewCosts)
+                                            R$ {{ number_format($extraCost->amount, 2, ',', '.') }}
+                                        @else
+                                            Valor restrito
+                                        @endif
+
+                                        @if($canEditExtraCosts && $canViewCosts)
+                                            <button
+                                                type="button"
+                                                class="maintenance-inline-edit-button"
+                                                @click.stop="$dispatch('edit-maintenance-extra-cost', {
+                                                    cost: @js([
+                                                        'description' => $extraCost->description,
+                                                        'amount' => (float) $extraCost->amount,
+                                                    ]),
+                                                    action: @js(route('vehicles.maintenance.extra-costs.update', [$vehicle->id, $openMaintenance->id, $extraCost->id]))
+                                                })"
+                                            >
+                                                <i data-lucide="pencil"></i>
+                                                Editar
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="maintenance-open-items-empty">Nenhum custo avulso registrado.</div>
+                        @endforelse
+                    </section>
+                @endif
+
+                @if($canEditItems || ($canEditExtraCosts && $canViewCosts))
+                    @include('vehicle.partials.maintenance-edit-modals')
+                @endif
 
         </section>
     @endif
