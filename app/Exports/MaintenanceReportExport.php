@@ -33,6 +33,15 @@ class MaintenanceReportExport implements WithMultipleSheets
             $sheets[] = new MaintenanceCancelledSheet($this->data);
         }
 
+        if (
+            ! empty($this->data['canViewChanges'])
+            && collect($this->data['maintenances'] ?? [])->contains(
+                fn (array $maintenance) => ! empty($maintenance['changes'])
+            )
+        ) {
+            $sheets[] = new MaintenanceChangesSheet($this->data);
+        }
+
         return $sheets;
     }
 }

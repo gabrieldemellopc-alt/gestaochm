@@ -57,6 +57,7 @@ class ReportController extends Controller
         $maintenance30Ids = (clone $maintenance30Query)->pluck('id');
         $internalMaintenances30 = MaintenanceRecordItem::query()
             ->whereIn('maintenance_record_id', $maintenance30Ids)
+            ->whereNull('cancelled_at')
             ->where('maintenance_type', 'internal')
             ->count()
             + (clone $maintenance30Query)
@@ -65,6 +66,7 @@ class ReportController extends Controller
                 ->count();
         $externalMaintenances30 = MaintenanceRecordItem::query()
             ->whereIn('maintenance_record_id', $maintenance30Ids)
+            ->whereNull('cancelled_at')
             ->where('maintenance_type', 'external')
             ->count()
             + (clone $maintenance30Query)
@@ -163,6 +165,7 @@ class ReportController extends Controller
         $data = $this->buildMaintenanceReportData($request, $context);
 
         $pdfData = $data;
+        $pdfData['maintenanceChangeRows'] = $data['maintenances'];
         $pdfData['maintenances'] = $data['operational_maintenances_raw']
             ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceForPdf($maintenance));
         $pdfData['cancelledMaintenancesRaw'] = $data['maintenances_raw']
@@ -170,9 +173,12 @@ class ReportController extends Controller
             ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceForPdf($maintenance))
             ->values();
 
-        $pdfView = $context['can_view_costs']
-            ? 'reports.pdf.maintenance'
-            : 'reports.pdf.maintenance-operational';
+        $pdfView = match (true) {
+            $context['can_view_changes'] && $context['can_view_costs'] => 'reports.pdf.maintenance-managerial',
+            $context['can_view_changes'] => 'reports.pdf.maintenance-operational-with-changes',
+            $context['can_view_costs'] => 'reports.pdf.maintenance',
+            default => 'reports.pdf.maintenance-operational',
+        };
 
         $pdf = Pdf::loadView($pdfView, $pdfData)
             ->setPaper('a4', 'landscape');
@@ -457,19 +463,32 @@ class ReportController extends Controller
     {
         $filters = $this->maintenanceFilters($request, $context);
 
+        $relations = [
+            'vehicle',
+            'procedure',
+            'values.field',
+            'items.procedure',
+            'items.values.field',
+            'extraCosts.creator',
+            'canceller',
+            'opener',
+            'closer',
+        ];
+
+        if ($context['can_view_changes']) {
+            array_push(
+                $relations,
+                'cancelledItems.procedure',
+                'cancelledItems.canceller',
+                'cancelledItems.stockMovements.stockItem',
+                'cancelledItems.replacement.procedure',
+                'cancelledItems.replacement.stockMovements.stockItem',
+            );
+        }
+
         $maintenanceQuery = $this->applyMaintenanceFilters(
             $this->reportContext->maintenanceQuery($context, $filters['query_includes_cancelled'])
-                ->with([
-                    'vehicle',
-                    'procedure',
-                    'values.field',
-                    'items.procedure',
-                    'items.values.field',
-                    'extraCosts.creator',
-                    'canceller',
-                    'opener',
-                    'closer',
-                ]),
+                ->with($relations),
             $filters
         )
             ->orderBy('performed_at', 'desc');
@@ -576,7 +595,7 @@ class ReportController extends Controller
             'division' => $context['division'],
             'location' => $context['location'],
             'canViewCancelled' => $context['can_view_cancelled'],
-            'canViewCosts' => $context['can_view_costs'],
+            'canViewChanges' => $context['can_view_changes'],
             'canViewCosts' => $context['can_view_costs'],
             'maintenances_raw' => $displayMaintenances,
             'operational_maintenances_raw' => $operationalMaintenances,
@@ -742,6 +761,63 @@ class ReportController extends Controller
             'cancel_reason' => $context['can_view_cancelled'] ? $maintenance->cancel_reason : null,
             'cancelled_by' => $context['can_view_cancelled'] ? $maintenance->canceller?->name : null,
             'considered_in_totals' => $maintenance->cancelled_at === null,
+            'changes' => $this->maintenanceChanges($maintenance, $context),
+        ];
+    }
+
+    private function maintenanceChanges(MaintenanceRecord $maintenance, array $context): array
+    {
+        if (! $context['can_view_changes']) {
+            return [];
+        }
+
+        return $maintenance->cancelledItems
+            ->filter(fn ($item) => $item->replacement !== null)
+            ->sortByDesc('cancelled_at')
+            ->map(function ($item) use ($context) {
+                $returnedStock = $item->stockMovements
+                    ->where('movement_type', 'out')
+                    ->whereNotNull('reversal_movement_id')
+                    ->map(fn (StockMovement $movement) => $this->maintenanceChangeStockRow($movement, $context))
+                    ->values()
+                    ->all();
+                $newStock = $item->replacement->stockMovements
+                    ->where('movement_type', 'out')
+                    ->whereNull('cancelled_at')
+                    ->whereNull('reversed_from_movement_id')
+                    ->map(fn (StockMovement $movement) => $this->maintenanceChangeStockRow($movement, $context))
+                    ->values()
+                    ->all();
+
+                return [
+                    'type' => $item->cancellation_type ?? 'replacement',
+                    'old_item_id' => $item->id,
+                    'old_procedure' => $item->procedure?->name ?? 'Item de manutencao',
+                    'old_cost' => $context['can_view_costs'] ? (float) $item->total_cost : null,
+                    'replacement_item_id' => $item->replacement->id,
+                    'replacement_procedure' => $item->replacement->procedure?->name ?? 'Item de manutencao',
+                    'replacement_cost' => $context['can_view_costs'] ? (float) $item->replacement->total_cost : null,
+                    'reason' => $item->cancel_reason,
+                    'changed_by' => $item->canceller?->name ?? 'Nao informado',
+                    'changed_at' => $item->cancelled_at,
+                    'returned_stock' => $returnedStock,
+                    'new_stock' => $newStock,
+                    'considered_in_totals' => false,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function maintenanceChangeStockRow(StockMovement $movement, array $context): array
+    {
+        return [
+            'item' => $movement->stockItem?->name ?? '-',
+            'quantity' => (float) $movement->quantity,
+            'unit_cost' => $context['can_view_costs'] ? (float) $movement->unit_cost : null,
+            'total_cost' => $context['can_view_costs']
+                ? (float) ($movement->total_cost ?? ((float) $movement->quantity * (float) $movement->unit_cost))
+                : null,
         ];
     }
 

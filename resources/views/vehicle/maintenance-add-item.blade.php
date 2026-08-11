@@ -8,7 +8,7 @@
 
     rel="stylesheet"
 
-    href="{{ asset('css/pages/maintenance.css') }}?v=8"
+    href="{{ asset('css/pages/maintenance.css') }}?v=10"
 >
 
 @endpush
@@ -16,6 +16,8 @@
 
 
 @section('content')
+
+@php($replacementItem = $replacementItem ?? null)
 
 
 
@@ -43,7 +45,7 @@
 
             <h1>
 
-                Adicionar procedimento
+                {{ $replacementItem ? 'Corrigir serviço da manutenção' : 'Adicionar procedimento' }}
 
             </h1>
 
@@ -316,7 +318,9 @@
 
     <form
         method="POST"
-        action="{{ route('vehicles.maintenance.items.store', [$vehicle->id, $maintenance->id]) }}"
+        action="{{ $replacementItem
+            ? route('vehicles.maintenance.items.replace', [$vehicle->id, $maintenance->id, $replacementItem->id])
+            : route('vehicles.maintenance.items.store', [$vehicle->id, $maintenance->id]) }}"
         class="maintenance-form"
         x-data="maintenanceSummary()"
     >
@@ -324,6 +328,43 @@
 
 
         @csrf
+
+        @if($replacementItem)
+            <section class="maintenance-replacement-warning">
+                <strong>Corrigir serviço lançado</strong>
+                <p>Revise o lançamento atual e informe os dados corretos do serviço.</p>
+                <small>Quando houver consumo de estoque, o sistema ajustará automaticamente a movimentação para manter os saldos corretos.</small>
+
+                <div class="maintenance-replacement-current">
+                    <span><strong>Procedimento:</strong> {{ $replacementItem->procedure?->name ?? 'Não informado' }}</span>
+                    <span><strong>Data:</strong> {{ optional($replacementItem->performed_at)->format('d/m/Y') }}</span>
+                    <span><strong>Tipo:</strong> {{ $replacementItem->maintenance_type === 'internal' ? 'Interna' : 'Terceirizada' }}</span>
+                    @if($canViewCosts)
+                        <span><strong>Custo atual:</strong> R$ {{ number_format($replacementItem->total_cost, 2, ',', '.') }}</span>
+                    @endif
+                    @foreach($replacementItem->stockMovements->where('movement_type', 'out')->whereNull('reversal_movement_id') as $movement)
+                        <span>
+                            <strong>Consumo:</strong>
+                            {{ $movement->stockItem?->name ?? 'Item de estoque' }} —
+                            {{ number_format($movement->quantity, 2, ',', '.') }} {{ $movement->stockItem?->unit }}
+                        </span>
+                    @endforeach
+                </div>
+
+                <div class="form-group">
+                    <label>Motivo da substituição</label>
+                    <textarea name="change_reason" rows="3" class="form-input" minlength="10" maxlength="2000" required>{{ old('change_reason') }}</textarea>
+                </div>
+
+                <label class="maintenance-replacement-confirmation">
+                    <input type="checkbox" name="confirm_replacement" value="1" required @checked(old('confirm_replacement'))>
+                    <span>
+                        Confirmo a correção deste lançamento.
+                        <small>O sistema ajustará estoque e totais automaticamente, quando aplicável.</small>
+                    </span>
+                </label>
+            </section>
+        @endif
 
 
 
@@ -528,9 +569,6 @@
 
 
                         </div>
-
-
-
                         <div class="form-group">
 
 
@@ -602,6 +640,7 @@
 
 
 
+                        @if($canViewCosts)
                         <div class="form-group">
 
 
@@ -633,6 +672,7 @@
 
 
                         </div>
+                        @endif
 
 
                         <div class="form-group full-width">
@@ -1062,10 +1102,12 @@
                             Custos
                         </div>
 
+                        @if($canViewCosts)
                         <div class="maintenance-summary-item">
                             <span>Custo adicional</span>
                             <strong x-text="formatMoney(extraCost || 0)"></strong>
                         </div>
+                        @endif
 
                         <div class="maintenance-summary-total">
                             <span>Total estimado</span>
@@ -1105,7 +1147,7 @@
 
 
 
-                            Adicionar procedimento
+                            {{ $replacementItem ? 'Confirmar correção' : 'Adicionar procedimento' }}
 
                         </button>
 

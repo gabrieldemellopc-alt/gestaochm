@@ -26,6 +26,12 @@ class MaintenanceRecordItem extends Model
         'next_due_km',
         'next_due_hours',
         'next_due_date',
+        'cancelled_at',
+        'cancelled_by',
+        'cancel_reason',
+        'cancellation_type',
+        'replaced_by_item_id',
+        'replacement_of_item_id',
     ];
 
     protected $casts = [
@@ -33,6 +39,7 @@ class MaintenanceRecordItem extends Model
         'total_cost' => 'decimal:2',
         'extra_cost' => 'decimal:2',
         'next_due_date' => 'date',
+        'cancelled_at' => 'datetime',
     ];
 
     public function maintenanceRecord()
@@ -53,5 +60,40 @@ class MaintenanceRecordItem extends Model
     public function stockMovements()
     {
         return $this->hasMany(StockMovement::class, 'maintenance_record_item_id');
+    }
+
+    public function canceller()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function replacement()
+    {
+        return $this->belongsTo(self::class, 'replaced_by_item_id');
+    }
+
+    public function originalItem()
+    {
+        return $this->belongsTo(self::class, 'replacement_of_item_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNull('cancelled_at');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->whereNotNull('cancelled_at');
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->cancelled_at !== null;
+    }
+
+    public function isReplacement(): bool
+    {
+        return $this->replacement_of_item_id !== null;
     }
 }

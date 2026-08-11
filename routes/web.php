@@ -502,6 +502,11 @@ Route::middleware('auth')->group(function () {
         [MaintenanceController::class, 'updateItem']
     )->name('vehicles.maintenance.items.update');
 
+    Route::post(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/items/{item}/replace',
+        [MaintenanceController::class, 'replaceItem']
+    )->name('vehicles.maintenance.items.replace');
+
 
     Route::post(
         '/vehicles/{vehicle}/maintenance/{maintenance}/close',

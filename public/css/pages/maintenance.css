@@ -3104,6 +3104,85 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     outline-offset: 2px;
 }
 
+.maintenance-correct-action {
+    text-decoration: none;
+    color: #bfdbfe;
+}
+
+.maintenance-replacement-warning {
+    margin: 0 0 20px;
+    padding: 18px 20px;
+    border: 1px solid rgba(148, 163, 184, .24);
+    border-radius: 14px;
+    background: rgba(30, 41, 59, .28);
+    color: #e2e8f0;
+}
+
+.maintenance-replacement-warning > p {
+    margin: 5px 0 4px;
+}
+
+.maintenance-replacement-warning > small {
+    display: block;
+    margin-bottom: 16px;
+    color: #94a3b8;
+    font-size: .8rem;
+}
+
+.maintenance-replacement-current {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .2);
+}
+
+.maintenance-replacement-confirmation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .16);
+    color: #cbd5e1;
+    font-size: .86rem;
+    font-weight: 650;
+}
+
+.maintenance-replacement-confirmation input {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #3b82f6;
+}
+
+.maintenance-replacement-confirmation span {
+    display: grid;
+    gap: 2px;
+}
+
+.maintenance-replacement-confirmation small {
+    color: #94a3b8;
+    font-size: .76rem;
+    font-weight: 500;
+}
+
+.maintenance-replaced-items {
+    margin-top: 18px;
+    padding: 18px;
+    border: 1px dashed rgba(148, 163, 184, .3);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, .18);
+}
+
+.maintenance-open-item-row.is-cancelled {
+    opacity: .72;
+}
+
 .maintenance-inline-edit-button svg {
     width: 0.85rem;
     height: 0.85rem;

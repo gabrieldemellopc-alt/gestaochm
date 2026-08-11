@@ -155,6 +155,16 @@ class MaintenanceRecord extends Model
 
     public function items()
     {
+        return $this->hasMany(MaintenanceRecordItem::class)->active();
+    }
+
+    public function cancelledItems()
+    {
+        return $this->hasMany(MaintenanceRecordItem::class)->cancelled();
+    }
+
+    public function allItems()
+    {
         return $this->hasMany(MaintenanceRecordItem::class);
     }
 

@@ -885,6 +885,23 @@
                                                     <i data-lucide="pencil"></i>
                                                     Editar
                                                 </button>
+
+                                                @php($itemHasStock = $item->stockMovements->where('movement_type', 'out')->whereNull('cancelled_at')->whereNull('reversal_movement_id')->isNotEmpty())
+                                                @if(! $itemHasStock || ($maintenancePermissions['consume_stock'] ?? false))
+                                                    <a
+                                                        class="maintenance-inline-edit-button maintenance-correct-action"
+                                                        href="{{ route('vehicles.maintenance.items.create', [
+                                                            $vehicle->id,
+                                                            $openMaintenance->id,
+                                                            'procedure_id' => $item->procedure_id,
+                                                            'execution_type' => $item->maintenance_type,
+                                                            'replace_item' => $item->id,
+                                                        ]) }}"
+                                                    >
+                                                        <i data-lucide="refresh-cw"></i>
+                                                        Corrigir serviço
+                                                    </a>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>
@@ -932,6 +949,31 @@
                     @endif
 
                     </section>
+
+                    @if($canEditItems && $openMaintenance->cancelledItems->isNotEmpty())
+                        <section class="maintenance-replaced-items">
+                            <div class="maintenance-open-items-header">
+                                <div>
+                                    <span>Histórico preservado</span>
+                                    <h3>Serviços substituídos/cancelados</h3>
+                                </div>
+                            </div>
+                            @foreach($openMaintenance->cancelledItems as $cancelledItem)
+                                <div class="maintenance-open-item-row is-cancelled">
+                                    <div class="maintenance-open-item-main">
+                                        <div>
+                                            <strong>{{ $cancelledItem->procedure?->name ?? 'Procedimento não informado' }}</strong>
+                                            <span>
+                                                Substituído em {{ optional($cancelledItem->cancelled_at)->format('d/m/Y H:i') }}
+                                                · {{ $cancelledItem->canceller?->name ?? 'Usuário não informado' }}
+                                            </span>
+                                            <small>{{ $cancelledItem->cancel_reason }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </section>
+                    @endif
                 </div>
 
                 @if(

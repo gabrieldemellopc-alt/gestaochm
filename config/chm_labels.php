@@ -106,6 +106,9 @@ return [
         'receipt' => 'Registrou recebimento',
         'filling' => 'Registrou abastecimento',
         'status_changed' => 'Alterou status',
+        'maintenance_item_replaced' => 'Serviço da manutenção substituído',
+        'maintenance_item_cancelled' => 'Serviço da manutenção cancelado',
+        'maintenance_item_stock_reversed' => 'Estoque do serviço revertido',
     ],
 
     'audit_module' => [

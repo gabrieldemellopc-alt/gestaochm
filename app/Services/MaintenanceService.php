@@ -350,9 +350,10 @@ class MaintenanceService
     
     public static function addItem(
         MaintenanceRecord $maintenance,
-        array $data
+        array $data,
+        bool $isReplacement = false
     ): MaintenanceRecordItem {
-        return DB::transaction(function () use ($maintenance, $data) {
+        return DB::transaction(function () use ($maintenance, $data, $isReplacement) {
     
             $maintenance = MaintenanceRecord::query()
                 ->with(['vehicle'])
@@ -382,7 +383,8 @@ class MaintenanceService
                 $stockUsage = self::collectStockUsage($procedure->fields, $data);
                 $stockItems = self::lockAndValidateStockItems(
                     $stockUsage,
-                    $vehicle
+                    $vehicle,
+                    $isReplacement
                 );
             }
             
@@ -646,6 +648,140 @@ class MaintenanceService
         });
     }
 
+    public static function replaceItem(
+        MaintenanceRecord $maintenance,
+        MaintenanceRecordItem $item,
+        array $data,
+        User $user
+    ): MaintenanceRecordItem {
+        return DB::transaction(function () use ($maintenance, $item, $data, $user) {
+            $maintenance = self::editableMaintenance($maintenance);
+            $item = MaintenanceRecordItem::query()
+                ->with(['values.field', 'procedure'])
+                ->where('maintenance_record_id', $maintenance->id)
+                ->whereKey($item->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($item->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'item' => 'Este serviço já foi cancelado ou substituído.',
+                ]);
+            }
+
+            $totalBefore = (float) $maintenance->total_cost;
+            $itemBefore = $item->toArray();
+            $reversedMovements = self::reverseItemStock(
+                $maintenance,
+                $item,
+                $user,
+                $data['change_reason']
+            );
+
+            $item->update([
+                'cancelled_at' => now(),
+                'cancelled_by' => $user->id,
+                'cancel_reason' => $data['change_reason'],
+                'cancellation_type' => 'replaced',
+            ]);
+
+            $newItem = self::addItem($maintenance, $data, true);
+            $newItem->update(['replacement_of_item_id' => $item->id]);
+            $item->update(['replaced_by_item_id' => $newItem->id]);
+            $maintenanceAfter = self::recalculateTotalCost($maintenance);
+            $newItem = $newItem->fresh(['procedure', 'values.field', 'stockMovements.stockItem']);
+
+            app(AuditLogService::class)->updated($item->fresh(), [
+                'tenant_id' => $maintenance->tenant_id,
+                'division_id' => $maintenance->vehicle->division_id,
+                'location_id' => $maintenance->vehicle->location_id,
+                'module' => 'maintenance',
+                'summary' => 'Serviço da manutenção #'.$maintenance->id.' substituído.',
+                'before_data' => $itemBefore,
+                'after_data' => $item->fresh()->toArray(),
+                'reason' => $data['change_reason'],
+                'metadata' => [
+                    'event' => 'maintenance_item_replaced',
+                    'maintenance_record_id' => $maintenance->id,
+                    'vehicle_id' => $maintenance->vehicle_id,
+                    'old_item_id' => $item->id,
+                    'new_item_id' => $newItem->id,
+                    'changed_by' => $user->id,
+                    'stock_returned' => $reversedMovements->map->toArray()->all(),
+                    'stock_consumed' => $newItem->stockMovements->map->toArray()->all(),
+                    'old_cost' => (float) ($itemBefore['total_cost'] ?? 0),
+                    'new_cost' => (float) $newItem->total_cost,
+                    'total_before' => $totalBefore,
+                    'total_after' => (float) $maintenanceAfter->total_cost,
+                ],
+            ]);
+
+            return $newItem;
+        });
+    }
+
+    private static function reverseItemStock(
+        MaintenanceRecord $maintenance,
+        MaintenanceRecordItem $item,
+        User $user,
+        string $reason
+    ): Collection {
+        $movements = StockMovement::query()
+            ->where('maintenance_record_id', $maintenance->id)
+            ->where('maintenance_record_item_id', $item->id)
+            ->where('movement_type', 'out')
+            ->whereNull('cancelled_at')
+            ->whereNull('reversal_movement_id')
+            ->lockForUpdate()
+            ->get();
+        $reversed = collect();
+
+        foreach ($movements as $movement) {
+            $movementBefore = $movement->toArray();
+            $stockItem = StockItem::query()
+                ->where('tenant_id', $movement->tenant_id)
+                ->where('location_id', $movement->location_id)
+                ->whereKey($movement->stock_item_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $reverse = StockMovement::create([
+                'tenant_id' => $movement->tenant_id,
+                'location_id' => $movement->location_id,
+                'stock_item_id' => $movement->stock_item_id,
+                'maintenance_record_id' => $maintenance->id,
+                'maintenance_record_item_id' => $item->id,
+                'movement_type' => 'in',
+                'quantity' => $movement->quantity,
+                'unit_cost' => $movement->unit_cost,
+                'total_cost' => $movement->total_cost,
+                'description' => 'Reversão pela substituição do serviço #'.$item->id,
+                'reversed_from_movement_id' => $movement->id,
+            ]);
+            $movement->update(['reversal_movement_id' => $reverse->id]);
+            $stockItem->increment('quantity', (float) $movement->quantity);
+            $reversed->push($reverse);
+
+            app(AuditLogService::class)->reversed($movement, [
+                'tenant_id' => $movement->tenant_id,
+                'division_id' => $maintenance->vehicle->division_id,
+                'location_id' => $movement->location_id,
+                'module' => 'stock',
+                'summary' => 'Estoque do serviço #'.$item->id.' revertido.',
+                'before_data' => $movementBefore,
+                'after_data' => $reverse->toArray(),
+                'reason' => $reason,
+                'metadata' => [
+                    'event' => 'maintenance_item_stock_reversed',
+                    'maintenance_record_id' => $maintenance->id,
+                    'maintenance_record_item_id' => $item->id,
+                    'changed_by' => $user->id,
+                ],
+            ]);
+        }
+
+        return $reversed;
+    }
+
     private static function collectStockUsage(Collection $fields, array $data): Collection
     {
         $fieldValues = $data['fields'] ?? [];
@@ -680,7 +816,8 @@ class MaintenanceService
 
     private static function lockAndValidateStockItems(
         Collection $stockUsage,
-        Vehicle $vehicle
+        Vehicle $vehicle,
+        bool $isReplacement = false
     ): Collection {
         if ($stockUsage->isEmpty()) {
             return collect();
@@ -723,9 +860,13 @@ class MaintenanceService
             $item = $stockItems->get((int) $itemId);
 
             if ((float) $item->quantity < $requiredQuantity) {
+                $available = number_format((float) $item->quantity, 2, ',', '.');
+                $requested = number_format((float) $requiredQuantity, 2, ',', '.');
                 throw ValidationException::withMessages([
                     'fields' =>
-                        "Saldo insuficiente para o item {$item->name}.",
+                        $isReplacement
+                            ? "Estoque insuficiente para o novo lançamento após considerar a devolução do serviço atual. Item: {$item->name}. Disponível: {$available}. Solicitado: {$requested}."
+                            : "Saldo insuficiente para o item {$item->name}.",
                 ]);
             }
         }
@@ -1023,12 +1164,13 @@ class MaintenanceService
     {
         $itemsTotal = MaintenanceRecordItem::query()
             ->where('maintenance_record_id', $maintenance->id)
+            ->whereNull('cancelled_at')
             ->sum('total_cost');
         $extraCostsTotal = MaintenanceRecordExtraCost::query()
             ->where('maintenance_record_id', $maintenance->id)
             ->sum('amount');
 
-        $maintenance->update([
+        MaintenanceRecord::query()->whereKey($maintenance->id)->update([
             'total_cost' => (float) $itemsTotal + (float) $extraCostsTotal,
         ]);
 

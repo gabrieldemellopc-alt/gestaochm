@@ -2932,6 +2932,8 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'items.procedure',
             'items.values.field',
             'items.stockMovements.stockItem',
+            'cancelledItems.procedure',
+            'cancelledItems.canceller',
             'extraCosts.creator',
         ])
         ->where('workflow_status', 'open')

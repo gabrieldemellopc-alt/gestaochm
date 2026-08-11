@@ -179,7 +179,24 @@ class MaintenanceController extends Controller
             abort(404);
         }
 
-        $this->authorizeMaintenancePermission('maintenance.add_items');
+        $replacementItem = null;
+        if ($request->filled('replace_item')) {
+            $this->authorizeMaintenancePermission('maintenance.edit_items');
+            $replacementItem = MaintenanceRecordItem::query()
+                ->with(['procedure', 'stockMovements.stockItem'])
+                ->where('maintenance_record_id', $maintenance->id)
+                ->whereNull('cancelled_at')
+                ->findOrFail($request->integer('replace_item'));
+
+            if ($replacementItem->stockMovements()
+                ->where('movement_type', 'out')
+                ->whereNull('reversal_movement_id')
+                ->exists()) {
+                $this->authorizeMaintenancePermission('maintenance.consume_stock');
+            }
+        } else {
+            $this->authorizeMaintenancePermission('maintenance.add_items');
+        }
 
         if ($maintenance->workflow_status !== 'open' || $maintenance->cancelled_at) {
             return redirect()
@@ -198,6 +215,7 @@ class MaintenanceController extends Controller
                         ->where('location_id', $vehicle->location_id)),
             ],
             'execution_type' => ['required', 'in:internal,external'],
+            'replace_item' => ['nullable', 'integer'],
         ]);
 
         $vehicle->load(['division', 'location']);
@@ -230,6 +248,8 @@ class MaintenanceController extends Controller
             'maintenance' => $maintenance,
             'procedure' => $procedure,
             'executionType' => $data['execution_type'],
+            'replacementItem' => $replacementItem,
+            'canViewCosts' => $this->canMaintenance('maintenance.view_costs'),
         ]);
     }
 
@@ -274,6 +294,10 @@ class MaintenanceController extends Controller
 
             'fields' => ['nullable', 'array'],
         ]);
+
+        if (! $this->canMaintenance('maintenance.view_costs')) {
+            $data['extra_cost'] = (float) $item->extra_cost;
+        }
 
         if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {
             $this->authorizeMaintenancePermission('maintenance.consume_stock');
@@ -336,6 +360,61 @@ class MaintenanceController extends Controller
         MaintenanceService::updateItem($maintenance, $item, $data, auth()->user());
 
         return back()->with('success', 'Serviço atualizado com sucesso.');
+    }
+
+    public function replaceItem(
+        Request $request,
+        Vehicle $vehicle,
+        MaintenanceRecord $maintenance,
+        MaintenanceRecordItem $item
+    ) {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
+            return $redirect;
+        }
+
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        abort_unless((int) $item->maintenance_record_id === (int) $maintenance->id, 404);
+        $this->authorizeMaintenancePermission('maintenance.edit_items');
+
+        if ($item->stockMovements()
+            ->where('movement_type', 'out')
+            ->whereNull('reversal_movement_id')
+            ->exists()) {
+            $this->authorizeMaintenancePermission('maintenance.consume_stock');
+        }
+
+        $data = $request->validate([
+            'procedure_id' => [
+                'required',
+                Rule::exists('procedures', 'id')->where(fn ($query) => $query
+                    ->where('tenant_id', $vehicle->tenant_id)
+                    ->where('location_id', $vehicle->location_id)),
+            ],
+            'maintenance_type' => ['required', 'in:internal,external'],
+            'performed_at' => ['required', 'date'],
+            'performed_km' => ['nullable', 'integer', 'min:0'],
+            'performed_hours' => ['nullable', 'integer', 'min:0'],
+            'extra_cost' => ['nullable', 'numeric', 'min:0'],
+            'provider_name' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'fields' => ['nullable', 'array'],
+            'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
+            'confirm_replacement' => ['accepted'],
+        ], [
+            'change_reason.required' => 'Informe o motivo da substituição.',
+            'change_reason.min' => 'O motivo da substituição deve ter pelo menos :min caracteres.',
+            'confirm_replacement.accepted' => 'Confirme que o lançamento atual será substituído.',
+        ]);
+
+        if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {
+            $this->authorizeMaintenancePermission('maintenance.consume_stock');
+        }
+
+        MaintenanceService::replaceItem($maintenance, $item, $data, auth()->user());
+
+        return redirect()
+            ->route('vehicle.maintenance.index', $vehicle->id)
+            ->with('success', 'Serviço substituído com sucesso.');
     }
 
     public function show(
