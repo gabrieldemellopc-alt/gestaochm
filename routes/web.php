@@ -25,6 +25,8 @@ use App\Http\Controllers\FiscalDocumentController;
 use App\Http\Controllers\FuelTankController;
 
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\MaintenancePhotoController;
+use App\Http\Controllers\PublicMaintenancePhotoController;
 
 use App\Http\Controllers\PermissionController;
 
@@ -70,6 +72,11 @@ Route::get('/', function () {
     return view('welcome');
 
 });
+
+Route::get('/maintenance-photo-upload/{token}', [PublicMaintenancePhotoController::class, 'show'])
+    ->middleware('throttle:60,1')->name('public.maintenance-photos.show');
+Route::post('/maintenance-photo-upload/{token}', [PublicMaintenancePhotoController::class, 'store'])
+    ->middleware('throttle:20,1')->name('public.maintenance-photos.store');
 
 
 
@@ -462,6 +469,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/vehicles/{vehicle}/maintenance', [MaintenanceController::class, 'store'])
         ->name('vehicles.maintenance.store');
+    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/photos', [MaintenancePhotoController::class, 'store'])->name('vehicles.maintenance.photos.store');
+    Route::delete('/vehicles/{vehicle}/maintenance/{maintenance}/photos/{photo}', [MaintenancePhotoController::class, 'destroy'])->name('vehicles.maintenance.photos.destroy');
+    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/photos/token', [MaintenancePhotoController::class, 'token'])->name('vehicles.maintenance.photos.token');
 
     // Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/cancel', [MaintenanceController::class, 'cancel'])
     //     ->name('vehicles.maintenance.cancel');

@@ -346,6 +346,64 @@
                 </div>
             </div>
 
+            <section class="maintenance-photo-card">
+                @php($minPhotos = \App\Services\MaintenancePhotoService::MIN_REQUIRED_PHOTOS)
+                @php($maxPhotos = \App\Services\MaintenancePhotoService::MAX_PHOTOS_PER_MAINTENANCE)
+                <div class="maintenance-photo-heading">
+                    <div>
+                        <span class="maintenance-kicker">Evidências da ordem</span>
+                        <h3>Fotos da manutenção</h3>
+                        <p class="maintenance-photo-guidance">Inclua pelo menos 2 fotos para encerrar a ordem. Se houver mais de um problema ou serviço, envie uma imagem de cada item a ser corrigido.</p>
+                    </div>
+                    @php($photoCount = $openMaintenance->photos->count())
+                    <div class="maintenance-photo-limits">
+                    <span class="maintenance-photo-counter {{ $photoCount >= $minPhotos ? 'complete' : 'pending' }}">{{ $photoCount < $minPhotos ? $photoCount.'/'.$minPhotos.' fotos obrigatórias' : $photoCount.'/'.$maxPhotos.' fotos enviadas' }}</span>
+                        <small>Obrigatório: mínimo {{ $minPhotos }} · Limite: máximo {{ $maxPhotos }}</small>
+                    </div>
+                </div>
+                <div class="maintenance-photo-gallery">
+                    @forelse($openMaintenance->photos as $photo)
+                        <article class="maintenance-photo-item">
+                            <a class="maintenance-photo-preview" href="{{ $photo->url }}" target="_blank" rel="noopener">
+                                <img src="{{ $photo->url }}" alt="Foto da manutenção" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+                                <span class="maintenance-photo-fallback" hidden><i data-lucide="image-off"></i>Imagem indisponível</span>
+                            </a>
+                            <small>{{ $photo->created_at->format('d/m/Y H:i') }}</small>
+                            @if($maintenancePermissions['delete_photos'] ?? false)
+                                <form method="POST" action="{{ route('vehicles.maintenance.photos.destroy', [$vehicle, $openMaintenance, $photo]) }}" onsubmit="return confirm('Remover esta foto?')">@csrf @method('DELETE')<button type="submit">Remover</button></form>
+                            @endif
+                        </article>
+                    @empty
+                        <p class="maintenance-photo-empty">Nenhuma foto anexada ainda.</p>
+                    @endforelse
+                </div>
+                <div class="maintenance-photo-actions">
+                    @if(($maintenancePermissions['upload_photos'] ?? false) && $photoCount < $maxPhotos)
+                        <form class="maintenance-photo-upload-form" method="POST" enctype="multipart/form-data" action="{{ route('vehicles.maintenance.photos.store', [$vehicle, $openMaintenance]) }}" x-data="{ fileLabel: 'Nenhum arquivo selecionado' }">@csrf
+                            <label class="maintenance-file-picker" for="maintenance-photos-input"><i data-lucide="images"></i><span>Escolher fotos</span></label>
+                            <input id="maintenance-photos-input" class="maintenance-file-input" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple required @change="fileLabel = $event.target.files.length ? ($event.target.files.length + ' arquivo(s) selecionado(s)') : 'Nenhum arquivo selecionado'">
+                            <span class="maintenance-file-label" x-text="fileLabel">Nenhum arquivo selecionado</span>
+                            <button class="chm-page-button" type="submit"><i data-lucide="upload"></i>Anexar pelo computador</button>
+                        </form>
+                    @endif
+                    @if(($maintenancePermissions['generate_photo_qr'] ?? false) && !session('photo_upload_url') && $photoCount < $maxPhotos)
+                        <form method="POST" action="{{ route('vehicles.maintenance.photos.token', [$vehicle, $openMaintenance]) }}">@csrf
+                            <button class="chm-page-button maintenance-qr-generate" type="submit"><i data-lucide="qr-code"></i>Gerar QR para celular</button>
+                        </form>
+                    @endif
+                    @if($photoCount >= $maxPhotos)<p class="maintenance-photo-limit-reached"><i data-lucide="circle-check"></i>Limite de {{ $maxPhotos }} fotos atingido.</p>@endif
+                </div>
+                @if(session('photo_upload_url'))
+                    <div class="maintenance-qr-box">
+                        <div class="maintenance-qr-image"><img src="{{ session('photo_upload_qr') }}" alt="QR Code para envio de fotos"></div>
+                        <div class="maintenance-qr-content"><strong>Escaneie com o celular</strong><p>Este link expira em 30 minutos. Válido até {{ session('photo_upload_expires_at') }}.</p>
+                            <div class="maintenance-qr-link"><input id="maintenance-photo-url" readonly value="{{ session('photo_upload_url') }}"><button type="button" onclick="navigator.clipboard.writeText(document.getElementById('maintenance-photo-url').value)"><i data-lucide="copy"></i>Copiar link</button></div>
+                            @if(($maintenancePermissions['generate_photo_qr'] ?? false) && $photoCount < $maxPhotos)<form method="POST" action="{{ route('vehicles.maintenance.photos.token', [$vehicle, $openMaintenance]) }}">@csrf<button class="maintenance-new-qr" type="submit"><i data-lucide="refresh-cw"></i>Gerar novo QR</button></form>@endif
+                        </div>
+                    </div>
+                @endif
+            </section>
+
             <div
                 x-show="cancelModal"
                 x-cloak

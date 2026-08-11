@@ -172,4 +172,10 @@ class MaintenanceRecord extends Model
     {
         return $this->hasMany(MaintenanceRecordExtraCost::class);
     }
+
+    public function photos() { return $this->hasMany(MaintenancePhoto::class); }
+    public function activePhotos() { return $this->photos(); }
+    public function photoUploadTokens() { return $this->hasMany(MaintenancePhotoUploadToken::class); }
+    public function getActivePhotoCountAttribute(): int { return $this->photos()->count(); }
+    public function hasMinimumPhotosForClosing(): bool { return $this->photos()->count() >= \App\Services\MaintenancePhotoService::MIN_REQUIRED_PHOTOS; }
 }

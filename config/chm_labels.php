@@ -109,6 +109,10 @@ return [
         'maintenance_item_replaced' => 'Serviço da manutenção substituído',
         'maintenance_item_cancelled' => 'Serviço da manutenção cancelado',
         'maintenance_item_stock_reversed' => 'Estoque do serviço revertido',
+        'maintenance_photo_uploaded' => 'Foto da manutenção enviada',
+        'maintenance_photo_deleted' => 'Foto da manutenção removida',
+        'maintenance_photo_upload_token_created' => 'Link temporário de fotos criado',
+        'maintenance_close_blocked_missing_photos' => 'Encerramento bloqueado por falta de fotos',
     ],
 
     'audit_module' => [

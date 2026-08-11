@@ -2935,6 +2935,7 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'cancelledItems.procedure',
             'cancelledItems.canceller',
             'extraCosts.creator',
+            'photos.uploader',
         ])
         ->where('workflow_status', 'open')
         ->whereNull('cancelled_at')
@@ -3025,6 +3026,9 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'edit_extra_costs' => $can('maintenance.edit_extra_costs'),
             'change_status' => $can('maintenance.change_status'),
             'close' => $can('maintenance.close'),
+            'upload_photos' => $can('maintenance.upload_photos'),
+            'delete_photos' => $can('maintenance.delete_photos'),
+            'generate_photo_qr' => $can('maintenance.generate_photo_qr'),
             'cancel' => \Illuminate\Support\Facades\Gate::allows('cancelMaintenanceRecords')
                 && $can('maintenance.cancel'),
             'reopen' => $can('maintenance.reopen'),

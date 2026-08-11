@@ -966,6 +966,8 @@ class MaintenanceService
         string $vehicleStatusAfter,
         ?string $closureNotes = null
     ): MaintenanceRecord {
+        app(MaintenancePhotoService::class)->ensureCanClose($maintenance);
+
         return DB::transaction(function () use ($maintenance, $vehicleStatusAfter, $closureNotes) {
             $maintenance = MaintenanceRecord::query()
                 ->with(['vehicle'])
@@ -1005,7 +1007,13 @@ class MaintenanceService
                     'maintenance' => 'Adicione ao menos um procedimento antes de encerrar a manutenção.',
                 ]);
             }
-    
+
+            if (! $maintenance->hasMinimumPhotosForClosing()) {
+                throw ValidationException::withMessages([
+                    'maintenance' => 'Envie pelo menos 2 fotos da manutenção antes de encerrar a ordem.',
+                ]);
+            }
+
             $vehicle = $maintenance->vehicle;
             $before = $maintenance->toArray();
             $vehicleBefore = $vehicle->toArray();
