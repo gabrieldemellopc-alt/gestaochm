@@ -379,11 +379,17 @@
                 </div>
                 <div class="maintenance-photo-actions">
                     @if(($maintenancePermissions['upload_photos'] ?? false) && $photoCount < $maxPhotos)
-                        <form class="maintenance-photo-upload-form" method="POST" enctype="multipart/form-data" action="{{ route('vehicles.maintenance.photos.store', [$vehicle, $openMaintenance]) }}" x-data="{ fileLabel: 'Nenhum arquivo selecionado' }">@csrf
-                            <label class="maintenance-file-picker" for="maintenance-photos-input"><i data-lucide="images"></i><span>Escolher fotos</span></label>
-                            <input id="maintenance-photos-input" class="maintenance-file-input" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple required @change="fileLabel = $event.target.files.length ? ($event.target.files.length + ' arquivo(s) selecionado(s)') : 'Nenhum arquivo selecionado'">
-                            <span class="maintenance-file-label" x-text="fileLabel">Nenhum arquivo selecionado</span>
-                            <button class="chm-page-button" type="submit"><i data-lucide="upload"></i>Anexar pelo computador</button>
+                        <form class="maintenance-photo-upload-form" method="POST" enctype="multipart/form-data" action="{{ route('vehicles.maintenance.photos.store', [$vehicle, $openMaintenance]) }}"
+                            x-data="{ selectedCount: 0, isSubmitting: false, updateSelectedFiles(event) { this.selectedCount = event.target.files.length }, selectedText() { return this.selectedCount === 0 ? 'Nenhum arquivo selecionado' : (this.selectedCount === 1 ? '1 foto selecionada' : this.selectedCount + ' fotos selecionadas') }, submitText() { if (this.isSubmitting) return 'Enviando...'; if (this.selectedCount === 0) return 'Selecione fotos para enviar'; return this.selectedCount === 1 ? 'Enviar 1 foto' : 'Enviar ' + this.selectedCount + ' fotos' } }"
+                            @submit="isSubmitting = true">@csrf
+                            <div class="maintenance-photo-picker-group">
+                                <label class="maintenance-file-picker" for="maintenance-photos-input"><i data-lucide="images"></i><span>Escolher fotos</span></label>
+                                <input id="maintenance-photos-input" class="maintenance-file-input" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple required @change="updateSelectedFiles($event)">
+                                <span class="maintenance-file-label" x-text="selectedText()">Nenhum arquivo selecionado</span>
+                            </div>
+                            <button class="maintenance-photo-submit" :class="{ 'is-ready': selectedCount > 0 && !isSubmitting, 'is-loading': isSubmitting }" type="submit" :disabled="selectedCount === 0 || isSubmitting">
+                                <i data-lucide="upload-cloud"></i><span x-text="submitText()">Selecione fotos para enviar</span>
+                            </button>
                         </form>
                     @endif
                     @if(($maintenancePermissions['generate_photo_qr'] ?? false) && !session('photo_upload_url') && $photoCount < $maxPhotos)
