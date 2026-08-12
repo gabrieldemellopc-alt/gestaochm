@@ -28,10 +28,10 @@
     @if($remaining > 0)
         <form class="upload" id="public-photo-upload" method="POST" enctype="multipart/form-data" action="{{ route('public.maintenance-photos.store', $token) }}" data-remaining="{{ $remaining }}">
             @csrf
-            <p class="upload-title">Escolha ou tire as fotos</p>
+            <p class="upload-title">Escolha fotos da galeria ou tire novas fotos pelo celular.</p>
             <p class="upload-help">Você pode selecionar mais de uma imagem antes de enviar.</p>
-            <label class="file-picker" for="photos">Abrir câmera ou escolher fotos</label>
-            <input class="file-input" id="photos" name="photos[]" type="file" accept="image/*" capture="environment" multiple required>
+            <label class="file-picker" for="photos">Escolher fotos</label>
+            <input class="file-input" id="photos" name="photos[]" type="file" accept="image/*" multiple required>
             <span class="file-label" id="file-label">Nenhum arquivo selecionado</span>
             <p class="selection-error" id="selection-error" role="alert" hidden></p>
             <button class="submit" id="photo-submit" type="submit" disabled>Selecione fotos para enviar</button>
