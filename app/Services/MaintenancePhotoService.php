@@ -34,10 +34,14 @@ class MaintenancePhotoService
     {
         $token = MaintenancePhotoUploadToken::query()->with('maintenanceRecord.vehicle')
             ->where('token', hash('sha256', $plain))->firstOrFail();
-        if ($token->isExpired() || $token->isRevoked()
-            || $token->maintenanceRecord?->workflow_status !== 'open'
-            || $token->maintenanceRecord?->cancelled_at) {
+        if ($token->isExpired()) {
             throw ValidationException::withMessages(['photos' => 'Este link expirou. Gere um novo QR Code no computador.']);
+        }
+        if ($token->isRevoked()) {
+            throw ValidationException::withMessages(['photos' => 'Este link foi revogado. Gere um novo QR Code no computador.']);
+        }
+        if ($token->maintenanceRecord?->workflow_status !== 'open' || $token->maintenanceRecord?->cancelled_at) {
+            throw ValidationException::withMessages(['photos' => 'Esta ordem não está mais disponível para envio de fotos.']);
         }
         $tokenRemaining = $token->max_uploads === null ? null : max(0, $token->max_uploads - $token->photos()->count());
         if ($tokenRemaining !== null && $incoming > $tokenRemaining) {

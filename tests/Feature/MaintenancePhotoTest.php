@@ -95,6 +95,36 @@ class MaintenancePhotoTest extends TestCase
         $this->assertStringContainsString('$token->max_uploads - $token->photos()->count()', $service);
     }
 
+    public function test_public_upload_preserves_success_when_redirected_token_cannot_receive_more(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/PublicMaintenancePhotoController.php'));
+        $completed = file_get_contents(resource_path('views/maintenance-photos/completed.blade.php'));
+
+        $this->assertStringContainsString("session()->has('photo_upload_result')", $controller);
+        $this->assertStringContainsString("'success' => 'Fotos enviadas com sucesso.'", $controller);
+        $this->assertStringContainsString('Fotos enviadas com sucesso', $completed);
+        $this->assertStringNotContainsString('Link indisponível', $completed);
+    }
+
+    public function test_public_token_states_have_distinct_messages(): void
+    {
+        $service = file_get_contents(app_path('Services/MaintenancePhotoService.php'));
+
+        $this->assertStringContainsString('Este link expirou.', $service);
+        $this->assertStringContainsString('Este link foi revogado.', $service);
+        $this->assertStringContainsString('Esta ordem não está mais disponível', $service);
+        $this->assertStringContainsString('Este link permite mais ', $service);
+    }
+
+    public function test_used_at_is_informational_and_does_not_invalidate_token(): void
+    {
+        $model = file_get_contents(app_path('Models/MaintenancePhotoUploadToken.php'));
+        $service = file_get_contents(app_path('Services/MaintenancePhotoService.php'));
+
+        $this->assertStringNotContainsString('used_at !== null', $model);
+        $this->assertStringContainsString("forceFill(['used_at' => now()])", $service);
+    }
+
     private function maintenanceWithPhotoCount(int $count): MaintenanceRecord
     {
         return new class($count) extends MaintenanceRecord {

@@ -22,7 +22,19 @@
     </div>
 
     <p class="rules"><strong>Mínimo para encerramento: {{ $minPhotos }} fotos.</strong><br>Envie uma imagem de cada problema ou serviço realizado.</p>
-    @if(session('success'))<p class="ok">{{ session('success') }}</p>@endif
+    @if(session('success'))
+        @php($uploadResult = session('photo_upload_result'))
+        <div class="ok">
+            <strong>Fotos enviadas com sucesso</strong><br>
+            As imagens foram anexadas à ordem de manutenção.
+            @if($uploadResult)
+                <br>Enviadas agora: {{ $uploadResult['uploadedNow'] }} foto(s). Fotos da ordem: {{ $uploadResult['photoCount'] }}/{{ $uploadResult['maxPhotos'] }}.
+                <br>{{ $uploadResult['minimumMet'] ? 'Mínimo obrigatório atendido.' : 'Envie pelo menos mais '.$uploadResult['missingForMinimum'].' foto(s) para permitir o encerramento da ordem.' }}
+                @if($uploadResult['maintenanceLimitReached'])<br>Esta ordem já atingiu o limite de {{ $uploadResult['maxPhotos'] }} fotos.
+                @elseif($uploadResult['tokenLimitReached'])<br>Limite de envio atingido para este link.@endif
+            @endif
+        </div>
+    @endif
     @if($errors->any())<p class="err">{{ $errors->first() }}</p>@endif
 
     @if($remaining > 0)
