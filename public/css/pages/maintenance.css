@@ -3724,12 +3724,21 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
 @media (max-width: 640px) {
     .maintenance-modal-backdrop {
         padding: 12px;
-        align-items: stretch;
+        align-items: center;
+        overflow-y: auto;
     }
 
+    .maintenance-close-modal,
     .maintenance-edit-modal {
         max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
         margin: auto 0;
+    }
+
+    .maintenance-close-modal {
+        padding: 18px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
     }
 
     .maintenance-edit-modal-header,
@@ -3741,6 +3750,7 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     .maintenance-edit-modal-actions {
         padding: 14px 18px 18px;
     }
+
 }
 
 .maintenance-close-modal h3 {
@@ -3784,6 +3794,19 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
 .maintenance-close-modal {
     max-width: 580px;
 }
+
+@media (max-width: 640px) {
+    .maintenance-modal-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-modal-actions .maintenance-cancel-btn,
+    .maintenance-modal-actions .chm-page-button {
+        min-height: 44px;
+        white-space: normal;
+    }
+}
+
 .chm-alert {
     margin: 0 0 18px;
     padding: 14px 16px;
