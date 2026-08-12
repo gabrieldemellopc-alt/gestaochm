@@ -20,17 +20,10 @@ return new class extends Migration
             });
         }
 
-        $indexExists = fn (string $name): bool => DB::table('information_schema.statistics')
-            ->where('table_schema', DB::connection()->getDatabaseName())
-            ->where('table_name', 'maintenance_record_items')
-            ->where('index_name', $name)
-            ->exists();
-        $foreignExists = fn (string $name): bool => DB::table('information_schema.table_constraints')
-            ->where('constraint_schema', DB::connection()->getDatabaseName())
-            ->where('table_name', 'maintenance_record_items')
-            ->where('constraint_type', 'FOREIGN KEY')
-            ->where('constraint_name', $name)
-            ->exists();
+        $indexExists = fn (string $name): bool => collect(Schema::getIndexes('maintenance_record_items'))
+            ->contains(fn (array $index) => ($index['name'] ?? null) === $name);
+        $foreignExists = fn (string $name): bool => collect(Schema::getForeignKeys('maintenance_record_items'))
+            ->contains(fn (array $foreign) => ($foreign['name'] ?? null) === $name);
 
         if ($foreignExists('1')) {
             DB::statement('ALTER TABLE maintenance_record_items DROP FOREIGN KEY `1`');

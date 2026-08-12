@@ -796,6 +796,7 @@ class MaintenanceController extends Controller
             'opener',
             'closer',
             'canceller',
+            'photos' => fn ($query) => $query->oldest('created_at'),
         ]);
 
         $pdf = Pdf::loadView('vehicle.pdf.maintenance-order', [

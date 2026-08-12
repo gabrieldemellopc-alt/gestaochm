@@ -22,4 +22,13 @@ class MaintenancePhoto extends Model
 
         return parse_url($diskUrl, PHP_URL_PATH) ?: $diskUrl;
     }
+
+    public function getPdfPathAttribute(): ?string
+    {
+        if (! Storage::disk('public')->exists($this->file_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->path($this->file_path);
+    }
 }

@@ -185,6 +185,48 @@
             font-size: 10px;
             color: #94a3b8;
         }
+
+        .photo-intro {
+            margin: -4px 0 10px;
+            color: #64748b;
+            font-size: 10px;
+        }
+
+        .photo-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 8px;
+            margin: 0 -8px;
+        }
+
+        .photo-cell {
+            width: 50%;
+            padding: 9px;
+            border: 1px solid #dbe2ea;
+            border-radius: 7px;
+            text-align: center;
+            vertical-align: middle;
+            page-break-inside: avoid;
+        }
+
+        .photo-img {
+            max-width: 235px;
+            max-height: 170px;
+        }
+
+        .photo-caption {
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 9px;
+        }
+
+        .photo-unavailable {
+            padding: 42px 8px;
+            background: #f8fafc;
+            color: #94a3b8;
+            font-size: 10px;
+        }
         
         .section-title { margin: 18px 0 10px; }
             .info-grid { margin-bottom: 14px; }
@@ -404,6 +446,35 @@
             @endforelse
         </tbody>
     </table>
+
+    <div class="section-title">Registros fotográficos</div>
+    <p class="photo-intro">Imagens anexadas à ordem de manutenção para registro da execução.</p>
+
+    @if($maintenance->photos->isEmpty())
+        <p class="muted">Nenhuma foto anexada.</p>
+    @else
+        <table class="photo-table">
+            <tbody>
+                @foreach($maintenance->photos->chunk(2) as $photoRow)
+                    <tr>
+                        @foreach($photoRow as $photo)
+                            <td class="photo-cell">
+                                @if($photo->pdf_path)
+                                    <img src="{{ $photo->pdf_path }}" class="photo-img" alt="Foto da manutenção">
+                                @else
+                                    <div class="photo-unavailable">Imagem indisponível</div>
+                                @endif
+                                <div class="photo-caption">
+                                    Foto {{ $loop->parent->index * 2 + $loop->iteration }} - {{ optional($photo->created_at)->format('d/m/Y H:i') }}
+                                </div>
+                            </td>
+                        @endforeach
+                        @if($photoRow->count() === 1)<td class="photo-cell"></td>@endif
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
     <div class="section-title">Custos avulsos</div>
 

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class MaintenanceEditingConfigurationTest extends TestCase
@@ -30,14 +33,37 @@ class MaintenanceEditingConfigurationTest extends TestCase
 
     public function test_maintenance_items_have_replacement_columns(): void
     {
-        $this->assertTrue(\Schema::hasColumns('maintenance_record_items', [
-            'cancelled_at',
-            'cancelled_by',
-            'cancel_reason',
-            'cancellation_type',
-            'replaced_by_item_id',
-            'replacement_of_item_id',
-        ]));
+        $originalConnection = DB::getDefaultConnection();
+        Config::set('database.connections.maintenance_schema_test', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ]);
+        DB::setDefaultConnection('maintenance_schema_test');
+
+        try {
+            Schema::create('users', fn ($table) => $table->id());
+            Schema::create('maintenance_records', fn ($table) => $table->id());
+            Schema::create('procedures', fn ($table) => $table->id());
+
+            $baseMigration = require database_path('migrations/2026_06_28_074521_create_maintenance_record_items_table.php');
+            $baseMigration->up();
+            $replacementMigration = require database_path('migrations/2026_08_07_120000_add_cancellation_and_replacement_fields_to_maintenance_record_items.php');
+            $replacementMigration->up();
+
+            $this->assertTrue(Schema::hasColumns('maintenance_record_items', [
+                'cancelled_at',
+                'cancelled_by',
+                'cancel_reason',
+                'cancellation_type',
+                'replaced_by_item_id',
+                'replacement_of_item_id',
+            ]));
+        } finally {
+            DB::purge('maintenance_schema_test');
+            DB::setDefaultConnection($originalConnection);
+        }
     }
 
     public function test_replacement_reverses_stock_before_creating_the_new_item(): void

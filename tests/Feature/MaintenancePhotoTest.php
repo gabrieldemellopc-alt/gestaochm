@@ -8,6 +8,7 @@ use App\Models\MaintenanceRecord;
 use App\Services\AuditLogService;
 use App\Services\MaintenancePhotoService;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
 
@@ -18,6 +19,30 @@ class MaintenancePhotoTest extends TestCase
         $photo = new MaintenancePhoto(['file_path' => 'maintenance/1/64/example.jpg']);
 
         $this->assertSame('/storage/maintenance/1/64/example.jpg', $photo->url);
+    }
+
+    public function test_photo_pdf_path_uses_local_public_disk_and_handles_missing_files(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('maintenance/1/64/example.jpg', 'image-content');
+
+        $available = new MaintenancePhoto(['file_path' => 'maintenance/1/64/example.jpg']);
+        $missing = new MaintenancePhoto(['file_path' => 'maintenance/1/64/missing.jpg']);
+
+        $this->assertSame(Storage::disk('public')->path($available->file_path), $available->pdf_path);
+        $this->assertNull($missing->pdf_path);
+    }
+
+    public function test_order_pdf_loads_and_renders_photos_without_public_urls(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+        $view = file_get_contents(resource_path('views/vehicle/pdf/maintenance-order.blade.php'));
+
+        $this->assertStringContainsString("'photos' => fn (\$query) => \$query->oldest('created_at')", $controller);
+        $this->assertStringContainsString('Registros fotográficos', $view);
+        $this->assertStringContainsString('$photo->pdf_path', $view);
+        $this->assertStringContainsString('Nenhuma foto anexada.', $view);
+        $this->assertStringNotContainsString('$photo->url', $view);
     }
 
     public function test_photo_routes_are_registered_with_expected_auth_boundaries(): void
