@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\Rule;
 use App\Models\StockCategory;
 use App\Models\StockItem;
@@ -10,6 +11,7 @@ use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
 use App\Services\Permissions\ProfilePermissionService;
 use App\Services\StockService;
+use App\Services\StockItemDetailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -51,7 +53,34 @@ class StockController extends Controller
         return view('stock.index', compact('categories', 'stockPermissions'));
     }
 
-    public function showItem(StockItem $item)
+    public function showItem(StockItem $item, StockItemDetailService $detailService)
+    {
+        if ($redirect = $this->ensureItemInActiveContext($item)) {
+            return $redirect;
+        }
+
+        $this->authorizeStockPermission('stock.view');
+        $this->authorizeStockPermission('stock.view_item_details');
+
+        $canViewCosts = $this->canStock('stock.view_costs');
+        $canViewAudit = Gate::allows('viewAuditLogs');
+        $stockPermissions = $this->stockPermissions();
+        $details = $detailService->build(
+            $item,
+            auth()->user()->tenant_id,
+            (int) $item->location_id,
+            $canViewCosts,
+            $canViewAudit
+        );
+
+        return view('stock.show', array_merge($details, compact(
+            'stockPermissions',
+            'canViewCosts',
+            'canViewAudit'
+        )));
+    }
+
+    public function itemData(StockItem $item)
     {
         if ($redirect = $this->ensureItemInActiveContext($item)) {
             return $redirect;
@@ -86,6 +115,40 @@ class StockController extends Controller
         }
 
         return response()->json($item);
+    }
+
+    public function itemReportPdf(
+        Request $request,
+        StockItem $item,
+        StockItemDetailService $detailService
+    ) {
+        if ($redirect = $this->ensureItemInActiveContext($item)) {
+            return $redirect;
+        }
+
+        $this->authorizeStockPermission('stock.view');
+        $this->authorizeStockPermission('stock.view_item_details');
+
+        $validated = $request->validate([
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        $canViewCosts = $this->canStock('stock.view_costs');
+        $canViewAudit = Gate::allows('viewAuditLogs');
+        $payload = $detailService->buildPdfReportPayload(
+            $item,
+            auth()->user()->tenant_id,
+            (int) $item->location_id,
+            $validated['start_date'],
+            $validated['end_date'],
+            $canViewCosts,
+            $canViewAudit
+        );
+
+        return Pdf::loadView('stock.pdf.item-report', $payload)
+            ->setPaper('a4', 'landscape')
+            ->stream('relatorio-item-estoque-'.$item->id.'.pdf');
     }
 
     public function storeCategory(Request $request)
@@ -403,6 +466,7 @@ class StockController extends Controller
     {
         return [
             'view' => $this->canStock('stock.view'),
+            'view_item_details' => $this->canStock('stock.view_item_details'),
             'manage_categories' => $this->canStock('stock.manage_categories'),
             'manage_items' => $this->canStock('stock.manage_items'),
             'create_entry' => $this->canStock('stock.entry'),

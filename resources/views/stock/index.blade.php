@@ -19,6 +19,7 @@
 @php
     $stockPermissions = array_merge([
         'view' => false,
+        'view_item_details' => false,
         'manage_categories' => false,
         'manage_items' => false,
         'create_entry' => false,
@@ -28,6 +29,7 @@
     ], $stockPermissions ?? []);
 
     $canManageStockCategories = (bool) $stockPermissions['manage_categories'];
+    $canViewStockItemDetails = (bool) $stockPermissions['view_item_details'];
     $canManageStockItems = (bool) $stockPermissions['manage_items'];
     $canCreateStockEntry = (bool) $stockPermissions['create_entry'];
     $canCreateStockOutput = (bool) $stockPermissions['create_manual_output'];
@@ -494,13 +496,14 @@
 
 
 
-                                <span class="stock-details-link">
-
-                                    Ver detalhes
-
-                                    <i data-lucide="chevron-right"></i>
-
-                                </span>
+                                <div class="stock-card-actions">
+                                    @if($canCreateStockEntry)
+                                        <button type="button" class="stock-card-entry" onclick="event.stopPropagation(); openDirectEntry({{ $item->id }})">
+                                            <i data-lucide="plus"></i>
+                                            Nova entrada
+                                        </button>
+                                    @endif
+                                </div>
 
 
 
@@ -1300,6 +1303,17 @@
 
 
                 <div class="stock-edit-actions-top">
+
+                    @if($canViewStockItemDetails)
+                    <a
+                        href="#"
+                        class="stock-details-link stock-modal-details-link"
+                        id="stockItemDetailsLink"
+                    >
+                        <i data-lucide="external-link"></i>
+                        Ver mais detalhes
+                    </a>
+                    @endif
 
 
 
@@ -2317,7 +2331,7 @@ async function openEditItemModal(id)
 
     const response =
 
-        await fetch(`/stock/items/${id}`);
+        await fetch(`/stock/items/${id}/data`);
 
 
 
@@ -2334,6 +2348,12 @@ async function openEditItemModal(id)
         .action =
 
             `/stock/items/${item.id}`;
+
+    const detailsLink = document.getElementById('stockItemDetailsLink');
+
+    if (detailsLink) {
+        detailsLink.href = `/stock/items/${item.id}`;
+    }
 
     document
 
@@ -2719,6 +2739,12 @@ async function openEditItemModal(id)
 
     }
 
+}
+
+async function openDirectEntry(id)
+{
+    await openEditItemModal(id);
+    openMovementModal('in');
 }
 
 
@@ -3148,6 +3174,14 @@ function closeMovementDetailPanel() {
         content.classList.remove('is-viewing-movement');
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const entryItemId = Number(@json(request()->query('entry')));
+
+    if (entryItemId > 0 && canCreateStockEntry) {
+        openDirectEntry(entryItemId);
+    }
+});
 </script>
 
 
