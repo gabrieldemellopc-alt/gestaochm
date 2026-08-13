@@ -16,11 +16,13 @@ class MaintenanceRecordExtraCost extends Model
         'maintenance_record_id',
         'description',
         'amount',
+        'cost_date',
         'created_by',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'cost_date' => 'date',
     ];
 
     public function maintenanceRecord()
@@ -31,5 +33,10 @@ class MaintenanceRecordExtraCost extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function getEffectiveCostDateAttribute()
+    {
+        return $this->cost_date ?? $this->created_at;
     }
 }

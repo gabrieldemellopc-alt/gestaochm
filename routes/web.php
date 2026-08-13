@@ -902,6 +902,22 @@ Route::middleware('auth')->group(function () {
 
             )->name('items.show');
 
+            Route::get(
+
+                '/items/{item}/report/pdf',
+
+                'itemReportPdf'
+
+            )->name('items.report.pdf');
+
+            Route::get(
+
+                '/items/{item}/data',
+
+                'itemData'
+
+            )->name('items.data');
+
 
 
             Route::put(

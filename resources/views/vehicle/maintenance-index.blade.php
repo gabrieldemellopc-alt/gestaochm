@@ -284,6 +284,9 @@
     @endif
 
     @if($openMaintenance)
+        @php($minPhotos = \App\Services\MaintenancePhotoService::MIN_REQUIRED_PHOTOS)
+        @php($maxPhotos = \App\Services\MaintenancePhotoService::MAX_PHOTOS_PER_MAINTENANCE)
+        @php($photoCount = $openMaintenance->photos->count())
         <section
             class="maintenance-open-card"
             x-data="{ cancelModal: false, closeModal: false }"
@@ -346,24 +349,39 @@
                 </div>
             </div>
 
-            <section class="maintenance-photo-card">
-                @php($minPhotos = \App\Services\MaintenancePhotoService::MIN_REQUIRED_PHOTOS)
-                @php($maxPhotos = \App\Services\MaintenancePhotoService::MAX_PHOTOS_PER_MAINTENANCE)
+            <div class="maintenance-open-badges maintenance-open-summary">
+                <span class="maintenance-service-badge status-{{ $openMaintenance->service_status }}">{{ \App\Services\MaintenanceService::serviceStatuses()[$openMaintenance->service_status] ?? 'Não informado' }}</span>
+                @if($openMaintenance->maintenance_category)
+                    <span class="maintenance-info-badge maintenance-category-badge"><i data-lucide="tag"></i>{{ \App\Services\MaintenanceService::maintenanceCategories()[$openMaintenance->maintenance_category] ?? 'Outros' }}</span>
+                @endif
+                <span class="maintenance-info-badge"><i data-lucide="clock"></i>Parado há {{ $openMaintenance->started_at ? $openMaintenance->started_at->diffForHumans(null, true) : '—' }}</span>
+                <span class="maintenance-info-badge"><i data-lucide="circle-dollar-sign"></i>Total @if($maintenancePermissions['view_costs'] ?? false)<span data-maintenance-total>R$ {{ number_format($openMaintenance->total_cost ?? 0, 2, ',', '.') }}</span>@else Valor restrito @endif</span>
+                <span class="maintenance-info-badge"><i data-lucide="images"></i>Fotos {{ $photoCount }}/{{ $maxPhotos }}</span>
+            </div>
+
+            <nav class="maintenance-tabs" aria-label="Seções da ordem de manutenção" data-maintenance-tabs>
+                @foreach(['general' => 'Geral', 'services' => 'Serviços', 'materials' => 'Materiais', 'costs' => 'Custos'] as $tabKey => $tabLabel)
+                    <button type="button" class="maintenance-tab {{ $tabKey === 'general' ? 'is-active' : '' }}" data-maintenance-tab="{{ $tabKey }}" aria-selected="{{ $tabKey === 'general' ? 'true' : 'false' }}">{{ $tabLabel }}</button>
+                @endforeach
+            </nav>
+
+            <section class="maintenance-photo-card maintenance-evidence-compact" data-maintenance-panel="general" x-data="{ expanded: @js($photoCount < $minPhotos), showAllPhotos: false }">
                 <div class="maintenance-photo-heading">
                     <div>
                         <span class="maintenance-kicker">Evidências da ordem</span>
                         <h3>Fotos da manutenção</h3>
                         <p class="maintenance-photo-guidance">Inclua pelo menos 2 fotos para encerrar a ordem. Se houver mais de um problema ou serviço, envie uma imagem de cada item a ser corrigido.</p>
                     </div>
-                    @php($photoCount = $openMaintenance->photos->count())
                     <div class="maintenance-photo-limits">
                     <span class="maintenance-photo-counter {{ $photoCount >= $minPhotos ? 'complete' : 'pending' }}">{{ $photoCount < $minPhotos ? $photoCount.'/'.$minPhotos.' fotos obrigatórias' : $photoCount.'/'.$maxPhotos.' fotos enviadas' }}</span>
-                        <small>Obrigatório: mínimo {{ $minPhotos }} · Limite: máximo {{ $maxPhotos }}</small>
+                        <small>{{ $photoCount >= $minPhotos ? 'Mínimo obrigatório atendido' : 'Obrigatório: mínimo '.$minPhotos }} · Limite: máximo {{ $maxPhotos }}</small>
+                        <button type="button" class="maintenance-evidence-toggle" @click="expanded = !expanded" :aria-expanded="expanded" x-text="expanded ? 'Ocultar fotos' : 'Ver fotos'">{{ $photoCount < $minPhotos ? 'Ocultar fotos' : 'Ver fotos' }}</button>
                     </div>
                 </div>
+                <div class="maintenance-evidence-body" x-show="expanded" x-cloak>
                 <div class="maintenance-photo-gallery">
                     @forelse($openMaintenance->photos as $photo)
-                        <article class="maintenance-photo-item">
+                        <article class="maintenance-photo-item" x-show="showAllPhotos || {{ $loop->index }} < 4" x-cloak>
                             <a class="maintenance-photo-preview" href="{{ $photo->url }}" target="_blank" rel="noopener">
                                 <img src="{{ $photo->url }}" alt="Foto da manutenção" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
                                 <span class="maintenance-photo-fallback" hidden><i data-lucide="image-off"></i>Imagem indisponível</span>
@@ -376,6 +394,9 @@
                     @empty
                         <p class="maintenance-photo-empty">Nenhuma foto anexada ainda.</p>
                     @endforelse
+                    @if($photoCount > 4)
+                        <button type="button" class="maintenance-photo-more" @click="showAllPhotos = !showAllPhotos" x-text="showAllPhotos ? 'Mostrar menos' : '+{{ $photoCount - 4 }} fotos'">+{{ $photoCount - 4 }} fotos</button>
+                    @endif
                 </div>
                 <div class="maintenance-photo-actions">
                     @if(($maintenancePermissions['upload_photos'] ?? false) && $photoCount < $maxPhotos)
@@ -408,6 +429,7 @@
                         </div>
                     </div>
                 @endif
+                </div>
             </section>
 
             <div
@@ -520,46 +542,6 @@
                     </form>
                 </div>
             </div>
-            </div>
-
-            <div class="maintenance-open-badges">
-
-                <span class="maintenance-service-badge status-{{ $openMaintenance->service_status }}">
-                    {{ \App\Services\MaintenanceService::serviceStatuses()[$openMaintenance->service_status] ?? 'Não informado' }}
-                </span>
-
-                @if($openMaintenance->maintenance_category)
-                    <span class="maintenance-info-badge maintenance-category-badge">
-                        <i data-lucide="tag"></i>
-
-                        {{ \App\Services\MaintenanceService::maintenanceCategories()[
-                            $openMaintenance->maintenance_category
-                        ] ?? 'Outros' }}
-                    </span>
-                @endif
-
-                <span class="maintenance-info-badge">
-                    <i data-lucide="clock"></i>
-
-                    Parado há
-                    {{ $openMaintenance->started_at
-                        ? $openMaintenance->started_at->diffForHumans(null, true)
-                        : '—'
-                    }}
-                </span>
-
-                <span class="maintenance-info-badge">
-                    <i data-lucide="circle-dollar-sign"></i>
-
-                    Total @if($maintenancePermissions['view_costs'] ?? false)<span data-maintenance-total>R$ {{ number_format(
-                        $openMaintenance->total_cost ?? 0,
-                        2,
-                        ',',
-                        '.'
-                    ) }}</span>@else Valor restrito @endif
-                </span>
-
-            </div>
 
             {{-- maintenance-open-actions-grid-permission-wrapper --}}
             @if($maintenancePermissions['change_status'] ?? false
@@ -570,14 +552,12 @@
 
                 @if($maintenancePermissions['change_status'] ?? false)
                 <div
-                    class="maintenance-open-action-box"
+                    class="maintenance-open-action-box maintenance-form-panel"
+                    data-maintenance-panel="general"
                     x-data="{
                         currentStatus: @js($openMaintenance->service_status),
-                        selectedStatus: @js($openMaintenance->service_status),
-                        reset() { this.selectedStatus = this.currentStatus; }
+                        selectedStatus: @js($openMaintenance->service_status)
                     }"
-                    @keydown.escape.window="reset()"
-                    @click.outside="reset()"
                 >
                 <div class="maintenance-card-accent"></div>
 
@@ -609,17 +589,7 @@
                                 @endforeach
                             </select>
 
-                            <div
-                                class="maintenance-action-placeholder"
-                                x-show="selectedStatus === currentStatus"
-                            >
-                                Selecione um novo status para registrar uma atualização.
-                            </div>
-
-                            <div
-                                x-show="selectedStatus !== currentStatus"
-                                x-cloak
-                            >
+                            <div class="maintenance-form-grid maintenance-form-grid--status">
                                 <div class="form-group">
                                     <label>Motivo / observação</label>
 
@@ -634,6 +604,7 @@
                                 <button
                                     type="submit"
                                     class="chm-page-button primary full"
+                                    :disabled="selectedStatus === currentStatus"
                                 >
                                     <i data-lucide="refresh-cw"></i>
                                     Atualizar status
@@ -648,10 +619,26 @@
 
                 @if($maintenancePermissions['add_items'] ?? false)
                 <div
-                    class="maintenance-open-action-box"
-                    x-data="{ procedureId: '' }"
-                    @keydown.escape.window="procedureId = ''"
-                    @click.outside="procedureId = ''"
+                    class="maintenance-open-action-box maintenance-form-panel"
+                    data-maintenance-panel="services"
+                    x-data="{
+                        procedureId: @js((string) old('procedure_id', '')),
+                        executionType: @js(old('execution_type', 'external')),
+                        internalAvailability: @js($procedures->mapWithKeys(fn ($procedure) => [(string) $procedure->id => (bool) $procedure->can_be_internal])),
+                        canBeInternal() {
+                            return this.internalAvailability[this.procedureId] === true;
+                        },
+                        selectProcedure(id) {
+                            this.procedureId = String(id);
+                            if (!this.canBeInternal()) this.executionType = 'external';
+                        },
+                        resetSelection() {
+                            this.procedureId = '';
+                            this.executionType = 'external';
+                        }
+                    }"
+                    @keydown.escape.window="resetSelection()"
+                    @click.outside="resetSelection()"
                 >
                     <div class="maintenance-card-accent"></div>
 
@@ -668,21 +655,23 @@
                                 action="{{ route('vehicles.maintenance.items.create', [$vehicle->id, $openMaintenance->id]) }}"
                                 class="maintenance-compact-add-form"
                             >
-                                <div class="form-group">
-                                    <select
-                                        name="procedure_id"
-                                        class="form-input"
-                                        x-model="procedureId"
-                                        required
-                                    >
-                                        <option value="">Selecione...</option>
+                                <input type="hidden" name="procedure_id" x-model="procedureId">
 
-                                        @foreach($procedures as $procedure)
-                                            <option value="{{ $procedure->id }}">
-                                                {{ $procedure->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                <div class="maintenance-procedure-picker">
+                                    @forelse($procedures as $procedure)
+                                        <button
+                                            type="button"
+                                            class="maintenance-procedure-option"
+                                            :class="{ 'is-active': procedureId === @js((string) $procedure->id) }"
+                                            @click="selectProcedure(@js((string) $procedure->id))"
+                                            :aria-pressed="procedureId === @js((string) $procedure->id)"
+                                        >
+                                            <strong>{{ $procedure->name }}</strong>
+                                            <span>Selecionar procedimento</span>
+                                        </button>
+                                    @empty
+                                        <div class="maintenance-open-items-empty">Nenhum procedimento disponível para este veículo.</div>
+                                    @endforelse
                                 </div>
 
                                 <div
@@ -692,21 +681,29 @@
                                     Selecione um procedimento para informar sua execução.
                                 </div>
 
-                                <div
-                                    x-show="procedureId"
-                                    x-cloak
-                                >
+                                <div class="maintenance-form-grid" x-show="procedureId" x-cloak>
                                     <div class="form-group">
                                         <label>Execução</label>
 
-                                        <select
-                                            name="execution_type"
-                                            class="form-input"
-                                            required
-                                        >
-                                            <option value="external">Terceirizado</option>
-                                            <option value="internal">Oficina interna</option>
-                                        </select>
+                                        <input type="hidden" name="execution_type" x-model="executionType">
+                                        <div class="maintenance-execution-toggle" role="group" aria-label="Tipo de execução">
+                                            <button
+                                                type="button"
+                                                class="maintenance-execution-option"
+                                                :class="{ 'is-active': executionType === 'internal' }"
+                                                :disabled="!canBeInternal()"
+                                                @click="executionType = 'internal'"
+                                            >Oficina interna</button>
+                                            <button
+                                                type="button"
+                                                class="maintenance-execution-option"
+                                                :class="{ 'is-active': executionType === 'external' }"
+                                                @click="executionType = 'external'"
+                                            >Terceirizado</button>
+                                        </div>
+                                        <small x-show="!canBeInternal()" class="maintenance-field-help">
+                                            Este procedimento permite somente execução terceirizada.
+                                        </small>
                                     </div>
 
                                     <button
@@ -726,10 +723,9 @@
 
                 @if($maintenancePermissions['add_extra_costs'] ?? false)
                 <div
-                    class="maintenance-open-action-box"
-                    x-data="{ opened: false, description: '' }"
-                    @keydown.escape.window="opened = false; description = ''"
-                    @click.outside="opened = false; description = ''"
+                    class="maintenance-open-action-box maintenance-form-panel"
+                    data-maintenance-panel="costs"
+                    x-data="{ description: '' }"
                 >
                     <div class="maintenance-card-accent"></div>
 
@@ -748,29 +744,18 @@
                             >
                                 @csrf
 
-                                <div class="form-group">
+                                <div class="maintenance-form-grid maintenance-form-grid--cost">
+                                <div class="form-group maintenance-form-field-wide">
+                                    <label>Descrição</label>
                                     <input
                                         type="text"
                                         name="description"
                                         class="form-input"
                                         required
                                         x-model="description"
-                                        @focus="opened = true"
                                         placeholder="Ex.: guincho, pátio, taxa..."
                                     >
                                 </div>
-
-                                <div
-                                    class="maintenance-action-placeholder"
-                                    x-show="!opened && !description.length"
-                                >
-                                    Informe a descrição para lançar um custo complementar.
-                                </div>
-
-                                <div
-                                    x-show="opened || description.length"
-                                    x-cloak
-                                >
                                     <div class="form-group">
                                         <label>Valor</label>
 
@@ -784,6 +769,18 @@
                                         >
                                     </div>
 
+                                    <div class="form-group">
+                                        <label>Data do custo</label>
+                                        <input
+                                            type="date"
+                                            name="cost_date"
+                                            class="form-input"
+                                            value="{{ old('cost_date', now()->format('Y-m-d')) }}"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="maintenance-form-actions">
                                     <button
                                         type="submit"
                                         class="chm-page-button primary full"
@@ -791,6 +788,7 @@
                                         <i data-lucide="plus-circle"></i>
                                         Lançar custo
                                     </button>
+                                    </div>
                                 </div>
                             </form>
 
@@ -800,7 +798,7 @@
             </div>
             @endif
             <div class="maintenance-open-bottom-grid">
-                    <section class="maintenance-timeline-card">
+                    <section class="maintenance-timeline-card" data-maintenance-panel="general">
                         <div class="maintenance-section-title">
                             <div>
                                 <span>Linha do tempo</span>
@@ -808,78 +806,22 @@
                             </div>
                         </div>
 
-                        <div class="maintenance-timeline-list">
-                            <div class="maintenance-timeline-item">
-                                <div class="maintenance-timeline-dot"></div>
-
-                                <div>
-                                    <strong>Abertura da manutenção</strong>
-                                    <span>
-                                        {{ optional($openMaintenance->started_at)->format('d/m/Y H:i') }}
-                                    </span>
-                                    <p>
-                                        Status inicial:
-                                        {{ \App\Services\MaintenanceService::serviceStatuses()[$openMaintenance->service_status] ?? 'Não informado' }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            @foreach($openMaintenance->statusLogs->sortBy('created_at') as $log)
-                                @if($log->old_status)
-                                    <div class="maintenance-timeline-item">
-                                        <div class="maintenance-timeline-dot"></div>
-
-                                        <div>
-                                            <strong>Status atualizado</strong>
-                                            <span>{{ optional($log->created_at)->format('d/m/Y H:i') }}</span>
-                                            <p>
-                                                {{ \App\Services\MaintenanceService::serviceStatuses()[$log->old_status] ?? $log->old_status }}
-                                                →
-                                                {{ \App\Services\MaintenanceService::serviceStatuses()[$log->new_status] ?? $log->new_status }}
-                                            </p>
-
-                                            @if($log->reason)
-                                                <small>{{ $log->reason }}</small>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-                            @endforeach
-
-                            @foreach($openMaintenance->items->sortBy('created_at') as $item)
+                        <div class="maintenance-timeline-list maintenance-scroll-body">
+                            @foreach($maintenanceTimeline as $event)
                                 <div class="maintenance-timeline-item">
-                                    <div class="maintenance-timeline-dot is-procedure"></div>
-
+                                    <div class="maintenance-timeline-dot is-{{ $event['type'] }}"></div>
                                     <div>
-                                        <strong>Procedimento realizado</strong>
-                                        <span>{{ optional($item->created_at)->format('d/m/Y H:i') }}</span>
-                                        <p>
-                                            {{ $item->procedure->name ?? 'Procedimento não informado' }}
-                                            —
-                                            @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format($item->total_cost ?? 0, 2, ',', '.') }}@else Valor restrito @endif
-                                        </p>
-                                    </div>
-                                </div>
-                            @endforeach
-                            @foreach($openMaintenance->extraCosts->sortBy('created_at') as $extraCost)
-                                <div class="maintenance-timeline-item">
-                                    <div class="maintenance-timeline-dot is-cost"></div>
-
-                                    <div>
-                                        <strong>Custo avulso lançado</strong>
-                                        <span>{{ optional($extraCost->created_at)->format('d/m/Y H:i') }}</span>
-                                        <p>
-                                            {{ $extraCost->description }}
-                                            —
-                                            @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format($extraCost->amount ?? 0, 2, ',', '.') }}@else Valor restrito @endif
-                                        </p>
+                                        <strong>{{ $event['title'] }}</strong>
+                                        <span>{{ optional($event['at'])->format('d/m/Y H:i') }}</span>
+                                        <p>{{ $event['detail'] }}</p>
+                                        @if($event['complement'])<small>{{ $event['complement'] }}</small>@endif
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                     </section>
 
-                    <section class="maintenance-services-card">
+                    <section class="maintenance-services-card" data-maintenance-panel="services">
                     <div class="maintenance-open-items-header">
                         <div>
                             <span>Procedimentos</span>
@@ -892,7 +834,7 @@
                     </div>
 
                     @if($openMaintenance->items->count())
-                        <div class="maintenance-open-items-list">
+                        <div class="maintenance-open-items-list maintenance-scroll-body">
                             @foreach($openMaintenance->items as $item)
                                 <div
                                     class="maintenance-open-item-row"
@@ -921,6 +863,7 @@
                                                     @click.stop="$dispatch('edit-maintenance-item', {
                                                         item: @js([
                                                             'maintenance_type' => $item->maintenance_type,
+                                                            'can_be_internal' => (bool) $item->procedure?->can_be_internal,
                                                             'performed_at' => optional($item->performed_at)->format('Y-m-d'),
                                                             'provider_name' => $item->provider_name,
                                                             'notes' => $item->notes,
@@ -1015,7 +958,7 @@
                     </section>
 
                     @if($canEditItems && $openMaintenance->cancelledItems->isNotEmpty())
-                        <section class="maintenance-replaced-items">
+                        <section class="maintenance-replaced-items" data-maintenance-panel="services">
                             <div class="maintenance-open-items-header">
                                 <div>
                                     <span>Histórico preservado</span>
@@ -1057,7 +1000,7 @@
                     || ($maintenancePermissions['add_extra_costs'] ?? false)
                     || $canEditExtraCosts
                 )
-                    <section class="maintenance-services-card maintenance-extra-costs-card" x-data="{}">
+                    <section class="maintenance-services-card maintenance-extra-costs-card" data-maintenance-panel="costs" x-data="{}">
                         <div class="maintenance-open-items-header">
                             <div>
                                 <span>Composição da ordem</span>
@@ -1066,13 +1009,15 @@
                             <strong>{{ $openMaintenance->extraCosts->count() }} registro(s)</strong>
                         </div>
 
+                        <div class="maintenance-scroll-body maintenance-extra-costs-list">
                         @forelse($openMaintenance->extraCosts as $extraCost)
                             <div class="maintenance-open-item-row">
                                 <div class="maintenance-open-item-main">
                                     <div>
                                         <strong>{{ $extraCost->description }}</strong>
                                         <span>
-                                            {{ optional($extraCost->created_at)->format('d/m/Y H:i') }}
+                                            Data do custo: {{ optional($extraCost->effective_cost_date)->format('d/m/Y') }}
+                                            · Lançado em: {{ optional($extraCost->created_at)->format('d/m/Y H:i') }}
                                             · {{ $extraCost->creator?->name ?? 'Responsável não informado' }}
                                         </span>
                                     </div>
@@ -1091,6 +1036,7 @@
                                                     cost: @js([
                                                         'description' => $extraCost->description,
                                                         'amount' => (float) $extraCost->amount,
+                                                        'cost_date' => optional($extraCost->effective_cost_date)->format('Y-m-d'),
                                                     ]),
                                                     action: @js(route('vehicles.maintenance.extra-costs.update', [$vehicle->id, $openMaintenance->id, $extraCost->id]))
                                                 })"
@@ -1105,6 +1051,7 @@
                         @empty
                             <div class="maintenance-open-items-empty">Nenhum custo avulso registrado.</div>
                         @endforelse
+                        </div>
                     </section>
                 @endif
 
@@ -1240,7 +1187,7 @@
             <h2>Manutenções anteriores</h2>
 
             <p>
-                Consulte as últimas ordens encerradas e acesse o histórico completo deste veículo.
+                Consulte as últimas ordens encerradas deste veículo.
             </p>
         </div>
 
@@ -1306,15 +1253,34 @@
 
 @push('scripts')
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = Array.from(document.querySelectorAll('[data-maintenance-tab]'));
+        const panels = Array.from(document.querySelectorAll('[data-maintenance-panel]'));
+
+        if (!tabs.length || !panels.length) return;
+
+        const activateTab = (name) => {
+            tabs.forEach((tab) => {
+                const active = tab.dataset.maintenanceTab === name;
+                tab.classList.toggle('is-active', active);
+                tab.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            panels.forEach((panel) => {
+                panel.hidden = panel.dataset.maintenancePanel !== name;
+            });
+        };
+
+        tabs.forEach((tab) => tab.addEventListener('click', () => activateTab(tab.dataset.maintenanceTab)));
+        activateTab('general');
+    });
+
     window.maintenanceMaterialsManager = function (config) {
         return {
-            modalOpen: false, query: '', results: [], selected: null, quantity: '', notes: '',
+            query: '', results: [], selected: null, quantity: '', notes: '',
             loading: false, submitting: false, message: '', messageType: 'success',
             count: config.count, totalQuantity: config.totalQuantity,
             materialsTotal: config.materialsTotal, maintenanceTotal: config.maintenanceTotal,
             money(value) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0)); },
-            openModal() { this.modalOpen = true; document.documentElement.classList.add('maintenance-modal-open'); this.$nextTick(() => document.getElementById('maintenance-material-search')?.focus()); },
-            closeModal() { this.modalOpen = false; document.documentElement.classList.remove('maintenance-modal-open'); },
             selectItem(item) { this.selected = item; this.query = item.name; this.results = []; this.quantity = ''; },
             async search() {
                 if (this.query.trim().length < 2) { this.results = []; return; }

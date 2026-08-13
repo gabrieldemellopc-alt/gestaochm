@@ -97,4 +97,22 @@ class MaintenanceEditingConfigurationTest extends TestCase
         $this->assertStringContainsString("'change_reason' => ['required', 'string', 'min:10', 'max:2000']", $controller);
         $this->assertStringContainsString("'confirm_replacement' => ['accepted']", $controller);
     }
+
+    public function test_add_item_reason_is_required_and_limited_to_supported_values(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+        $view = file_get_contents(resource_path('views/vehicle/maintenance-add-item.blade.php'));
+
+        $this->assertGreaterThanOrEqual(
+            2,
+            substr_count($controller, "'reason' => ['required', 'in:preventive,corrective,inspection,other']")
+        );
+        $this->assertStringContainsString("'reason.required' => 'Selecione o motivo da manutenção.'", $controller);
+        $this->assertStringContainsString('type="radio"', $view);
+        $this->assertStringContainsString("@checked(old('reason', 'preventive') === \$reasonValue)", $view);
+        $this->assertStringContainsString('Dados — {{ $procedure->name }}', $view);
+        $this->assertStringContainsString("Execução {{ \$executionType === 'internal' ? 'Oficina interna' : 'Terceirizada' }}", $view);
+        $this->assertStringNotContainsString('maintenance-add-context-chip', $view);
+        $this->assertStringNotContainsString('type="hidden" name="reason"', $view);
+    }
 }

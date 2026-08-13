@@ -40,7 +40,7 @@ class MaintenanceController extends Controller
         $this->assertMaintenanceRelation($vehicle, $maintenance);
         $this->authorizeMaintenancePermission('maintenance.use_materials');
         $data = $request->validate([
-            'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'numeric', 'gt:0'],
+            'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
         $material = $service->add($maintenance, $data, auth()->user());
@@ -72,7 +72,7 @@ class MaintenanceController extends Controller
         $this->authorizeMaintenancePermission('maintenance.cancel_materials');
         $this->authorizeMaintenancePermission('maintenance.use_materials');
         $data = $request->validate([
-            'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'numeric', 'gt:0'],
+            'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
         ]);
@@ -85,7 +85,12 @@ class MaintenanceController extends Controller
 
     private function materialPayload(Vehicle $vehicle, MaintenanceRecord $maintenance, string $message, ?MaintenanceMaterialUsage $material = null): array
     {
-        $maintenance = $maintenance->fresh(['materialUsages.stockItem.category', 'materialUsages.creator']);
+        $maintenance = $maintenance->fresh([
+            'materialUsages.stockItem.category',
+            'materialUsages.creator',
+            'procedureMaterialMovements.stockItem.category',
+            'procedureMaterialMovements.maintenanceRecordItem.procedure',
+        ]);
         $canViewCosts = $this->canMaintenance('maintenance.view_costs');
         $canCancelMaterials = $this->canMaintenance('maintenance.cancel_materials');
 
@@ -338,10 +343,16 @@ class MaintenanceController extends Controller
                 ]);
         }
 
+        $visibleProcedureFields = $procedure->fields->filter(
+            fn ($field) => in_array($field->field_type, ['text', 'number'], true)
+                || ($field->field_type === 'stock_item' && $data['execution_type'] === 'internal')
+        );
+
         return view('vehicle.maintenance-add-item', [
             'vehicle' => $vehicle,
             'maintenance' => $maintenance,
             'procedure' => $procedure,
+            'visibleProcedureFields' => $visibleProcedureFields,
             'executionType' => $data['execution_type'],
             'replacementItem' => $replacementItem,
             'canViewCosts' => $this->canMaintenance('maintenance.view_costs'),
@@ -378,6 +389,7 @@ class MaintenanceController extends Controller
                         ->where('location_id', $vehicle->location_id)),
             ],
             'maintenance_type' => ['required', 'in:internal,external'],
+            'reason' => ['required', 'in:preventive,corrective,inspection,other'],
 
             'performed_at' => ['required', 'date'],
             'performed_km' => ['nullable', 'integer', 'min:0'],
@@ -388,6 +400,9 @@ class MaintenanceController extends Controller
             'notes' => ['nullable', 'string'],
 
             'fields' => ['nullable', 'array'],
+        ], [
+            'reason.required' => 'Selecione o motivo da manutenção.',
+            'reason.in' => 'Selecione um motivo de manutenção válido.',
         ]);
 
         if (! $this->canMaintenance('maintenance.view_costs')) {
@@ -486,6 +501,7 @@ class MaintenanceController extends Controller
                     ->where('location_id', $vehicle->location_id)),
             ],
             'maintenance_type' => ['required', 'in:internal,external'],
+            'reason' => ['required', 'in:preventive,corrective,inspection,other'],
             'performed_at' => ['required', 'date'],
             'performed_km' => ['nullable', 'integer', 'min:0'],
             'performed_hours' => ['nullable', 'integer', 'min:0'],
@@ -499,6 +515,8 @@ class MaintenanceController extends Controller
             'change_reason.required' => 'Informe o motivo da substituição.',
             'change_reason.min' => 'O motivo da substituição deve ter pelo menos :min caracteres.',
             'confirm_replacement.accepted' => 'Confirme que o lançamento atual será substituído.',
+            'reason.required' => 'Selecione o motivo da manutenção.',
+            'reason.in' => 'Selecione um motivo de manutenção válido.',
         ]);
 
         if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {
@@ -543,6 +561,10 @@ class MaintenanceController extends Controller
             'extraCosts.creator',
             'materialUsages.stockItem.category',
             'materialUsages.creator',
+            'allMaterialUsages.stockItem.category',
+            'allMaterialUsages.creator',
+            'allMaterialUsages.canceller',
+            'allMaterialUsages.replacement.stockItem.category',
             'statusLogs.user',
             'opener',
             'closer',
@@ -830,6 +852,7 @@ class MaintenanceController extends Controller
         $data = $request->validate([
             'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'cost_date' => ['required', 'date'],
         ]);
 
         MaintenanceService::addExtraCost($maintenance, $data);
@@ -859,6 +882,7 @@ class MaintenanceController extends Controller
         $data = $request->validate([
             'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
+            'cost_date' => ['required', 'date'],
             'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
         ], [
             'change_reason.required' => 'Informe o motivo da alteração.',
@@ -893,6 +917,9 @@ class MaintenanceController extends Controller
             'extraCosts.creator',
             'materialUsages.stockItem.category',
             'materialUsages.creator',
+            'allMaterialUsages.stockItem.category',
+            'allMaterialUsages.canceller',
+            'allMaterialUsages.replacement.stockItem.category',
             'statusLogs.user',
             'opener',
             'closer',
@@ -904,6 +931,8 @@ class MaintenanceController extends Controller
             'vehicle' => $vehicle,
             'maintenance' => $maintenance,
             'canViewCosts' => $this->maintenancePermissions($vehicle)['view_costs'],
+            'canViewChanges' => $this->canMaintenance('reports.view_changes'),
+            'canViewCancelled' => $this->canMaintenance('reports.view_cancelled'),
             'canViewAuditLogs' => $this->maintenancePermissions($vehicle)['view_cancellation_details'],
         ])->setPaper('a4', 'portrait');
 

@@ -479,7 +479,7 @@
     <div class="section-title">Materiais utilizados</div>
 
     <table>
-        <thead><tr><th>Item / categoria</th><th>Quantidade</th><th>Lançado por / data</th><th>Observação</th><th>Custo</th></tr></thead>
+        <thead><tr><th>Item / categoria</th><th>Quantidade</th><th>Lançado por / data</th><th>Observação</th>@if($canViewCosts ?? false)<th>Custo unitário</th><th>Total</th>@endif</tr></thead>
         <tbody>
             @forelse($maintenance->materialUsages as $usage)
                 <tr>
@@ -487,13 +487,36 @@
                     <td>{{ number_format($usage->quantity, 2, ',', '.') }} {{ $usage->stockItem?->unit }}</td>
                     <td>{{ $usage->creator?->name ?? 'Não informado' }}<br>{{ optional($usage->created_at)->format('d/m/Y H:i') }}</td>
                     <td>{{ $usage->notes ?: '-' }}</td>
-                    <td><strong>@if($canViewCosts ?? false)R$ {{ number_format($usage->total_cost, 2, ',', '.') }}@else Restrito @endif</strong></td>
+                    @if($canViewCosts ?? false)<td>R$ {{ number_format($usage->unit_cost, 2, ',', '.') }}</td><td><strong>R$ {{ number_format($usage->total_cost, 2, ',', '.') }}</strong></td>@endif
                 </tr>
             @empty
-                <tr><td colspan="5">Nenhum material utilizado diretamente.</td></tr>
+                <tr><td colspan="{{ ($canViewCosts ?? false) ? 6 : 4 }}">Nenhum material utilizado registrado.</td></tr>
             @endforelse
         </tbody>
     </table>
+
+    @php
+        $materialChanges = $maintenance->allMaterialUsages
+            ->whereNotNull('cancelled_at')
+            ->filter(fn ($usage) => $usage->replaced_by_usage_id ? ($canViewChanges ?? false) : ($canViewCancelled ?? false));
+    @endphp
+    @if($materialChanges->isNotEmpty())
+        <div class="section-title">Alterações em materiais</div>
+        <table>
+            <thead><tr><th>Material anterior</th><th>Resultado</th><th>Motivo</th><th>Responsável / data</th>@if($canViewCosts ?? false)<th>Custo anterior</th>@endif</tr></thead>
+            <tbody>
+                @foreach($materialChanges as $usage)
+                    <tr>
+                        <td>{{ $usage->stockItem?->name ?? '-' }}<br>{{ number_format($usage->quantity, 2, ',', '.') }} {{ $usage->stockItem?->unit }}</td>
+                        <td>@if($usage->replacement)Corrigido para {{ $usage->replacement->stockItem?->name ?? '-' }} ({{ number_format($usage->replacement->quantity, 2, ',', '.') }} {{ $usage->replacement->stockItem?->unit }}). Estoque anterior devolvido e novo consumo registrado.@else Cancelado; estoque devolvido.@endif</td>
+                        <td>{{ $usage->cancel_reason ?: '-' }}</td>
+                        <td>{{ $usage->canceller?->name ?? '-' }}<br>{{ optional($usage->cancelled_at)->format('d/m/Y H:i') }}</td>
+                        @if($canViewCosts ?? false)<td>R$ {{ number_format($usage->total_cost, 2, ',', '.') }}</td>@endif
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
     <div class="section-title">Custos avulsos</div>
 
@@ -502,7 +525,8 @@
             <tr>
                 <th>Descrição</th>
                 <th>Lançado por</th>
-                <th>Data</th>
+                <th>Data do custo</th>
+                <th>Lançado em</th>
                 <th>Valor</th>
             </tr>
         </thead>
@@ -512,12 +536,13 @@
                 <tr>
                     <td>{{ $extraCost->description }}</td>
                     <td>{{ $extraCost->creator?->name ?? 'Não informado' }}</td>
+                    <td>{{ optional($extraCost->effective_cost_date)->format('d/m/Y') }}</td>
                     <td>{{ optional($extraCost->created_at)->format('d/m/Y H:i') }}</td>
                     <td><strong>R$ {{ number_format($extraCost->amount ?? 0, 2, ',', '.') }}</strong></td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="4">Nenhum custo avulso lançado.</td>
+                    <td colspan="5">Nenhum custo avulso lançado.</td>
                 </tr>
             @endforelse
         </tbody>

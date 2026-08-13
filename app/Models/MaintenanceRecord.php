@@ -178,9 +178,37 @@ class MaintenanceRecord extends Model
         return $this->hasMany(MaintenanceMaterialUsage::class)->active();
     }
 
+    public function procedureMaterialMovements()
+    {
+        return $this->hasMany(StockMovement::class)
+            ->where('movement_type', 'out')
+            ->whereNotNull('maintenance_record_item_id')
+            ->whereNull('cancelled_at')
+            ->whereNull('reversal_movement_id')
+            ->whereNull('reversed_from_movement_id')
+            ->whereHas('maintenanceRecordItem', fn ($query) => $query->whereNull('cancelled_at'));
+    }
+
     public function allMaterialUsages()
     {
         return $this->hasMany(MaintenanceMaterialUsage::class);
+    }
+
+    public function activeMaterialUsages()
+    {
+        return $this->hasMany(MaintenanceMaterialUsage::class)->active();
+    }
+
+    public function cancelledMaterialUsages()
+    {
+        return $this->hasMany(MaintenanceMaterialUsage::class)->cancelled();
+    }
+
+    public function hasAnyActiveComposition(): bool
+    {
+        return $this->items()->exists()
+            || $this->materialUsages()->exists()
+            || $this->extraCosts()->exists();
     }
 
     public function photos() { return $this->hasMany(MaintenancePhoto::class); }

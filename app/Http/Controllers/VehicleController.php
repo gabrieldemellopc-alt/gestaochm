@@ -27,6 +27,8 @@ use App\Services\ActiveContextService;
 use App\Services\Permissions\ProfilePermissionService;
 use App\Services\VehicleReadingService;
 use App\Models\VehicleDowntimePeriod;
+use App\Models\SystemAuditLog;
+use Illuminate\Support\Collection;
 
 class VehicleController extends Controller
 
@@ -2937,6 +2939,12 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'extraCosts.creator',
             'materialUsages.stockItem.category',
             'materialUsages.creator',
+            'procedureMaterialMovements.stockItem.category',
+            'procedureMaterialMovements.maintenanceRecordItem.procedure',
+            'allMaterialUsages.stockItem.category',
+            'allMaterialUsages.creator',
+            'allMaterialUsages.canceller',
+            'allMaterialUsages.replacement.stockItem.category',
             'photos.uploader',
         ])
         ->where('workflow_status', 'open')
@@ -2964,6 +2972,9 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
     $canEditItems = $maintenancePermissions['edit_items'];
     $canEditExtraCosts = $maintenancePermissions['edit_extra_costs'];
     $canViewCosts = $maintenancePermissions['view_costs'];
+    $maintenanceTimeline = $openMaintenance
+        ? $this->maintenanceTimeline($openMaintenance, $maintenancePermissions)
+        : collect();
 
     return view('vehicle.maintenance-index', compact(
         'vehicle',
@@ -2974,10 +2985,104 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
         'maintenancePermissions',
         'canEditItems',
         'canEditExtraCosts',
-        'canViewCosts'
+        'canViewCosts',
+        'maintenanceTimeline'
     ));
 
 }
+
+    private function maintenanceTimeline($maintenance, array $permissions): Collection
+    {
+        $events = collect([[
+            'type' => 'opening',
+            'title' => 'Abertura da manutenção',
+            'detail' => 'Status inicial: '.(\App\Services\MaintenanceService::serviceStatuses()[$maintenance->service_status] ?? 'Não informado'),
+            'complement' => null,
+            'at' => $maintenance->started_at,
+        ]]);
+
+        foreach ($maintenance->statusLogs as $log) {
+            if (! $log->old_status) continue;
+            $events->push([
+                'type' => 'status', 'title' => 'Status atualizado',
+                'detail' => (\App\Services\MaintenanceService::serviceStatuses()[$log->old_status] ?? $log->old_status).' → '.(\App\Services\MaintenanceService::serviceStatuses()[$log->new_status] ?? $log->new_status),
+                'complement' => $log->reason, 'at' => $log->created_at,
+            ]);
+        }
+
+        foreach ($maintenance->items as $item) {
+            $events->push([
+                'type' => 'procedure', 'title' => 'Procedimento realizado',
+                'detail' => $item->procedure?->name ?? 'Procedimento não informado',
+                'complement' => ($permissions['view_costs'] ?? false) ? 'Custo: R$ '.number_format($item->total_cost ?? 0, 2, ',', '.') : null,
+                'at' => $item->created_at,
+            ]);
+        }
+
+        foreach ($maintenance->extraCosts as $cost) {
+            $events->push([
+                'type' => 'cost', 'title' => 'Custo avulso lançado', 'detail' => $cost->description,
+                'complement' => ($permissions['view_costs'] ?? false) ? 'Custo: R$ '.number_format($cost->amount ?? 0, 2, ',', '.') : null,
+                'at' => $cost->created_at,
+            ]);
+        }
+
+        foreach ($maintenance->allMaterialUsages as $usage) {
+            $unit = $usage->stockItem?->unit;
+            $quantity = number_format((float) $usage->quantity, 2, ',', '.').' '.$unit;
+            $showReason = (bool) ($permissions['cancel_materials'] ?? false)
+                || (bool) ($permissions['view_cancellation_details'] ?? false);
+
+            if ($usage->replaced_by_usage_id) {
+                $replacement = $usage->replacement;
+                $sameItem = $replacement?->stock_item_id === $usage->stock_item_id;
+                $detail = $sameItem
+                    ? ($usage->stockItem?->name ?? 'Material').' — de '.$quantity.' para '.number_format((float) $replacement?->quantity, 2, ',', '.').' '.$unit
+                    : ($usage->stockItem?->name ?? 'Material').' → '.($replacement?->stockItem?->name ?? 'Material');
+                $events->push([
+                    'type' => 'material-corrected', 'title' => 'Material corrigido', 'detail' => $detail,
+                    'complement' => $showReason && $usage->cancel_reason ? 'Motivo: '.$usage->cancel_reason : null,
+                    'at' => $usage->cancelled_at,
+                ]);
+            } elseif ($usage->cancelled_at) {
+                $events->push([
+                    'type' => 'material-cancelled', 'title' => 'Material cancelado',
+                    'detail' => ($usage->stockItem?->name ?? 'Material').' — '.$quantity.' devolvido ao estoque',
+                    'complement' => $showReason && $usage->cancel_reason ? 'Motivo: '.$usage->cancel_reason : null,
+                    'at' => $usage->cancelled_at,
+                ]);
+            } elseif (! $usage->replaces_usage_id) {
+                $complements = ['Responsável: '.($usage->creator?->name ?? 'Não informado')];
+                if ($permissions['view_costs'] ?? false) $complements[] = 'Custo: R$ '.number_format((float) $usage->total_cost, 2, ',', '.');
+                $events->push([
+                    'type' => 'material', 'title' => 'Material utilizado',
+                    'detail' => ($usage->stockItem?->name ?? 'Material').' — '.$quantity,
+                    'complement' => implode(' · ', $complements), 'at' => $usage->created_at,
+                ]);
+            }
+        }
+
+        foreach ($maintenance->photos as $photo) {
+            $events->push([
+                'type' => 'photo', 'title' => 'Foto anexada', 'detail' => '1 foto adicionada',
+                'complement' => $photo->source === 'qr_mobile' ? 'Via QR Code' : 'Responsável: '.($photo->uploader?->name ?? 'Não informado'),
+                'at' => $photo->created_at,
+            ]);
+        }
+
+        SystemAuditLog::query()
+            ->with('user:id,name')
+            ->where('module', 'maintenance')
+            ->where('action', 'maintenance_photo_deleted')
+            ->where('metadata->maintenance_record_id', $maintenance->id)
+            ->get()
+            ->each(fn ($audit) => $events->push([
+                'type' => 'photo-removed', 'title' => 'Foto removida', 'detail' => 'Imagem removida da ordem',
+                'complement' => 'Responsável: '.($audit->user?->name ?? 'Não informado'), 'at' => $audit->created_at,
+            ]));
+
+        return $events->filter(fn ($event) => $event['at'])->sortBy('at')->values();
+    }
 
 
 

@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Procedure extends Model
 {
+    protected $casts = [
+        'can_be_internal' => 'boolean',
+    ];
+
     protected $fillable = [
         'tenant_id',
         'location_id',

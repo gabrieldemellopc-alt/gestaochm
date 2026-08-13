@@ -32,11 +32,12 @@
             <div class="form-group">
                 <label>Tipo de execução</label>
                 <input type="hidden" name="maintenance_type" :value="itemForm.maintenance_type">
-                <select class="form-input" x-model="itemForm.maintenance_type" :disabled="itemForm.has_stock_consumption" required>
-                    <option value="internal">Oficina interna</option>
-                    <option value="external">Terceirizado</option>
-                </select>
+                <div class="maintenance-execution-toggle" role="group" aria-label="Tipo de execução">
+                    <button type="button" class="maintenance-execution-option" :class="{ 'is-active': itemForm.maintenance_type === 'internal' }" :disabled="itemForm.has_stock_consumption || !itemForm.can_be_internal" @click="itemForm.maintenance_type = 'internal'">Oficina interna</button>
+                    <button type="button" class="maintenance-execution-option" :class="{ 'is-active': itemForm.maintenance_type === 'external' }" :disabled="itemForm.has_stock_consumption" @click="itemForm.maintenance_type = 'external'">Terceirizado</button>
+                </div>
                 <small x-show="itemForm.has_stock_consumption" class="maintenance-field-help">O tipo de execução fica bloqueado enquanto houver consumo vinculado.</small>
+                <small x-show="!itemForm.can_be_internal" class="maintenance-field-help">Este procedimento permite somente execução terceirizada.</small>
             </div>
 
             <div class="form-group">
@@ -124,6 +125,11 @@
                 <div class="form-group">
                     <label>Valor</label>
                     <input type="number" name="amount" class="form-input" min="0" step="0.01" x-model="extraCostForm.amount" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Data do custo</label>
+                    <input type="date" name="cost_date" class="form-input" x-model="extraCostForm.cost_date" required>
                 </div>
 
                 <div class="form-group">

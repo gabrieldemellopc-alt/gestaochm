@@ -3846,6 +3846,11 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     background: #ffd36a;
     box-shadow: 0 0 0 4px rgba(255, 211, 106, .14);
 }
+.maintenance-timeline-dot.is-material { background:#42c493; box-shadow:0 0 0 4px rgba(66,196,147,.14); }
+.maintenance-timeline-dot.is-material-corrected { background:#e6a94f; box-shadow:0 0 0 4px rgba(230,169,79,.14); }
+.maintenance-timeline-dot.is-material-cancelled,
+.maintenance-timeline-dot.is-photo-removed { background:#e56872; box-shadow:0 0 0 4px rgba(229,104,114,.14); }
+.maintenance-timeline-dot.is-photo { background:#5ba4e8; box-shadow:0 0 0 4px rgba(91,164,232,.14); }
 .maintenance-open-actions-grid {
     align-items: start;
 }
@@ -4292,14 +4297,82 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
 }
 
 .maintenance-create-page .maintenance-observations-field {
+    grid-column: 1 / -1;
+}
+
+.maintenance-create-page .maintenance-add-grid {
+    align-items: start;
+}
+
+.maintenance-create-page .maintenance-reason-field {
     grid-column: span 2;
 }
+
+.maintenance-reason-toggle {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid #53627a;
+    border-radius: 10px;
+    background: #222d40;
+}
+
+.maintenance-reason-option {
+    position: relative;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.maintenance-reason-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.maintenance-reason-option span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #aebbd0;
+    font-weight: 700;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.maintenance-reason-option:hover span {
+    background: #33435b;
+    color: #f2f6fc;
+}
+
+.maintenance-reason-option input:checked + span {
+    border-color: #7188a8;
+    background: #425774;
+    color: #fff;
+    box-shadow: 0 2px 7px rgba(7, 13, 24, .2);
+}
+
+.maintenance-reason-option input:focus-visible + span {
+    outline: 2px solid #9db6d8;
+    outline-offset: 2px;
+}
+
 @media (max-width: 1100px) {
     .maintenance-create-page .maintenance-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .maintenance-create-page .maintenance-observations-field {
+        grid-column: 1 / -1;
+    }
+
+    .maintenance-create-page .maintenance-reason-field {
         grid-column: 1 / -1;
     }
 }
@@ -4312,17 +4385,15 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     .maintenance-create-page .maintenance-observations-field {
         grid-column: auto;
     }
-}
-/* =========================================================
-   DESTAQUE LATERAL DOS CARDS DE AÇÃO
-   ========================================================= */
 
-.maintenance-index-page .maintenance-open-action-box {
-    position: relative;
-    overflow: hidden;
-    padding-left: 22px;
-}
+    .maintenance-create-page .maintenance-reason-field {
+        grid-column: auto;
+    }
 
+    .maintenance-reason-toggle {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
 .maintenance-category-badge {
     border-color: rgba(217, 122, 74, .34);
     color: #f0c0a3;
@@ -4332,79 +4403,31 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
 .maintenance-category-badge svg {
     color: #e49a6c;
 }
-/* =========================================================
-   FAIXA LATERAL DOS CARDS DE AÇÃO
-   ========================================================= */
-
+/* Faixa lateral única dos cards operacionais. */
 .maintenance-index-page .maintenance-open-action-box {
     position: relative;
+    display: flex;
+    min-height: 196px;
+    padding: 0;
     overflow: hidden;
-    padding-left: 26px;
-}
-
-
-.maintenance-index-page .maintenance-open-action-box {
-    position: relative;
-    overflow: hidden;
-    padding-left: 26px;
+    border: 1px solid #46546b !important;
+    border-radius: 12px;
+    background: #303c52;
 }
 
 .maintenance-index-page .maintenance-open-action-box::before {
-    content: "";
-
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-
-    width: 7px;
-
-    background: linear-gradient(
-        180deg,
-        #ff5a5f 0%,
-        #e0525b 55%,
-        #d9794c 100%
-    );
-
-    border-radius: 9px 0 0 9px;
+    content: none;
 }
 
-.maintenance-index-page .maintenance-open-action-box {
-    min-height: 196px;
-
-    padding-left: 22px;
-
-    border-left: 7px solid #e0525b !important;
-
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
-}
-.maintenance-index-page .maintenance-open-action-box {
-    min-height: 196px;
-
-    padding-left: 22px;
-
-    border-left: 7px solid transparent !important;
-
-    border-image:
-        linear-gradient(
-            180deg,
-            #ff5a5f,
-            #e0525b,
-            #d9794c
-        ) 1;
-
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
+/* Painéis fixos de formulário dentro das abas não são alertas ou CTAs. */
+.maintenance-index-page .maintenance-form-panel {
+    border-color: #46566f !important;
+    background: linear-gradient(145deg, #303c52, #2b374b);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025) !important;
 }
 
-.maintenance-open-action-box{
-
-    display:flex;
-
-    padding:0;
-
-    overflow:hidden;
+.maintenance-index-page .maintenance-form-panel .maintenance-card-accent {
+    display: none;
 }
 .maintenance-card-accent{
 
@@ -4456,6 +4479,353 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
 .maintenance-material-actions summary { cursor:pointer; margin-top:8px; }
 .maintenance-material-actions form { display:grid; gap:7px; margin-top:9px; width:min(320px, 100%); }
 @media (max-width: 900px) { .maintenance-material-form { grid-template-columns:1fr; } .maintenance-material-selected { grid-column:auto; flex-direction:column; } }
+
+/* Painel operacional da ordem aberta */
+.maintenance-open-card {
+    display: grid;
+    grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+    align-items: start;
+}
+
+.maintenance-open-card > :not(.maintenance-open-actions-grid):not(.maintenance-open-bottom-grid) {
+    grid-column: 1 / -1;
+}
+
+.maintenance-open-card > .maintenance-open-actions-grid,
+.maintenance-open-card > .maintenance-open-bottom-grid {
+    display: contents;
+}
+
+.maintenance-open-card > .maintenance-extra-costs-card {
+    grid-column: auto !important;
+    margin-top: 0;
+}
+
+.maintenance-open-card [data-maintenance-panel] {
+    min-width: 0;
+}
+
+.maintenance-open-summary {
+    margin: 14px 0 16px;
+    gap: 8px;
+}
+
+.maintenance-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 2px 0 16px;
+    padding: 5px;
+    overflow-x: auto;
+    border: 1px solid #40506a;
+    border-radius: 12px;
+    background: #263247;
+    scrollbar-width: thin;
+}
+
+.maintenance-tab {
+    flex: 1 1 0;
+    min-height: 38px;
+    padding: 8px 15px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #aebdd1;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.maintenance-tab:hover {
+    color: #f8fafc;
+    background: #33415a;
+}
+
+.maintenance-tab.is-active {
+    border-color: #617797;
+    background: #3b4e6b;
+    color: #fff;
+    box-shadow: 0 5px 13px rgba(7, 13, 24, .2);
+}
+
+[data-maintenance-panel][hidden] {
+    display: none !important;
+}
+
+.maintenance-open-actions-grid,
+.maintenance-open-bottom-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+.maintenance-procedure-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 9px;
+    margin-bottom: 14px;
+}
+
+.maintenance-procedure-option {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #53627a;
+    border-radius: 10px;
+    background: #263348;
+    color: #eef4fc;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.maintenance-procedure-option strong,
+.maintenance-procedure-option span {
+    display: block;
+}
+
+.maintenance-procedure-option strong {
+    line-height: 1.3;
+}
+
+.maintenance-procedure-option span {
+    margin-top: 5px;
+    color: #9fafc4;
+    font-size: .74rem;
+}
+
+.maintenance-procedure-option:hover {
+    border-color: #7488a7;
+    background: #304059;
+}
+
+.maintenance-procedure-option.is-active {
+    border-color: #8da9d0;
+    background: #3b4f6c;
+    box-shadow: inset 0 0 0 1px rgba(175, 205, 244, .25);
+    transform: translateY(-1px);
+}
+
+.maintenance-execution-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid #53627a;
+    border-radius: 10px;
+    background: #222d40;
+}
+
+.maintenance-execution-option {
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #aebbd0;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.maintenance-execution-option:hover:not(:disabled) {
+    background: #33435b;
+    color: #f2f6fc;
+}
+
+.maintenance-execution-option.is-active {
+    border-color: #7188a8;
+    background: #425774;
+    color: #fff;
+    box-shadow: 0 2px 7px rgba(7, 13, 24, .2);
+}
+
+.maintenance-execution-option:disabled {
+    color: #6f7c8f;
+    cursor: not-allowed;
+    opacity: .58;
+}
+
+.maintenance-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+}
+
+.maintenance-form-grid--status {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 12px;
+}
+
+.maintenance-form-grid--cost {
+    grid-template-columns: minmax(0, 1fr) minmax(76px, .38fr) minmax(118px, .58fr);
+}
+
+.maintenance-form-grid--cost input {
+    min-width: 0;
+    width: 100%;
+}
+
+.maintenance-form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.maintenance-form-grid .form-group {
+    margin: 0;
+}
+
+.maintenance-form-grid .chm-page-button {
+    min-height: 42px;
+    width: auto !important;
+}
+
+.maintenance-form-grid--status .chm-page-button {
+    justify-self: end;
+}
+
+.maintenance-evidence-compact {
+    margin: 0;
+    padding: 16px;
+    box-shadow: none;
+}
+
+.maintenance-evidence-compact .maintenance-photo-guidance {
+    max-width: 680px;
+    font-size: .9rem;
+}
+
+.maintenance-evidence-compact .maintenance-photo-gallery {
+    margin: 13px 0;
+}
+
+.maintenance-evidence-compact .maintenance-photo-item {
+    min-width: 112px;
+}
+
+.maintenance-evidence-compact .maintenance-photo-preview,
+.maintenance-evidence-compact .maintenance-photo-item img,
+.maintenance-evidence-compact .maintenance-photo-fallback {
+    width: 98px;
+    height: 72px;
+}
+
+.maintenance-photo-more {
+    min-width: 98px;
+    min-height: 86px;
+    border: 1px dashed #687a95;
+    border-radius: 10px;
+    background: #2b384d;
+    color: #dbe7f7;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.maintenance-photo-more:hover {
+    background: #35455d;
+}
+
+.maintenance-evidence-compact .maintenance-photo-upload-form {
+    padding: 7px;
+}
+
+.maintenance-evidence-toggle {
+    margin-top: 9px;
+    padding: 7px 11px;
+    border: 1px solid #61718a;
+    border-radius: 8px;
+    background: #34435a;
+    color: #edf4ff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.maintenance-evidence-toggle:hover {
+    background: #40516b;
+}
+
+.maintenance-evidence-body {
+    margin-top: 4px;
+}
+
+.maintenance-materials-inline-list {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #46546b;
+}
+
+.maintenance-materials-inline-list .maintenance-materials-current-header {
+    margin-bottom: 10px;
+}
+
+.maintenance-open-card > .maintenance-open-actions-grid,
+.maintenance-open-card > .maintenance-open-bottom-grid,
+.maintenance-open-card > .maintenance-materials-summary,
+.maintenance-open-card > .maintenance-extra-costs-card {
+    margin-top: 14px;
+}
+
+.maintenance-open-card .maintenance-open-action-box,
+.maintenance-open-card .maintenance-timeline-card,
+.maintenance-open-card .maintenance-services-card,
+.maintenance-open-card .maintenance-replaced-items {
+    box-shadow: none;
+}
+
+@media (max-width: 700px) {
+    .maintenance-open-card {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .maintenance-open-card > *,
+    .maintenance-open-card > .maintenance-extra-costs-card {
+        grid-column: 1;
+    }
+
+    .maintenance-procedure-picker,
+    .maintenance-form-grid,
+    .maintenance-form-grid--cost {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .maintenance-form-grid .chm-page-button,
+    .maintenance-form-grid--status .chm-page-button {
+        width: 100% !important;
+        justify-self: stretch;
+    }
+
+    .maintenance-form-actions {
+        display: block;
+    }
+
+    .maintenance-open-summary {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .maintenance-open-summary > span {
+        flex: 0 0 auto;
+    }
+
+    .maintenance-tabs {
+        margin-inline: -4px;
+    }
+
+    .maintenance-tab {
+        flex: 0 0 auto;
+        min-height: 42px;
+        padding-inline: 14px;
+    }
+
+    .maintenance-evidence-compact .maintenance-photo-heading {
+        gap: 10px;
+    }
+
+    .maintenance-evidence-compact .maintenance-photo-limits {
+        width: 100%;
+    }
+}
 
 html.maintenance-modal-open { overflow:hidden; }
 .maintenance-materials-summary {
@@ -4563,3 +4933,194 @@ html.maintenance-modal-open { overflow:hidden; }
 .materials-empty-state span { color:#93a4ba; font-size:.84rem; }
 @media(max-width:900px){.materials-workspace{grid-template-columns:1fr}.materials-search-panel{align-self:stretch}.materials-entry-grid{grid-template-columns:minmax(120px,.45fr) minmax(0,1fr)}}
 @media(max-width:640px){.maintenance-materials-body{padding-top:18px;padding-bottom:22px}.materials-panel{padding:16px}.materials-entry-grid{grid-template-columns:1fr}.materials-submit-row{display:block}.materials-submit-row small{display:block;margin:0 0 8px}.materials-submit-row .maintenance-materials-primary{width:100%;min-width:0}.materials-list-section{margin-top:24px;padding-top:20px}}
+
+/* Abas operacionais: cabeçalhos fixos e listas longas com rolagem interna. */
+.maintenance-scroll-panel,
+.maintenance-timeline-card,
+.maintenance-services-card {
+    min-height: 0;
+}
+
+.maintenance-scroll-body {
+    min-height: 0;
+    max-height: 480px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: #60718a transparent;
+}
+
+.maintenance-scroll-body::-webkit-scrollbar {
+    width: 7px;
+}
+
+.maintenance-scroll-body::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #60718a;
+}
+
+.maintenance-scroll-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.maintenance-extra-costs-list .maintenance-open-item-row:first-child {
+    margin-top: 0;
+}
+
+/* Materiais seguem o mesmo padrão de duas colunas das demais abas. */
+.maintenance-open-card > .maintenance-materials-panel {
+    grid-column: 1 / -1;
+    margin-top: 14px;
+}
+
+.maintenance-tab-grid {
+    display: grid;
+    grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+    gap: 14px;
+    min-width: 0;
+}
+
+.maintenance-materials-column {
+    min-width: 0;
+    padding: 18px;
+    border: 1px solid #46566f;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #303c52, #2b374b);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+}
+
+.maintenance-materials-column-header {
+    margin-bottom: 16px;
+}
+
+.maintenance-materials-column-header > span,
+.maintenance-materials-list-header > div:first-child > span {
+    color: #91a4bf;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.maintenance-materials-column-header h3 {
+    margin: 4px 0 5px;
+    color: #f8fafc;
+}
+
+.maintenance-materials-column-header p {
+    margin: 0;
+    color: #b9c5d6;
+    line-height: 1.45;
+}
+
+.maintenance-materials-list-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.maintenance-materials-list-header .maintenance-materials-stats {
+    flex: 0 0 auto;
+}
+
+.maintenance-materials-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    margin-top: 16px;
+}
+
+.maintenance-materials-column .maintenance-materials-search,
+.maintenance-materials-column .maintenance-materials-search > input,
+.maintenance-materials-form .materials-selected-empty,
+.maintenance-materials-form .maintenance-materials-selected,
+.maintenance-materials-form .materials-entry-grid,
+.maintenance-materials-form .materials-submit-row {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.maintenance-materials-form.maintenance-materials-entry-form {
+    display: flex;
+    grid-template-columns: none;
+    align-items: stretch;
+}
+
+.maintenance-materials-form .maintenance-materials-selected {
+    grid-column: auto;
+}
+
+.maintenance-materials-form .materials-entry-grid {
+    grid-template-columns: minmax(118px, .4fr) minmax(0, 1fr);
+}
+
+.maintenance-materials-form .materials-submit-row {
+    margin-top: 0;
+}
+
+.maintenance-materials-list {
+    max-height: 480px;
+}
+
+.maintenance-material-entry--procedure {
+    border-color: rgba(112, 138, 173, .38);
+    background: linear-gradient(145deg, rgba(42, 57, 78, .82), rgba(35, 48, 67, .82));
+}
+
+.maintenance-material-origin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.maintenance-material-origin-badge {
+    flex: 0 0 auto;
+    padding: 4px 8px;
+    border: 1px solid #607795;
+    border-radius: 999px;
+    background: #334763;
+    color: #d9e8fb !important;
+    font-size: .69rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.maintenance-material-origin-note {
+    border: 1px solid rgba(112, 138, 173, .22);
+    background: rgba(30, 44, 63, .72) !important;
+    color: #aebed2 !important;
+    font-size: .78rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+    .maintenance-tab-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .maintenance-scroll-body,
+    .maintenance-materials-list {
+        max-height: min(65dvh, 420px);
+    }
+
+    .maintenance-materials-list-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .maintenance-materials-list-header .maintenance-materials-stats {
+        justify-content: flex-start;
+    }
+
+    .maintenance-materials-form .materials-entry-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

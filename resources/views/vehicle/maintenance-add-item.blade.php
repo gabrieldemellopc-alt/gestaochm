@@ -422,7 +422,7 @@
 
                             <h3>
 
-                                Dados da manutenção
+                                Dados — {{ $procedure->name }}
 
                             </h3>
 
@@ -430,7 +430,9 @@
 
                             <p>
 
-                                Informe os dados básicos da execução deste procedimento.
+                                {{ $vehicle->name }}@if($vehicle->plate) — {{ $vehicle->plate }}@endif
+                                <span aria-hidden="true">•</span>
+                                Execução {{ $executionType === 'internal' ? 'Oficina interna' : 'Terceirizada' }}
 
                             </p>
 
@@ -448,7 +450,7 @@
 
 
 
-                    <div class="maintenance-grid">
+                    <div class="maintenance-grid maintenance-add-grid">
 
 
 
@@ -484,7 +486,7 @@
 
 
 
-                        <div class="form-group">
+                        <div class="form-group maintenance-reason-field">
 
 
 
@@ -496,80 +498,30 @@
 
 
 
-                            <select
-
-                                name="reason"
-
-                                class="form-input"
-
-                                required
-
-                            >
-
-
-
-                                <option
-
-                                    value="preventive"
-
-                                    @selected(old('reason') === 'preventive')
-
-                                >
-
-                                    Preventiva
-
-                                </option>
-
-
-
-                                <option
-
-                                    value="corrective"
-
-                                    @selected(old('reason') === 'corrective')
-
-                                >
-
-                                    Corretiva
-
-                                </option>
-
-
-
-                                <option
-
-                                    value="inspection"
-
-                                    @selected(old('reason') === 'inspection')
-
-                                >
-
-                                    Inspeção
-
-                                </option>
-
-
-
-                                <option
-
-                                    value="other"
-
-                                    @selected(old('reason') === 'other')
-
-                                >
-
-                                    Outros
-
-                                </option>
-
-
-
-                            </select>
+                            <div class="maintenance-reason-toggle" role="radiogroup" aria-label="Motivo da manutenção">
+                                @foreach([
+                                    'preventive' => 'Preventiva',
+                                    'corrective' => 'Corretiva',
+                                    'inspection' => 'Inspeção',
+                                    'other' => 'Outros',
+                                ] as $reasonValue => $reasonLabel)
+                                    <label class="maintenance-reason-option">
+                                        <input
+                                            type="radio"
+                                            name="reason"
+                                            value="{{ $reasonValue }}"
+                                            required
+                                            @checked(old('reason', 'preventive') === $reasonValue)
+                                        >
+                                        <span>{{ $reasonLabel }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
 
 
 
                         </div>
-                        <div class="form-group">
+                        <div class="form-group maintenance-meter-field">
 
 
 
@@ -605,7 +557,7 @@
 
 
 
-                        <div class="form-group">
+                        <div class="form-group maintenance-meter-field">
 
 
 
@@ -675,7 +627,7 @@
                         @endif
 
 
-                        <div class="form-group full-width">
+                        <div class="form-group full-width maintenance-observations-field">
 
 
 
@@ -715,7 +667,8 @@
 
                 {{-- CAMPOS DINÂMICOS DO PROCEDIMENTO --}}
 
-                <div class="maintenance-card">
+                @if($visibleProcedureFields->isNotEmpty())
+                <div class="maintenance-card maintenance-procedure-fields">
 
 
 
@@ -763,15 +716,11 @@
 
 
 
-                    @if($procedure->fields->count())
-
-
-
                         <div class="maintenance-fields">
 
 
 
-                            @foreach($procedure->fields as $field)
+                            @foreach($visibleProcedureFields as $field)
 
 
 
@@ -960,43 +909,8 @@
 
 
 
-                    @else
-
-
-
-                        <div class="maintenance-empty-fields">
-
-
-
-                            <i data-lucide="info"></i>
-
-
-
-                            <strong>
-
-                                Nenhum campo adicional
-
-                            </strong>
-
-
-
-                            <p>
-
-                                Este procedimento não possui campos complementares configurados.
-
-                            </p>
-
-
-
-                        </div>
-
-
-
-                    @endif
-
-
-
                 </div>
+                @endif
 
 
 

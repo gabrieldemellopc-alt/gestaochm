@@ -30,6 +30,8 @@ class MaintenanceMaterialService
 
     public function add(MaintenanceRecord $maintenance, array $data, User $user): MaintenanceMaterialUsage
     {
+        $data['quantity'] = self::validatedQuantity($data['quantity'] ?? null);
+
         return DB::transaction(function () use ($maintenance, $data, $user) {
             $maintenance = $this->editable($maintenance);
             $usage = $this->createUsage($maintenance, $data, $user);
@@ -52,6 +54,8 @@ class MaintenanceMaterialService
 
     public function replace(MaintenanceRecord $maintenance, MaintenanceMaterialUsage $usage, array $data, User $user): MaintenanceMaterialUsage
     {
+        $data['quantity'] = self::validatedQuantity($data['quantity'] ?? null);
+
         return DB::transaction(function () use ($maintenance, $usage, $data, $user) {
             $maintenance = $this->editable($maintenance);
             $usage = $this->activeUsage($maintenance, $usage);
@@ -73,8 +77,8 @@ class MaintenanceMaterialService
             ->where('tenant_id', $maintenance->tenant_id)
             ->where('location_id', $maintenance->vehicle->location_id)
             ->where('active', true)->lockForUpdate()->firstOrFail();
-        $quantity = round((float) $data['quantity'], 2);
-        if ($quantity <= 0 || (float) $item->quantity < $quantity) {
+        $quantity = self::validatedQuantity($data['quantity'] ?? null);
+        if ((float) $item->quantity < $quantity) {
             throw ValidationException::withMessages(['quantity' => 'Saldo insuficiente para a quantidade informada.']);
         }
         $unitCost = (float) $item->unit_cost;
@@ -100,6 +104,19 @@ class MaintenanceMaterialService
             'notes' => $data['notes'] ?? null, 'created_by' => $user->id,
             'replaces_usage_id' => $replaces,
         ]);
+    }
+
+    public static function validatedQuantity(mixed $quantity): int
+    {
+        $validated = filter_var($quantity, FILTER_VALIDATE_INT);
+
+        if ($validated === false || $validated < 1) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Informe uma quantidade inteira igual ou maior que 1.',
+            ]);
+        }
+
+        return $validated;
     }
 
     private function reverse(MaintenanceRecord $maintenance, MaintenanceMaterialUsage $usage, string $reason, User $user): void

@@ -21,6 +21,17 @@ use App\Models\VehicleDowntimePeriod;
 
 class MaintenanceService
 {
+    public static function assertExecutionTypeAllowed(
+        Procedure $procedure,
+        string $executionType
+    ): void {
+        if ($executionType === 'internal' && ! $procedure->can_be_internal) {
+            throw ValidationException::withMessages([
+                'maintenance_type' => 'Este procedimento não permite execução em oficina interna.',
+            ]);
+        }
+    }
+
     public static function cancel(
         MaintenanceRecord $maintenance,
         string $reason,
@@ -375,6 +386,7 @@ class MaintenanceService
                 ->findOrFail($data['procedure_id']);
     
             $executionType = $data['maintenance_type'] ?? 'external';
+            self::assertExecutionTypeAllowed($procedure, $executionType);
     
             $stockUsage = collect();
             $stockItems = collect();
@@ -571,10 +583,16 @@ class MaintenanceService
         return DB::transaction(function () use ($maintenance, $item, $data, $user) {
             $maintenance = self::editableMaintenance($maintenance);
             $item = MaintenanceRecordItem::query()
+                ->with('procedure')
                 ->where('maintenance_record_id', $maintenance->id)
                 ->whereKey($item->id)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            self::assertExecutionTypeAllowed(
+                $item->procedure,
+                $data['maintenance_type']
+            );
 
             $auditableFields = [
                 'maintenance_type',
@@ -966,8 +984,6 @@ class MaintenanceService
         string $vehicleStatusAfter,
         ?string $closureNotes = null
     ): MaintenanceRecord {
-        app(MaintenancePhotoService::class)->ensureCanClose($maintenance);
-
         return DB::transaction(function () use ($maintenance, $vehicleStatusAfter, $closureNotes) {
             $maintenance = MaintenanceRecord::query()
                 ->with(['vehicle'])
@@ -1002,17 +1018,13 @@ class MaintenanceService
                 ]);
             }
     
-            if ($maintenance->items()->count() === 0) {
+            if (! $maintenance->hasAnyActiveComposition()) {
                 throw ValidationException::withMessages([
-                    'maintenance' => 'Adicione ao menos um procedimento antes de encerrar a manutenção.',
+                    'maintenance' => 'Antes de encerrar, registre ao menos um serviço, material utilizado ou custo avulso na ordem.',
                 ]);
             }
 
-            if (! $maintenance->hasMinimumPhotosForClosing()) {
-                throw ValidationException::withMessages([
-                    'maintenance' => 'Envie pelo menos 2 fotos da manutenção antes de encerrar a ordem.',
-                ]);
-            }
+            app(MaintenancePhotoService::class)->ensureCanClose($maintenance);
 
             $vehicle = $maintenance->vehicle;
             $before = $maintenance->toArray();
@@ -1113,6 +1125,7 @@ class MaintenanceService
                 'maintenance_record_id' => $maintenance->id,
                 'description' => $data['description'],
                 'amount' => $data['amount'],
+                'cost_date' => $data['cost_date'],
                 'created_by' => auth()->id(),
             ]);
     
@@ -1142,6 +1155,7 @@ class MaintenanceService
             $extraCost->update([
                 'description' => $data['description'],
                 'amount' => (float) $data['amount'],
+                'cost_date' => $data['cost_date'],
             ]);
             self::recalculateTotalCost($maintenance);
             $after = $extraCost->fresh();

@@ -247,6 +247,7 @@
                                     class="maintenance-inline-edit-button"
                                     @click="editItem(@js([
                                         "maintenance_type" => $item->maintenance_type,
+                                        "can_be_internal" => (bool) $item->procedure?->can_be_internal,
                                         "performed_at" => optional($item->performed_at)->format("Y-m-d"),
                                         "provider_name" => $item->provider_name,
                                         "notes" => $item->notes,
@@ -288,7 +289,8 @@
                         <div>
                             <strong>{{ $extraCost->description }}</strong>
                             <span>
-                                {{ optional($extraCost->created_at)->format('d/m/Y H:i') }}
+                                Data do custo: {{ optional($extraCost->effective_cost_date)->format('d/m/Y') }}
+                                · Lançado em: {{ optional($extraCost->created_at)->format('d/m/Y H:i') }}
                                 · {{ $extraCost->creator?->name ?? 'Responsável não informado' }}
                             </span>
                         </div>
@@ -311,6 +313,7 @@
                                     @click="editExtraCost(@js([
                                         "description" => $extraCost->description,
                                         "amount" => (float) $extraCost->amount,
+                                        "cost_date" => optional($extraCost->effective_cost_date)->format('Y-m-d'),
                                     ]), @js(route("vehicles.maintenance.extra-costs.update", [$vehicle->id, $maintenance->id, $extraCost->id])))"
                                 >
                                     <i data-lucide="pencil"></i>
@@ -431,10 +434,12 @@
 
                 <div class="form-group">
                     <label>Tipo de execução</label>
-                    <select name="maintenance_type" class="form-input" x-model="itemForm.maintenance_type" required>
-                        <option value="internal">Oficina interna</option>
-                        <option value="external">Terceirizado</option>
-                    </select>
+                    <input type="hidden" name="maintenance_type" :value="itemForm.maintenance_type">
+                    <div class="maintenance-execution-toggle" role="group" aria-label="Tipo de execução">
+                        <button type="button" class="maintenance-execution-option" :class="{ 'is-active': itemForm.maintenance_type === 'internal' }" :disabled="!itemForm.can_be_internal" @click="itemForm.maintenance_type = 'internal'">Oficina interna</button>
+                        <button type="button" class="maintenance-execution-option" :class="{ 'is-active': itemForm.maintenance_type === 'external' }" @click="itemForm.maintenance_type = 'external'">Terceirizado</button>
+                    </div>
+                    <small x-show="!itemForm.can_be_internal" class="maintenance-field-help">Este procedimento permite somente execução terceirizada.</small>
                 </div>
 
                 <div class="form-group">
@@ -493,6 +498,11 @@
                 <div class="form-group">
                     <label>Valor</label>
                     <input type="number" name="amount" class="form-input" min="0" step="0.01" x-model="extraCostForm.amount" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Data do custo</label>
+                    <input type="date" name="cost_date" class="form-input" x-model="extraCostForm.cost_date" required>
                 </div>
 
                 <div class="form-group">

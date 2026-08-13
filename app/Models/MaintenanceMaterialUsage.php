@@ -20,6 +20,7 @@ class MaintenanceMaterialUsage extends Model
     ];
 
     public function scopeActive(Builder $query): Builder { return $query->whereNull('cancelled_at'); }
+    public function scopeCancelled(Builder $query): Builder { return $query->whereNotNull('cancelled_at'); }
     public function maintenanceRecord() { return $this->belongsTo(MaintenanceRecord::class); }
     public function stockItem() { return $this->belongsTo(StockItem::class); }
     public function stockMovement() { return $this->belongsTo(StockMovement::class); }
@@ -28,4 +29,5 @@ class MaintenanceMaterialUsage extends Model
     public function canceller() { return $this->belongsTo(User::class, 'cancelled_by'); }
     public function replacement() { return $this->belongsTo(self::class, 'replaced_by_usage_id'); }
     public function replacedUsage() { return $this->belongsTo(self::class, 'replaces_usage_id'); }
+    public function original() { return $this->replacedUsage(); }
 }
