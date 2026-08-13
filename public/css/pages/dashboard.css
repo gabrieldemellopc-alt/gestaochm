@@ -5095,7 +5095,11 @@ html[data-chm-theme="corporate-light"] .dashboard-page .quick-action-card:hover 
 }
 
 .vehicle-modal-action.primary {
-    border-color: rgba(224,82,91,.32);
+    border-color: rgba(224, 195, 82,.32);
+}
+.vehicle-modal-action.primary:hover {
+    border-color: rgba(224, 195, 82,.55);
+    background: rgba(224, 195, 82,.18);
 }
 
 .vehicle-center-status-form{

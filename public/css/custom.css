@@ -14248,7 +14248,7 @@ html[data-chm-theme="corporate-light"] .topbar .user-dropdown a {
     color: #ffffff;
 
     font-family: Inter, Arial, sans-serif;
-    font-size: clamp(42px, 5vw, 72px);
+    font-size: 28px !important;
     font-weight: 950;
     line-height: .9;
     letter-spacing: .01em;
