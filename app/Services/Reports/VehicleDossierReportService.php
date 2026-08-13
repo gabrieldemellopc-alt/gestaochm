@@ -207,6 +207,8 @@ class VehicleDossierReportService
             'location' => $context['location'],
             'location_ids' => $context['location_ids'],
             'can_view_cancelled' => $context['can_view_cancelled'],
+            'can_view_changes' => $context['can_view_changes'],
+            'can_view_costs' => $context['can_view_costs'],
             'can_view_audit' => $context['can_view_audit'],
         ];
     }
@@ -461,6 +463,9 @@ class VehicleDossierReportService
                 'extraCosts.creator',
                 'materialUsages.stockItem.category',
                 'materialUsages.creator',
+                'allMaterialUsages.stockItem.category',
+                'allMaterialUsages.canceller',
+                'allMaterialUsages.replacement.stockItem.category',
                 'statusLogs.user',
                 'opener',
                 'closer',
@@ -468,7 +473,7 @@ class VehicleDossierReportService
             ->orderByDesc('performed_at')
             ->orderByDesc('id')
             ->get()
-            ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceRow($maintenance))
+            ->map(fn (MaintenanceRecord $maintenance) => $this->maintenanceRow($maintenance, $context))
             ->values();
 
         if (! $filters['include_audit']) {
@@ -497,6 +502,9 @@ class VehicleDossierReportService
                 'extraCosts.creator',
                 'materialUsages.stockItem.category',
                 'materialUsages.creator',
+                'allMaterialUsages.stockItem.category',
+                'allMaterialUsages.canceller',
+                'allMaterialUsages.replacement.stockItem.category',
                 'statusLogs.user',
                 'opener',
                 'closer',
@@ -507,7 +515,7 @@ class VehicleDossierReportService
             ->orderByDesc('id')
             ->get()
             ->map(fn (MaintenanceRecord $maintenance) => [
-                ...$this->maintenanceRow($maintenance),
+                ...$this->maintenanceRow($maintenance, $context),
                 'module' => 'maintenance',
                 'record_type' => 'Manutencao cancelada',
                 'record_label' => $this->procedureSummary($this->normalizedMaintenanceItems($maintenance)),
@@ -533,7 +541,7 @@ class VehicleDossierReportService
             ->whereBetween('performed_at', [$filters['start_date'], $filters['end_date']]);
     }
 
-    private function maintenanceRow(MaintenanceRecord $maintenance): array
+    private function maintenanceRow(MaintenanceRecord $maintenance, array $context): array
     {
         $items = $this->normalizedMaintenanceItems($maintenance);
         $firstItem = $items->first();
@@ -565,6 +573,23 @@ class VehicleDossierReportService
                 'created_at' => $usage->created_at,
                 'created_by_name' => $usage->creator?->name ?? 'Não informado',
             ])->values(),
+            'material_changes' => $maintenance->allMaterialUsages
+                ->whereNotNull('cancelled_at')
+                ->filter(fn ($usage) => $usage->replaced_by_usage_id
+                    ? (bool) $context['can_view_changes']
+                    : (bool) $context['can_view_cancelled'])
+                ->map(fn ($usage) => [
+                    'old_name' => $usage->stockItem?->name ?? '-',
+                    'old_quantity' => (float) $usage->quantity,
+                    'unit' => $usage->stockItem?->unit,
+                    'replacement_name' => $usage->replacement?->stockItem?->name,
+                    'replacement_quantity' => $usage->replacement ? (float) $usage->replacement->quantity : null,
+                    'reason' => $usage->cancel_reason,
+                    'changed_at' => $usage->cancelled_at,
+                    'changed_by_name' => $usage->canceller?->name ?? 'Não informado',
+                    'type' => $usage->replaced_by_usage_id ? 'replacement' : 'cancelled',
+                    'old_cost' => $context['can_view_costs'] ? (float) $usage->total_cost : null,
+                ])->values(),
             'performed_km' => $maintenance->performed_km,
             'performed_hours' => $maintenance->performed_hours,
             'total_cost' => (float) ($maintenance->total_cost ?? 0),

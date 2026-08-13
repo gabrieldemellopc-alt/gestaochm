@@ -174,10 +174,10 @@ class ReportController extends Controller
             ->values();
 
         $pdfView = match (true) {
-            $context['can_view_changes'] && $context['can_view_costs'] => 'reports.pdf.maintenance-managerial',
-            $context['can_view_changes'] => 'reports.pdf.maintenance-operational-with-changes',
-            $context['can_view_costs'] => 'reports.pdf.maintenance',
-            default => 'reports.pdf.maintenance-operational',
+            ($context['can_view_changes'] || $context['can_view_cancelled']) && $context['can_view_costs'] => 'reports.pdf.maintenance-managerial',
+            $context['can_view_changes'] || $context['can_view_cancelled'] => 'reports.pdf.maintenance-operational-with-changes',
+            $context['can_view_costs'] => 'reports.pdf.maintenance-with-materials',
+            default => 'reports.pdf.maintenance-operational-with-materials',
         };
 
         $pdf = Pdf::loadView($pdfView, $pdfData)
@@ -470,12 +470,14 @@ class ReportController extends Controller
             'items.procedure',
             'items.values.field',
             'extraCosts.creator',
+            'materialUsages.stockItem.category',
+            'materialUsages.creator',
             'canceller',
             'opener',
             'closer',
         ];
 
-        if ($context['can_view_changes']) {
+        if ($context['can_view_changes'] || $context['can_view_cancelled']) {
             array_push(
                 $relations,
                 'cancelledItems.procedure',
@@ -483,6 +485,9 @@ class ReportController extends Controller
                 'cancelledItems.stockMovements.stockItem',
                 'cancelledItems.replacement.procedure',
                 'cancelledItems.replacement.stockMovements.stockItem',
+                'allMaterialUsages.stockItem.category',
+                'allMaterialUsages.canceller',
+                'allMaterialUsages.replacement.stockItem.category',
             );
         }
 
@@ -752,7 +757,24 @@ class ReportController extends Controller
             'procedure_summary' => $this->procedureSummary($items),
             'maintenance_type' => $items->first()['maintenance_type'] ?? $maintenance->maintenance_type,
             'maintenance_type_summary' => $this->maintenanceTypeSummary($items),
-            'extra_costs' => $maintenance->extraCosts,
+            'extra_costs' => $maintenance->extraCosts->map(fn ($cost) => [
+                'description' => $cost->description,
+                'amount' => $context['can_view_costs'] ? (float) $cost->amount : null,
+                'cost_date' => $cost->effective_cost_date,
+                'created_at' => $cost->created_at,
+                'created_by_name' => $cost->creator?->name ?? 'Não informado',
+            ])->values()->all(),
+            'materials' => $maintenance->materialUsages->map(fn ($usage) => [
+                'name' => $usage->stockItem?->name ?? '-',
+                'category' => $usage->stockItem?->category?->name,
+                'quantity' => (float) $usage->quantity,
+                'unit' => $usage->stockItem?->unit,
+                'unit_cost' => $context['can_view_costs'] ? (float) $usage->unit_cost : null,
+                'total_cost' => $context['can_view_costs'] ? (float) $usage->total_cost : null,
+                'notes' => $usage->notes,
+                'created_by_name' => $usage->creator?->name ?? 'Não informado',
+                'created_at' => $usage->created_at,
+            ])->values()->all(),
             'opened_by_name' => $maintenance->opener?->name ?? 'Não informado',
             'closed_by_name' => $maintenance->workflow_status === 'closed' ? ($maintenance->closer?->name ?? 'Não informado') : null,
             'cancelled_by_name' => $context['can_view_cancelled'] && $maintenance->cancelled_at !== null ? ($maintenance->canceller?->name ?? 'Não informado') : null,
@@ -767,11 +789,11 @@ class ReportController extends Controller
 
     private function maintenanceChanges(MaintenanceRecord $maintenance, array $context): array
     {
-        if (! $context['can_view_changes']) {
+        if (! ($context['can_view_changes'] ?? false) && ! ($context['can_view_cancelled'] ?? false)) {
             return [];
         }
 
-        return $maintenance->cancelledItems
+        $serviceChanges = $context['can_view_changes'] ? $maintenance->cancelledItems
             ->filter(fn ($item) => $item->replacement !== null)
             ->sortByDesc('cancelled_at')
             ->map(function ($item) use ($context) {
@@ -806,7 +828,44 @@ class ReportController extends Controller
                 ];
             })
             ->values()
-            ->all();
+            ->all() : [];
+
+        $materialChanges = $maintenance->allMaterialUsages
+            ->whereNotNull('cancelled_at')
+            ->filter(fn ($usage) => $usage->replaced_by_usage_id !== null
+                ? (bool) $context['can_view_changes']
+                : (bool) ($context['can_view_cancelled'] ?? false))
+            ->sortByDesc('cancelled_at')
+            ->map(fn ($usage) => [
+                'type' => $usage->replaced_by_usage_id ? 'material_replacement' : 'material_cancelled',
+                'old_item_id' => $usage->id,
+                'old_procedure' => $usage->stockItem?->name ?? 'Material',
+                'old_quantity' => (float) $usage->quantity,
+                'old_unit' => $usage->stockItem?->unit,
+                'old_cost' => $context['can_view_costs'] ? (float) $usage->total_cost : null,
+                'replacement_item_id' => $usage->replacement?->id,
+                'replacement_procedure' => $usage->replacement?->stockItem?->name,
+                'replacement_quantity' => $usage->replacement ? (float) $usage->replacement->quantity : null,
+                'replacement_cost' => $context['can_view_costs'] && $usage->replacement ? (float) $usage->replacement->total_cost : null,
+                'reason' => $usage->cancel_reason,
+                'changed_by' => $usage->canceller?->name ?? 'Nao informado',
+                'changed_at' => $usage->cancelled_at,
+                'returned_stock' => [[
+                    'item' => $usage->stockItem?->name ?? '-',
+                    'quantity' => (float) $usage->quantity,
+                    'unit_cost' => $context['can_view_costs'] ? (float) $usage->unit_cost : null,
+                    'total_cost' => $context['can_view_costs'] ? (float) $usage->total_cost : null,
+                ]],
+                'new_stock' => $usage->replacement ? [[
+                    'item' => $usage->replacement->stockItem?->name ?? '-',
+                    'quantity' => (float) $usage->replacement->quantity,
+                    'unit_cost' => $context['can_view_costs'] ? (float) $usage->replacement->unit_cost : null,
+                    'total_cost' => $context['can_view_costs'] ? (float) $usage->replacement->total_cost : null,
+                ]] : [],
+                'considered_in_totals' => false,
+            ])->values()->all();
+
+        return [...$serviceChanges, ...$materialChanges];
     }
 
     private function maintenanceChangeStockRow(StockMovement $movement, array $context): array

@@ -23,6 +23,7 @@ class MaintenanceDetailsSheet implements FromArray, ShouldAutoSize, WithTitle
             'Procedimentos',
             'Tipo',
             'Itens',
+            'Materiais utilizados',
             'Custo registrado da ordem',
             'Aberta por',
             'Finalizada por',
@@ -36,6 +37,9 @@ class MaintenanceDetailsSheet implements FromArray, ShouldAutoSize, WithTitle
                 $maintenance['procedure_summary'] ?? $maintenance['procedure_name'] ?? '-',
                 $this->maintenanceTypeLabel($maintenance['maintenance_type_summary'] ?? $maintenance['maintenance_type'] ?? null),
                 $maintenance['items_count'] ?? 1,
+                collect($maintenance['materials'] ?? [])->map(
+                    fn (array $material) => ($material['name'] ?? '-').' ('.($material['quantity'] ?? 0).' '.($material['unit'] ?? '').')'
+                )->implode('; ') ?: '-',
                 ! empty($this->data['canViewCosts'])
                     ? ($maintenance['total_cost'] !== null ? (float) $maintenance['total_cost'] : null)
                     : 'Restrito',

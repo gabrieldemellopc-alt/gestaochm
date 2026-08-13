@@ -17,7 +17,7 @@ class MaintenanceChangesSheet implements FromArray, ShouldAutoSize, WithTitle
     {
         $rows = [[
             'Ordem', 'Veiculo', 'Placa', 'Alterado em', 'Responsavel',
-            'Servico anterior', 'Novo servico', 'Motivo', 'Estoque devolvido',
+            'Registro anterior', 'Novo registro', 'Motivo', 'Estoque devolvido',
             'Novo consumo', 'Custo anterior', 'Novo custo', 'Considerado nos totais?',
         ]];
 

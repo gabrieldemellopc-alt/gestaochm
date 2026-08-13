@@ -540,7 +540,14 @@
                             @endif
                             @if(collect($maintenance['materials'] ?? [])->isNotEmpty())
                                 <span class="muted"><strong>Materiais utilizados:</strong>
-                                    {{ collect($maintenance['materials'])->map(fn ($material) => $material['name'].' ('.$number($material['quantity'], 2).' '.$material['unit'].')')->join(', ') }}
+                                    {{ collect($maintenance['materials'])->map(fn ($material) => $material['name'].' ('.$number($material['quantity'], 2).' '.$material['unit'].')'.(($context['can_view_costs'] ?? false) ? ' - '.$money($material['total_cost']) : ''))->join(', ') }}
+                                </span>
+                            @endif
+                            @if(collect($maintenance['material_changes'] ?? [])->isNotEmpty())
+                                <span class="muted"><strong>Alterações em materiais:</strong>
+                                    @foreach(collect($maintenance['material_changes']) as $change)
+                                        {{ $change['old_name'] }} ({{ $number($change['old_quantity'], 2) }} {{ $change['unit'] }}) — {{ $change['type'] === 'replacement' ? 'corrigido' : 'cancelado' }}@if($change['replacement_name']) para {{ $change['replacement_name'] }} ({{ $number($change['replacement_quantity'], 2) }} {{ $change['unit'] }})@endif; motivo: {{ $change['reason'] ?: '-' }}; {{ $change['changed_by_name'] }} em {{ $formatDate($change['changed_at']) }}.<br>
+                                    @endforeach
                                 </span>
                             @endif
                         </td>

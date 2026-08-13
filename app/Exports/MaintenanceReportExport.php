@@ -34,7 +34,7 @@ class MaintenanceReportExport implements WithMultipleSheets
         }
 
         if (
-            ! empty($this->data['canViewChanges'])
+            (! empty($this->data['canViewChanges']) || ! empty($this->data['canViewCancelled']))
             && collect($this->data['maintenances'] ?? [])->contains(
                 fn (array $maintenance) => ! empty($maintenance['changes'])
             )

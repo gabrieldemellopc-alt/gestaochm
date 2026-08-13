@@ -1,7 +1,7 @@
-@if(($canViewChanges ?? false) && collect($maintenanceChangeRows ?? [])->contains(fn ($maintenance) => ! empty($maintenance['changes'] ?? [])))
+@if((($canViewChanges ?? false) || ($canViewCancelled ?? false)) && collect($maintenanceChangeRows ?? [])->contains(fn ($maintenance) => ! empty($maintenance['changes'] ?? [])))
     <section style="page-break-before: auto; margin-top: 26px; font-family: DejaVu Sans; color: #111827; font-size: 10px;">
         <div style="page-break-inside: avoid; margin-bottom: 12px;">
-            <h3 style="margin: 0 0 5px; font-size: 15px; line-height: 1.3; color: #0f172a;">Alterações de serviços</h3>
+            <h3 style="margin: 0 0 5px; font-size: 15px; line-height: 1.3; color: #0f172a;">Alterações e cancelamentos</h3>
 
             <p style="margin: 0; color: #64748b; line-height: 1.4;">
                 Os lançamentos anteriores são exibidos apenas para rastreabilidade e não compõem totais, rankings ou médias.
@@ -16,7 +16,7 @@
                         <tr>
                             <th colspan="4" style="background: #f1f5f9; color: #0f172a; padding: 7px 9px; text-align: left; border-bottom: 1px solid #dbe2ea;">
                                 <span style="display: inline-block; background: #fef3c7; color: #92400e; padding: 2px 6px; margin-right: 7px; font-size: 9px; font-weight: bold;">
-                                    {{ ($change['type'] ?? null) === 'replacement' ? 'Substituído' : 'Corrigido' }}
+                                    {{ match ($change['type'] ?? null) { 'material_replacement' => 'Material corrigido', 'material_cancelled' => 'Material cancelado', 'replacement' => 'Serviço substituído', default => 'Corrigido' } }}
                                 </span>
                                 Ordem #{{ $maintenance['id'] }} - {{ $maintenance['vehicle_name'] }} ({{ $maintenance['vehicle_plate'] }})
                             </th>
@@ -24,8 +24,8 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td style="width: 25%; padding: 7px 9px; border-bottom: 1px solid #e5e7eb;"><strong>Serviço anterior</strong><br>{{ $change['old_procedure'] ?: 'Não informado' }}</td>
-                            <td style="width: 25%; padding: 7px 9px; border-bottom: 1px solid #e5e7eb;"><strong>Novo serviço</strong><br>{{ $change['replacement_procedure'] ?: 'Não informado' }}</td>
+                            <td style="width: 25%; padding: 7px 9px; border-bottom: 1px solid #e5e7eb;"><strong>{{ str_starts_with($change['type'] ?? '', 'material_') ? 'Material anterior' : 'Serviço anterior' }}</strong><br>{{ $change['old_procedure'] ?: 'Não informado' }}@if(isset($change['old_quantity'])) ({{ $change['old_quantity'] }} {{ $change['old_unit'] ?? '' }})@endif</td>
+                            <td style="width: 25%; padding: 7px 9px; border-bottom: 1px solid #e5e7eb;"><strong>{{ str_starts_with($change['type'] ?? '', 'material_') ? 'Novo material' : 'Novo serviço' }}</strong><br>{{ $change['replacement_procedure'] ?: 'Cancelado' }}@if(isset($change['replacement_quantity'])) ({{ $change['replacement_quantity'] }} {{ $change['old_unit'] ?? '' }})@endif</td>
                             <td style="width: 25%; padding: 7px 9px; border-bottom: 1px solid #e5e7eb;"><strong>Responsável</strong><br>{{ $change['changed_by'] ?: 'Não informado' }}</td>
                             <td style="width: 25%; padding: 7px 9px; border-bottom: 1px solid #e5e7eb;"><strong>Data/hora</strong><br>{{ $change['changed_at'] ? optional($change['changed_at'])->format('d/m/Y H:i') : 'Não informado' }}</td>
                         </tr>

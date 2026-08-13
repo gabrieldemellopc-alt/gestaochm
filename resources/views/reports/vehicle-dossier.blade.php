@@ -909,7 +909,21 @@
                                         <div class="dossier-item-line">
                                             <strong>Materiais utilizados</strong>
                                             @foreach(collect($maintenance['materials'])->take(4) as $material)
-                                                <div class="dossier-muted-line">{{ $material['name'] }} · {{ $number($material['quantity'], 2) }} {{ $material['unit'] }}</div>
+                                                <div class="dossier-muted-line">{{ $material['name'] }} · {{ $number($material['quantity'], 2) }} {{ $material['unit'] }}@if($context['can_view_costs'] ?? false) · {{ $money($material['total_cost']) }}@endif</div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                    @if(collect($maintenance['material_changes'] ?? [])->isNotEmpty())
+                                        <div class="dossier-item-line">
+                                            <strong>Alterações em materiais</strong>
+                                            @foreach(collect($maintenance['material_changes']) as $change)
+                                                <div class="dossier-muted-line">
+                                                    {{ $change['old_name'] }} ({{ $number($change['old_quantity'], 2) }} {{ $change['unit'] }})
+                                                    · {{ $change['type'] === 'replacement' ? 'corrigido' : 'cancelado' }}
+                                                    @if($change['replacement_name']) → {{ $change['replacement_name'] }} ({{ $number($change['replacement_quantity'], 2) }} {{ $change['unit'] }}) @endif
+                                                    · {{ $change['changed_by_name'] }} · {{ $formatDate($change['changed_at']) }}
+                                                    · {{ $change['reason'] ?: '-' }}
+                                                </div>
                                             @endforeach
                                         </div>
                                     @endif
