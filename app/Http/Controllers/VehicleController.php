@@ -2935,6 +2935,8 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'cancelledItems.procedure',
             'cancelledItems.canceller',
             'extraCosts.creator',
+            'materialUsages.stockItem.category',
+            'materialUsages.creator',
             'photos.uploader',
         ])
         ->where('workflow_status', 'open')
@@ -3022,6 +3024,8 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'add_items' => $can('maintenance.add_items'),
             'edit_items' => $can('maintenance.edit_items'),
             'consume_stock' => $can('maintenance.consume_stock'),
+            'use_materials' => $can('maintenance.use_materials'),
+            'cancel_materials' => $can('maintenance.cancel_materials'),
             'add_extra_costs' => $can('maintenance.add_extra_costs'),
             'edit_extra_costs' => $can('maintenance.edit_extra_costs'),
             'change_status' => $can('maintenance.change_status'),

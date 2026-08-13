@@ -5,6 +5,7 @@ use App\Models\Procedure;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceRecordExtraCost;
 use App\Models\MaintenanceRecordItem;
+use App\Models\MaintenanceMaterialUsage;
 use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
@@ -13,10 +14,104 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use App\Services\MaintenanceService;
+use App\Services\MaintenanceMaterialService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class MaintenanceController extends Controller
 {
+    public function searchMaterials(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceMaterialService $service)
+    {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) { return $redirect; }
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        $this->authorizeMaintenancePermission('maintenance.use_materials');
+        $items = $service->search($maintenance->loadMissing('vehicle'), (string) $request->query('q', ''));
+        $showCosts = $this->canMaintenance('maintenance.view_costs');
+        return response()->json($items->map(fn ($item) => [
+            'id' => $item->id, 'name' => $item->name, 'brand' => $item->brand,
+            'category' => $item->category?->name, 'unit' => $item->unit,
+            'available_quantity' => (float) $item->quantity,
+            'unit_cost' => $showCosts ? (float) $item->unit_cost : null,
+        ]));
+    }
+
+    public function storeMaterial(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceMaterialService $service)
+    {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) { return $redirect; }
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        $this->authorizeMaintenancePermission('maintenance.use_materials');
+        $data = $request->validate([
+            'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'numeric', 'gt:0'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $material = $service->add($maintenance, $data, auth()->user());
+        if ($request->expectsJson()) {
+            return response()->json($this->materialPayload($vehicle, $maintenance, 'Material lançado com sucesso.', $material));
+        }
+        return back()->with('success', 'Material adicionado com sucesso.');
+    }
+
+    public function cancelMaterial(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceMaterialUsage $usage, MaintenanceMaterialService $service)
+    {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) { return $redirect; }
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        abort_unless((int) $usage->maintenance_record_id === (int) $maintenance->id, 404);
+        $this->authorizeMaintenancePermission('maintenance.cancel_materials');
+        $data = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:2000']]);
+        $service->cancel($maintenance, $usage, $data['reason'], auth()->user());
+        if ($request->expectsJson()) {
+            return response()->json($this->materialPayload($vehicle, $maintenance, 'Material cancelado e devolvido ao estoque.'));
+        }
+        return back()->with('success', 'Material cancelado e devolvido ao estoque.');
+    }
+
+    public function replaceMaterial(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceMaterialUsage $usage, MaintenanceMaterialService $service)
+    {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) { return $redirect; }
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        abort_unless((int) $usage->maintenance_record_id === (int) $maintenance->id, 404);
+        $this->authorizeMaintenancePermission('maintenance.cancel_materials');
+        $this->authorizeMaintenancePermission('maintenance.use_materials');
+        $data = $request->validate([
+            'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'numeric', 'gt:0'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+        $material = $service->replace($maintenance, $usage, $data, auth()->user());
+        if ($request->expectsJson()) {
+            return response()->json($this->materialPayload($vehicle, $maintenance, 'Material corrigido com devolução e nova baixa.', $material));
+        }
+        return back()->with('success', 'Material corrigido com devolução e nova baixa.');
+    }
+
+    private function materialPayload(Vehicle $vehicle, MaintenanceRecord $maintenance, string $message, ?MaintenanceMaterialUsage $material = null): array
+    {
+        $maintenance = $maintenance->fresh(['materialUsages.stockItem.category', 'materialUsages.creator']);
+        $canViewCosts = $this->canMaintenance('maintenance.view_costs');
+        $canCancelMaterials = $this->canMaintenance('maintenance.cancel_materials');
+
+        return [
+            'message' => $message,
+            'material' => $material ? [
+                'id' => $material->id,
+                'stock_item_id' => $material->stock_item_id,
+                'quantity' => (float) $material->quantity,
+                'notes' => $material->notes,
+                'unit_cost' => $canViewCosts ? (float) $material->unit_cost : null,
+                'total_cost' => $canViewCosts ? (float) $material->total_cost : null,
+            ] : null,
+            'count' => $maintenance->materialUsages->count(),
+            'quantity_total' => (float) $maintenance->materialUsages->sum('quantity'),
+            'materials_total' => $canViewCosts ? (float) $maintenance->materialUsages->sum('total_cost') : null,
+            'maintenance_total' => $canViewCosts ? (float) $maintenance->total_cost : null,
+            'list_html' => view('vehicle.partials.maintenance-materials-list', [
+                'vehicle' => $vehicle,
+                'maintenance' => $maintenance,
+                'canViewCosts' => $canViewCosts,
+                'canCancelMaterials' => $canCancelMaterials,
+            ])->render(),
+        ];
+    }
+
     public function store(Request $request, Vehicle $vehicle)
     {
         if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
@@ -446,6 +541,8 @@ class MaintenanceController extends Controller
             'items.procedure',
             'items.values.field',
             'extraCosts.creator',
+            'materialUsages.stockItem.category',
+            'materialUsages.creator',
             'statusLogs.user',
             'opener',
             'closer',
@@ -613,6 +710,8 @@ class MaintenanceController extends Controller
             'edit_items' => $can('maintenance.edit_items'),
             'consume_stock' => $can('maintenance.consume_stock'),
             'add_extra_costs' => $can('maintenance.add_extra_costs'),
+            'use_materials' => $can('maintenance.use_materials'),
+            'cancel_materials' => $can('maintenance.cancel_materials'),
             'edit_extra_costs' => $can('maintenance.edit_extra_costs'),
             'change_status' => $can('maintenance.change_status'),
             'close' => $can('maintenance.close'),
@@ -792,6 +891,8 @@ class MaintenanceController extends Controller
             'items.procedure',
             'items.values.field',
             'extraCosts.creator',
+            'materialUsages.stockItem.category',
+            'materialUsages.creator',
             'statusLogs.user',
             'opener',
             'closer',
@@ -802,6 +903,7 @@ class MaintenanceController extends Controller
         $pdf = Pdf::loadView('vehicle.pdf.maintenance-order', [
             'vehicle' => $vehicle,
             'maintenance' => $maintenance,
+            'canViewCosts' => $this->maintenancePermissions($vehicle)['view_costs'],
             'canViewAuditLogs' => $this->maintenancePermissions($vehicle)['view_cancellation_details'],
         ])->setPaper('a4', 'portrait');
 

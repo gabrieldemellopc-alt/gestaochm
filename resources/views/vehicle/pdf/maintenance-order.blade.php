@@ -476,6 +476,25 @@
         </table>
     @endif
 
+    <div class="section-title">Materiais utilizados</div>
+
+    <table>
+        <thead><tr><th>Item / categoria</th><th>Quantidade</th><th>Lançado por / data</th><th>Observação</th><th>Custo</th></tr></thead>
+        <tbody>
+            @forelse($maintenance->materialUsages as $usage)
+                <tr>
+                    <td>{{ $usage->stockItem?->name ?? 'Item de estoque' }}<br><span class="muted">{{ $usage->stockItem?->category?->name ?? 'Sem categoria' }}</span></td>
+                    <td>{{ number_format($usage->quantity, 2, ',', '.') }} {{ $usage->stockItem?->unit }}</td>
+                    <td>{{ $usage->creator?->name ?? 'Não informado' }}<br>{{ optional($usage->created_at)->format('d/m/Y H:i') }}</td>
+                    <td>{{ $usage->notes ?: '-' }}</td>
+                    <td><strong>@if($canViewCosts ?? false)R$ {{ number_format($usage->total_cost, 2, ',', '.') }}@else Restrito @endif</strong></td>
+                </tr>
+            @empty
+                <tr><td colspan="5">Nenhum material utilizado diretamente.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
     <div class="section-title">Custos avulsos</div>
 
     <table>

@@ -173,6 +173,16 @@ class MaintenanceRecord extends Model
         return $this->hasMany(MaintenanceRecordExtraCost::class);
     }
 
+    public function materialUsages()
+    {
+        return $this->hasMany(MaintenanceMaterialUsage::class)->active();
+    }
+
+    public function allMaterialUsages()
+    {
+        return $this->hasMany(MaintenanceMaterialUsage::class);
+    }
+
     public function photos() { return $this->hasMany(MaintenancePhoto::class); }
     public function activePhotos() { return $this->photos(); }
     public function photoUploadTokens() { return $this->hasMany(MaintenancePhotoUploadToken::class); }

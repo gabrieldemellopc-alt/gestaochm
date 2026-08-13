@@ -53,6 +53,8 @@ return [
                 'maintenance.add_items' => ['label' => 'Adicionar procedimentos', 'default' => ['supervisor' => true]],
                 'maintenance.edit_items' => ['label' => 'Editar serviços da manutenção', 'default' => ['supervisor' => false]],
                 'maintenance.consume_stock' => ['label' => 'Consumir estoque em manutenção', 'default' => ['supervisor' => true]],
+                'maintenance.use_materials' => ['label' => 'Lançar materiais utilizados na manutenção', 'default' => ['supervisor' => true]],
+                'maintenance.cancel_materials' => ['label' => 'Cancelar ou corrigir materiais utilizados', 'default' => ['supervisor' => false]],
                 'maintenance.add_extra_costs' => ['label' => 'Lançar custos avulsos', 'default' => ['supervisor' => false]],
                 'maintenance.edit_extra_costs' => ['label' => 'Editar custos avulsos da manutenção', 'default' => ['supervisor' => false]],
                 'maintenance.change_status' => ['label' => 'Alterar status', 'default' => ['supervisor' => true]],

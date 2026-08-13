@@ -1177,9 +1177,13 @@ class MaintenanceService
         $extraCostsTotal = MaintenanceRecordExtraCost::query()
             ->where('maintenance_record_id', $maintenance->id)
             ->sum('amount');
+        $materialsTotal = \App\Models\MaintenanceMaterialUsage::query()
+            ->where('maintenance_record_id', $maintenance->id)
+            ->whereNull('cancelled_at')
+            ->sum('total_cost');
 
         MaintenanceRecord::query()->whereKey($maintenance->id)->update([
-            'total_cost' => (float) $itemsTotal + (float) $extraCostsTotal,
+            'total_cost' => (float) $itemsTotal + (float) $extraCostsTotal + (float) $materialsTotal,
         ]);
 
         return $maintenance->fresh();

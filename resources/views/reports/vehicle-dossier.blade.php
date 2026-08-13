@@ -905,6 +905,14 @@
                                     <div class="dossier-muted-line">
                                         {{ $maintenance['items_count'] }} serviço(s)
                                     </div>
+                                    @if(collect($maintenance['materials'] ?? [])->isNotEmpty())
+                                        <div class="dossier-item-line">
+                                            <strong>Materiais utilizados</strong>
+                                            @foreach(collect($maintenance['materials'])->take(4) as $material)
+                                                <div class="dossier-muted-line">{{ $material['name'] }} · {{ $number($material['quantity'], 2) }} {{ $material['unit'] }}</div>
+                                            @endforeach
+                                        </div>
+                                    @endif
 
                                     @foreach($visibleItems as $item)
                                         <div class="dossier-item-line">

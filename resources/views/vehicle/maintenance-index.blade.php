@@ -8,7 +8,7 @@
 
     rel="stylesheet"
 
-    href="{{ asset('css/pages/maintenance.css') }}?v=10"
+ href="{{ asset('css/pages/maintenance.css') }}?v=13"
 >
 
 @endpush
@@ -551,12 +551,12 @@
                 <span class="maintenance-info-badge">
                     <i data-lucide="circle-dollar-sign"></i>
 
-                    Total @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format(
+                    Total @if($maintenancePermissions['view_costs'] ?? false)<span data-maintenance-total>R$ {{ number_format(
                         $openMaintenance->total_cost ?? 0,
                         2,
                         ',',
                         '.'
-                    ) }}@else Valor restrito @endif
+                    ) }}</span>@else Valor restrito @endif
                 </span>
 
             </div>
@@ -887,7 +887,7 @@
                         </div>
 
                         <strong>
-                            Total: @if($maintenancePermissions['view_costs'] ?? false)R$ {{ number_format($openMaintenance->total_cost ?? 0, 2, ',', '.') }}@else Valor restrito @endif
+                            Total: @if($maintenancePermissions['view_costs'] ?? false)<span data-maintenance-total>R$ {{ number_format($openMaintenance->total_cost ?? 0, 2, ',', '.') }}</span>@else Valor restrito @endif
                         </strong>
                     </div>
 
@@ -1039,6 +1039,18 @@
                         </section>
                     @endif
                 </div>
+
+                @includeWhen(
+                    $openMaintenance->materialUsages->isNotEmpty() || ($maintenancePermissions['use_materials'] ?? false),
+                    'vehicle.partials.maintenance-materials-summary',
+                    [
+                        'vehicle' => $vehicle,
+                        'maintenance' => $openMaintenance,
+                        'canUseMaterials' => (bool) ($maintenancePermissions['use_materials'] ?? false),
+                        'canCancelMaterials' => (bool) ($maintenancePermissions['cancel_materials'] ?? false),
+                        'canViewCosts' => $canViewCosts,
+                    ]
+                )
 
                 @if(
                     $openMaintenance->extraCosts->isNotEmpty()
@@ -1291,3 +1303,47 @@
 
 
 @endsection
+
+@push('scripts')
+<script>
+    window.maintenanceMaterialsManager = function (config) {
+        return {
+            modalOpen: false, query: '', results: [], selected: null, quantity: '', notes: '',
+            loading: false, submitting: false, message: '', messageType: 'success',
+            count: config.count, totalQuantity: config.totalQuantity,
+            materialsTotal: config.materialsTotal, maintenanceTotal: config.maintenanceTotal,
+            money(value) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0)); },
+            openModal() { this.modalOpen = true; document.documentElement.classList.add('maintenance-modal-open'); this.$nextTick(() => document.getElementById('maintenance-material-search')?.focus()); },
+            closeModal() { this.modalOpen = false; document.documentElement.classList.remove('maintenance-modal-open'); },
+            selectItem(item) { this.selected = item; this.query = item.name; this.results = []; this.quantity = ''; },
+            async search() {
+                if (this.query.trim().length < 2) { this.results = []; return; }
+                this.loading = true;
+                try {
+                    const response = await fetch(config.searchUrl + '?q=' + encodeURIComponent(this.query), { headers: { Accept: 'application/json' } });
+                    this.results = response.ok ? await response.json() : [];
+                } finally { this.loading = false; }
+            },
+            async request(form) {
+                this.submitting = true; this.message = '';
+                try {
+                    const response = await fetch(form.action, { method: form.method || 'POST', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: new FormData(form) });
+                    const payload = await response.json();
+                    if (!response.ok) throw new Error(Object.values(payload.errors || {}).flat()[0] || payload.message || 'Não foi possível concluir a operação.');
+                    this.count = payload.count; this.totalQuantity = payload.quantity_total; this.materialsTotal = payload.materials_total; this.maintenanceTotal = payload.maintenance_total;
+                    this.$refs.materialsList.innerHTML = payload.list_html;
+                    document.querySelectorAll('[data-maintenance-total]').forEach(element => element.textContent = this.money(payload.maintenance_total));
+                    this.message = payload.message; this.messageType = 'success';
+                    return true;
+                } catch (error) { this.message = error.message; this.messageType = 'error'; return false; }
+                finally { this.submitting = false; }
+            },
+            async addMaterial(event) {
+                if (!this.selected || this.submitting) return;
+                if (await this.request(event.target)) { this.selected = null; this.query = ''; this.quantity = ''; this.notes = ''; this.results = []; }
+            },
+            async submitAction(event) { if (!this.submitting) await this.request(event.target); }
+        };
+    };
+</script>
+@endpush

@@ -537,6 +537,15 @@ Route::middleware('auth')->group(function () {
         '/vehicles/{vehicle}/maintenance/{maintenance}/extra-costs/{extraCost}',
         [MaintenanceController::class, 'updateExtraCost']
     )->name('vehicles.maintenance.extra-costs.update');
+
+    Route::get('/vehicles/{vehicle}/maintenance/{maintenance}/materials/search', [MaintenanceController::class, 'searchMaterials'])
+        ->name('vehicles.maintenance.materials.search');
+    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials', [MaintenanceController::class, 'storeMaterial'])
+        ->name('vehicles.maintenance.materials.store');
+    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials/{usage}/cancel', [MaintenanceController::class, 'cancelMaterial'])
+        ->name('vehicles.maintenance.materials.cancel');
+    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials/{usage}/replace', [MaintenanceController::class, 'replaceMaterial'])
+        ->name('vehicles.maintenance.materials.replace');
     
     Route::get(
         '/vehicles/{vehicle}/maintenance/{maintenance}/pdf',

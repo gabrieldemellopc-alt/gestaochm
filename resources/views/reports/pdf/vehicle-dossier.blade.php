@@ -538,6 +538,11 @@
                             @if(! empty($maintenance['closed_by_name']))
                                 <span class="muted">Finalizada por: {{ $maintenance['closed_by_name'] }}</span>
                             @endif
+                            @if(collect($maintenance['materials'] ?? [])->isNotEmpty())
+                                <span class="muted"><strong>Materiais utilizados:</strong>
+                                    {{ collect($maintenance['materials'])->map(fn ($material) => $material['name'].' ('.$number($material['quantity'], 2).' '.$material['unit'].')')->join(', ') }}
+                                </span>
+                            @endif
                         </td>
 
                         <td>
