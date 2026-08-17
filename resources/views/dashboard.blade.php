@@ -18,6 +18,21 @@
 
     $fuelEnabled = (bool) config('chm.features.fuel_enabled', true);
 
+    $dashboardPermissionService = app(\App\Services\Permissions\ProfilePermissionService::class);
+    $dashboardCanPermission = function (string $permissionKey) use ($dashboardPermissionService) {
+        $dashboardCurrentUser = auth()->user();
+
+        if (! $dashboardCurrentUser) { return false; }
+        if (userHasProfile('admin') || userHasProfile('manager')) { return true; }
+        if (! userHasProfile('supervisor')) { return true; }
+
+        return $dashboardPermissionService->allows($dashboardCurrentUser, $permissionKey);
+    };
+
+    $canAccessVehicleMaintenance = $dashboardCanPermission('navigation.workshop') && $dashboardCanPermission('maintenance.view');
+    $canFillVehicle = $fuelEnabled && $dashboardCanPermission('navigation.fuel') && ($dashboardCanPermission('fuel.fill_internal') || $dashboardCanPermission('fuel.fill_external'));
+    $canAccessVehicleTires = $dashboardCanPermission('navigation.tires');
+
 @endphp
 
 
@@ -700,18 +715,29 @@
                 
 
                         @endif
+                        @if($canAccessVehicleMaintenance || $canFillVehicle || $canAccessVehicleTires)
+                            <div class="vehicle-card-actions">
+                                @if($canAccessVehicleMaintenance)
+                                    <a href="{{ route('vehicle.maintenance.index', $vehicle) }}" class="vehicle-card-action vehicle-card-action--maintenance" title="Abrir manutenção do veículo" aria-label="Abrir manutenção do veículo" onclick="event.stopPropagation();">
+                                        <span class="vehicle-action-hover-arrow" aria-hidden="true">&uarr;</span>
+                                        <span class="vehicle-action-icon"><i data-lucide="wrench"></i></span>
+                                    </a>
+                                @endif
 
-                        @if($fuelEnabled)
+                                @if($canFillVehicle)
+                                    <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}" class="vehicle-card-action vehicle-card-action--fuel" title="Lançar abastecimento do veículo" aria-label="Lançar abastecimento do veículo" onclick="event.stopPropagation();">
+                                        <span class="vehicle-action-hover-arrow" aria-hidden="true">&uarr;</span>
+                                        <span class="vehicle-action-icon"><i data-lucide="fuel"></i></span>
+                                    </a>
+                                @endif
 
-                            <a
-                                href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}"
-                                class="vehicle-operation-action-btn fuel"
-                                onclick="event.stopPropagation();"
-                            >
-                                <i data-lucide="fuel"></i>
-                                Abastecer veiculo
-                            </a>
-
+                                @if($canAccessVehicleTires)
+                                    <a href="{{ route('vehicles.tires.index', $vehicle) }}" class="vehicle-card-action vehicle-card-action--tires" title="Abrir pneus do veículo" aria-label="Abrir pneus do veículo" onclick="event.stopPropagation();">
+                                        <span class="vehicle-action-hover-arrow" aria-hidden="true">&uarr;</span>
+                                        <span class="vehicle-action-icon"><i data-lucide="circle-dot"></i></span>
+                                    </a>
+                                @endif
+                            </div>
                         @endif
                 
 
