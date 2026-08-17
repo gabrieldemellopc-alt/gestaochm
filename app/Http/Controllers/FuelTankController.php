@@ -127,6 +127,60 @@ class FuelTankController extends Controller
         ]);
     }
 
+    public function consumptionDashboard(Request $request)
+    {
+        $context = $this->activeContext();
+        if (! $context) abort(422);
+        $this->authorizeFuelManagement($context);
+        $this->authorizeFuelPermission('fuel.view', $context);
+
+        $period = $request->input('period', 'last_30_days');
+        $today = now()->startOfDay();
+        [$start, $end, $periodLabel] = match ($period) {
+            'current_month' => [$today->copy()->startOfMonth(), $today->copy()->endOfMonth(), $today->translatedFormat('F/Y')],
+            'previous_month' => [$today->copy()->subMonthNoOverflow()->startOfMonth(), $today->copy()->subMonthNoOverflow()->endOfMonth(), $today->copy()->subMonthNoOverflow()->translatedFormat('F/Y')],
+            'all' => [null, null, 'Todo o período disponível'],
+            default => [$today->copy()->subDays(30), $today->copy()->endOfDay(), 'Últimos 30 dias'],
+        };
+        $query = FuelFilling::with('vehicle')->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->whereNull('cancelled_at');
+        if ($start && $end) $query->whereBetween('filled_at', [$start, $end]);
+        $fillings = $query->orderBy('filled_at')->get();
+        $costs = $this->canFuel('fuel.view_costs', $context);
+        $efficiency = $this->vehicleEfficiency($fillings);
+        $validEntries = $efficiency->sum('valid_entries');
+        $validKm = $efficiency->sum('total_km');
+        $validLiters = $efficiency->sum('total_liters');
+
+        return response()->json([
+            'period' => $period, 'period_label' => $periodLabel, 'start_date' => $start?->toDateString(), 'end_date' => $end?->toDateString(),
+            'summary' => ['total_liters' => (float) $fillings->sum('quantity_liters'), 'fillings_count' => $fillings->count(), 'total_cost' => $costs ? (float) $fillings->sum('total_cost') : null, 'average_km_per_liter' => $validLiters > 0 ? round($validKm / $validLiters, 2) : null, 'average_km_per_liter_entries_count' => $validEntries],
+            'by_month' => $fillings->groupBy(fn ($filling) => $filling->filled_at->format('M/Y'))->map(fn ($group, $label) => ['label' => $label, 'liters' => (float) $group->sum('quantity_liters')])->values(),
+            'by_weekday' => $fillings->groupBy(fn ($filling) => $filling->filled_at->locale('pt_BR')->isoFormat('ddd'))->map(fn ($group, $label) => ['label' => mb_strtoupper($label), 'liters' => (float) $group->sum('quantity_liters')])->values(),
+            'by_day' => $fillings->groupBy(fn ($filling) => $filling->filled_at->toDateString())->map(fn ($group, $label) => ['label' => $label, 'liters' => (float) $group->sum('quantity_liters')])->values(),
+            'vehicle_efficiency' => $efficiency->sortByDesc('km_per_liter')->take(10)->values(),
+            'top_vehicles_by_liters' => $fillings->groupBy('vehicle_id')->map(fn ($group) => ['vehicle_id' => $group->first()->vehicle_id, 'label' => ($group->first()->vehicle?->name ?? 'Veículo não informado').' · '.($group->first()->vehicle?->plate ?? ''), 'liters' => (float) $group->sum('quantity_liters'), 'total_cost' => $costs ? (float) $group->sum('total_cost') : null])->sortByDesc('liters')->take(10)->values(),
+        ]);
+    }
+
+    private function vehicleEfficiency($fillings)
+    {
+        return $fillings->groupBy('vehicle_id')->map(function ($group) {
+            $valid = $group->map(fn ($filling) => ['filling' => $filling, 'km' => $this->validImportedDistance($filling)])->filter(fn ($item) => $item['km'] !== null && (float) $item['filling']->quantity_liters > 0)->values();
+            $totalKm = (float) $valid->sum('km');
+            $totalLiters = (float) $valid->sum(fn ($item) => $item['filling']->quantity_liters);
+            $first = $group->first();
+            return ['vehicle_id' => $first->vehicle_id, 'label' => ($first->vehicle?->name ?? 'Veículo não informado').' · '.($first->vehicle?->plate ?? ''), 'total_km' => round($totalKm, 2), 'total_liters' => round($totalLiters, 3), 'km_per_liter' => $totalLiters > 0 ? round($totalKm / $totalLiters, 2) : null, 'valid_entries' => $valid->count(), 'ignored_entries' => $group->count() - $valid->count()];
+        })->filter(fn ($item) => $item['km_per_liter'] !== null);
+    }
+
+    private function validImportedDistance(FuelFilling $filling): ?float
+    {
+        $notes = (string) $filling->notes;
+        if (! str_starts_with($notes, 'Importação histórica Imperatriz;') || ! preg_match('/(?:^|;)\s*percorrido=([^;]+);/u', $notes, $matches)) return null;
+        $value = trim($matches[1]);
+        $number = (float) str_replace(',', '.', str_replace('.', '', preg_replace('/[^0-9,.-]/', '', $value)));
+        return $number > 0 && $number <= 5000 ? $number : null;
+    }
     public function store(Request $request)
     {
         $context = $this->activeContext();

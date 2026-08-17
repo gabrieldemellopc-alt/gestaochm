@@ -55,7 +55,7 @@
                         Relatório
                     </a>
                 @endif
-                @if($canRegisterFilling)
+                <button type="button" class="fuel-secondary-action" onclick="openFuelConsumptionDashboard()"><i data-lucide="chart-column"></i>Painel de consumo</button>                @if($canRegisterFilling)
                     <button type="button" class="fuel-secondary-action" onclick="openFuelModal('filling')">
                         <i data-lucide="truck"></i>
                         Registrar abastecimento
@@ -803,7 +803,34 @@
             </div>
         @endforeach
     </div>
-@endsection
+<div id="fuelConsumptionDashboard" class="fuel-dashboard-modal" hidden><div class="fuel-dashboard-card"><button type="button" class="fuel-detail-close" onclick="closeFuelConsumptionDashboard()">×</button><h2>Painel de consumo</h2><div class="fuel-dashboard-toolbar"><p id="fuelDashboardSubtitle">Indicadores e gráficos de abastecimento — Últimos 30 dias</p><label>Período<select id="fuelDashboardPeriod" onchange="openFuelConsumptionDashboard()"><option value="last_30_days">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="previous_month">Mês anterior</option><option value="all">Todo o período</option></select></label></div><div id="fuelDashboardContent">Carregando…</div></div></div>
+<script>
+window.openFuelConsumptionDashboard = async function(){
+    const modal=document.getElementById('fuelConsumptionDashboard'),content=document.getElementById('fuelDashboardContent'),period=document.getElementById('fuelDashboardPeriod')?.value||'last_30_days';
+    modal.hidden=false; content.textContent='Carregando…';
+    try {
+        const d=await (await fetch(@json(route('fuel.consumption-dashboard'))+'?period='+encodeURIComponent(period))).json(),num=v=>Number(v||0),lit=v=>num(v).toLocaleString('pt-BR')+' L',max=rows=>Math.max(...rows.map(r=>num(r.liters)),1),escape=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+        document.getElementById('fuelDashboardSubtitle').textContent='Indicadores e gráficos de abastecimento — '+(d.period_label||'Últimos 30 dias');
+        const empty=title=>`<section class="fuel-dashboard-chart"><h3>${title}</h3><p class="fuel-chart-empty">Sem dados no período.</p></section>`;
+        const barChart=(title,rows)=>!rows.length?empty(title):`<section class="fuel-dashboard-chart fuel-chart-month"><h3>${title}</h3><div class="fuel-chart-body fuel-month-chart">${rows.map(r=>`<div class="fuel-month-bar-item"><b class="fuel-month-value">${lit(r.liters)}</b><i class="fuel-month-bar" style="height:${Math.max(10,num(r.liters)/max(rows)*100)}%"></i><span class="fuel-month-label">${escape(r.label)}</span></div>`).join('')}</div></section>`;
+        const dayLabel=value=>{const [year,month,day]=String(value).split('-'),names=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return {day,month:`${names[Number(month)-1]||month}/${String(year).slice(-2)}`};};
+        const lineChart=(title,rows)=>{if(!rows.length)return empty(title);const w=Math.max(620,rows.length*42),h=220,p={l:45,r:18,t:20,b:50},highest=max(rows),x=i=>p.l+i*(w-p.l-p.r)/Math.max(rows.length-1,1),y=v=>h-p.b-num(v)/highest*(h-p.t-p.b),points=rows.map((r,i)=>`${x(i)},${y(r.liters)}`).join(' '),step=Math.max(1,Math.ceil(rows.length/8));return `<section class="fuel-dashboard-chart fuel-chart-line"><h3>${title}</h3><div class="fuel-chart-svg-scroll"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${title}">${[.25,.5,.75,1].map(v=>`<g><line class="fuel-svg-grid" x1="${p.l}" x2="${w-p.r}" y1="${h-p.b-(h-p.t-p.b)*v}" y2="${h-p.b-(h-p.t-p.b)*v}"/><text class="fuel-svg-axis" x="3" y="${h-p.b-(h-p.t-p.b)*v+4}">${lit(highest*v)}</text></g>`).join('')}<polyline class="fuel-svg-line" points="${points}"/>${rows.map((r,i)=>{const label=dayLabel(r.label);return `<g><title>${escape(r.label)}: ${lit(r.liters)}</title><circle class="fuel-svg-point" cx="${x(i)}" cy="${y(r.liters)}" r="4"/>${i%step===0||i===rows.length-1?`<text class="fuel-svg-day" x="${x(i)}" y="${h-27}">${escape(label.day)}</text><text class="fuel-svg-month" x="${x(i)}" y="${h-13}">${escape(label.month)}</text>`:''}</g>`}).join('')}</svg></div></section>`};
+        const weekdayOrder={SEG:1,TER:2,QUA:3,QUI:4,SEX:5,SAB:6,DOM:7};
+        const horizontal=(title,rows,rank=false)=>!rows.length?empty(title):`<section class="fuel-dashboard-chart fuel-chart-horizontal ${rank?'fuel-chart-rank':''}"><h3>${title}</h3>${rank?'<p class="fuel-chart-caption">Top 10 dos veículos com maior volume no período.</p>':''}<div class="fuel-chart-scroll">${rows.map((r,i)=>`<div class="fuel-chart-horizontal-row"><em>${rank?'#'+(i+1):escape(r.label)}</em><span>${rank?escape(r.label):''}</span><i style="width:${Math.max(4,num(r.liters)/max(rows)*100)}%"></i><b>${lit(r.liters)}</b></div>`).join('')}</div></section>`;
+        const weekdayChart=(title,rows)=>{
+            if(!rows.length)return empty(title);
+            const body=rows.map(r=>{
+                const width=num(r.liters)>0?Math.max(4,num(r.liters)/max(rows)*100):0;
+                return '<div class="fuel-weekday-row"><span class="fuel-weekday-label">'+escape(r.label)+'</span><div class="fuel-weekday-track"><span class="fuel-weekday-bar" style="width:'+width+'%"></span></div><b class="fuel-weekday-value">'+lit(r.liters)+'</b></div>';
+            }).join('');
+            return '<section class="fuel-dashboard-chart fuel-chart-weekday"><h3>'+title+'</h3><div class="fuel-chart-body fuel-weekday-chart">'+body+'</div></section>';
+        };        const efficiencyChart=rows=>!rows.length?empty('KM/L por veículo'):`<section class="fuel-dashboard-chart fuel-chart-efficiency"><h3>KM/L por veículo</h3><p class="fuel-chart-caption">Somente lançamentos com KM válido.</p><div class="fuel-chart-scroll">${rows.map((r,i)=>`<div class="fuel-chart-horizontal-row"><em>#${i+1}</em><span>${escape(r.label)} <small>${r.total_km.toLocaleString('pt-BR')} km · ${r.total_liters.toLocaleString('pt-BR')} L</small></span><i style="width:${Math.max(4,num(r.km_per_liter)/Math.max(...rows.map(x=>num(x.km_per_liter)),1)*100)}%"></i><b>${Number(r.km_per_liter).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} KM/L</b></div>`).join('')}</div></section>`;        const card=(label,value,help)=>`<div class="fuel-dashboard-kpi"><span>${label}</span><strong>${value}</strong><small>${help}</small></div>`;
+        const weekdays=['SEG','TER','QUA','QUI','SEX','SAB','DOM'].map(label=>(d.by_weekday||[]).find(row=>String(row.label).slice(0,3).toUpperCase()===label)||{label,liters:0});
+        content.innerHTML=`<div class="fuel-dashboard-kpis">${card('Total litros',lit(d.summary.total_liters),'Últimos 30 dias')}${card('Abastecimentos',d.summary.fillings_count,'Lançamentos válidos')}${card('Total gasto',d.summary.total_cost===null?'Restrito':'R$ '+num(d.summary.total_cost).toLocaleString('pt-BR',{minimumFractionDigits:2}),'No período')}${card('Média Km/L',d.summary.average_km_per_liter===null?'N/D':Number(d.summary.average_km_per_liter).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' KM/L',d.summary.average_km_per_liter_entries_count?'Com base em '+d.summary.average_km_per_liter_entries_count+' lançamentos válidos':'Sem base suficiente')}</div><div class="fuel-dashboard-charts">${barChart('Abastecimento por mês',d.by_month)}${weekdayChart('Consumo por dia da semana',weekdays)}${lineChart('Abastecimento por dia',d.by_day)}${efficiencyChart(d.vehicle_efficiency||[])}${horizontal('Top 10 por volume abastecido',d.top_vehicles_by_liters||[],true)}</div>`;
+    } catch(e) { content.innerHTML='<p class="fuel-chart-empty">Não foi possível carregar o painel.</p>'; }
+};
+window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelConsumptionDashboard').hidden=true};
+</script>@endsection
 
 @push('scripts')
     <script>

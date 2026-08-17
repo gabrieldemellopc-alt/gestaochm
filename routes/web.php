@@ -22,6 +22,7 @@ use App\Http\Controllers\DashboardController;
 
 
 use App\Http\Controllers\FiscalDocumentController;
+use App\Http\Controllers\FiscalDocumentImportController;
 use App\Http\Controllers\FuelTankController;
 
 use App\Http\Controllers\MaintenanceController;
@@ -173,6 +174,14 @@ Route::middleware('auth')->group(function () {
     ])
         ->name('fiscal-documents.index')
         ->middleware('module:fleet');
+
+    Route::get('/fiscal-documents/{fiscalDocument}/file', [FiscalDocumentController::class, 'file'])->name('fiscal-documents.file')->middleware('module:fleet');
+
+    Route::post('/fiscal-documents/import/parse', [FiscalDocumentImportController::class, 'parse'])
+        ->name('fiscal-documents.import.parse')->middleware(['module:fleet', 'throttle:10,1']);
+    Route::post('/fiscal-documents/import/confirm', [FiscalDocumentImportController::class, 'confirm'])
+        ->name('fiscal-documents.import.confirm')->middleware(['module:fleet', 'throttle:10,1']);
+
 
     Route::get('/permissions', [PermissionController::class, 'index'])
         ->name('permissions.index')
@@ -981,6 +990,8 @@ Route::middleware('auth')->group(function () {
                 'index'
 
             )->name('tanks.index');
+
+            Route::get('/consumption-dashboard', 'consumptionDashboard')->name('consumption-dashboard');
 
 
 
