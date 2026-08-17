@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FiscalDocument;
 use App\Services\FiscalDocuments\FiscalDocumentIndexService;
+use Illuminate\Support\Facades\Storage;
 use App\Services\Permissions\ProfilePermissionService;
 use Illuminate\Http\Request;
 
@@ -22,6 +24,13 @@ class FiscalDocumentController extends Controller
         return view('fiscal-documents.index', $data);
     }
 
+    public function file(FiscalDocument $fiscalDocument)
+    {
+        $this->authorizeFiscalDocumentPermission('fiscal_documents.open_origin');
+        abort_unless($fiscalDocument->tenant_id === request()->user()->tenant_id, 404);
+        abort_unless(Storage::disk('local')->exists($fiscalDocument->pdf_path), 404);
+        return Storage::disk('local')->download($fiscalDocument->pdf_path, 'nota-fiscal-'.$fiscalDocument->number.'.'.pathinfo($fiscalDocument->pdf_path, PATHINFO_EXTENSION));
+    }
     private function authorizeFiscalDocumentPermission(string $permissionKey): void
     {
         abort_unless($this->canFiscalDocumentPermission($permissionKey), 403);
@@ -41,6 +50,7 @@ class FiscalDocumentController extends Controller
             'fiscal_documents.view_details',
             'fiscal_documents.open_origin',
             'fiscal_documents.view_values',
+            'fiscal_documents.import',
         ];
 
         return collect($keys)

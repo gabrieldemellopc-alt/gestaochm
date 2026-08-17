@@ -4,12 +4,8 @@
 
 @push('styles')
 
-<link
-
-    rel="stylesheet"
-
-    href="{{ asset('css/pages/stock.css') }}?v=3"
->
+<link rel="stylesheet" href="{{ asset('css/pages/stock.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('css/pages/fiscal-document-import-stock.css') }}?v=2">
 
 @endpush
 
@@ -26,6 +22,7 @@
         'create_manual_output' => false,
         'cancel_movement' => false,
         'view_costs' => false,
+        'import_invoice' => false,
     ], $stockPermissions ?? []);
 
     $canManageStockCategories = (bool) $stockPermissions['manage_categories'];
@@ -35,6 +32,7 @@
     $canCreateStockOutput = (bool) $stockPermissions['create_manual_output'];
     $canCancelStockMovement = (bool) $stockPermissions['cancel_movement'];
     $canViewStockCosts = (bool) $stockPermissions['view_costs'];
+    $canImportFiscalDocument = (bool) $stockPermissions['import_invoice'];
 @endphp
 
 <div class="stock-page">
@@ -99,6 +97,16 @@
 
             </a>
 
+            @if($canImportFiscalDocument)
+                <button
+                    type="button"
+                    class="chm-page-button secondary stock-import-invoice-trigger"
+                    onclick="window.dispatchEvent(new CustomEvent('open-fiscal-import'))"
+                >
+                    <i data-lucide="file-up"></i>
+                    Importar NF
+                </button>
+            @endif
 
 
             @if($canManageStockCategories)
@@ -407,6 +415,50 @@
 
                                 </div>
 
+                                @if($item->stock_status === 'danger')
+
+
+
+                                    <span class="stock-status-badge stock-item-status danger">
+
+                                        <i data-lucide="circle-alert"></i>
+
+                                        Crítico
+
+                                    </span>
+
+
+
+                                @elseif($item->stock_status === 'warning')
+
+
+
+                                    <span class="stock-status-badge stock-item-status warning">
+
+                                        <i data-lucide="triangle-alert"></i>
+
+                                        Atenção
+
+                                    </span>
+
+
+
+                                @else
+
+
+
+                                    <span class="stock-status-badge stock-item-status ok">
+
+                                        <i data-lucide="check-circle"></i>
+
+                                        Adequado
+
+                                    </span>
+
+
+
+                                @endif
+
 
 
                             </div>
@@ -447,54 +499,6 @@
 
 
                             <div class="stock-item-footer">
-
-
-
-                                @if($item->stock_status === 'danger')
-
-
-
-                                    <span class="stock-status-badge danger">
-
-                                        <i data-lucide="circle-alert"></i>
-
-                                        Crítico
-
-                                    </span>
-
-
-
-                                @elseif($item->stock_status === 'warning')
-
-
-
-                                    <span class="stock-status-badge warning">
-
-                                        <i data-lucide="triangle-alert"></i>
-
-                                        Atenção
-
-                                    </span>
-
-
-
-                                @else
-
-
-
-                                    <span class="stock-status-badge ok">
-
-                                        <i data-lucide="check-circle"></i>
-
-                                        Adequado
-
-                                    </span>
-
-
-
-                                @endif
-
-
 
                                 <div class="stock-card-actions">
                                     @if($canCreateStockEntry)
@@ -1073,277 +1077,63 @@
 
     <div class="stock-edit-item-modal-card">
 
-        <div class="stock-edit-modal-layout">
+        <div class="stock-edit-modal-layout stock-item-modal-layout">
 
+            <button type="button" onclick="closeEditItemModal()" class="stock-modal-close stock-item-modal-close" aria-label="Fechar modal">
+                <i data-lucide="x"></i>
+            </button>
 
-
-            {{-- ESQUERDA --}}
-
-            <aside class="stock-edit-sidebar">
-
-
-
-                <div class="stock-balance-card-new">
-
-
-
-                    <div class="stock-balance-icon">
-
-                        <i data-lucide="package-check"></i>
-
+            <aside class="stock-edit-sidebar stock-item-modal-sidebar">
+                <div class="stock-edit-header-new stock-item-modal-identity">
+                    <div class="stock-modal-icon">
+                        <i data-lucide="package"></i>
                     </div>
-
-
-
-                    <span>
-
-                        Estoque atual
-
-                    </span>
-
-
-
-                    <h2 id="editStockQuantity">
-
-                        0
-
-                    </h2>
-
-
-
-                    <small id="editItemUnitBadge">
-
-                        Unidade
-
-                    </small>
-
-
-
+                    <div>
+                        <span id="editItemCategory"></span>
+                        <h2 id="editItemName"></h2>
+                    </div>
                 </div>
-
-
+                <div class="stock-balance-card-new stock-item-modal-summary">
+                    <div class="stock-balance-icon"><i data-lucide="package-check"></i></div>
+                    <span>Estoque atual</span>
+                    <h2 id="editStockQuantity">0</h2>
+                    <small id="editItemUnitBadge">Unidade</small>
+                </div>
 
                 @if($canCreateStockEntry || $canCreateStockOutput)
-                <div class="stock-movement-actions-new">
-
-
-
+                <div class="stock-movement-actions-new stock-item-modal-movement-actions">
                     @if($canCreateStockEntry)
-<button
-
-                        type="button"
-
-                        class="stock-movement-btn in"
-
-                        onclick="openMovementModal('in')"
-
-                    >
-
-                        <i data-lucide="plus"></i>
-
-
-
-                        Entrada
-
+                    <button type="button" class="stock-movement-btn in" onclick="openMovementModal('in')">
+                        <i data-lucide="plus"></i> Entrada
                     </button>
-@endif
-
-
-
+                    @endif
                     @if($canCreateStockOutput)
-<button
-
-                        type="button"
-
-                        class="stock-movement-btn out"
-
-                        onclick="openMovementModal('out')"
-
-                    >
-
-                        <i data-lucide="minus"></i>
-
-
-
-                        Saída
-
+                    <button type="button" class="stock-movement-btn out" onclick="openMovementModal('out')">
+                        <i data-lucide="minus"></i> Saída
                     </button>
-@endif
-
-
-
+                    @endif
                 </div>
-
-
-
-                <div class="stock-history-card-new">
-
-
-
-                    <div class="stock-history-header-new">
-
-
-
-                        <div>
-
-
-
-                            <span>
-
-                                Histórico
-
-                            </span>
-
-
-
-                            <h3>
-
-                                Últimas movimentações
-
-                            </h3>
-
-
-
-                        </div>
-
-
-
-                        <i data-lucide="history"></i>
-
-
-
-                    </div>
-
-
-
-                    <div
-
-                        id="movementHistory"
-
-                        class="stock-movement-history-list"
-
-                    >
-
-                    </div>
-
-
-
-                </div>
-
-
-            @endif
-            </aside>
-
-
-
-            {{-- DIREITA --}}
-
-            <section class="stock-edit-content">
-
-
-
-                <div class="stock-edit-header-new">
-
-
-
-                    <div class="stock-modal-icon">
-
-                        <i data-lucide="package"></i>
-
-                    </div>
-
-
-
-                    <div>
-
-
-
-                        <span id="editItemCategory">
-
-                        </span>
-
-
-
-                        <h2 id="editItemName">
-
-                        </h2>
-
-
-
-                        <p>
-
-                            Detalhes, saldo e movimentações do item em estoque.
-
-                        </p>
-
-
-
-                    </div>
-
-
-                    <div>
-
-                    <button
-
-                        type="button"
-
-                        onclick="closeEditItemModal()"
-
-                        class="stock-modal-close"
-
-                    >
-
-                        <i data-lucide="x"></i>
-
+                @endif
+
+                <div class="stock-edit-actions-top stock-item-modal-secondary-actions">
+                    @if($canManageStockItems)
+                    <button type="button" class="stock-edit-trigger-btn" onclick="enableItemEdit()" id="editItemBtn">
+                        <i data-lucide="pencil"></i> Editar item
                     </button>
-
-                    </div>
-                </div>
-
-
-
-                <div class="stock-edit-actions-top">
-
+                    @endif
                     @if($canViewStockItemDetails)
-                    <a
-                        href="#"
-                        class="stock-details-link stock-modal-details-link"
-                        id="stockItemDetailsLink"
-                    >
-                        <i data-lucide="external-link"></i>
-                        Ver mais detalhes
+                    <a href="#" class="stock-details-link stock-modal-details-link" id="stockItemDetailsLink">
+                        <i data-lucide="external-link"></i> Ver mais detalhes
                     </a>
                     @endif
-
-
-
-                    @if($canManageStockItems)
-<button
-
-                        type="button"
-
-                        class="stock-edit-trigger-btn"
-
-                        onclick="enableItemEdit()"
-
-                        id="editItemBtn"
-
-                    >
-
-                        <i data-lucide="pencil"></i>
-
-
-
-                        Editar item
-
-                    </button>
-@endif
-
-
-
                 </div>
+            </aside>
 
-
+            <section class="stock-edit-content stock-item-modal-main">
+                <div class="stock-item-modal-section-heading">
+                    <span>Informações do item</span>
+                    <h2>Detalhes</h2>
+                </div>
 
                 {{-- VISUALIZAÇÃO --}}
 
@@ -1418,6 +1208,7 @@
 
 
                         </div>
+                        @if($canViewStockCosts)
 
 
 
@@ -1440,6 +1231,7 @@
 
 
                         </div>
+                        @endif
 
 
 
@@ -1471,6 +1263,14 @@
 
                 </div>
 
+
+                <section class="stock-history-card-new stock-item-history-panel">
+                    <div class="stock-history-header-new">
+                        <div><span>Histórico</span><h3>Últimas movimentações</h3></div>
+                        <i data-lucide="history"></i>
+                    </div>
+                    <div id="movementHistory" class="stock-movement-history-list stock-item-history-list"></div>
+                </section>
                 <div id="movementDetailPanel" class="stock-movement-detail-panel" style="display:none;">
                     <div class="stock-movement-detail-header">
                         <div class="stock-movement-detail-title-row">
@@ -2172,6 +1972,9 @@ function enableItemEdit()
     if (!canManageStockItems) { return; }
     closeMovementDetailPanel();
 
+    const modalCard = document.querySelector('#editItemModal .stock-edit-item-modal-card');
+    if (modalCard) { modalCard.classList.add('is-editing'); }
+
     document
 
         .querySelector('.details-view-mode')
@@ -2206,6 +2009,8 @@ function enableItemEdit()
 function disableItemEdit()
 
 {
+    const modalCard = document.querySelector('#editItemModal .stock-edit-item-modal-card');
+    if (modalCard) { modalCard.classList.remove('is-editing'); }
 
     document
 
@@ -2589,8 +2394,8 @@ async function openEditItemModal(id)
             ].filter(Boolean).join(' ');
             const movementBadges = [
                 isCancelled ? '<span class="stock-status-badge danger">Cancelada</span>' : '',
-                isReversal ? '<span class="stock-status-badge warning">Reversao</span>' : '',
-                isMaintenance ? '<span class="stock-status-badge info">Manutencao</span>' : '',
+                isReversal ? '<span class="stock-status-badge warning">Reversão</span>' : '',
+                isMaintenance ? '<span class="stock-status-badge info">Manutenção</span>' : '',
                 isReverted && !isCancelled ? '<span class="stock-status-badge muted">Revertida</span>' : '',
             ].filter(Boolean).join('');
             const auditDetails = canViewStockAuditDetails && isCancelled && movement.cancel_reason
@@ -2598,123 +2403,78 @@ async function openEditItemModal(id)
                 : '';
             const lockReason = !canCancelMovement
                 ? (isCancelled
-                    ? 'Movimento ja cancelado.'
+                    ? 'Movimento já cancelado.'
                     : (isReversal
-                        ? 'Movimento reverso nao pode ser cancelado direto.'
+                        ? 'Movimento reverso não pode ser cancelado diretamente.'
                         : (isMaintenance
-                            ? 'Vinculado a manutencao; cancele pela manutencao.'
-                            : 'Movimento nao cancelavel.')))
+                            ? 'Vinculado à manutenção; cancele pela manutenção.'
+                            : 'Movimento não cancelável.')))
                 : '';
             const shortDate = movement.moved_at
-                ? new Date(movement.moved_at).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: '2-digit',
-                })
-                : '';
-
-            const movementIcon = movement.movement_type === 'in'
-                ? 'arrow-down-left'
-                : 'arrow-up-right';
-            const movementDate = movement.moved_at
-            ? new Date(movement.moved_at).toLocaleString('pt-BR')
-            : (
-                movement.created_at
-                    ? new Date(movement.created_at).toLocaleString('pt-BR')
-                    : ''
-            );
+                ? new Date(movement.moved_at).toLocaleDateString('pt-BR')
+                : (movement.created_at ? new Date(movement.created_at).toLocaleDateString('pt-BR') : '-');
+            const movementIcon = isCancelled
+                ? 'circle-x'
+                : (isReversal ? 'rotate-ccw' : (movement.movement_type === 'in' ? 'arrow-down-left' : 'arrow-up-right'));
+            const movementTitle = isReversal
+                ? 'Reversão'
+                : (movement.movement_type === 'in' ? 'Entrada' : 'Saída');
+            const movementQuantity = Number(movement.quantity || 0).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
             const lockNotice = lockReason
                 ? `<small class="stock-movement-lock">${lockReason}</small>`
                 : '';
-            const cancelForm = canCancelMovement
+            const cancelTrigger = canCancelMovement
+                ? `<button type="button" class="stock-modal-cancel stock-movement-cancel-trigger" onclick="showMovementCancelForm(this)">Cancelar</button>`
+                : '';
+            const cancelPanel = canCancelMovement
                 ? `
-                    <div class="stock-cancel-box" data-cancel-box>
-                        <button
-                            type="button"
-                            class="stock-modal-cancel"
-                            onclick="showMovementCancelForm(this)"
-                        >
-                            Cancelar
-                        </button>
-
-                        <form method="POST" action="/stock/movements/${movement.id}/cancel" class="stock-movement-cancel-form" style="display:none;">
-                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
-
-                            <textarea name="reason" rows="2" required minlength="5" placeholder="Motivo do cancelamento"></textarea>
-
-                            <div class="stock-cancel-actions">
-                                <button type="submit" class="stock-modal-cancel">
-                                    Cancelar movimentação
-                                </button>
-
-                                <button
-                                    type="button"
-                                    class="stock-cancel-dismiss"
-                                    onclick="hideMovementCancelForm(this)"
-                                    title="Desistir"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    <form method="POST" action="/stock/movements/${movement.id}/cancel" class="stock-movement-cancel-form stock-movement-cancel-panel" style="display:none;">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <label>Motivo do cancelamento</label>
+                        <textarea name="reason" rows="2" required minlength="5" placeholder="Descreva o motivo do cancelamento"></textarea>
+                        <div class="stock-cancel-actions stock-movement-cancel-actions">
+                            <button type="submit" class="stock-modal-cancel">Cancelar movimentação</button>
+                            <button type="button" class="stock-cancel-dismiss" onclick="hideMovementCancelForm(this)">Fechar</button>
+                        </div>
+                    </form>
                 `
                 : '';
 
-
             html += `
-
-                <div class="movement-row ${rowClasses}">
-
-
-                    <div class="movement-top">
-                        <div class="movement-type-left">
-                            <span class="movement-mini-icon ${movement.movement_type === 'in' ? 'is-in' : 'is-out'}">
+                <article class="movement-row stock-movement-card ${rowClasses}">
+                    <div class="stock-movement-card-body">
+                        <div class="stock-movement-main">
+                            <span class="movement-mini-icon stock-movement-icon ${movement.movement_type === 'in' ? 'is-in' : 'is-out'}">
                                 <i data-lucide="${movementIcon}"></i>
                             </span>
-
-                            <div>
-                                <strong>
-                                    ${movement.movement_type === 'in' ? 'Entrada' : 'Saída'}
+                            <div class="stock-movement-content">
+                                <div class="stock-movement-title">
+                                    <strong>${movementTitle} <span>(${shortDate})</span></strong>
                                     <span class="stock-movement-badges">${movementBadges}</span>
-                                </strong>
-
-                                <small class="movement-qty">${movement.quantity}</small>
+                                </div>
+                                <small class="movement-qty stock-movement-meta">Quantidade: ${movementQuantity} ${item.unit || ''}</small>
                             </div>
                         </div>
 
-                        <small class="stock-movement-date">${shortDate}</small>
+                        <div class="stock-cancel-box stock-movement-action-shell" data-cancel-box>
+                            <div class="stock-movement-actions">
+                                <button type="button" class="stock-movement-view-btn" onclick='showMovementDetails(${JSON.stringify(movement)})'>
+                                    Ver informações
+                                </button>
+                                ${cancelTrigger}
+                            </div>
+                            ${cancelPanel}
+                        </div>
                     </div>
 
-
-
-                    <small>
-
-                        ${movement.description ?? ''}
-
-                    </small>
-
+                    ${movement.description ? `<small class="stock-movement-description">${movement.description}</small>` : ''}
                     ${auditDetails}
-
                     ${lockNotice}
-
-                    <button
-                        type="button"
-                        class="stock-movement-view-btn"
-                        onclick='showMovementDetails(${JSON.stringify(movement)})'
-                    >
-                        Ver informações
-                    </button>
-
-                    ${cancelForm}
-
-
-                </div>
-
+                </article>
             `;
-
-
-
         });
 
 
@@ -2754,21 +2514,7 @@ async function openDirectEntry(id)
 function closeEditItemModal()
 {
     closeMovementDetailPanel();
-
-    document
-        .querySelector('.details-view-mode')
-        .style.display = 'block';
-
-    document
-        .querySelector('.details-edit-mode')
-        .style.display = 'none';
-
-    document
-        .getElementById('saveItemBtn')
-        .style.display = 'none';
-
-    const editItemBtn = document.getElementById('editItemBtn');
-    if (editItemBtn) { editItemBtn.style.display = 'inline-flex'; }
+    disableItemEdit();
 
     document
         .getElementById('editItemModal')
@@ -3187,5 +2933,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+
+@include('fiscal-documents._import-modal')
 
 @endsection

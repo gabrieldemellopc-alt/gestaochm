@@ -136,6 +136,7 @@ return [
                 'fiscal_documents.view_details' => ['label' => 'Ver detalhes de notas fiscais', 'default' => ['supervisor' => false]],
                 'fiscal_documents.open_origin' => ['label' => 'Abrir origem da nota fiscal', 'default' => ['supervisor' => false]],
                 'fiscal_documents.view_values' => ['label' => 'Ver valores de notas fiscais', 'default' => ['supervisor' => false]],
+                'fiscal_documents.import' => ['label' => 'Importar notas fiscais', 'default' => ['supervisor' => false]],
                 'audit.view' => ['label' => 'Ver auditoria', 'default' => ['supervisor' => false]],
                 'audit.view_details' => ['label' => 'Ver detalhes da auditoria', 'default' => ['supervisor' => false]],
                 'audit.view_technical_details' => ['label' => 'Ver detalhes técnicos da auditoria', 'default' => ['supervisor' => false]],

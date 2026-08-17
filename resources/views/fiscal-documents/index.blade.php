@@ -42,6 +42,7 @@
                 </p>
             </div>
 
+
             <div class="fiscal-context-card">
                 <span>Contexto ativo</span>
                 <strong>{{ $context['location']->name ?? 'Unidade não selecionada' }}</strong>
@@ -326,6 +327,11 @@
                             </div>
                         </section>
 
+                        <template x-if="selectedFiscalDocument.fiscal_items">
+                            <section class="fiscal-detail-section"><div class="fiscal-detail-section-title"><i data-lucide="package"></i><h3>Itens da nota fiscal</h3></div>
+                                <div class="fiscal-detail-grid"><template x-for="item in selectedFiscalDocument.fiscal_items" :key="item.description"><div class="fiscal-detail-field full"><span x-text="item.description"></span><strong x-text="item.category + ' · ' + item.quantity + ' ' + item.unit + ' · R$ ' + Number(item.total_value).toLocaleString('pt-BR',{minimumFractionDigits:2})"></strong><small x-text="'Estoque: ' + item.stock_item + ' · Movimento #' + (item.movement_id || '-') + (item.created_stock_item ? ' · Item criado' : '')"></small></div></template></div>
+                            </section>
+                        </template>
                         <template x-if="selectedFiscalDocument.notes && selectedFiscalDocument.notes !== 'Não informado'">
                             <section class="fiscal-detail-notes">
                                 <span>Observações</span>
@@ -351,7 +357,7 @@
                             </button>
 
                             @if($canOpenFiscalOrigin)
-                                <template x-if="selectedFiscalDocument.origin_url">
+                                <template x-if="selectedFiscalDocument.file_url"><a class="fiscal-button secondary" :href="selectedFiscalDocument.file_url"><i data-lucide="download"></i>Arquivo original</a></template>`r`n                                <template x-if="selectedFiscalDocument.origin_url">
                                     <a class="fiscal-button secondary" :href="selectedFiscalDocument.origin_url">
                                         <i data-lucide="external-link"></i>
                                         Abrir origem

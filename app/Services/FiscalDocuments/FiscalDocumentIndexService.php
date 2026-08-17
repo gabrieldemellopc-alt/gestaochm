@@ -2,6 +2,7 @@
 
 namespace App\Services\FiscalDocuments;
 
+use App\Models\FiscalDocument;
 use App\Models\FuelFilling;
 use App\Models\FuelReceipt;
 use App\Models\StockMovement;
@@ -51,6 +52,7 @@ class FiscalDocumentIndexService
         $documents = collect()
             ->merge($this->fuelReceipts($context, $filters))
             ->merge($this->externalFuelFillings($context, $filters))
+            ->merge($this->fiscalDocuments($context, $filters))
             ->merge($this->stockMovements($context, $filters))
             ->merge($this->tireEntries($context, $filters))
             ->when($filters['search'] !== '', function (Collection $collection) use ($filters) {
@@ -208,6 +210,16 @@ class FiscalDocumentIndexService
             });
     }
 
+    private function fiscalDocuments(array $context, array $filters): Collection
+    {
+        return FiscalDocument::query()->with(['items.stockItem.category', 'items.stockMovement', 'creator', 'location'])
+            ->where('tenant_id', $context['tenant_id'])->where('location_id', $context['location']->id)
+            ->whereBetween('issued_at', $this->period($filters))->get()->map(function (FiscalDocument $document) use ($context) {
+                $items = $document->items->map(fn ($item) => ['description'=>$item->description, 'category'=>$item->category?->name ?? 'Sem categoria', 'stock_item'=>$item->stockItem?->name ?? 'Não associado', 'movement_id'=>$item->stock_movement_id, 'quantity'=>(float)$item->quantity, 'unit'=>$item->unit, 'unit_value'=>(float)$item->unit_value, 'total_value'=>(float)$item->total_value, 'created_stock_item'=>(bool)$item->created_stock_item])->all();
+                $row = $this->documentRow($context, 'stock', 'fiscal_import', $document->issued_at ?? $document->created_at, trim($document->number.' / '.$document->series, ' /'), $document->supplier_name, $document->total_amount, count($items).' item(ns) importado(s)', $document->creator?->name, $document->location?->name ?? $context['location']->name, route('stock.index'), [$this->field('Chave de acesso',$document->access_key),$this->field('CNPJ fornecedor',$document->supplier_cnpj),$this->field('Valor dos produtos',$this->money($document->products_total))], $this->technicalFields($context, 'fiscal_documents', FiscalDocument::class, $document->id));
+                $row['fiscal_items']=$items; $row['file_url']=route('fiscal-documents.file', $document); $row['fiscal_document_id']=$document->id; return $row;
+            });
+    }
     private function stockMovements(array $context, array $filters): Collection
     {
         return StockMovement::query()
@@ -215,6 +227,7 @@ class FiscalDocumentIndexService
             ->where('tenant_id', $context['tenant_id'])
             ->where('location_id', $context['location']->id)
             ->whereNull('cancelled_at')
+            ->whereNull('fiscal_document_id')
             ->whereNull('reversed_from_movement_id')
             ->whereNull('reversal_movement_id')
             ->whereBetween('moved_at', $this->period($filters))
@@ -416,6 +429,7 @@ class FiscalDocumentIndexService
             'fuel_external_filling' => 'Abastecimento externo',
             'stock_entry' => 'Entrada de estoque',
             'stock_output' => 'Saída de estoque',
+            'fiscal_import' => 'NF importada',
             'tire_entry' => 'Entrada de pneus',
         ];
     }

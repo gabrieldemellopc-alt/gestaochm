@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe>
+    <infNFe Id="NFe29260840187670000183550010000001641900026784" versao="4.00">
+      <ide><serie>1</serie><nNF>164</nNF><dhEmi>2026-08-14T10:30:00-03:00</dhEmi></ide>
+      <emit><CNPJ>40187670000183</CNPJ><xNome>Fornecedor Exemplo Ltda</xNome></emit>
+      <dest><CNPJ>12345678000199</CNPJ><xNome>CHM Destinatário</xNome></dest>
+      <det nItem="1"><prod><cProd>P001</cProd><cEAN>7891234567890</cEAN><xProd>Filtro de óleo</xProd><NCM>84212300</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>2.0000</qCom><vUnCom>25.5000</vUnCom><vProd>51.00</vProd><vDesc>1.00</vDesc></prod></det>
+      <det nItem="2"><prod><cProd>P002</cProd><cEAN>SEM GTIN</cEAN><xProd>Óleo lubrificante 5W30</xProd><NCM>27101932</NCM><CFOP>5102</CFOP><uCom>LT</uCom><qCom>4.0000</qCom><vUnCom>40.0000</vUnCom><vProd>160.00</vProd></prod></det>
+      <total><ICMSTot><vProd>211.00</vProd><vFrete>10.00</vFrete><vDesc>1.00</vDesc><vNF>220.00</vNF></ICMSTot></total>
+      <infAdic><infCpl>Entrega no almoxarifado.</infCpl></infAdic>
+    </infNFe>
+  </NFe>
+  <protNFe><infProt><chNFe>29260840187670000183550010000001641900026784</chNFe></infProt></protNFe>
+</nfeProc>

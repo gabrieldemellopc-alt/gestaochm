@@ -471,6 +471,7 @@ class StockController extends Controller
             'manage_items' => $this->canStock('stock.manage_items'),
             'create_entry' => $this->canStock('stock.entry'),
             'create_manual_output' => $this->canStock('stock.manual_output'),
+            'import_invoice' => $this->canStock('stock.entry') && $this->canStock('fiscal_documents.import'),
             'cancel_movement' => Gate::allows('cancelStockMovements') && $this->canStock('stock.cancel_movement'),
             'view_costs' => $this->canStock('stock.view_costs'),
         ];

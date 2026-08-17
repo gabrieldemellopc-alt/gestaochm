@@ -17,6 +17,7 @@ class StockMovement extends Model
         'tenant_id',
         'location_id',
         'stock_item_id',
+        'fiscal_document_id',
         'maintenance_record_id',
         'movement_type',
         'quantity',
