@@ -40,6 +40,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\SettingsController;
 
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\VehicleReadingCorrectionController;
@@ -182,6 +183,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/fiscal-documents/import/confirm', [FiscalDocumentImportController::class, 'confirm'])
         ->name('fiscal-documents.import.confirm')->middleware(['module:fleet', 'throttle:10,1']);
 
+
+    Route::get('/settings', [SettingsController::class, 'index'])
+        ->name('settings.index')
+        ->middleware('module:fleet');
+
+    Route::patch('/settings/fiscal-documents', [SettingsController::class, 'updateFiscalDocuments'])
+        ->name('settings.fiscal-documents.update')
+        ->middleware('module:fleet');
 
     Route::get('/permissions', [PermissionController::class, 'index'])
         ->name('permissions.index')

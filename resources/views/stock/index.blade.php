@@ -1848,7 +1848,7 @@
             </div>
 
             <div class="form-group stock-entry-only stock-span-6">
-                <label>Nota fiscal</label>
+                <label>Nota fiscal @if($stockEntryInvoiceRequired ?? false)<small>Obrigatório</small>@else<small>Opcional</small>@endif</label>
 
                 <div class="input-with-badge stock-input-with-badge">
                     <span>NF</span>

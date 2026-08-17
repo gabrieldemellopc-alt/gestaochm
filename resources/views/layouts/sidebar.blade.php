@@ -490,22 +490,15 @@
 
 
         @if(userHasProfile('manager') || userHasProfile('admin'))
-
-            {{-- PERMISSÕES --}}
-
-            <a    title="Permissões"
-
-                href="{{ route('permissions.index') }}"
-                class="sidebar-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}"
+            {{-- CONFIGURAÇÕES --}}
+            <a title="Configurações"
+                href="{{ route('settings.index') }}"
+                class="sidebar-link {{ request()->routeIs('settings.*') ? 'active' : '' }}"
             >
-                <span class="sidebar-icon">
-                    <i data-lucide="shield-check"></i>
-                </span>
-                <span class="sidebar-link-text">Permissões</span>
-
+                <span class="sidebar-icon"><i data-lucide="settings"></i></span>
+                <span class="sidebar-link-text">Configurações</span>
             </a>
-
-        @endif
+@endif
         @can('viewAuditLogs')
             @if($sidebarCanPermission('navigation.audit') || $sidebarCanPermission('audit.view'))
 

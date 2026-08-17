@@ -14,6 +14,7 @@ use App\Services\StockService;
 use App\Services\StockItemDetailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\TenantFiscalSettingService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -50,7 +51,8 @@ class StockController extends Controller
             }
         }
 
-        return view('stock.index', compact('categories', 'stockPermissions'));
+        $stockEntryInvoiceRequired = app(TenantFiscalSettingService::class)->requires('stock_entry');
+        return view('stock.index', compact('categories', 'stockPermissions', 'stockEntryInvoiceRequired'));
     }
 
     public function showItem(StockItem $item, StockItemDetailService $detailService)
@@ -280,6 +282,7 @@ class StockController extends Controller
                 'min:0',
             ],
             'invoice_number' => [
+                Rule::requiredIf(app(TenantFiscalSettingService::class)->requires('stock_entry') && $request->input('movement_type') === 'in'),
                 'nullable',
                 'string',
                 'max:255',

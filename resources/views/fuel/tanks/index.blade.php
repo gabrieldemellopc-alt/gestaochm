@@ -593,8 +593,8 @@
                         </label>
 
                         <label class="fuel-span-6 is-hidden" data-source-field="external">
-                            Documento/NF/cupom
-                            <input type="text" name="document_number" value="{{ old('document_number') }}" maxlength="255" placeholder="Opcional">
+                            Documento/NF/cupom @if($externalFuelDocumentRequired ?? false) (Obrigatório) @else (Opcional) @endif
+                            <input type="text" name="document_number" @if($externalFuelDocumentRequired ?? false) required @endif value="{{ old('document_number') }}" maxlength="255">
                         </label>
 
                         <label class="fuel-span-6 is-hidden" data-source-field="external">
@@ -717,7 +717,7 @@
                             </label>
                         
                             <label>
-                                Nota fiscal
+                                Nota fiscal @if($fuelReceiptInvoiceRequired ?? false) (Obrigatório) @else (Opcional) @endif
                                 <div class="input-with-badge">
                                     <span>NF</span>
                         
