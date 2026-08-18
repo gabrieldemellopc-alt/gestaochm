@@ -27,6 +27,32 @@ class WorkshopTireController extends Controller
 
 {
 
+    public function dashboard(Request $request)
+    {
+        $location = $this->activeLocation();
+        if (! $location) abort(422, 'Selecione uma unidade para continuar.');
+        $this->authorizeTirePermission('tires.view');
+        $period = $request->input('period', 'last_30_days'); $today = now()->startOfDay();
+        [$start, $end, $label] = match ($period) {
+            'current_month' => [$today->copy()->startOfMonth(), $today->copy()->endOfMonth(), 'Mês atual'],
+            'last_90_days' => [$today->copy()->subDays(90), $today->copy()->endOfDay(), 'Últimos 90 dias'],
+            'current_year' => [$today->copy()->startOfYear(), $today->copy()->endOfYear(), 'Ano atual'],
+            default => [$today->copy()->subDays(30), $today->copy()->endOfDay(), 'Últimos 30 dias'],
+        };
+        $user = $request->user();
+        $tires = Tire::query()->where('tenant_id', $user->tenant_id)->where('location_id', $location->id)->notCancelled()->with(['latestMeasurement','latestRetread','activeInstallation.vehicle'])->get();
+        $measurements = TireMeasurement::query()->where('tenant_id',$user->tenant_id)->whereNull('cancelled_at')->whereBetween('measured_at',[$start,$end])->get();
+        $retreads = TireRetread::query()->where('tenant_id',$user->tenant_id)->whereNull('cancelled_at')->whereBetween('retreaded_at',[$start,$end])->count();
+        $current = $tires->filter(fn($tire) => $tire->status === 'installed');
+        $critical = $current->filter(fn($tire) => $tire->current_tread_depth !== null && $tire->critical_tread_depth !== null && (float)$tire->current_tread_depth <= (float)$tire->critical_tread_depth);
+        $low = $current->map(function($tire){$depth=$tire->current_tread_depth; $level=$depth !== null && $tire->critical_tread_depth !== null && (float)$depth <= (float)$tire->critical_tread_depth ? 'critical' : ($depth !== null && $tire->warning_tread_depth !== null && (float)$depth <= (float)$tire->warning_tread_depth ? 'warning' : 'normal'); return ['code'=>$tire->code,'vehicle'=>$tire->activeInstallation?->vehicle?->plate ?? 'Sem veículo','position'=>$tire->activeInstallation?->position_code ?? '-','tread'=>$depth,'level'=>$level];})->filter(fn($row)=>$row['tread'] !== null && (float) $row['tread'] > 0)->sortBy('tread')->take(10)->values();
+        $trend = match($period) {
+            'current_year' => $measurements->groupBy(fn($m)=>$m->measured_at->format('m/Y'))->map(fn($g,$l)=>['label'=>$l,'value'=>round($g->avg('average_tread'),2)])->values(),
+            'last_90_days' => $measurements->groupBy(fn($m)=>$m->measured_at->startOfWeek()->format('d/m'))->map(fn($g,$l)=>['label'=>$l,'value'=>round($g->avg('average_tread'),2)])->values(),
+            default => $measurements->groupBy(fn($m)=>$m->measured_at->format('d/m'))->map(fn($g,$l)=>['label'=>$l,'value'=>round($g->avg('average_tread'),2)])->values(),
+        };
+        return response()->json(['period_label'=>$label,'summary'=>['total_tires'=>$tires->count(),'in_use'=>$current->count(),'in_stock'=>$tires->where('status','available')->count(),'critical'=>$critical->count(),'measurements'=>$measurements->count(),'average_tread'=>$current->pluck('current_tread_depth')->filter()->avg() ? round($current->pluck('current_tread_depth')->filter()->avg(),2) : null,'retreaded'=>$retreads,'discarded'=>$tires->where('status','discarded')->filter(fn($t)=>$t->updated_at->between($start,$end))->count()],'by_status'=>$tires->groupBy('status')->map(fn($g,$s)=>['status'=>$s,'count'=>$g->count()])->values(),'tread_trend'=>$trend,'lowest_tread'=>$low,'critical_by_vehicle'=>$critical->groupBy(fn($t)=>$t->activeInstallation?->vehicle?->plate ?? 'Sem veículo')->map(fn($g,$v)=>['label'=>$v,'count'=>$g->count()])->sortByDesc('count')->values(),'retread_vs_discard'=>[],'without_recent_measurement'=>[],'top_mileage'=>[]]);
+    }
     public function index(Request $request)
 
     {

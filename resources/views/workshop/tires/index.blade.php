@@ -87,6 +87,8 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
+        <button type="button" class="workshop-hero-btn tire-dashboard-trigger" onclick="openTireDashboard()"><i data-lucide="gauge"></i> Painel de pneus</button>
+
         <a
 
             href="{{ route('dashboard') }}"
@@ -1895,4 +1897,11 @@ function closeEditTireModal() {
 
 </script>
 
+
+<div id="tireDashboard" class="tire-dashboard-modal" hidden><div class="tire-dashboard-card"><button type="button" class="tire-dashboard-close" onclick="closeTireDashboard()" aria-label="Fechar painel">×</button><h2>Painel de pneus</h2><p id="tireDashboardSubtitle">Indicadores de pneus, sulcagem, recapagens e descartes — período selecionado</p><label>Período <select id="tireDashboardPeriod"><option value="last_30_days">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="last_90_days">Últimos 90 dias</option><option value="current_year">Ano atual</option></select></label><div id="tireDashboardContent" class="tire-dashboard-loading">Carregando indicadores…</div></div></div>
 @endsection
+@push('scripts')
+<script>
+(() => { const tireDashboardUrl=@json(route('workshop.tires.dashboard')); const n=v=>Number(v||0); const friendly=v=>({available:'Disponível',installed:'Em uso',maintenance:'Manutenção',discarded:'Descartado',retread:'Recapagem'})[v]||String(v||'Outros').replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); const bars=(title,rows)=>`<section class="tire-dashboard-section"><h3>${title}</h3>${rows?.length?rows.map(r=>`<p>${friendly(r.status||r.label||r.code)} <b>${n(r.count)}</b></p>`).join(''):'<p>Dados não disponíveis.</p>'}</section>`; window.openTireDashboard=async()=>{const modal=document.getElementById('tireDashboard'),content=document.getElementById('tireDashboardContent'),period=document.getElementById('tireDashboardPeriod').value;modal.hidden=false;content.textContent='Carregando indicadores…';try{const response=await fetch(tireDashboardUrl+'?period='+encodeURIComponent(period),{headers:{Accept:'application/json'}});if(!response.ok)throw Error();const d=await response.json(),s=d.summary,k=(l,v)=>`<article><span>${l}</span><strong>${v??'N/D'}</strong></article>`;document.getElementById('tireDashboardSubtitle').textContent='Indicadores de pneus — '+d.period_label;content.innerHTML=`<div class="tire-dashboard-kpis">${k('Pneus cadastrados',s.total_tires)}${k('Pneus em uso',s.in_use)}${k('Pneus em estoque',s.in_stock)}${k('Pneus críticos',s.critical)}${k('Medições no período',s.measurements)}${k('Sulco médio atual',s.average_tread===null?'N/D':s.average_tread+' mm')}${k('Recapagens no período',s.retreaded)}${k('Descartes no período',s.discarded)}</div><div class="tire-dashboard-grid">${bars('Pneus por status',d.by_status)}${bars('Pneus críticos por veículo',d.critical_by_vehicle)}${bars('Pneus com menor sulco',d.lowest_tread)}${bars('Evolução da sulcagem média',d.tread_trend)}</div>`}catch(e){content.textContent='Não foi possível carregar o painel de pneus.'}};window.closeTireDashboard=()=>document.getElementById('tireDashboard').hidden=true;document.getElementById('tireDashboardPeriod').addEventListener('change',window.openTireDashboard);document.addEventListener('keydown',e=>{if(e.key==='Escape')window.closeTireDashboard()});})();
+</script>
+@endpush
