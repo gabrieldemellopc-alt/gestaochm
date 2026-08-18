@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class FuelFilling extends Model
 {
+    public const KM_STATUS_VALID = 'valid';
+    public const KM_STATUS_SUSPECT = 'suspect';
+    public const KM_STATUS_IGNORED = 'ignored';
     public const SOURCE_INTERNAL_TANK = 'internal_tank';
     public const SOURCE_EXTERNAL_STATION = 'external_station';
     protected $fillable = [
@@ -19,6 +22,10 @@ class FuelFilling extends Model
         'driver_id',
         'filled_at',
         'vehicle_km',
+        'vehicle_km_status',
+        'vehicle_km_issue',
+        'vehicle_km_reviewed_by',
+        'vehicle_km_reviewed_at',
         'vehicle_hours',
         'quantity_liters',
         'unit_cost',
@@ -35,6 +42,7 @@ class FuelFilling extends Model
     protected $casts = [
         'filled_at' => 'datetime',
         'vehicle_km' => 'decimal:2',
+        'vehicle_km_reviewed_at' => 'datetime',
         'vehicle_hours' => 'decimal:2',
         'quantity_liters' => 'decimal:3',
         'unit_cost' => 'decimal:4',
@@ -90,6 +98,21 @@ class FuelFilling extends Model
     public function canceller()
     {
         return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function vehicleReadingLogs()
+    {
+        return $this->hasMany(VehicleUpdateLog::class);
+    }
+
+    public function kmReviewer()
+    {
+        return $this->belongsTo(User::class, 'vehicle_km_reviewed_by');
+    }
+
+    public function getIsKmReadingUsableAttribute(): bool
+    {
+        return $this->vehicle_km !== null && in_array($this->vehicle_km_status, [null, self::KM_STATUS_VALID], true);
     }
     public function getResolvedSourceAttribute(): string
     {

@@ -14106,7 +14106,7 @@ html[data-chm-theme="corporate-light"] .sidebar .sidebar-link {
 
 html[data-chm-theme="corporate-light"] .sidebar .sidebar-link.active,
 html[data-chm-theme="corporate-light"] .sidebar .sidebar-group.open .sidebar-link.active {
-    color: #d9f0e0;
+    color: #ffffff;
     background: rgba(74, 91, 123, .72);
 }
 

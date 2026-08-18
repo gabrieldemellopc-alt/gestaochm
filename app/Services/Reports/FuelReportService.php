@@ -301,7 +301,7 @@ class FuelReportService
     private function counterConsumption(Collection $items, string $counterField): array
     {
         $valid = $items
-            ->filter(fn (FuelFilling $filling) => $filling->{$counterField} !== null)
+            ->filter(fn (FuelFilling $filling) => $filling->{$counterField} !== null && ($counterField !== 'vehicle_km' || $filling->is_km_reading_usable))
             ->sortBy('filled_at')
             ->values();
 

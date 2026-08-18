@@ -987,7 +987,7 @@ class ReportController extends Controller
     {
         return $this->reportContext->vehicleUpdateLogsQuery($context, $vehicleId)
             ->where('type', $type)
-            ->whereBetween('created_at', [$filters['start_date'], $filters['end_date']])
+            ->whereRaw('COALESCE(read_at, created_at) between ? and ?', [$filters['start_date'], $filters['end_date']])
             ->get()
             ->sum(fn ($log) => max(0, (float) $log->new_value - (float) $log->old_value));
     }

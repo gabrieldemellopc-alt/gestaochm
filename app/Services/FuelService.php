@@ -300,7 +300,9 @@ class FuelService
                 "Hodômetro atualizado automaticamente pelo abastecimento #{$filling->id}.",
                 'vehicle_km',
                 ! empty($validated['km_reading_confirmed'])
-                    || ! empty($validated['confirm_high_vehicle_km'])
+                    || ! empty($validated['confirm_high_vehicle_km']),
+                $filling->filled_at,
+                $filling,
             );
         }
     
@@ -315,7 +317,9 @@ class FuelService
                 "Horímetro atualizado automaticamente pelo abastecimento #{$filling->id}.",
                 'vehicle_hours',
                 ! empty($validated['hours_reading_confirmed'])
-                    || ! empty($validated['confirm_high_vehicle_hours'])
+                    || ! empty($validated['confirm_high_vehicle_hours']),
+                $filling->filled_at,
+                $filling,
             );
         }
     }

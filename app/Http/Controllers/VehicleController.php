@@ -26,6 +26,7 @@ use App\Models\StockItem;
 use App\Services\ActiveContextService;
 use App\Services\Permissions\ProfilePermissionService;
 use App\Services\VehicleReadingService;
+use App\Services\VehicleHistoryService;
 use App\Models\VehicleDowntimePeriod;
 use App\Models\SystemAuditLog;
 use Illuminate\Support\Collection;
@@ -2238,66 +2239,24 @@ class VehicleController extends Controller
             return $redirect;
         }
 
-        $vehicle->load([
-            'division',
-            'location',
-            'currentAllocation.location',
-            'procedures',
+        $permissions = app(ProfilePermissionService::class);
+        $scope = [
+            'tenant_id' => auth()->user()->tenant_id,
+            'division_id' => $vehicle->division_id,
+            'location_id' => $vehicle->location_id,
+            'module' => 'fleet',
+        ];
+        $canViewMaintenanceCosts = $permissions->allows(auth()->user(), 'maintenance.view_costs', $scope);
+        $canViewFuelCosts = $permissions->allows(auth()->user(), 'fuel.view_costs', $scope);
 
-            'updateLogs' => function ($query) {
-                $query->latest('created_at');
-            },
-
-            'updateLogs.user',
-
-            'maintenances' => function ($query) {
-                $query
-                    ->whereNull('deleted_at')
-                    ->latest('started_at');
-            },
-
-            'maintenances.procedure',
-            'maintenances.values.field',
-            'maintenances.items.procedure',
-            'maintenances.items.values.field',
+        $history = app(VehicleHistoryService::class)->build($vehicle, [
+            'maintenance_costs' => $canViewMaintenanceCosts,
+            'fuel_costs' => $canViewFuelCosts,
         ]);
-
-        $locationIds = $vehicle->updateLogs
-            ->where('type', 'location')
-            ->flatMap(function ($log) {
-                return [
-                    $log->old_value,
-                    $log->new_value,
-                ];
-            })
-            ->filter()
-            ->unique()
-            ->values();
-
-        $locations = \App\Models\Location::query()
-            ->whereIn('id', $locationIds)
-            ->pluck('name', 'id');
-
-        $locationLogs = $vehicle->updateLogs
-            ->where('type', 'location')
-            ->sortBy('created_at')
-            ->map(function ($log) use ($locations) {
-                $log->old_location_name =
-                    $locations->get($log->old_value);
-
-                $log->new_location_name =
-                    $locations->get($log->new_value);
-
-                return $log;
-            })
-            ->values();
 
         return view(
             'vehicle.history',
-            compact(
-                'vehicle',
-                'locationLogs'
-            )
+            compact('vehicle', 'history', 'canViewMaintenanceCosts', 'canViewFuelCosts')
         );
     }
 

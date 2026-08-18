@@ -15,6 +15,9 @@ class ImportImperatrizFuelSheet extends Command
 
     public function handle(): int
     {
+        if ($this->option('update-vehicle-readings')) {
+            $this->warn('A opção --update-vehicle-readings está preterida e não sincroniza leituras. Use chm:sync-fuel-readings explicitamente após revisar o dry-run.');
+        }
         $path = $this->argument('file');
         if (! is_file($path)) { $this->error('Arquivo não encontrado.'); return self::FAILURE; }
         foreach (['tenant-id', 'division-id', 'location-id'] as $option) {

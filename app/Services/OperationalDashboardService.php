@@ -104,7 +104,7 @@ class OperationalDashboardService
                     ->take(5)
                     ->sortBy('filled_at')
                     ->values();
-                $kmAverage = $this->averageByCounter($recent, 'vehicle_km');
+                $kmAverage = $this->averageByCounter($recent->filter(fn (FuelFilling $filling) => $filling->is_km_reading_usable)->values(), 'vehicle_km');
 
                 if ($kmAverage['value'] !== null) {
                     return $this->fuelAveragePayload($kmAverage['value'], 'km/L', 'available');

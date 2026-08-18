@@ -812,6 +812,7 @@ class VehicleDossierReportService
             'driver' => $filling->driver,
             'driver_name' => $filling->driver?->name ?? 'Não informado',
             'vehicle_km' => $filling->vehicle_km !== null ? (float) $filling->vehicle_km : null,
+            'vehicle_km_status' => $filling->vehicle_km_status,
             'vehicle_hours' => $filling->vehicle_hours !== null ? (float) $filling->vehicle_hours : null,
             'quantity_liters' => (float) $filling->quantity_liters,
             'unit_cost' => $filling->unit_cost !== null ? (float) $filling->unit_cost : null,
@@ -855,7 +856,7 @@ class VehicleDossierReportService
     private function counterConsumption(Collection $items, string $counterField): array
     {
         $valid = $items
-            ->filter(fn (array $filling) => $filling[$counterField] !== null)
+            ->filter(fn (array $filling) => $filling[$counterField] !== null && ($counterField !== 'vehicle_km' || in_array($filling['vehicle_km_status'] ?? null, [null, FuelFilling::KM_STATUS_VALID], true)))
             ->values();
     
         if ($valid->count() < 2) {
@@ -983,12 +984,12 @@ class VehicleDossierReportService
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
             ->whereIn('type', ['km', 'hours'])
-            ->whereBetween('created_at', [$filters['start_date'], $filters['end_date']])
-            ->orderByDesc('created_at')
+            ->whereRaw('COALESCE(read_at, created_at) between ? and ?', [$filters['start_date'], $filters['end_date']])
+            ->orderByRaw('COALESCE(read_at, created_at) desc')
             ->get()
             ->map(fn (VehicleUpdateLog $log) => [
                 'id' => $log->id,
-                'date' => $log->created_at,
+                'date' => $log->read_at ?? $log->created_at,
                 'type' => $log->type,
                 'type_label' => $log->type === 'hours' ? 'Horímetro' : 'KM',
                 'old_value' => $log->old_value !== null ? (float) $log->old_value : null,
