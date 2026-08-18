@@ -894,6 +894,8 @@ Route::middleware('auth')->group(function () {
 
             )->name('index');
 
+            Route::get('/dashboard', 'dashboard')->name('dashboard');
+
 
 
             Route::post(

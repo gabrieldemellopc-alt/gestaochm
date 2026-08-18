@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\TenantFiscalSettingService;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
@@ -53,6 +54,91 @@ class StockController extends Controller
 
         $stockEntryInvoiceRequired = app(TenantFiscalSettingService::class)->requires('stock_entry');
         return view('stock.index', compact('categories', 'stockPermissions', 'stockEntryInvoiceRequired'));
+    }
+
+    public function dashboard(Request $request)
+    {
+        $activeLocation = $this->activeLocation();
+        if (! $activeLocation) {
+            abort(403, 'Selecione uma unidade para continuar.');
+        }
+
+        $this->authorizeStockPermission('stock.view');
+
+        $period = $request->validate(['period' => ['nullable', 'in:30d,current_month,90d,current_year']])['period'] ?? '30d';
+        $now = now();
+        [$start, $groupBy] = match ($period) {
+            'current_month' => [$now->copy()->startOfMonth(), 'day'],
+            '90d' => [$now->copy()->subDays(89)->startOfDay(), 'week'],
+            'current_year' => [$now->copy()->startOfYear(), 'month'],
+            default => [$now->copy()->subDays(29)->startOfDay(), 'day'],
+        };
+        $tenantId = auth()->user()->tenant_id;
+        $locationId = $activeLocation->id;
+        $canViewCosts = $this->canStock('stock.view_costs');
+
+        $items = StockItem::query()->where('tenant_id', $tenantId)->where('location_id', $locationId)
+            ->where('active', true)->with('category:id,name')->get();
+        $validMovements = StockMovement::query()->where('tenant_id', $tenantId)->where('location_id', $locationId)
+            ->whereNull('cancelled_at')->whereNull('reversed_from_movement_id');
+        $periodMovements = (clone $validMovements)->where(function ($query) use ($start, $now) {
+            $query->whereBetween('moved_at', [$start, $now])
+                ->orWhere(function ($query) use ($start, $now) {
+                    $query->whereNull('moved_at')->whereBetween('created_at', [$start, $now]);
+                });
+        })
+            ->with(['stockItem:id,name,unit,stock_category_id', 'stockItem.category:id,name', 'maintenanceRecord.procedure', 'maintenanceRecord.vehicle'])->get();
+
+        $entries = $periodMovements->where('movement_type', 'in');
+        $outputs = $periodMovements->where('movement_type', 'out');
+        $belowMinimum = $items->filter(fn ($item) => (float) $item->quantity > 0 && (float) $item->quantity < (float) $item->minimum_quantity);
+        $zeroStock = $items->filter(fn ($item) => (float) $item->quantity <= 0);
+        $lastMovements = (clone $validMovements)->get(['stock_item_id', 'moved_at', 'created_at'])
+            ->sortByDesc(fn ($movement) => $movement->moved_at ?? $movement->created_at)
+            ->groupBy('stock_item_id')->map->first();
+        $staleItems = $items->filter(function ($item) use ($lastMovements, $now) {
+            $last = $lastMovements->get($item->id);
+            return ! $last || Carbon::parse($last->moved_at ?? $last->created_at)->lt($now->copy()->subDays(90));
+        });
+
+        $series = $periodMovements->groupBy(function ($movement) use ($groupBy) {
+            $date = Carbon::parse($movement->moved_at ?? $movement->created_at);
+            return match ($groupBy) {
+                'month' => $date->format('Y-m'),
+                'week' => $date->startOfWeek()->format('Y-m-d'),
+                default => $date->format('Y-m-d'),
+            };
+        })->map(function ($movements, $label) {
+            return ['label' => $label, 'entries' => (float) $movements->where('movement_type', 'in')->sum('quantity'), 'outputs' => (float) $movements->where('movement_type', 'out')->sum('quantity')];
+        })->sortKeys()->values();
+        $financialMovements = $canViewCosts ? $periodMovements->groupBy(function ($movement) use ($groupBy) {
+            $date = Carbon::parse($movement->moved_at ?? $movement->created_at);
+            return match ($groupBy) {
+                'month' => $date->format('Y-m'),
+                'week' => $date->startOfWeek()->format('Y-m-d'),
+                default => $date->format('Y-m-d'),
+            };
+        })->map(function ($movements, $label) {
+            return ['label' => $label, 'entries_value' => round((float) $movements->where('movement_type', 'in')->sum('total_cost'), 2), 'outputs_value' => round((float) $movements->where('movement_type', 'out')->sum('total_cost'), 2)];
+        })->sortKeys()->values() : [];
+        $topConsumed = $outputs->groupBy('stock_item_id')->map(function ($movements) {
+            $item = $movements->first()->stockItem;
+            return ['item' => $item?->name ?? 'Item removido', 'category' => $item?->category?->name ?? 'Sem categoria', 'quantity' => (float) $movements->sum('quantity'), 'unit' => $item?->unit ?? '-'];
+        })->sortByDesc('quantity')->take(8)->values();
+        $topCategories = $outputs->groupBy(fn ($movement) => $movement->stockItem?->category?->name ?? 'Sem categoria')->map(function ($movements, $category) use ($canViewCosts) {
+            $result = ['category' => $category, 'quantity' => (float) $movements->sum('quantity')];
+            if ($canViewCosts) $result['value'] = round((float) $movements->sum('total_cost'), 2);
+            return $result;
+        })->sortByDesc('quantity')->take(8)->values();
+        $formatItem = fn ($item) => ['item' => $item->name, 'category' => $item->category?->name ?? 'Sem categoria', 'quantity' => (float) $item->quantity, 'minimum_quantity' => (float) $item->minimum_quantity, 'difference' => max(0, (float) $item->minimum_quantity - (float) $item->quantity)];
+
+        $maintenanceOutputs = $outputs->whereNotNull('maintenance_record_id')->take(10)->map(function ($movement) {
+            $maintenance = $movement->maintenanceRecord;
+            return ['item' => $movement->stockItem?->name ?? 'Item removido', 'quantity' => (float) $movement->quantity, 'unit' => $movement->stockItem?->unit ?? '-', 'procedure' => $maintenance?->procedure?->name ?? 'Manutenção #'.$movement->maintenance_record_id, 'vehicle' => $maintenance?->vehicle?->plate ?? $maintenance?->vehicle?->name];
+        })->values();
+        $stockValueItems = $canViewCosts ? $items->map(fn ($item) => ['item' => $item->name, 'quantity' => (float) $item->quantity, 'unit_cost' => (float) $item->unit_cost, 'value' => round((float) $item->quantity * (float) $item->unit_cost, 2)])->sortByDesc('value')->take(8)->values() : [];
+
+        return response()->json(['summary' => ['total_items' => $items->count(), 'below_minimum' => $belowMinimum->count(), 'zero_stock' => $zeroStock->count(), 'entries' => (float) $entries->sum('quantity'), 'outputs' => (float) $outputs->sum('quantity'), 'maintenance_consumption' => (float) $outputs->whereNotNull('maintenance_record_id')->sum('quantity'), 'stock_value' => $canViewCosts ? round((float) $items->sum(fn ($item) => (float) $item->quantity * (float) $item->unit_cost), 2) : null, 'movement_value' => $canViewCosts ? round((float) $periodMovements->sum('total_cost'), 2) : null, 'can_view_costs' => $canViewCosts], 'entries_vs_outputs' => $series, 'financial_movements' => $financialMovements, 'top_consumed_items' => $topConsumed, 'top_categories' => $topCategories, 'below_minimum_items' => $belowMinimum->map($formatItem)->values(), 'zero_stock_items' => $zeroStock->map(function ($item) use ($lastMovements, $formatItem) { $row = $formatItem($item); $last = $lastMovements->get($item->id); $row['last_movement'] = $last?->moved_at?->format('Y-m-d') ?? $last?->created_at?->format('Y-m-d'); return $row; })->values(), 'stale_items' => $staleItems->map(function ($item) use ($lastMovements, $now) { $last = $lastMovements->get($item->id); $date = $last?->moved_at ?? $last?->created_at; return ['item' => $item->name, 'quantity' => (float) $item->quantity, 'last_movement' => $date?->format('Y-m-d'), 'days_without_movement' => $date ? (int) Carbon::parse($date)->diffInDays($now) : null]; })->values(), 'top_stock_value_items' => $stockValueItems, 'maintenance_outputs' => $maintenanceOutputs]);
     }
 
     public function showItem(StockItem $item, StockItemDetailService $detailService)

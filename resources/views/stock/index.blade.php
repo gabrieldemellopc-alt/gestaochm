@@ -97,6 +97,11 @@
 
             </a>
 
+            <button type="button" class="chm-page-button secondary" onclick="window.openStockDashboard()">
+                <i data-lucide="bar-chart-3"></i>
+                Painel de estoque
+            </button>
+
             @if($canImportFiscalDocument)
                 <button
                     type="button"
@@ -1933,6 +1938,16 @@
 
 </div>
 
+<div id="stockDashboardModal" class="stock-dashboard-overlay" aria-hidden="true">
+    <section class="stock-dashboard-modal" role="dialog" aria-modal="true" aria-labelledby="stockDashboardTitle">
+        <header class="stock-dashboard-header">
+            <div><span>Estoque</span><h2 id="stockDashboardTitle">Painel de estoque</h2><p>Indicadores de estoque, entradas, saídas e consumo — período selecionado</p></div>
+            <div class="stock-dashboard-controls"><select id="stockDashboardPeriod" aria-label="Período"><option value="30d">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="90d">Últimos 90 dias</option><option value="current_year">Ano atual</option></select><button type="button" onclick="window.closeStockDashboard()" aria-label="Fechar painel"><i data-lucide="x"></i></button></div>
+        </header>
+        <div id="stockDashboardContent" class="stock-dashboard-content"><p class="stock-dashboard-loading">Carregando indicadores…</p></div>
+    </section>
+</div>
+
 <script>
 const canManageStockCategories = @json($canManageStockCategories);
 const canManageStockItems = @json($canManageStockItems);
@@ -1941,7 +1956,60 @@ const canCreateStockOutput = @json($canCreateStockOutput);
 const canCancelStockMovements = @json($canCancelStockMovement);
 const canViewStockCosts = @json($canViewStockCosts);
 const canViewStockAuditDetails = @can('viewAuditLogs') true @else false @endcan;
+const stockDashboardUrl = @json(route('stock.dashboard'));
 let lastOpenedItemId = null;
+
+function stockDashboardEscape(value) { return String(value ?? '-').replace(/[&<>\"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[char]); }
+function stockDashboardNumber(value) { return Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 }); }
+function stockDashboardMoney(value) { return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function stockDashboardDate(value) { return value ? new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem movimentação'; }
+function stockDashboardDays(value) { if (value === null || value === undefined) return 'Nunca movimentado'; const days = Math.floor(Number(value)); return `${days} ${days === 1 ? 'dia' : 'dias'}`; }
+function stockDashboardFinancialChart(rows) {
+    const width = 760, height = 240, left = 48, right = 18, top = 18, bottom = 34;
+    const max = Math.max(1, ...rows.flatMap(row => [Number(row.entries_value || 0), Number(row.outputs_value || 0)]));
+    const x = index => rows.length === 1 ? (left + width - right) / 2 : left + index * ((width - left - right) / (rows.length - 1));
+    const y = value => top + (height - top - bottom) * (1 - Number(value || 0) / max);
+    const path = key => rows.map((row, index) => `${index ? 'L' : 'M'} ${x(index).toFixed(1)} ${y(row[key]).toFixed(1)}`).join(' ');
+    const step = Math.max(1, Math.ceil(rows.length / 6));
+    const grid = [0, .5, 1].map(ratio => { const value = max * (1 - ratio), position = top + (height - top - bottom) * ratio; return `<line x1="${left}" y1="${position}" x2="${width-right}" y2="${position}"/><text x="${left - 7}" y="${position + 3}" text-anchor="end">${stockDashboardMoney(value)}</text>`; }).join('');
+    const labels = rows.map((row, index) => index % step === 0 || index === rows.length - 1 ? `<text x="${x(index)}" y="${height - 10}" text-anchor="middle">${stockDashboardEscape(row.label)}</text>` : '').join('');
+    const points = (key, color, label) => rows.map((row, index) => `<circle cx="${x(index)}" cy="${y(row[key])}" r="3.5" fill="${color}"><title>${stockDashboardEscape(row.label)} — ${label}: ${stockDashboardMoney(row[key])}</title></circle>`).join('');
+    const entriesTotal = rows.reduce((total, row) => total + Number(row.entries_value || 0), 0);
+    const outputsTotal = rows.reduce((total, row) => total + Number(row.outputs_value || 0), 0);
+    return `<div class="stock-dashboard-financial-chart"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Entradas e saídas financeiras"><g class="stock-dashboard-financial-grid">${grid}${labels}</g><path class="stock-dashboard-financial-line entry" d="${path('entries_value')}"/>${points('entries_value', '#4f9ddd', 'Entradas')}<path class="stock-dashboard-financial-line output" d="${path('outputs_value')}"/>${points('outputs_value', '#dd7b6e', 'Saídas')}</svg><div class="stock-dashboard-financial-summary"><span><i></i> Entradas: <b>${stockDashboardMoney(entriesTotal)}</b></span><span><i class="out"></i> Saídas: <b>${stockDashboardMoney(outputsTotal)}</b></span></div></div>`;
+}
+function stockDashboardList(title, rows, columns, empty = 'Nenhum dado para o período selecionado.') {
+    const head = columns.map(column => `<th>${column.label}</th>`).join('');
+    const body = rows.length ? rows.map(row => `<tr>${columns.map(column => `<td>${column.render ? column.render(row) : stockDashboardEscape(row[column.key])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${columns.length}" class="stock-dashboard-empty">${empty}</td></tr>`;
+    return `<article class="stock-dashboard-card stock-dashboard-table-card"><h3>${title}</h3><div class="stock-dashboard-table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></article>`;
+}
+function renderStockDashboard(data) {
+    const s = data.summary;
+    const cost = s.can_view_costs;
+    const kpis = [['Itens cadastrados', s.total_items, 'Total de itens ativos'], ['Abaixo do mínimo', s.below_minimum, 'Reposição necessária'], ['Itens zerados', s.zero_stock, 'Sem saldo disponível'], ['Entradas no período', stockDashboardNumber(s.entries), 'Movimentos válidos'], ['Saídas no período', stockDashboardNumber(s.outputs), 'Consumo/retirada'], ['Consumo em manutenção', stockDashboardNumber(s.maintenance_consumption), 'Saídas vinculadas a OMs'], ['Valor em estoque', cost ? stockDashboardMoney(s.stock_value) : 'Restrito', 'Permissão de custos'], ['Valor movimentado', cost ? stockDashboardMoney(s.movement_value) : 'Restrito', 'Permissão de custos']];
+    const financialMovements = data.financial_movements || [];
+    const hasFinancialMovements = financialMovements.some(row => Number(row.entries_value || 0) > 0 || Number(row.outputs_value || 0) > 0);
+    let html = `<div class="stock-dashboard-kpis">${kpis.map(k => `<article><span>${k[0]}</span><strong>${k[1]}</strong><small>${k[2]}</small></article>`).join('')}</div>`;
+    html += `<article class="stock-dashboard-card stock-dashboard-financial-card"><h3>Movimentação financeira do estoque</h3><p class="stock-dashboard-card-description">Valores estimados de entradas e saídas no período selecionado.</p>${!cost ? `<p class="stock-dashboard-empty">Restrito pela permissão de custos.</p>` : hasFinancialMovements ? stockDashboardFinancialChart(financialMovements) : `<p class="stock-dashboard-empty">Nenhuma movimentação financeira válida no período selecionado.</p>`}</article>`;
+    html += `<div class="stock-dashboard-grid">`;
+    html += stockDashboardList('Itens mais consumidos', data.top_consumed_items, [{label:'Item',key:'item'}, {label:'Categoria',key:'category'}, {label:'Quantidade',render:r=>`${stockDashboardNumber(r.quantity)} ${stockDashboardEscape(r.unit)}`}]);
+    html += stockDashboardList('Categorias com maior consumo', data.top_categories, [{label:'Categoria',key:'category'}, {label:'Quantidade',render:r=>stockDashboardNumber(r.quantity)}, ...(cost ? [{label:'Valor',render:r=>stockDashboardMoney(r.value)}] : [])]);
+    html += stockDashboardList('Itens abaixo do mínimo', data.below_minimum_items, [{label:'Item',key:'item'}, {label:'Saldo',render:r=>stockDashboardNumber(r.quantity)}, {label:'Mínimo',render:r=>stockDashboardNumber(r.minimum_quantity)}, {label:'Falta',render:r=>stockDashboardNumber(r.difference)}]);
+    html += stockDashboardList('Itens zerados', data.zero_stock_items, [{label:'Item',key:'item'}, {label:'Categoria',key:'category'}, {label:'Última movimentação',render:r=>stockDashboardDate(r.last_movement)}]);
+    html += stockDashboardList('Itens sem movimentação recente', data.stale_items, [{label:'Item',key:'item'}, {label:'Saldo',render:r=>stockDashboardNumber(r.quantity)}, {label:'Última movimentação',render:r=>stockDashboardDate(r.last_movement)}, {label:'Dias sem movimento',render:r=>stockDashboardDays(r.days_without_movement)}]);
+    if (cost) html += stockDashboardList('Top itens por valor em estoque', data.top_stock_value_items, [{label:'Item',key:'item'}, {label:'Saldo',render:r=>stockDashboardNumber(r.quantity)}, {label:'Custo médio',render:r=>stockDashboardMoney(r.unit_cost)}, {label:'Valor estimado',render:r=>stockDashboardMoney(r.value)}]);
+    html += stockDashboardList('Saídas por manutenção/procedimento', data.maintenance_outputs, [{label:'Procedimento',key:'procedure'}, {label:'Item',key:'item'}, {label:'Quantidade',render:r=>`${stockDashboardNumber(r.quantity)} ${stockDashboardEscape(r.unit)}`}, {label:'Veículo/OM',key:'vehicle'}], 'Não há saídas de estoque vinculadas a manutenções no período.');
+    document.getElementById('stockDashboardContent').innerHTML = html + '</div>';
+}
+async function loadStockDashboard() {
+    const content = document.getElementById('stockDashboardContent');
+    content.innerHTML = '<p class="stock-dashboard-loading">Atualizando indicadores…</p>';
+    try { const response = await fetch(`${stockDashboardUrl}?period=${encodeURIComponent(document.getElementById('stockDashboardPeriod').value)}`, {headers:{Accept:'application/json'}}); if (!response.ok) throw new Error(); renderStockDashboard(await response.json()); if (window.lucide) lucide.createIcons(); } catch (error) { content.innerHTML = '<p class="stock-dashboard-empty">Não foi possível carregar o painel. Tente novamente.</p>'; }
+}
+window.openStockDashboard = function () { const modal = document.getElementById('stockDashboardModal'); modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false'); loadStockDashboard(); };
+window.closeStockDashboard = function () { const modal = document.getElementById('stockDashboardModal'); modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); };
+document.addEventListener('keydown', event => { if (event.key === 'Escape') window.closeStockDashboard(); });
+document.addEventListener('DOMContentLoaded', () => { document.getElementById('stockDashboardPeriod')?.addEventListener('change', loadStockDashboard); document.getElementById('stockDashboardModal')?.addEventListener('click', event => { if (event.target.id === 'stockDashboardModal') window.closeStockDashboard(); }); });
 
 
 
