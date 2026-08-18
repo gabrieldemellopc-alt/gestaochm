@@ -774,7 +774,11 @@ Route::middleware('auth')->group(function () {
 
         )->name('index');
 
+        Route::get('/maintenance-dashboard', [WorkshopController::class, 'maintenanceDashboard'])->name('maintenance-dashboard');
 
+
+
+        Route::get('/tires/dashboard', [WorkshopTireController::class, 'dashboard'])->name('tires.dashboard');
 
         Route::get(
 
