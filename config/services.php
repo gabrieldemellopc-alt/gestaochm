@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'video_processor' => [
+        'driver' => env('VIDEO_PROCESSOR_DRIVER', 'local'),
+        'url' => env('VIDEO_PROCESSOR_URL'),
+        'token' => env('VIDEO_PROCESSOR_TOKEN'),
+        'timeout' => (int) env('VIDEO_PROCESSOR_TIMEOUT', 90),
+    ],
+
 ];
