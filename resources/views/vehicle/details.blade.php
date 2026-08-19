@@ -776,10 +776,6 @@
             <input type="hidden" name="evidence_id" id="readingCorrectionEvidenceId">
             <section class="reading-correction-evidence"><strong>Comprovação em vídeo</strong><p>Escaneie o QR Code com o celular e grave um vídeo de até 10 segundos mostrando a placa e o hodômetro/horímetro do veículo.</p><div id="readingCorrectionQr">Preparando QR Code…</div><p id="readingCorrectionEvidenceStatus">Aguardando envio do vídeo...</p></section>
             <div id="readingCorrectionImpacts" class="reading-correction-impact" aria-live="polite"></div>
-            <label id="readingCorrectionConfirmation" class="reading-correction-warning" style="display:none;">
-                <input type="checkbox" name="impact_confirmed" value="1" required>
-                <span><strong>Estou ciente dos impactos desta correção.</strong><small>Registros relacionados poderão ter seus indicadores recalculados, sem exclusão do histórico original.</small></span>
-            </label>
             </div>
 
             <div class="reading-correction-actions">
@@ -955,19 +951,17 @@
 
         const impacts = data.impacts || [];
         target.innerHTML = impacts.length
-            ? `<div class="reading-correction-impact-header"><div><strong>Lançamentos potencialmente afetados</strong><p>Eles não serão alterados automaticamente, mas podem precisar de conferência.</p></div><span>${impacts.length} registro${impacts.length === 1 ? '' : 's'}</span></div><div class="reading-correction-impact-list">${impacts.map(item => `<article class="reading-correction-impact-item"><div><strong>${escapeReadingCorrectionHtml(item.type)}</strong><small>${escapeReadingCorrectionHtml(item.date)}</small></div><b>${escapeReadingCorrectionHtml(item.value)}</b><span>${escapeReadingCorrectionHtml(item.reference)}</span></article>`).join('')}</div>`
+            ? `<label id="readingCorrectionConfirmation" class="reading-correction-impact-header"><input type="checkbox" name="impact_confirmed" value="1" required><span class="reading-correction-impact-copy"><strong>Lançamentos potencialmente afetados</strong><p>Esses registros não serão alterados automaticamente, mas podem precisar de conferência.</p><span class="reading-correction-warning-copy"><strong>Estou ciente dos impactos desta correção.</strong><small>Registros relacionados poderão ter seus indicadores recalculados, sem exclusão do histórico original.</small></span></span><span class="reading-correction-impact-badge">${impacts.length} registro${impacts.length === 1 ? '' : 's'}</span></label><div class="reading-correction-impact-list">${impacts.map(item => `<article class="reading-correction-impact-item"><div><strong>${escapeReadingCorrectionHtml(item.type)}</strong><small>${escapeReadingCorrectionHtml(item.date)}</small></div><b>${escapeReadingCorrectionHtml(item.value)}</b><span>${escapeReadingCorrectionHtml(item.reference)}</span></article>`).join('')}</div>`
             : '<div class="reading-correction-impact-state is-success"><i data-lucide="circle-check"></i><div><strong>Nenhum impacto localizado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
         if (window.lucide) lucide.createIcons();
-        document.getElementById('readingCorrectionConfirmation').style.display = 'block';
-        document.getElementById('readingCorrectionConfirmation').querySelector('input').checked = false;
+        const confirmation = document.querySelector('#readingCorrectionConfirmation input');
+        if (confirmation) confirmation.addEventListener('change', updateReadingSubmit);
         document.getElementById('readingCorrectionSubmit').type = 'submit';
         document.getElementById('readingCorrectionSubmit').removeAttribute('onclick');
     }
 
     document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"], #readingCorrectionForm [name="target_log_id"]')
         .forEach(input => input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
-            document.getElementById('readingCorrectionConfirmation').style.display = 'none';
-            document.getElementById('readingCorrectionConfirmation').querySelector('input').checked = false;
             document.getElementById('readingCorrectionSubmit').type = 'button';
             document.getElementById('readingCorrectionSubmit').setAttribute('onclick', 'previewReadingCorrection()');
             updateReadingSubmit();
@@ -975,9 +969,8 @@
             if (window.lucide) lucide.createIcons();
         }));
 
-    document.querySelector('#readingCorrectionConfirmation input').addEventListener('change', updateReadingSubmit);
     function reasonWordCount(){return document.querySelector('#readingCorrectionForm [name="reason"]').value.trim().split(/\s+/).filter(Boolean).length;}
-    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); const confirmationVisible=document.getElementById('readingCorrectionConfirmation').style.display !== 'none'; document.getElementById('readingCorrectionSubmit').disabled=!(readingEvidenceReady&&change&&words>=8&&f.target_log_id.value&&(!confirmationVisible||f.impact_confirmed.checked)); }
+    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); document.getElementById('readingCorrectionSubmit').disabled=!(readingEvidenceReady&&change&&words>=8&&f.target_log_id.value&&(!confirmation||confirmation.checked)); }
 
     function escapeReadingCorrectionHtml(value) {
         const element = document.createElement('div');
