@@ -775,7 +775,11 @@
 
             <input type="hidden" name="evidence_id" id="readingCorrectionEvidenceId">
             <section class="reading-correction-evidence"><strong>Comprovação em vídeo</strong><p>Escaneie o QR Code com o celular e grave um vídeo de até 10 segundos mostrando a placa e o hodômetro/horímetro do veículo.</p><div id="readingCorrectionQr">Preparando QR Code…</div><p id="readingCorrectionEvidenceStatus">Aguardando envio do vídeo...</p></section>
-            <div id="readingCorrectionImpacts" class="reading-correction-impact" aria-live="polite"></div>
+            <section class="reading-correction-impact-area" aria-live="polite">
+                <div id="readingCorrectionImpacts" class="reading-correction-impact">
+                    <div class="reading-correction-impact-state"><i data-lucide="info"></i><div><strong>Impactos ainda não analisados</strong><p>Revise os impactos da correção antes de confirmar.</p></div></div>
+                </div>
+            </section>
             </div>
 
             <div class="reading-correction-actions">
@@ -901,10 +905,13 @@
 @if($canCorrectReadings)
     let readingEvidenceTimer;
     let readingEvidenceReady = false;
-    let readingImpactsReviewed = false;
+    let readingImpactState = 'not_reviewed';
+    let readingImpactHighlightTimer;
     function openReadingCorrectionModal() {
         document.getElementById('readingCorrectionModal').style.display = 'flex';
         document.body.classList.add('reading-correction-open');
+        readingImpactState = 'not_reviewed';
+        renderReadingImpactNotice();
         updateReadingSubmit();
         createReadingEvidence();
     }
@@ -959,20 +966,22 @@
         if (window.lucide) lucide.createIcons();
         const confirmation = document.querySelector('#readingCorrectionConfirmation input');
         if (confirmation) confirmation.addEventListener('change', updateReadingSubmit);
-        readingImpactsReviewed = true;
+        readingImpactState = 'reviewed';
         updateReadingSubmit();
+        scrollToReadingImpacts();
     }
 
     document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"], #readingCorrectionForm [name="target_log_id"]')
         .forEach(input => input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
-            readingImpactsReviewed = false;
+            readingImpactState = readingImpactState === 'reviewed' ? 'stale' : 'not_reviewed';
             updateReadingSubmit();
-            document.getElementById('readingCorrectionImpacts').innerHTML = '<div class="reading-correction-impact-state"><i data-lucide="info"></i><p>Os dados foram alterados. Revise os impactos antes de confirmar.</p></div>';
-            if (window.lucide) lucide.createIcons();
+            renderReadingImpactNotice();
         }));
 
     function reasonWordCount(){return document.querySelector('#readingCorrectionForm [name="reason"]').value.trim().split(/\s+/).filter(Boolean).length;}
-    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const readyForReview=readingEvidenceReady&&change&&words>=8&&f.target_log_id.value; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=readingImpactsReviewed?'Confirmar correção':'Revisar impactos'; button.type=readingImpactsReviewed?'submit':'button'; if(readingImpactsReviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!readingImpactsReviewed||confirmation?.checked)); }
+    function scrollToReadingImpacts() { requestAnimationFrame(() => { const container=document.querySelector('.reading-correction-body'); const impacts=document.getElementById('readingCorrectionImpacts'); if (!container || !impacts) return; const containerRect=container.getBoundingClientRect(); const impactsRect=impacts.getBoundingClientRect(); container.scrollTo({top:Math.max(0,container.scrollTop+impactsRect.top-containerRect.top-12),behavior:'smooth'}); clearTimeout(readingImpactHighlightTimer); impacts.classList.add('is-highlighted'); readingImpactHighlightTimer=setTimeout(()=>impacts.classList.remove('is-highlighted'),1800); }); }
+    function renderReadingImpactNotice() { const target=document.getElementById('readingCorrectionImpacts'); const stale=readingImpactState==='stale'; target.innerHTML=`<div class="reading-correction-impact-state"><i data-lucide="info"></i><div><strong>${stale?'Dados alterados após a análise':'Impactos ainda não analisados'}</strong><p>${stale?'Os dados foram alterados. Revise os impactos antes de confirmar.':'Revise os impactos da correção antes de confirmar.'}</p></div></div>`; if (window.lucide) lucide.createIcons(); }
+    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const readyForReview=readingEvidenceReady&&change&&words>=8&&f.target_log_id.value; const reviewed=readingImpactState==='reviewed'; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=reviewed?'Confirmar correção':'Revisar impactos'; button.type=reviewed?'submit':'button'; if(reviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!reviewed||confirmation?.checked)); }
 
     function escapeReadingCorrectionHtml(value) {
         const element = document.createElement('div');
