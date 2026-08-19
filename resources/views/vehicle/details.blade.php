@@ -780,7 +780,7 @@
 
             <div class="reading-correction-actions">
                 <button type="button" onclick="closeReadingCorrectionModal()">Cancelar</button>
-                <button type="button" id="readingCorrectionSubmit" disabled onclick="previewReadingCorrection()">Confirmar correção</button>
+                <button type="button" id="readingCorrectionSubmit" disabled onclick="previewReadingCorrection()">Revisar impactos</button>
             </div>
         </form>
     </div>
@@ -901,6 +901,7 @@
 @if($canCorrectReadings)
     let readingEvidenceTimer;
     let readingEvidenceReady = false;
+    let readingImpactsReviewed = false;
     function openReadingCorrectionModal() {
         document.getElementById('readingCorrectionModal').style.display = 'flex';
         document.body.classList.add('reading-correction-open');
@@ -936,6 +937,7 @@
     async function previewReadingCorrection() {
         const form = document.getElementById('readingCorrectionForm');
         const target = document.getElementById('readingCorrectionImpacts');
+        if (!form.reportValidity()) return;
         const response = await fetch(@json(route('vehicles.reading-correction.preview', $vehicle)), {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value },
@@ -950,27 +952,27 @@
         }
 
         const impacts = data.impacts || [];
-        target.innerHTML = impacts.length
-            ? `<label id="readingCorrectionConfirmation" class="reading-correction-impact-header"><input type="checkbox" name="impact_confirmed" value="1" required><span class="reading-correction-impact-copy"><strong>Lançamentos potencialmente afetados</strong><p>Esses registros não serão alterados automaticamente, mas podem precisar de conferência.</p><span class="reading-correction-warning-copy"><strong>Estou ciente dos impactos desta correção.</strong><small>Registros relacionados poderão ter seus indicadores recalculados, sem exclusão do histórico original.</small></span></span><span class="reading-correction-impact-badge">${impacts.length} registro${impacts.length === 1 ? '' : 's'}</span></label><div class="reading-correction-impact-list">${impacts.map(item => `<article class="reading-correction-impact-item"><div><strong>${escapeReadingCorrectionHtml(item.type)}</strong><small>${escapeReadingCorrectionHtml(item.date)}</small></div><b>${escapeReadingCorrectionHtml(item.value)}</b><span>${escapeReadingCorrectionHtml(item.reference)}</span></article>`).join('')}</div>`
-            : '<div class="reading-correction-impact-state is-success"><i data-lucide="circle-check"></i><div><strong>Nenhum impacto localizado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
+        const impactItems = impacts.length
+            ? impacts.map(item => `<article class="reading-correction-impact-item"><div><strong>${escapeReadingCorrectionHtml(item.type)}</strong><small>${escapeReadingCorrectionHtml(item.date)}</small></div><b>${escapeReadingCorrectionHtml(item.value)}</b><span>${escapeReadingCorrectionHtml(item.reference)}</span></article>`).join('')
+            : '<div class="reading-correction-impact-state is-success"><i data-lucide="circle-check"></i><div><strong>Nenhum lançamento potencialmente afetado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
+        target.innerHTML = `<label id="readingCorrectionConfirmation" class="reading-correction-impact-header"><input type="checkbox" name="impact_confirmed" value="1" required><span class="reading-correction-impact-copy"><strong>Lançamentos potencialmente afetados</strong><p>Esses registros não serão alterados automaticamente, mas podem precisar de conferência.</p><span class="reading-correction-warning-copy"><strong>Estou ciente dos impactos desta correção.</strong><small>Registros relacionados poderão ter seus indicadores recalculados, sem exclusão do histórico original.</small></span></span><span class="reading-correction-impact-badge">${impacts.length} registro${impacts.length === 1 ? '' : 's'}</span></label><div class="reading-correction-impact-list">${impactItems}</div>`;
         if (window.lucide) lucide.createIcons();
         const confirmation = document.querySelector('#readingCorrectionConfirmation input');
         if (confirmation) confirmation.addEventListener('change', updateReadingSubmit);
-        document.getElementById('readingCorrectionSubmit').type = 'submit';
-        document.getElementById('readingCorrectionSubmit').removeAttribute('onclick');
+        readingImpactsReviewed = true;
+        updateReadingSubmit();
     }
 
     document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"], #readingCorrectionForm [name="target_log_id"]')
         .forEach(input => input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
-            document.getElementById('readingCorrectionSubmit').type = 'button';
-            document.getElementById('readingCorrectionSubmit').setAttribute('onclick', 'previewReadingCorrection()');
+            readingImpactsReviewed = false;
             updateReadingSubmit();
             document.getElementById('readingCorrectionImpacts').innerHTML = '<div class="reading-correction-impact-state"><i data-lucide="info"></i><p>Os dados foram alterados. Revise os impactos antes de confirmar.</p></div>';
             if (window.lucide) lucide.createIcons();
         }));
 
     function reasonWordCount(){return document.querySelector('#readingCorrectionForm [name="reason"]').value.trim().split(/\s+/).filter(Boolean).length;}
-    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); document.getElementById('readingCorrectionSubmit').disabled=!(readingEvidenceReady&&change&&words>=8&&f.target_log_id.value&&(!confirmation||confirmation.checked)); }
+    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const readyForReview=readingEvidenceReady&&change&&words>=8&&f.target_log_id.value; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=readingImpactsReviewed?'Confirmar correção':'Revisar impactos'; button.type=readingImpactsReviewed?'submit':'button'; if(readingImpactsReviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!readingImpactsReviewed||confirmation?.checked)); }
 
     function escapeReadingCorrectionHtml(value) {
         const element = document.createElement('div');
