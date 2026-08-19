@@ -1308,3 +1308,14 @@ body.corporate-dark .fuel-source-single-note {
 .fuel-chart-efficiency .fuel-chart-horizontal-row span small { display:block; margin-top:2px; color:#b7cbe0; font-size:.66rem; }
 .fuel-dashboard-charts > .fuel-chart-line { grid-column:1 / -1; height:360px; max-height:360px; }
 @media(max-width:700px){.fuel-dashboard-charts > .fuel-chart-line{grid-column:auto;height:320px;max-height:320px}}
+/* Históricos administrativos de combustível */
+.fuel-history-filters { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 18px; }
+.fuel-history-filters input, .fuel-history-filters select { min-height:40px; padding:0 10px; border-radius:10px; border:1px solid rgba(148,163,184,.25); background:#17243d; color:#e6edff; }
+.fuel-table tr.is-cancelled { opacity:.65; }
+.fuel-table td small { display:block; margin-top:4px; color:#aeb9dc; }
+.fuel-history-status { display:inline-flex; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:800; border:1px solid rgba(148,163,184,.25); }
+.fuel-history-status.is-complete { color:#b9e7c9; background:rgba(34,197,94,.10); border-color:rgba(34,197,94,.25); }
+.fuel-history-status.is-cancelled { color:#d9c5c5; background:rgba(148,163,184,.10); }
+.fuel-history-reading strong { display:block; color:#fff; white-space:nowrap; }
+.fuel-history-reading small { display:block; margin-top:4px; color:#aeb9dc; }
+.fuel-cancel-action:hover { border-color:rgba(239,68,68,.45); color:#fecaca; }

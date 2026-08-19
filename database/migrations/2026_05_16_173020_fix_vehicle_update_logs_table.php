@@ -6,9 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
-    {
-        Schema::table('vehicle_update_logs', function (Blueprint $table) {
+    public function up(): void
+    {
+        // The preceding create migration already introduced these columns.
+        // Keep this historical "fix" migration idempotent for clean SQLite
+        // databases and installations where only a partial legacy schema exists.
+        if (! Schema::hasColumn('vehicle_update_logs', 'vehicle_id')) {
+            Schema::table('vehicle_update_logs', function (Blueprint $table) {
 
             $table->foreignId('vehicle_id')
                 ->after('id')
@@ -48,31 +52,12 @@ return new class extends Migration
                 ->nullable()
                 ->after('new_value');
 
-        });
+            });
+        }
     }
 
-    public function down(): void
-    {
-        Schema::table('vehicle_update_logs', function (Blueprint $table) {
-
-            $table->dropForeign(['vehicle_id']);
-            $table->dropForeign(['user_id']);
-            $table->dropForeign(['division_id']);
-            $table->dropForeign(['location_id']);
-
-            $table->dropColumn([
-
-                'vehicle_id',
-                'user_id',
-                'division_id',
-                'location_id',
-                'type',
-                'old_value',
-                'new_value',
-                'observation',
-
-            ]);
-
-        });
+    public function down(): void
+    {
+        // No-op: all columns belong to the canonical create migration.
     }
 };

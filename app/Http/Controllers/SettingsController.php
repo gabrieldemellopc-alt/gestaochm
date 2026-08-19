@@ -24,6 +24,7 @@ class SettingsController extends Controller
             'stock_entry' => ['nullable', 'boolean'],
             'external_fuel_filling' => ['nullable', 'boolean'],
             'fuel_receipt' => ['nullable', 'boolean'],
+            'maintenance_external_service' => ['nullable', 'boolean'],
         ]);
         $fiscalSettings->updateRequirements($validated);
         return redirect()->route('settings.index', ['tab' => 'fiscal-documents'])->with('success', 'Configurações fiscais salvas.');

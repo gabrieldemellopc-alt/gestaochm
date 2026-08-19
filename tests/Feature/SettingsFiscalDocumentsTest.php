@@ -38,7 +38,7 @@ class SettingsFiscalDocumentsTest extends TestCase
         [$user, , $division] = $this->administrator();
         $this->actingAs($user)->withSession(['active_division_id' => $division->id]);
         $requirements = app(TenantFiscalSettingService::class)->requirements();
-        $this->assertSame(['stock_entry' => false, 'external_fuel_filling' => false, 'fuel_receipt' => false], $requirements);
+        $this->assertSame(['stock_entry' => false, 'external_fuel_filling' => false, 'fuel_receipt' => false, 'maintenance_external_service' => false], $requirements);
     }
 
     public function test_authorized_user_can_save_fiscal_requirements(): void

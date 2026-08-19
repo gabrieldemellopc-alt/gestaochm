@@ -759,25 +759,32 @@
             </div>
 
             <div class="reading-correction-field">
-                <label>Motivo da correção</label>
-                <textarea name="reason" minlength="10" required rows="3" placeholder="Explique o lançamento incorreto e a leitura correta.">{{ old('reason') }}</textarea>
+                <label>Leitura incorreta a substituir</label>
+                <select name="target_log_id" required>
+                    <option value="">Selecione o evento original</option>
+                    @foreach($vehicle->updateLogs->whereIn('type', ['km', 'hours'])->filter->is_reading_usable as $log)
+                        <option value="{{ $log->id }}">{{ strtoupper($log->type) }}: {{ $log->new_value }} — {{ optional($log->read_at ?? $log->created_at)->format('d/m/Y H:i') }}</option>
+                    @endforeach
+                </select>
             </div>
 
-            <button type="button" class="reading-correction-analyze" onclick="previewReadingCorrection()">
-                <i data-lucide="scan-search"></i>
-                Analisar impactos
-            </button>
-            <div id="readingCorrectionImpacts" class="reading-correction-impact" aria-live="polite"></div>
+            <div class="reading-correction-field">
+                <label>Motivo da correção <span id="readingCorrectionWordCount">0 / 8 palavras</span></label>
+                <textarea name="reason" required rows="3" placeholder="Descreva o motivo da correção com pelo menos 8 palavras.">{{ old('reason') }}</textarea>
+            </div>
 
+            <input type="hidden" name="evidence_id" id="readingCorrectionEvidenceId">
+            <section class="reading-correction-evidence"><strong>Comprovação em vídeo</strong><p>Escaneie o QR Code com o celular e grave um vídeo de até 10 segundos mostrando a placa e o hodômetro/horímetro do veículo.</p><div id="readingCorrectionQr">Preparando QR Code…</div><p id="readingCorrectionEvidenceStatus">Aguardando envio do vídeo...</p></section>
+            <div id="readingCorrectionImpacts" class="reading-correction-impact" aria-live="polite"></div>
             <label id="readingCorrectionConfirmation" class="reading-correction-warning" style="display:none;">
                 <input type="checkbox" name="impact_confirmed" value="1" required>
-                <span>Confirmo que esta correção pode afetar a interpretação de lançamentos já registrados.</span>
+                <span><strong>Estou ciente dos impactos desta correção.</strong><small>Registros relacionados poderão ter seus indicadores recalculados, sem exclusão do histórico original.</small></span>
             </label>
             </div>
 
             <div class="reading-correction-actions">
                 <button type="button" onclick="closeReadingCorrectionModal()">Cancelar</button>
-                <button type="submit" id="readingCorrectionSubmit" disabled>Confirmar correção</button>
+                <button type="button" id="readingCorrectionSubmit" disabled onclick="previewReadingCorrection()">Confirmar correção</button>
             </div>
         </form>
     </div>
@@ -896,15 +903,39 @@
 </div>
 <script>
 @if($canCorrectReadings)
+    let readingEvidenceTimer;
+    let readingEvidenceReady = false;
     function openReadingCorrectionModal() {
         document.getElementById('readingCorrectionModal').style.display = 'flex';
         document.body.classList.add('reading-correction-open');
+        updateReadingSubmit();
+        createReadingEvidence();
     }
 
     function closeReadingCorrectionModal() {
         document.getElementById('readingCorrectionModal').style.display = 'none';
         document.body.classList.remove('reading-correction-open');
+        clearInterval(readingEvidenceTimer);
     }
+
+    async function createReadingEvidence() {
+        const form=document.getElementById('readingCorrectionForm');
+        const qr=document.getElementById('readingCorrectionQr');
+        const status=document.getElementById('readingCorrectionEvidenceStatus');
+        try {
+            const response=await fetch(@json(route('vehicles.reading-correction.evidence.create',$vehicle)),{method:'POST',headers:{Accept:'application/json','X-CSRF-TOKEN':form.querySelector('[name=_token]').value}});
+            const data=await response.json().catch(()=>({}));
+            if(!response.ok || !data.id || !data.qr) throw new Error(data.message || `HTTP ${response.status}`);
+            form.querySelector('[name=evidence_id]').value=data.id;
+            qr.innerHTML=`<img alt="QR Code para envio do vídeo" src="${data.qr}">`;
+            clearInterval(readingEvidenceTimer); readingEvidenceTimer=setInterval(()=>pollReadingEvidence(data.id),5000); pollReadingEvidence(data.id);
+        } catch (error) {
+            qr.textContent='Não foi possível gerar a sessão de comprovação.';
+            status.textContent='Tente novamente. Se o problema persistir, contate o administrador.';
+            if (@json(config('app.debug'))) console.error('Falha ao criar evidência de correção:', error);
+        }
+    }
+    async function pollReadingEvidence(id) { const r=await fetch(`/vehicles/{{ $vehicle->id }}/reading-correction/evidence/${id}/status`,{headers:{Accept:'application/json'}}); if(!r.ok)return; const d=await r.json(); readingEvidenceReady=!!d.available; const text=d.status==='processing'?'Vídeo recebido. Processando...':d.status==='expired'?'Sessão de vídeo expirada. Abra o modal novamente.':d.status==='failed'?'O processamento do vídeo falhou. Gere uma nova sessão.':'Aguardando envio do vídeo...'; document.getElementById('readingCorrectionEvidenceStatus').innerHTML=readingEvidenceReady?`<strong>Vídeo recebido</strong> — ${d.uploaded_at} (${d.duration}s) ${d.view_url?`<a href="${d.view_url}" target="_blank" rel="noopener">Visualizar vídeo</a>`:''}`:text; updateReadingSubmit(); if(readingEvidenceReady||['expired','failed'].includes(d.status))clearInterval(readingEvidenceTimer); }
 
     async function previewReadingCorrection() {
         const form = document.getElementById('readingCorrectionForm');
@@ -928,16 +959,25 @@
             : '<div class="reading-correction-impact-state is-success"><i data-lucide="circle-check"></i><div><strong>Nenhum impacto localizado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
         if (window.lucide) lucide.createIcons();
         document.getElementById('readingCorrectionConfirmation').style.display = 'block';
-        document.getElementById('readingCorrectionSubmit').disabled = false;
+        document.getElementById('readingCorrectionConfirmation').querySelector('input').checked = false;
+        document.getElementById('readingCorrectionSubmit').type = 'submit';
+        document.getElementById('readingCorrectionSubmit').removeAttribute('onclick');
     }
 
-    document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"]')
-        .forEach(input => input.addEventListener('input', () => {
+    document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"], #readingCorrectionForm [name="target_log_id"]')
+        .forEach(input => input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
             document.getElementById('readingCorrectionConfirmation').style.display = 'none';
             document.getElementById('readingCorrectionConfirmation').querySelector('input').checked = false;
-            document.getElementById('readingCorrectionSubmit').disabled = true;
-            document.getElementById('readingCorrectionImpacts').innerHTML = '<p>Analise novamente os impactos após alterar os dados.</p>';
+            document.getElementById('readingCorrectionSubmit').type = 'button';
+            document.getElementById('readingCorrectionSubmit').setAttribute('onclick', 'previewReadingCorrection()');
+            updateReadingSubmit();
+            document.getElementById('readingCorrectionImpacts').innerHTML = '<div class="reading-correction-impact-state"><i data-lucide="info"></i><p>Os dados foram alterados. Revise os impactos antes de confirmar.</p></div>';
+            if (window.lucide) lucide.createIcons();
         }));
+
+    document.querySelector('#readingCorrectionConfirmation input').addEventListener('change', updateReadingSubmit);
+    function reasonWordCount(){return document.querySelector('#readingCorrectionForm [name="reason"]').value.trim().split(/\s+/).filter(Boolean).length;}
+    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); const confirmationVisible=document.getElementById('readingCorrectionConfirmation').style.display !== 'none'; document.getElementById('readingCorrectionSubmit').disabled=!(readingEvidenceReady&&change&&words>=8&&f.target_log_id.value&&(!confirmationVisible||f.impact_confirmed.checked)); }
 
     function escapeReadingCorrectionHtml(value) {
         const element = document.createElement('div');

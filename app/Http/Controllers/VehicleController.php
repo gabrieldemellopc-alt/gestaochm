@@ -2927,6 +2927,10 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
         ->get();
 
 
+    $stockCategories = \App\Models\StockCategory::query()
+        ->where('tenant_id', $vehicle->tenant_id)
+        ->orderBy('name')
+        ->get(['id', 'name']);
     $maintenancePermissions = $this->maintenancePermissions($vehicle);
     $canEditItems = $maintenancePermissions['edit_items'];
     $canEditExtraCosts = $maintenancePermissions['edit_extra_costs'];
@@ -2945,7 +2949,8 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
         'canEditItems',
         'canEditExtraCosts',
         'canViewCosts',
-        'maintenanceTimeline'
+        'maintenanceTimeline',
+        'stockCategories'
     ));
 
 }
@@ -3089,6 +3094,7 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             'edit_items' => $can('maintenance.edit_items'),
             'consume_stock' => $can('maintenance.consume_stock'),
             'use_materials' => $can('maintenance.use_materials'),
+            'stock_entry' => $can('stock.entry'),
             'cancel_materials' => $can('maintenance.cancel_materials'),
             'add_extra_costs' => $can('maintenance.add_extra_costs'),
             'edit_extra_costs' => $can('maintenance.edit_extra_costs'),

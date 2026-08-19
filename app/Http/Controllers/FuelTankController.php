@@ -333,6 +333,50 @@ class FuelTankController extends Controller
             ->with('success', 'Abastecimento registrado com sucesso.');
     }
 
+    public function fillingsHistory(Request $request)
+    {
+        $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.view', $context);
+        $query = FuelFilling::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['vehicle', 'tank', 'product', 'driver', 'responsible', 'canceller']);
+        $this->applyPeriod($query, $request, 'filled_at');
+        foreach (['vehicle_id', 'fuel_product_id', 'fuel_tank_id'] as $field) if ($request->filled($field)) $query->where($field, $request->integer($field));
+        if ($request->filled('source')) {
+            $request->input('source') === FuelFilling::SOURCE_INTERNAL_TANK
+                ? $query->where(fn ($q) => $q->where('source', FuelFilling::SOURCE_INTERNAL_TANK)->orWhereNull('source'))
+                : $query->where('source', $request->input('source'));
+        }
+        if ($request->input('status') === 'active') $query->whereNull('cancelled_at');
+        if ($request->input('status') === 'cancelled') $query->whereNotNull('cancelled_at');
+        return view('fuel.tanks.fillings-history', ['fillings' => $query->latest('filled_at')->paginate(25)->withQueryString(), 'vehicles' => $this->vehiclesForContext($context), 'products' => FuelProduct::where('tenant_id', $context['tenant_id'])->orderBy('name')->get(), 'tanks' => FuelTank::where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->orderBy('name')->get(), 'fuelPermissions' => $this->fuelPermissions($context)]);
+    }
+
+    public function receiptsHistory(Request $request)
+    {
+        $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.view', $context);
+        $query = FuelReceipt::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['tank', 'product', 'responsible', 'canceller']);
+        $this->applyPeriod($query, $request, 'received_at');
+        foreach (['fuel_product_id', 'fuel_tank_id'] as $field) if ($request->filled($field)) $query->where($field, $request->integer($field));
+        if ($request->filled('supplier_name')) $query->where('supplier_name', 'like', '%'.$request->input('supplier_name').'%');
+        if ($request->input('status') === 'active') $query->whereNull('cancelled_at');
+        if ($request->input('status') === 'cancelled') $query->whereNotNull('cancelled_at');
+        return view('fuel.tanks.receipts-history', ['receipts' => $query->latest('received_at')->paginate(25)->withQueryString(), 'products' => FuelProduct::where('tenant_id', $context['tenant_id'])->orderBy('name')->get(), 'tanks' => FuelTank::where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->orderBy('name')->get(), 'fuelPermissions' => $this->fuelPermissions($context)]);
+    }
+
+    public function cancelFilling(Request $request, FuelFilling $filling, FuelService $fuelService)
+    {
+        $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.cancel', $context);
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:2000']]);
+        try { $fuelService->cancelFilling($filling, $data['reason']); } catch (ValidationException $e) { return back()->withErrors($e->errors())->withInput(); }
+        return back()->with('success', 'Abastecimento cancelado e mantido no histórico para auditoria.');
+    }
+
+    public function cancelReceipt(Request $request, FuelReceipt $receipt, FuelService $fuelService)
+    {
+        $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.cancel', $context);
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:2000']]);
+        try { $fuelService->cancelReceipt($receipt, $data['reason']); } catch (ValidationException $e) { return back()->withErrors($e->errors())->withInput(); }
+        return back()->with('success', 'Recebimento cancelado e mantido no histórico para auditoria.');
+    }
+
     private function activeContext(): ?array
     {
         $user = auth()->user();
@@ -357,6 +401,20 @@ class FuelTankController extends Controller
             'division' => $division,
             'location' => $location,
         ];
+    }
+
+    private function historyContext(): array
+    {
+        $context = $this->activeContext();
+        if (! $context) abort(422, 'Selecione uma unidade ativa.');
+        $this->authorizeFuelManagement($context);
+        return $context;
+    }
+
+    private function applyPeriod($query, Request $request, string $column): void
+    {
+        if ($request->filled('start_date')) $query->whereDate($column, '>=', $request->input('start_date'));
+        if ($request->filled('end_date')) $query->whereDate($column, '<=', $request->input('end_date'));
     }
 
     private function validatedData(Request $request, array $context, string $errorBag): array

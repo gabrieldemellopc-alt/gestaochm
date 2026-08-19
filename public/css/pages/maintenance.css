@@ -536,7 +536,7 @@
 
     display: block;
 
-    margin-bottom: 8px;
+    margin-bottom: 0px !important;
 
     color: #dbe5ff;
 
@@ -5123,4 +5123,147 @@ html.maintenance-modal-open { overflow:hidden; }
     .maintenance-materials-form .materials-entry-grid {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+.maintenance-previous-history { text-align:center; }
+.maintenance-previous-toggle { border:0; background:transparent; color:#aeb9dc; font:inherit; font-weight:800; cursor:pointer; padding:10px 14px; }
+.maintenance-previous-toggle:hover { color:#fff; }
+.maintenance-previous-toggle svg { width:16px; vertical-align:middle; transition:transform .2s ease; }
+.maintenance-previous-toggle svg.is-rotated { transform:rotate(180deg); }
+
+.maintenance-direct-material__separator { display:flex; align-items:center; gap:12px; margin:22px 0 12px; color:#8695ac; font-size:.76rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.maintenance-direct-material__separator::before, .maintenance-direct-material__separator::after { content:''; flex:1; height:1px; background:rgba(112, 138, 173, .25); }
+.maintenance-direct-material { border:1px solid rgba(112, 138, 173, .3); border-radius:12px; background:rgba(24, 36, 52, .55); padding:0 16px 16px; }
+.maintenance-direct-material summary { padding:15px 0 12px; color:#d9e8fb; font-weight:800; cursor:pointer; }
+.maintenance-direct-material__intro { margin:0 0 14px; color:#aebed2; font-size:.85rem; }
+.maintenance-direct-material__description { margin:-8px 0 16px; color:#8fa1b9; font-size:.81rem; line-height:1.45; }
+.maintenance-direct-material__search { position:relative; margin-bottom:14px; }
+.maintenance-direct-material__search label { display:block; margin-bottom:6px; color:#b9c8dc; font-size:.82rem; font-weight:700; }
+.maintenance-direct-material__search input { width:100%; box-sizing:border-box; }
+.maintenance-direct-material__suggestions { position:relative; z-index:3; margin-top:5px; border:1px solid rgba(112, 138, 173, .35); border-radius:9px; overflow:hidden; background:#1e2c3f; }
+.maintenance-direct-material__suggestions > span { display:block; padding:10px 12px; color:#aebed2; font-size:.82rem; }
+.maintenance-direct-material__suggestions button { display:flex; width:100%; align-items:center; justify-content:space-between; gap:12px; border:0; border-bottom:1px solid rgba(112, 138, 173, .18); background:transparent; color:#e7f0fb; padding:10px 12px; text-align:left; cursor:pointer; }
+.maintenance-direct-material__suggestions button:last-child { border-bottom:0; }
+.maintenance-direct-material__suggestions button:hover { background:rgba(75, 112, 154, .24); }
+.maintenance-direct-material__suggestions strong, .maintenance-direct-material__suggestions small { display:block; }
+.maintenance-direct-material__suggestions small { color:#aebed2; font-size:.75rem; }
+.maintenance-direct-material__selected { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px; padding:10px 12px; border:1px solid rgba(100, 143, 190, .42); border-radius:9px; background:rgba(49, 73, 101, .28); color:#d7e4f4; font-size:.82rem; }
+.maintenance-direct-material__selected strong,.maintenance-direct-material__selected small { display:block; }
+.maintenance-direct-material__selected strong { margin-bottom:3px; color:#fff; }
+.maintenance-direct-material__selected small { color:#afc1d7; }
+.maintenance-direct-material__selected button { border:0; background:transparent; color:#b4cae7; font:inherit; font-weight:800; cursor:pointer; text-decoration:underline; }
+.maintenance-direct-material__notice,.maintenance-direct-material__new-item { display:grid; gap:4px; margin-top:9px; padding:11px 12px; border-radius:9px; font-size:.81rem; line-height:1.42; }
+.maintenance-direct-material__notice { border:1px solid rgba(106, 145, 184, .35); background:rgba(53, 78, 105, .24); color:#c5d6e8; }
+.maintenance-direct-material__notice strong { color:#e4effc; }.maintenance-direct-material__notice small { color:#aebfd3; }
+.maintenance-direct-material__new-item { border:1px dashed rgba(112, 138, 173, .36); color:#aebed2; }.maintenance-direct-material__new-item strong { color:#dbe7f5; }
+.maintenance-direct-material__item-fields,.maintenance-direct-material__purchase-fields,.maintenance-direct-material__item-summary { margin-top:16px; padding-top:15px; border-top:1px solid rgba(112, 138, 173, .2); }
+.maintenance-direct-material__form-title { display:block; margin-bottom:10px; color:#d5e1ef; font-size:.78rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+.maintenance-direct-material__grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }
+.maintenance-direct-material__grid label { display:grid; gap:7px; min-width:0; color:#bdcce0; font-size:.82rem; font-weight:700; }
+.maintenance-direct-material__grid input,.maintenance-direct-material__grid select,.maintenance-direct-material__grid textarea { width:100%; min-width:0; height:44px; box-sizing:border-box; border:1px solid rgba(112, 138, 173, .55); border-radius:8px; padding:0 12px; background:#202f43; color:#e3edf9; }
+.maintenance-direct-material__grid textarea { height:auto; min-height:88px; padding-top:10px; resize:vertical; }
+.maintenance-direct-material__grid input:focus,.maintenance-direct-material__grid select:focus,.maintenance-direct-material__grid textarea:focus { outline:0; border-color:#7098c6; box-shadow:0 0 0 3px rgba(92, 137, 189, .16); }
+.maintenance-direct-material__grid input[readonly] { border-color:rgba(112, 138, 173, .38); background:#26364b; color:#c6d5e6; }
+.maintenance-direct-material__grid label small { color:#9cadc2; font-weight:600; }.maintenance-direct-material__item-summary > div { display:grid; gap:3px; color:#b5c6da; font-size:.84rem; }.maintenance-direct-material__item-summary strong { color:#fff; }.maintenance-direct-material__invoice { display:flex; }.maintenance-direct-material__invoice span { display:inline-flex; align-items:center; padding:0 11px; border:1px solid #586b84; border-right:0; border-radius:7px 0 0 7px; background:#253348; color:#b9c8dc; }.maintenance-direct-material__invoice input { border-radius:0 7px 7px 0; }
+@media (max-width:700px) { .maintenance-direct-material__grid { grid-template-columns:1fr; }.maintenance-direct-material__selected { align-items:flex-start; flex-direction:column; } }
+.maintenance-create-page .maintenance-add-grid { gap:14px 18px; }
+.maintenance-create-page .maintenance-add-grid .form-input { min-height:42px; border-radius:8px; padding:0 12px; border-color:rgba(112,138,173,.48); }
+.maintenance-create-page .maintenance-add-grid textarea.form-input { min-height:92px; padding-top:10px; resize:vertical; }
+.maintenance-create-page .maintenance-add-grid .form-input:focus { border-color:#7098c6; box-shadow:0 0 0 3px rgba(92,137,189,.14); }
+.maintenance-create-page .maintenance-add-grid .form-input::placeholder { color:#7f91a9; }
+.maintenance-external-service { margin-top:2px; padding:16px; border:1px solid rgba(112,138,173,.3); border-radius:11px; background:rgba(30,44,63,.42); }
+.maintenance-external-service__heading { display:grid; gap:3px; margin-bottom:14px; }
+.maintenance-external-service__heading > label { color:#dbe8f7; font-weight:800; }
+.maintenance-external-service__heading small,.maintenance-external-service__requirement { color:#9fb1c7; font-size:.76rem; }
+.maintenance-external-service__requirement { display:block; margin:-3px 0 5px; }
+@media(max-width:760px){.maintenance-create-page .maintenance-add-grid{grid-template-columns:1fr;gap:13px}.maintenance-external-service{padding:14px}}
+.maintenance-create-page > * .maintenance-add-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.maintenance-create-page > * .maintenance-add-grid .maintenance-reason-field,
+.maintenance-create-page > * .maintenance-add-grid .maintenance-external-service,
+.maintenance-create-page > * .maintenance-add-grid .full-width { grid-column:1 / -1; }
+.maintenance-external-service .maintenance-add-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.maintenance-external-service .maintenance-add-grid .maintenance-external-provider { grid-column:span 2; }
+.maintenance-external-service .maintenance-add-grid .maintenance-external-document { grid-column:span 1; }
+@media(max-width:760px){.maintenance-create-page > * .maintenance-add-grid,.maintenance-external-service .maintenance-add-grid{grid-template-columns:1fr}.maintenance-external-service .maintenance-add-grid .maintenance-external-provider,.maintenance-external-service .maintenance-add-grid .maintenance-external-document{grid-column:auto}}
+
+/* Container alinhado 100% horizontalmente */
+.maintenance-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    white-space: nowrap;
+}
+
+/* Ícone do Veículo */
+.meta-vehicle-icon {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+/* Nome do Veículo */
+.meta-vehicle-name {
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* Badge da Placa */
+.plate-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.5rem;
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* Ponto Separador */
+.meta-bullet {
+    color: #64748b;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+/* Badge de Execução */
+.execution-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.execution-badge [data-lucide] {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Cores por Execução */
+.execution-badge.internal {
+    background-color: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.execution-badge.external {
+    background-color: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }

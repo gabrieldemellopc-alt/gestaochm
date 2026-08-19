@@ -10,6 +10,7 @@ use App\Models\FuelTank;
 use App\Models\User;
 use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
+use App\Models\VehicleUpdateLog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -324,6 +325,66 @@ class FuelService
         }
     }
 
+    public function cancelFilling(FuelFilling $filling, string $reason): void
+    {
+        $context = $this->resolveContext();
+        $this->ensureRecordInContext($filling, $context);
+
+        DB::transaction(function () use ($filling, $reason, $context) {
+            $filling = FuelFilling::query()->lockForUpdate()->findOrFail($filling->id);
+            if ($filling->cancelled_at) {
+                throw ValidationException::withMessages(['filling' => 'Este abastecimento já foi cancelado.']);
+            }
+
+            if ($filling->resolved_source === FuelFilling::SOURCE_INTERNAL_TANK) {
+                $tank = $this->lockTankForContext((int) $filling->fuel_tank_id, $context);
+                $before = $this->decimal($tank->current_balance_liters, 3);
+                $after = $this->decimal($before + (float) $filling->quantity_liters, 3);
+                if ($after > (float) $tank->capacity_liters) {
+                    throw ValidationException::withMessages(['filling' => 'O estorno ultrapassaria a capacidade atual do tanque.']);
+                }
+                $stockValue = $this->decimal((float) ($tank->estimated_stock_value ?? 0) + (float) ($filling->total_cost ?? 0), 2);
+                $tank->forceFill(['current_balance_liters' => $after, 'estimated_stock_value' => $stockValue, 'average_unit_cost' => $after > 0 ? $this->decimal($stockValue / $after, 4) : 0])->save();
+                $this->createMovement($context, $tank, FuelMovement::TYPE_REVERSAL, (float) $filling->quantity_liters, $before, $after, $filling, $context['user']->id, 'Estorno do abastecimento #'.$filling->id);
+            }
+
+            $filling->forceFill(['cancelled_at' => now(), 'cancelled_by' => $context['user']->id, 'cancel_reason' => $reason])->save();
+            $issue = 'Leitura desconsiderada devido ao cancelamento do abastecimento #'.$filling->id.'.';
+            VehicleUpdateLog::query()->where('fuel_filling_id', $filling->id)->update(['reading_status' => VehicleUpdateLog::READING_STATUS_IGNORED, 'reading_issue' => $issue, 'reviewed_by' => $context['user']->id, 'reviewed_at' => now()]);
+            $vehicle = Vehicle::query()->find($filling->vehicle_id);
+            if ($vehicle) {
+                $latest = app(VehicleReadingReconciliationService::class)->latestValid($vehicle);
+                if ($latest) $vehicle->forceFill(['current_km' => $latest['km']])->save();
+            }
+            $this->auditLog->updated($filling, ['tenant_id' => $context['tenant_id'], 'division_id' => $context['division_id'], 'location_id' => $context['location_id'], 'module' => 'fuel', 'summary' => 'Abastecimento #'.$filling->id.' cancelado.', 'after_data' => $filling->fresh()->toArray()]);
+        });
+    }
+
+    public function cancelReceipt(FuelReceipt $receipt, string $reason): void
+    {
+        $context = $this->resolveContext();
+        $this->ensureRecordInContext($receipt, $context);
+        DB::transaction(function () use ($receipt, $reason, $context) {
+            $receipt = FuelReceipt::query()->lockForUpdate()->findOrFail($receipt->id);
+            if ($receipt->cancelled_at) throw ValidationException::withMessages(['receipt' => 'Este recebimento já foi cancelado.']);
+            $tank = $this->lockTankForContext((int) $receipt->fuel_tank_id, $context);
+            $before = $this->decimal($tank->current_balance_liters, 3);
+            if ($before < (float) $receipt->quantity_liters) throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: parte deste combustível já foi consumida e o saldo ficaria negativo.']);
+            $receiptMovement = FuelMovement::query()->where('source_type', FuelReceipt::class)->where('source_id', $receipt->id)->orderBy('id')->first();
+            if ($receiptMovement && FuelMovement::query()->where('fuel_tank_id', $tank->id)->where('movement_type', FuelMovement::TYPE_FILLING)->where('id', '>', $receiptMovement->id)->exists()) {
+                throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: existem abastecimentos posteriores que podem ter consumido este recebimento.']);
+            }
+            $after = $this->decimal($before - (float) $receipt->quantity_liters, 3);
+            $stockValueBefore = $this->decimal($tank->estimated_stock_value ?? 0, 2);
+            $stockValue = $this->decimal($stockValueBefore - (float) ($receipt->total_cost ?? 0), 2);
+            if ($stockValue < 0) throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: o valor estimado do estoque ficaria negativo.']);
+            $tank->forceFill(['current_balance_liters' => $after, 'estimated_stock_value' => $stockValue, 'average_unit_cost' => $after > 0 ? $this->decimal($stockValue / $after, 4) : 0])->save();
+            $this->createMovement($context, $tank, FuelMovement::TYPE_REVERSAL, (float) $receipt->quantity_liters, $before, $after, $receipt, $context['user']->id, 'Estorno do recebimento #'.$receipt->id);
+            $receipt->forceFill(['cancelled_at' => now(), 'cancelled_by' => $context['user']->id, 'cancel_reason' => $reason])->save();
+            $this->auditLog->updated($receipt, ['tenant_id' => $context['tenant_id'], 'division_id' => $context['division_id'], 'location_id' => $context['location_id'], 'module' => 'fuel', 'summary' => 'Recebimento #'.$receipt->id.' cancelado.', 'after_data' => $receipt->fresh()->toArray()]);
+        });
+    }
+
     private function resolveContext(): array
     {
         /** @var User|null $user */
@@ -369,6 +430,13 @@ class FuelService
         }
 
         return $tank;
+    }
+
+    private function ensureRecordInContext(FuelReceipt|FuelFilling $record, array $context): void
+    {
+        if ((int) $record->tenant_id !== (int) $context['tenant_id'] || (int) $record->division_id !== (int) $context['division_id'] || (int) $record->location_id !== (int) $context['location_id']) {
+            abort(403);
+        }
     }
 
     private function vehicleForContext(int $vehicleId, array $context): Vehicle

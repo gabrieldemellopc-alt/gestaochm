@@ -229,7 +229,7 @@
                 <div class="fuel-panel-actions">
                     <p>Exibindo os 8 registros mais recentes.</p>
             
-                    <a href="#" class="fuel-secondary-action disabled">
+                    <a href="{{ route('fuel.receipts.history') }}" class="fuel-secondary-action">
                         Histórico completo
                     </a>
                 </div>
@@ -239,7 +239,7 @@
                 @forelse($latestReceipts as $receipt)
                     <article class="fuel-receipt-item">
                         <div>
-                            <strong>{{ $receipt->tank?->name ?? 'Tanque' }}</strong>
+                            <strong>{{ $receipt->tank?->name ?? 'Tanque' }} @if($receipt->cancelled_at)<span class="fuel-status-badge low">Cancelado</span>@endif</strong>
                             <span>{{ $receipt->product?->name ?? $receipt->tank?->product?->name ?? 'Produto' }} · {{ $receipt->received_at?->format('d/m/Y H:i') }}</span>
                         </div>
 
@@ -279,7 +279,7 @@
                 <div class="fuel-panel-actions">
                     <p>Exibindo os 8 registros mais recentes.</p>
             
-                    <a href="#" class="fuel-secondary-action disabled">
+                    <a href="{{ route('fuel.fillings.history') }}" class="fuel-secondary-action">
                         Histórico completo
                     </a>
                 </div>
@@ -289,7 +289,7 @@
                 @forelse($latestFillings as $filling)
                     <article class="fuel-receipt-item">
                         <div>
-                            <strong>{{ $filling->vehicle?->name ?? 'Veículo' }}</strong>
+                            <strong>{{ $filling->vehicle?->name ?? 'Veículo' }} @if($filling->cancelled_at)<span class="fuel-status-badge low">Cancelado</span>@endif</strong>
                             <span>{{ $filling->vehicle?->plate ?: 'Sem placa' }} · {{ $filling->filled_at?->format('d/m/Y H:i') }}</span>
                         </div>
 

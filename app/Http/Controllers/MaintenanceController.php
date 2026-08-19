@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Procedure;
+use App\Models\StockCategory;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceRecordExtraCost;
 use App\Models\MaintenanceRecordItem;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use App\Services\MaintenanceService;
 use App\Services\MaintenanceMaterialService;
+use App\Services\StockEntryService;
+use App\Services\TenantFiscalSettingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class MaintenanceController extends Controller
@@ -28,7 +31,7 @@ class MaintenanceController extends Controller
         $showCosts = $this->canMaintenance('maintenance.view_costs');
         return response()->json($items->map(fn ($item) => [
             'id' => $item->id, 'name' => $item->name, 'brand' => $item->brand,
-            'category' => $item->category?->name, 'unit' => $item->unit,
+            'category' => $item->category?->name, 'stock_category_id' => $item->stock_category_id, 'unit' => $item->unit,
             'available_quantity' => (float) $item->quantity,
             'unit_cost' => $showCosts ? (float) $item->unit_cost : null,
         ]));
@@ -48,6 +51,40 @@ class MaintenanceController extends Controller
             return response()->json($this->materialPayload($vehicle, $maintenance, 'Material lançado com sucesso.', $material));
         }
         return back()->with('success', 'Material adicionado com sucesso.');
+    }
+
+    public function storeDirectMaterial(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceMaterialService $service, StockEntryService $entries)
+    {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) return $redirect;
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        $this->authorizeMaintenancePermission('maintenance.use_materials');
+        abort_unless($this->canMaintenance('stock.entry'), 403);
+        $requiredInvoice = app(TenantFiscalSettingService::class)->requires('stock_entry');
+        $data = $request->validate([
+            'stock_item_id' => ['nullable', 'integer'],
+            'name' => ['required', 'string', 'max:255'],
+            'brand' => ['nullable', 'string', 'max:255'],
+            'stock_category_id' => ['nullable', 'integer'],
+            'unit' => ['required', 'string', 'max:50'],
+            'unit_other' => [Rule::requiredIf($request->input('unit') === 'Outro'), 'nullable', 'string', 'max:50'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'total_cost' => ['required', 'numeric', 'min:0'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
+            'invoice_number' => [Rule::requiredIf($requiredInvoice), 'nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        if (empty($data['stock_item_id'])) {
+            if (! in_array($data['unit'], ['UNID', 'L', 'KG', 'G', 'Outro'], true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['unit' => 'Selecione uma unidade válida.']);
+            }
+            $data['unit'] = $data['unit'] === 'Outro' ? trim((string) $data['unit_other']) : $data['unit'];
+            if ($data['unit'] === '') {
+                throw \Illuminate\Validation\ValidationException::withMessages(['unit_other' => 'Informe a unidade personalizada.']);
+            }
+        }
+        $data['unit_cost'] = round((float) $data['total_cost'] / (int) $data['quantity'], 2);
+        $service->addDirectPurchase($maintenance, $data, $request->user(), $entries);
+        return redirect()->route('vehicle.maintenance.index', $vehicle)->with('success', 'Material lançado e vinculado à manutenção com sucesso.');
     }
 
     public function cancelMaterial(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceMaterialUsage $usage, MaintenanceMaterialService $service)
@@ -397,6 +434,9 @@ class MaintenanceController extends Controller
 
             'extra_cost' => ['nullable', 'numeric', 'min:0'],
             'provider_name' => ['nullable', 'string', 'max:255'],
+            'provider_document' => ['nullable', 'string', 'max:20'],
+            'fiscal_document_number' => [Rule::requiredIf($request->input('maintenance_type') === 'external' && app(TenantFiscalSettingService::class)->requires('maintenance_external_service')), 'nullable', 'string', 'max:255'],
+            'fiscal_document_issued_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
 
             'fields' => ['nullable', 'array'],
@@ -406,7 +446,16 @@ class MaintenanceController extends Controller
         ]);
 
         if (! $this->canMaintenance('maintenance.view_costs')) {
-            $data['extra_cost'] = (float) $item->extra_cost;
+            $data['extra_cost'] = 0;
+        }
+
+        if ($data['maintenance_type'] === 'internal') {
+            $data['provider_name'] = null;
+            $data['provider_document'] = null;
+            $data['fiscal_document_number'] = null;
+            $data['fiscal_document_issued_at'] = null;
+        } else {
+            $data['provider_document'] = preg_replace('/\D+/', '', (string) ($data['provider_document'] ?? '')) ?: null;
         }
 
         if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {
@@ -558,13 +607,19 @@ class MaintenanceController extends Controller
             'procedure',
             'items.procedure',
             'items.values.field',
+            'items.stockMovements.stockItem',
+            'cancelledItems.procedure',
+            'cancelledItems.canceller',
             'extraCosts.creator',
             'materialUsages.stockItem.category',
             'materialUsages.creator',
+            'procedureMaterialMovements.stockItem.category',
+            'procedureMaterialMovements.maintenanceRecordItem.procedure',
             'allMaterialUsages.stockItem.category',
             'allMaterialUsages.creator',
             'allMaterialUsages.canceller',
             'allMaterialUsages.replacement.stockItem.category',
+            'photos.uploader',
             'statusLogs.user',
             'opener',
             'closer',
@@ -572,21 +627,88 @@ class MaintenanceController extends Controller
             'deleter',
         ]);
 
+        // The vehicle-history URL intentionally renders the same workspace as the
+        // main maintenance route.  Keeping a single Blade prevents the two order
+        // presentations from drifting apart again.
         $maintenancePermissions = $this->maintenancePermissions($vehicle);
-        $canManageMaintenance = $maintenancePermissions['cancel'];
-        $canEditItems = $maintenancePermissions['edit_items'];
-        $canEditExtraCosts = $maintenancePermissions['edit_extra_costs'];
-        $canViewCosts = $maintenancePermissions['view_costs'];
+        $isMaintenanceOpen = $maintenance->workflow_status === 'open' && ! $maintenance->cancelled_at;
 
-        return view('vehicle.maintenance-show', compact(
-            'vehicle',
-            'maintenance',
-            'canManageMaintenance',
-            'maintenancePermissions',
-            'canEditItems',
-            'canEditExtraCosts',
-            'canViewCosts'
+        if (! $isMaintenanceOpen) {
+            foreach ([
+                'cancel', 'close', 'change_status', 'add_items', 'edit_items',
+                'add_extra_costs', 'edit_extra_costs', 'consume_stock',
+                'use_materials', 'cancel_materials', 'upload_photos',
+                'delete_photos', 'generate_photo_qr',
+            ] as $permission) {
+                $maintenancePermissions[$permission] = false;
+            }
+        }
+
+        $procedures = Procedure::query()
+            ->where('tenant_id', $vehicle->tenant_id)
+            ->where('location_id', $vehicle->location_id)
+            ->with(['fields.stockCategory.items' => fn ($query) => $query
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id)
+                ->where('active', true)])
+            ->orderBy('name')
+            ->get();
+        $stockCategories = StockCategory::query()
+            ->where('tenant_id', $vehicle->tenant_id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $openMaintenance = $maintenance;
+        $alertProcedures = collect();
+        $recentMaintenances = collect();
+        $canEditItems = $maintenancePermissions['edit_items'] ?? false;
+        $canEditExtraCosts = $maintenancePermissions['edit_extra_costs'] ?? false;
+        $canViewCosts = $maintenancePermissions['view_costs'] ?? false;
+        $maintenanceTimeline = $this->detailTimeline($maintenance, $maintenancePermissions);
+        $isMaintenanceDetail = true;
+
+        return view('vehicle.maintenance-index', compact(
+            'vehicle', 'procedures', 'openMaintenance', 'alertProcedures',
+            'recentMaintenances', 'maintenancePermissions', 'canEditItems',
+            'canEditExtraCosts', 'canViewCosts', 'maintenanceTimeline',
+            'isMaintenanceOpen', 'isMaintenanceDetail', 'stockCategories'
         ));
+    }
+
+    private function detailTimeline(MaintenanceRecord $maintenance, array $permissions)
+    {
+        $events = collect([[
+            'type' => 'opening',
+            'title' => 'Abertura da manutenção',
+            'detail' => 'Status inicial: '.(MaintenanceService::serviceStatuses()[$maintenance->service_status] ?? 'Não informado'),
+            'complement' => null,
+            'at' => $maintenance->started_at,
+        ]]);
+
+        foreach ($maintenance->statusLogs as $log) {
+            if ($log->old_status) {
+                $events->push(['type' => 'status', 'title' => 'Status atualizado', 'detail' => (MaintenanceService::serviceStatuses()[$log->old_status] ?? $log->old_status).' → '.(MaintenanceService::serviceStatuses()[$log->new_status] ?? $log->new_status), 'complement' => $log->reason, 'at' => $log->created_at]);
+            }
+        }
+        foreach ($maintenance->items as $item) {
+            $events->push(['type' => 'procedure', 'title' => 'Procedimento realizado', 'detail' => $item->procedure?->name ?? 'Procedimento não informado', 'complement' => ($permissions['view_costs'] ?? false) ? 'Custo: R$ '.number_format($item->total_cost ?? 0, 2, ',', '.') : null, 'at' => $item->created_at]);
+        }
+        foreach ($maintenance->extraCosts as $cost) {
+            $events->push(['type' => 'cost', 'title' => 'Custo avulso lançado', 'detail' => $cost->description, 'complement' => ($permissions['view_costs'] ?? false) ? 'Custo: R$ '.number_format($cost->amount ?? 0, 2, ',', '.') : null, 'at' => $cost->created_at]);
+        }
+        foreach ($maintenance->allMaterialUsages as $usage) {
+            $events->push(['type' => $usage->cancelled_at ? 'material-cancelled' : 'material', 'title' => $usage->cancelled_at ? 'Material cancelado' : 'Material utilizado', 'detail' => ($usage->stockItem?->name ?? 'Material').' — '.number_format((float) $usage->quantity, 2, ',', '.').' '.($usage->stockItem?->unit ?? ''), 'complement' => $usage->cancelled_at ? $usage->cancel_reason : null, 'at' => $usage->cancelled_at ?? $usage->created_at]);
+        }
+        foreach ($maintenance->photos as $photo) {
+            $events->push(['type' => 'photo', 'title' => 'Foto anexada', 'detail' => 'Foto adicionada à manutenção #'.$maintenance->id, 'complement' => 'Responsável: '.($photo->uploader?->name ?? 'Não informado'), 'at' => $photo->created_at]);
+        }
+        if ($maintenance->cancelled_at) {
+            $events->push(['type' => 'cancelled', 'title' => 'Manutenção cancelada', 'detail' => $maintenance->cancel_reason ?: 'Motivo não informado', 'complement' => 'Responsável: '.($maintenance->canceller?->name ?? 'Não informado'), 'at' => $maintenance->cancelled_at]);
+        } elseif ($maintenance->finished_at) {
+            $events->push(['type' => 'closed', 'title' => 'Manutenção encerrada', 'detail' => $maintenance->closure_notes ?: 'Encerramento registrado', 'complement' => 'Responsável: '.($maintenance->closer?->name ?? 'Não informado'), 'at' => $maintenance->finished_at]);
+        }
+
+        return $events->filter(fn ($event) => $event['at'])->sortBy('at')->values();
     }
 
     public function reopen(

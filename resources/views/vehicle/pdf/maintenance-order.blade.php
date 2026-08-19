@@ -411,7 +411,7 @@
                     <td>{{ optional($item->performed_at)->format('d/m/Y') ?? '-' }}</td>
                     <td>{{ $item->performed_km ? number_format($item->performed_km, 0, ',', '.') : '-' }}</td>
                     <td>{{ $item->performed_hours ? number_format($item->performed_hours, 0, ',', '.') : '-' }}</td>
-                    <td>{{ $item->provider_name ?? '-' }}</td>
+                    <td>{{ $item->provider_name ?? '-' }}@if($item->maintenance_type === 'external' && ($item->provider_document || $item->fiscal_document_number))<br><span class="muted">{{ $item->provider_document }}@if($item->provider_document && $item->fiscal_document_number) · @endif{{ $item->fiscal_document_number ? 'NFS-e '.$item->fiscal_document_number : '' }}@if($item->fiscal_document_issued_at) · {{ optional($item->fiscal_document_issued_at)->format('d/m/Y') }}@endif</span>@endif</td>
                     <td><strong>R$ {{ number_format($item->total_cost ?? 0, 2, ',', '.') }}</strong></td>
                 </tr>
 

@@ -5,14 +5,50 @@ namespace App\Services;
 use App\Models\MaintenanceMaterialUsage;
 use App\Models\MaintenanceRecord;
 use App\Models\StockItem;
+use App\Models\StockCategory;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Services\StockEntryService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class MaintenanceMaterialService
 {
+    public function addDirectPurchase(MaintenanceRecord $maintenance, array $data, User $user, StockEntryService $entries): MaintenanceMaterialUsage
+    {
+        return DB::transaction(function () use ($maintenance, $data, $user, $entries) {
+            $maintenance = $this->editable($maintenance);
+            $locationId = $maintenance->vehicle->location_id;
+            $item = null;
+            if (! empty($data['stock_item_id'])) {
+                $item = StockItem::query()->whereKey($data['stock_item_id'])
+                    ->where('tenant_id', $maintenance->tenant_id)->where('location_id', $locationId)
+                    ->where('active', true)->lockForUpdate()->first();
+                if (! $item) {
+                    throw ValidationException::withMessages(['stock_item_id' => 'O item selecionado não está disponível neste estoque.']);
+                }
+            } else {
+                if (empty($data['stock_category_id'])) {
+                    throw ValidationException::withMessages(['stock_category_id' => 'Informe uma categoria para o novo item.']);
+                }
+                if (! StockCategory::query()->whereKey($data['stock_category_id'])->where('tenant_id', $maintenance->tenant_id)->exists()) {
+                    throw ValidationException::withMessages(['stock_category_id' => 'A categoria selecionada não pertence a este contexto.']);
+                }
+                $item = StockItem::query()->where('tenant_id', $maintenance->tenant_id)->where('location_id', $locationId)
+                    ->where('name', $data['name'])->where('unit', $data['unit'])->where('brand', $data['brand'] ?? null)
+                    ->where('stock_category_id', $data['stock_category_id'] ?? null)->lockForUpdate()->first();
+            }
+            if (! $item) $item = StockItem::create(['tenant_id'=>$maintenance->tenant_id,'location_id'=>$locationId,'name'=>$data['name'],'brand'=>$data['brand']??null,'stock_category_id'=>$data['stock_category_id']??null,'unit'=>$data['unit'],'quantity'=>0,'unit_cost'=>0,'minimum_quantity'=>0,'active'=>true,'observation'=>'Criado por compra direta da manutenção #'.$maintenance->id]);
+            $total = round((float) $data['total_cost'], 2);
+            $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>now()]);
+            $entry->update(['maintenance_record_id'=>$maintenance->id]);
+            $usage = $this->createUsage($maintenance, ['stock_item_id'=>$item->id,'quantity'=>$data['quantity'],'notes'=>$data['notes']??null], $user);
+            MaintenanceService::recalculateTotalCost($maintenance);
+            $this->audit($usage, 'created', 'maintenance_material_direct_purchase', null, ['stock_entry_movement_id'=>$entry->id]);
+            return $usage;
+        });
+    }
     public function search(MaintenanceRecord $maintenance, string $term = ''): Collection
     {
         return StockItem::query()

@@ -35,6 +35,7 @@
                 'stock_entry' => ['title' => 'Entrada de item no estoque', 'description' => 'Exige número da nota/documento ao lançar entrada manual de item no estoque.'],
                 'external_fuel_filling' => ['title' => 'Abastecimento em posto externo', 'description' => 'Exige documento fiscal ao lançar abastecimento externo.'],
                 'fuel_receipt' => ['title' => 'Recebimento de combustível no tanque', 'description' => 'Exige nota fiscal ao registrar entrada no tanque interno.'],
+                'maintenance_external_service' => ['title' => 'Serviços terceirizados em manutenção', 'description' => 'Exigir documento fiscal ao registrar serviço executado por prestador externo.'],
             ] as $key => $routine)
                 <label class="settings-fiscal-routine">
                     <span class="settings-fiscal-routine-copy">

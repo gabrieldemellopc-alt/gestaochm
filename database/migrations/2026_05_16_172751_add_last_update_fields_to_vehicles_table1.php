@@ -11,15 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('vehicles', function (Blueprint $table) {
-        
-            $table->timestamp('last_km_update_at')
-                ->nullable();
-        
-            $table->timestamp('last_hours_update_at')
-                ->nullable();
-        
-        });
+        // A migration anterior (2026_05_16_172704) is the canonical origin
+        // of these columns. This historical duplicate must remain safe for
+        // clean databases and for installations where it was already applied.
+        if (! Schema::hasColumn('vehicles', 'last_km_update_at')) {
+            Schema::table('vehicles', function (Blueprint $table) {
+                $table->timestamp('last_km_update_at')->nullable();
+            });
+        }
+
+        if (! Schema::hasColumn('vehicles', 'last_hours_update_at')) {
+            Schema::table('vehicles', function (Blueprint $table) {
+                $table->timestamp('last_hours_update_at')->nullable();
+            });
+        }
     }
 
     /**
@@ -27,8 +32,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('vehicles_table1', function (Blueprint $table) {
-            //
-        });
+        // Intentionally a no-op: this migration may have run after the
+        // canonical one and must never remove columns it did not originate.
     }
 };

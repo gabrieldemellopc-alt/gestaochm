@@ -86,8 +86,7 @@
                             @endforeach
                         </dl>
                     @endif
-                    @if($event['image'])<img class="vehicle-history-photo" src="{{ $event['image'] }}" alt="Foto da manutenção">@endif
-                    @if($event['url'])<a class="vehicle-history-detail" href="{{ $event['url'] }}">Abrir detalhe <i data-lucide="arrow-up-right"></i></a>@endif
+                    @if($event['url'])<a class="vehicle-history-detail" href="{{ $event['url'] }}" target="_blank" rel="noopener">{{ $event['url_label'] ?? 'Abrir detalhe' }} <i data-lucide="arrow-up-right"></i></a>@endif
                 </article>
             @empty
                 <div class="vehicle-history-empty"><i data-lucide="history"></i><strong>Nenhum evento registrado</strong><p>Este veículo ainda não possui registros operacionais ou técnicos disponíveis.</p></div>

@@ -22,6 +22,9 @@ class MaintenanceRecordItem extends Model
         'total_cost',
         'extra_cost',
         'provider_name',
+        'provider_document',
+        'fiscal_document_number',
+        'fiscal_document_issued_at',
         'notes',
         'next_due_km',
         'next_due_hours',
@@ -40,6 +43,7 @@ class MaintenanceRecordItem extends Model
         'extra_cost' => 'decimal:2',
         'next_due_date' => 'date',
         'cancelled_at' => 'datetime',
+        'fiscal_document_issued_at' => 'date',
     ];
 
     public function maintenanceRecord()

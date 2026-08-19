@@ -390,696 +390,379 @@
 
         <div class="maintenance-layout">
 
-
-
-            {{-- COLUNA PRINCIPAL --}}
-
-            <div class="maintenance-main">
-
-
-
-                {{-- DADOS DA MANUTENÇÃO --}}
-
-                <div class="maintenance-card">
-
-
-
-                    <div class="maintenance-card-header">
-
-
-
-                        <div>
-
-
-
-                            <span>
-
-                                Registro operacional
-
-                            </span>
-
-
-
-                            <h3>
-
-                                Dados — {{ $procedure->name }}
-
-                            </h3>
-
-
-
-                            <p>
-
-                                {{ $vehicle->name }}@if($vehicle->plate) — {{ $vehicle->plate }}@endif
-                                <span aria-hidden="true">•</span>
-                                Execução {{ $executionType === 'internal' ? 'Oficina interna' : 'Terceirizada' }}
-
-                            </p>
-
-
-
-                        </div>
-
-
-
-                        <i data-lucide="clipboard-wrench"></i>
-
-
-
-                    </div>
-
-
-
-                    <div class="maintenance-grid maintenance-add-grid">
-
-
-
-                        <div class="form-group">
-
-
-
-                            <label>
-
-                                Data de entrada
-
-                            </label>
-
-
-
-                            <input
-
-                                type="date"
-
-                                name="performed_at"
-
-                                class="form-input"
-
-                                value="{{ old('performed_at', now()->format('Y-m-d')) }}"
-
-                                required
-
-                            >
-
-
-
-                        </div>
-
-
-
-                        <div class="form-group maintenance-reason-field">
-
-
-
-                            <label>
-
-                                Motivo
-
-                            </label>
-
-
-
-                            <div class="maintenance-reason-toggle" role="radiogroup" aria-label="Motivo da manutenção">
-                                @foreach([
-                                    'preventive' => 'Preventiva',
-                                    'corrective' => 'Corretiva',
-                                    'inspection' => 'Inspeção',
-                                    'other' => 'Outros',
-                                ] as $reasonValue => $reasonLabel)
-                                    <label class="maintenance-reason-option">
-                                        <input
-                                            type="radio"
-                                            name="reason"
-                                            value="{{ $reasonValue }}"
-                                            required
-                                            @checked(old('reason', 'preventive') === $reasonValue)
-                                        >
-                                        <span>{{ $reasonLabel }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-
-
-
-                        </div>
-                        <div class="form-group maintenance-meter-field">
-
-
-
-                            <label>
-
-                                Hodômetro no lançamento
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                step="1"
-
-                                min="{{ $vehicle->current_km ?? 0 }}"
-
-                                name="performed_km"
-
-                                class="form-input"
-
-                                value="{{ old('km', $vehicle->current_km ?? 0) }}"
-
-                                required
-
-                            >
-
-
-
-                        </div>
-
-
-
-                        <div class="form-group maintenance-meter-field">
-
-
-
-                            <label>
-
-                                Horímetro no lançamento
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                step="1"
-
-                                min="{{ $vehicle->current_hours ?? 0 }}"
-
-                                name="performed_hours"
-                                class="form-input"
-
-                                value="{{ old('hours', $vehicle->current_hours ?? 0) }}"
-
-                                required
-
-                            >
-
-
-
-                        </div>
-
-
-
-                        @if($canViewCosts)
-                        <div class="form-group">
-
-
-
-                            <label>
-
-                                Custo adicional
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                step="0.01"
-
-                                min="0"
-
-                                name="extra_cost"
-                                class="form-input"
-                                x-model.number="extraCost"
-
-                                value="{{ old('additional_cost', 0) }}"
-
-                            >
-
-
-
-                        </div>
+    {{-- COLUNA PRINCIPAL --}}
+    <div class="maintenance-main">
+
+        {{-- DADOS DA MANUTENÇÃO --}}
+        <div class="maintenance-card">
+
+            <div class="maintenance-card-header">
+                <div>
+                    <span>Registro operacional</span>
+                    <h3>Dados — {{ $procedure->name }}</h3>
+                    
+                    <div class="maintenance-card-meta">
+                        <span class="meta-vehicle-name">{{ $vehicle->name }}</span>
+
+                        @if($vehicle->plate)
+                            <span class="plate-badge">{{ $vehicle->plate }}</span>
                         @endif
 
+                        <span class="meta-bullet">•</span>
 
-                        <div class="form-group full-width maintenance-observations-field">
+                        <span class="execution-badge {{ $executionType }}">
+                            <span>Execução {{ $executionType === 'internal' ? 'Oficina interna' : 'Terceirizada' }}</span>
+                        </span>
+                    </div>
+                </div>
+                <i data-lucide="clipboard-wrench"></i>
+            </div>
 
+            <div class="maintenance-card-body">
+                
+                {{-- LINHA 1: 3 COLUNAS (Data de Entrada, Hodômetro, Horímetro) --}}
+                <div class="maintenance-grid grid-3-cols">
 
-
-                            <label>
-
-                                Observações
-
-                            </label>
-
-
-
-                            <textarea
-
-                                name="notes"
-
-                                rows="4"
-
-                                class="form-input"
-
-                                placeholder="Descreva detalhes da manutenção, diagnóstico, peças trocadas ou observações relevantes..."
-
-                            >{{ old('observation') }}</textarea>
-
-
-
-                        </div>
-
-
-
+                    <div class="form-group maintenance-entry-date-field">
+                        <label>Data</label>
+                        <input
+                            type="date"
+                            name="performed_at"
+                            class="form-input"
+                            value="{{ old('performed_at', now()->format('Y-m-d')) }}"
+                            required
+                        >
                     </div>
 
+                    <div class="form-group maintenance-meter-field">
+                        <label>Hodômetro no lançamento</label>
+                        <input
+                            type="number"
+                            step="1"
+                            min="{{ $vehicle->current_km ?? 0 }}"
+                            name="performed_km"
+                            class="form-input"
+                            value="{{ old('km', $vehicle->current_km ?? 0) }}"
+                            required
+                        >
+                    </div>
 
+                    <div class="form-group maintenance-meter-field">
+                        <label>Horímetro no lançamento</label>
+                        <input
+                            type="number"
+                            step="1"
+                            min="{{ $vehicle->current_hours ?? 0 }}"
+                            name="performed_hours"
+                            class="form-input"
+                            value="{{ old('hours', $vehicle->current_hours ?? 0) }}"
+                            required
+                        >
+                    </div>
 
                 </div>
 
+                {{-- LINHA 2: MOTIVO (LARGURA TOTAL) --}}
+                <div class="form-group full-width maintenance-reason-field mt-4">
+                    <label>Motivo</label>
+                    <div class="maintenance-reason-toggle" role="radiogroup" aria-label="Motivo da manutenção">
+                        @foreach([
+                            'preventive' => 'Preventiva',
+                            'corrective' => 'Corretiva',
+                            'inspection' => 'Inspeção',
+                            'other' => 'Outros',
+                        ] as $reasonValue => $reasonLabel)
+                            <label class="maintenance-reason-option">
+                                <input
+                                    type="radio"
+                                    name="reason"
+                                    value="{{ $reasonValue }}"
+                                    required
+                                    @checked(old('reason', 'preventive') === $reasonValue)
+                                >
+                                <span>{{ $reasonLabel }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
-
-                {{-- CAMPOS DINÂMICOS DO PROCEDIMENTO --}}
-
-                @if($visibleProcedureFields->isNotEmpty())
-                <div class="maintenance-card maintenance-procedure-fields">
-
-
-
-                    <div class="maintenance-card-header">
-
-
-
-                        <div>
-
-
-
-                            <span>
-
-                                Campos do procedimento
-
-                            </span>
-
-
-
-                            <h3>
-
-                                {{ $procedure->name }}
-
-                            </h3>
-
-
-
-                            <p>
-
-                                Preencha as informações complementares exigidas por este procedimento.
-
-                            </p>
-
-
-
-                        </div>
-
-
-
-                        <i data-lucide="list-checks"></i>
-
-
-
+                {{-- BLOCO DADOS DO SERVIÇO TERCEIRIZADO --}}
+                @if($executionType === 'external')
+                <div class="form-group full-width maintenance-external-service mt-4">
+                    <div class="maintenance-external-service__heading">
+                        <label>Dados do serviço terceirizado</label>
+                        <small>Informe os dados do prestador e do documento fiscal deste serviço.</small>
                     </div>
 
-
-
-                        <div class="maintenance-fields">
-
-
-
-                            @foreach($visibleProcedureFields as $field)
-
-
-
-                                <div class="maintenance-field-row">
-
-
-
-                                    @if($field->field_type === 'text')
-
-
-
-                                        <div class="form-group full-width">
-
-
-
-                                            <label>
-
-                                                {{ $field->label }}
-
-
-
-                                                @if($field->required)
-
-                                                    <span class="required-mark">*</span>
-
-                                                @endif
-
-                                            </label>
-
-
-
-                                            <input
-                                                type="text"
-                                                name="fields[{{ $field->slug }}]"
-                                                class="form-input"
-                                                value="{{ old('fields.' . $field->slug) }}"
-                                                x-model="simpleFields['{{ $field->slug }}']"
-                                                {{ $field->required ? 'required' : '' }}
-                                            >
-
-
-
-                                        </div>
-
-
-
-                                    @elseif($field->field_type === 'number')
-
-
-
-                                        <div class="form-group full-width">
-
-
-
-                                            <label>
-
-                                                {{ $field->label }}
-
-
-
-                                                @if($field->required)
-
-                                                    <span class="required-mark">*</span>
-
-                                                @endif
-
-                                            </label>
-
-
-
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                name="fields[{{ $field->slug }}]"
-                                                class="form-input"
-                                                value="{{ old('fields.' . $field->slug) }}"
-                                                x-model="simpleFields['{{ $field->slug }}']"
-                                                {{ $field->required ? 'required' : '' }}
-                                            >
-
-
-
-                                        </div>
-
-
-
-                                    @elseif($field->field_type === 'stock_item' && $executionType === 'internal')
-                                        <div class="maintenance-stock-field">
-
-                                            <div class="form-group">
-
-                                                <label>
-                                                    {{ $field->label }}
-
-                                                    @if($field->required)
-                                                        <span class="required-mark">*</span>
-                                                    @endif
-                                                </label>
-
-                                                <select
-                                                    name="fields[{{ $field->slug }}]"
-                                                    class="form-input"
-                                                    x-model="stockFields['{{ $field->slug }}'].itemId"
-                                                    @change="updateStockField('{{ $field->slug }}')"
-                                                    {{ $field->required ? 'required' : '' }}
-                                                >
-                                                    <option
-                                                        value=""
-                                                        data-name=""
-                                                        data-unit=""
-                                                        data-cost="0"
-                                                    >
-                                                        Selecione o item
-                                                    </option>
-
-                                                    @foreach(($field->stockCategory->items ?? []) as $stockItem)
-                                                        <option
-                                                            value="{{ $stockItem->id }}"
-                                                            data-name="{{ $stockItem->name }}"
-                                                            data-unit="{{ $stockItem->unit }}"
-                                                            data-cost="{{ $stockItem->unit_cost ?? 0 }}"
-                                                            @selected(old('fields.' . $field->slug) == $stockItem->id)
-                                                        >
-                                                            {{ $stockItem->name }}
-                                                            —
-                                                            Estoque:
-                                                            {{ number_format($stockItem->quantity, 2, ',', '.') }}
-                                                            {{ $stockItem->unit }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-
-                                                @if($field->stockCategory)
-
-                                                    <small class="field-help">
-                                                        Categoria:
-                                                        {{ $field->stockCategory->name }}
-                                                    </small>
-
-                                                @endif
-
-                                            </div>
-
-                                            <div class="form-group">
-
-                                                <label>
-                                                    Quantidade utilizada
-
-                                                    @if($field->required)
-                                                        <span class="required-mark">*</span>
-                                                    @endif
-                                                </label>
-
-                                                <input
-                                                    type="number"
-                                                    step="1"
-                                                    min="1"
-                                                    name="fields[{{ $field->slug }}_quantity]"
-                                                    class="form-input"
-                                                    value="{{ old('fields.' . $field->slug . '_quantity', 1) }}"
-                                                    x-model.number="stockFields['{{ $field->slug }}'].quantity"
-                                                    {{ $field->required ? 'required' : '' }}
-                                                >
-
-                                                <small class="field-help">
-                                                    Informe a quantidade consumida na manutenção.
-                                                </small>
-
-                                            </div>
-
-                                        </div>
-
-                                    @endif
-
-
-
-                                </div>
-
-
-
-                            @endforeach
-
-
-
+                    {{-- SUB-LINHA 1: PRESTADOR (2 COLUNAS) + CPF/CNPJ (1 COLUNA) --}}
+                    <div class="maintenance-grid grid-3-cols mb-3">
+                        <div class="form-group maintenance-external-provider col-span-2" style="grid-column: span 2;">
+                            <label>Prestador / razão social</label>
+                            <input type="text" name="provider_name" class="form-input" x-model="providerName" placeholder="Nome ou razão social" maxlength="255">
                         </div>
 
+                        <div class="form-group maintenance-external-document">
+                            <label>CPF/CNPJ do prestador</label>
+                            <input type="text" name="provider_document" class="form-input" x-model="providerDocument" placeholder="CPF ou CNPJ" maxlength="20">
+                        </div>
+                    </div>
 
+                    {{-- SUB-LINHA 2: 3 COLUNAS (NFS-e, Data NFS-e, Valor) --}}
+                    <div class="maintenance-grid grid-3-cols">
+                        <div class="form-group">
+                            <label>NFS-e / documento fiscal</label>
+                            <input type="text" name="fiscal_document_number" class="form-input" x-model="fiscalNumber" @required(app(\App\Services\TenantFiscalSettingService::class)->requires('maintenance_external_service')) maxlength="255" placeholder="@if(app(\App\Services\TenantFiscalSettingService::class)->requires('maintenance_external_service'))Obrigatório @else Opcional @endif">
+                        </div>
 
+                        <div class="form-group">
+                            <label>Data da NFS-e</label>
+                            <input type="date" name="fiscal_document_issued_at" class="form-input" x-model="fiscalDate">
+                        </div>
+
+                        @if($canViewCosts)
+                        <div class="form-group">
+                            <label>Valor do serviço</label>
+                            <input type="number" step="0.01" min="0" name="extra_cost" class="form-input" x-model.number="extraCost" value="{{ old('additional_cost', 0) }}">
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+                {{-- CUSTO ADICIONAL (OFICINA INTERNA) --}}
+                @if($canViewCosts && $executionType !== 'external')
+                <div class="form-group full-width mt-4">
+                    <label>Custo adicional</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="extra_cost"
+                        class="form-input"
+                        x-model.number="extraCost"
+                        value="{{ old('additional_cost', 0) }}"
+                    >
                 </div>
                 @endif
 
-
+                {{-- OBSERVAÇÕES --}}
+                <div class="form-group full-width maintenance-observations-field mt-4">
+                    <label>Observações</label>
+                    <textarea
+                        name="notes"
+                        rows="4"
+                        class="form-input"
+                        placeholder="Descreva detalhes da manutenção, diagnóstico, peças trocadas ou observações relevantes..."
+                    >{{ old('observation') }}</textarea>
+                </div>
 
             </div>
 
+        </div>
 
+        {{-- CAMPOS DINÂMICOS DO PROCEDIMENTO --}}
+        @if($visibleProcedureFields->isNotEmpty())
+        <div class="maintenance-card maintenance-procedure-fields mt-4">
 
-            {{-- SIDEBAR --}}
+            <div class="maintenance-card-header">
+                <div>
+                    <span>Campos do procedimento</span>
+                    <h3>{{ $procedure->name }}</h3>
+                    <p>Preencha as informações complementares exigidas por este procedimento.</p>
+                </div>
+                <i data-lucide="list-checks"></i>
+            </div>
 
-            <aside class="maintenance-side">
+            <div class="maintenance-fields">
+                @foreach($visibleProcedureFields as $field)
+                    <div class="maintenance-field-row">
 
-
-
-                <div class="maintenance-summary-card">
-
-
-
-                    <div class="maintenance-summary-header">
-
-
-
-                        <span>
-
-                            Resumo
-
-                        </span>
-
-
-
-                        <h3>
-
-                            Antes de salvar
-
-                        </h3>
-
-
-
-                    </div>
-
-
-
-                    <div class="maintenance-summary-list">
-                        <div class="maintenance-summary-item">
-                            <span>Veículo</span>
-                            <strong>{{ $vehicle->name }}</strong>
-                        </div>
-
-                        <div class="maintenance-summary-item">
-                            <span>Procedimento</span>
-                            <strong>{{ $procedure->name }}</strong>
-                        </div>
-
-                        <div class="maintenance-summary-item">
-                            <span>Execução</span>
-                            <strong>{{ $executionType === 'internal' ? 'Interna' : 'Terceirizada' }}</strong>
-                        </div>
-
-                        <div class="maintenance-summary-divider">
-                            Campos preenchidos
-                        </div>
-
-                        <template x-if="filledSimpleFields.length === 0 && filledStockFields.length === 0">
-                            <div class="maintenance-summary-empty">
-                                Nenhum campo adicional preenchido ainda.
+                        @if($field->field_type === 'text')
+                            <div class="form-group full-width">
+                                <label>
+                                    {{ $field->label }}
+                                    @if($field->required)<span class="required-mark">*</span>@endif
+                                </label>
+                                <input
+                                    type="text"
+                                    name="fields[{{ $field->slug }}]"
+                                    class="form-input"
+                                    value="{{ old('fields.' . $field->slug) }}"
+                                    x-model="simpleFields['{{ $field->slug }}']"
+                                    {{ $field->required ? 'required' : '' }}
+                                >
                             </div>
-                        </template>
 
-                        <template x-for="field in filledSimpleFields" :key="field.slug">
-                            <div class="maintenance-summary-item">
-                                <span x-text="field.label"></span>
-                                <strong x-text="field.value"></strong>
+                        @elseif($field->field_type === 'number')
+                            <div class="form-group full-width">
+                                <label>
+                                    {{ $field->label }}
+                                    @if($field->required)<span class="required-mark">*</span>@endif
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="fields[{{ $field->slug }}]"
+                                    class="form-input"
+                                    value="{{ old('fields.' . $field->slug) }}"
+                                    x-model="simpleFields['{{ $field->slug }}']"
+                                    {{ $field->required ? 'required' : '' }}
+                                >
                             </div>
-                        </template>
 
-                        <template x-for="field in filledStockFields" :key="field.slug">
-                            <div class="maintenance-summary-stock">
-                                <div class="maintenance-summary-stock-top">
-                                    <span x-text="field.label"></span>
-                                    <strong x-text="field.name"></strong>
+                        @elseif($field->field_type === 'stock_item' && $executionType === 'internal')
+                            <div class="maintenance-stock-field">
+                                <div class="form-group">
+                                    <label>
+                                        {{ $field->label }}
+                                        @if($field->required)<span class="required-mark">*</span>@endif
+                                    </label>
+                                    <select
+                                        name="fields[{{ $field->slug }}]"
+                                        class="form-input"
+                                        x-model="stockFields['{{ $field->slug }}'].itemId"
+                                        @change="updateStockField('{{ $field->slug }}')"
+                                        {{ $field->required ? 'required' : '' }}
+                                    >
+                                        <option value="" data-name="" data-unit="" data-cost="0">Selecione o item</option>
+                                        @foreach(($field->stockCategory->items ?? []) as $stockItem)
+                                            <option
+                                                value="{{ $stockItem->id }}"
+                                                data-name="{{ $stockItem->name }}"
+                                                data-unit="{{ $stockItem->unit }}"
+                                                data-cost="{{ $stockItem->unit_cost ?? 0 }}"
+                                                @selected(old('fields.' . $field->slug) == $stockItem->id)
+                                            >
+                                                {{ $stockItem->name }} — Estoque: {{ number_format($stockItem->quantity, 2, ',', '.') }} {{ $stockItem->unit }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @if($field->stockCategory)
+                                        <small class="field-help">Categoria: {{ $field->stockCategory->name }}</small>
+                                    @endif
                                 </div>
 
-                                <div class="maintenance-summary-stock-details">
-                                    <small>
-                                        Qtd:
-                                        <b x-text="formatNumber(field.quantity)"></b>
-                                        <b x-text="field.unit"></b>
-                                    </small>
-
-                                    <small>
-                                        Unit:
-                                        <b x-text="formatMoney(field.unitCost)"></b>
-                                    </small>
-                                </div>
-
-                                <div class="maintenance-summary-stock-total">
-                                    <span>Subtotal</span>
-                                    <strong x-text="formatMoney(field.subtotal)"></strong>
+                                <div class="form-group">
+                                    <label>
+                                        Quantidade utilizada
+                                        @if($field->required)<span class="required-mark">*</span>@endif
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="1"
+                                        min="1"
+                                        name="fields[{{ $field->slug }}_quantity]"
+                                        class="form-input"
+                                        value="{{ old('fields.' . $field->slug . '_quantity', 1) }}"
+                                        x-model.number="stockFields['{{ $field->slug }}'].quantity"
+                                        {{ $field->required ? 'required' : '' }}
+                                    >
+                                    <small class="field-help">Informe a quantidade consumida na manutenção.</small>
                                 </div>
                             </div>
-                        </template>
-
-                        <div class="maintenance-summary-divider">
-                            Custos
-                        </div>
-
-                        @if($canViewCosts)
-                        <div class="maintenance-summary-item">
-                            <span>Custo adicional</span>
-                            <strong x-text="formatMoney(extraCost || 0)"></strong>
-                        </div>
                         @endif
 
-                        <div class="maintenance-summary-total">
-                            <span>Total estimado</span>
-                            <strong x-text="formatMoney(totalEstimated)"></strong>
-                        </div>
                     </div>
-
-
-
-                    <div class="maintenance-actions">
-
-
-
-                        <a
-
-                            href="{{ route('vehicle.maintenance.index', $vehicle->id) }}"
-
-                            class="maintenance-cancel-btn"
-
-                        >
-
-                            Cancelar
-
-                        </a>
-
-
-
-                        <button
-
-                            type="submit"
-
-                            class="chm-page-button primary full"
-
-                        >
-
-                            <i data-lucide="save"></i>
-
-
-
-                            {{ $replacementItem ? 'Confirmar correção' : 'Adicionar procedimento' }}
-
-                        </button>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-            </aside>
-
-
+                @endforeach
+            </div>
 
         </div>
+        @endif
+
+    </div>
+
+    {{-- SIDEBAR --}}
+    <aside class="maintenance-side">
+        <div class="maintenance-summary-card">
+            <div class="maintenance-summary-header">
+                <span>Resumo</span>
+                <h3>Antes de salvar</h3>
+            </div>
+
+            <div class="maintenance-summary-list">
+                <div class="maintenance-summary-item">
+                    <span>Veículo</span>
+                    <strong>{{ $vehicle->name }}</strong>
+                </div>
+
+                <div class="maintenance-summary-item">
+                    <span>Procedimento</span>
+                    <strong>{{ $procedure->name }}</strong>
+                </div>
+
+                <div class="maintenance-summary-item">
+                    <span>Execução</span>
+                    <strong>{{ $executionType === 'internal' ? 'Interna' : 'Terceirizada' }}</strong>
+                </div>
+
+                @if($executionType === 'external')
+                    <div class="maintenance-summary-divider">Serviço terceirizado</div>
+                    <div class="maintenance-summary-item" x-show="providerName"><span>Prestador</span><strong x-text="providerName"></strong></div>
+                    <div class="maintenance-summary-item" x-show="providerDocument"><span>CPF/CNPJ</span><strong x-text="providerDocument"></strong></div>
+                    <div class="maintenance-summary-item" x-show="fiscalNumber"><span>NFS-e</span><strong x-text="fiscalNumber"></strong></div>
+                    <div class="maintenance-summary-item" x-show="fiscalDate"><span>Data da NFS-e</span><strong x-text="fiscalDate ? fiscalDate.split('-').reverse().join('/') : ''"></strong></div>
+                @endif
+
+                <div class="maintenance-summary-divider">Campos preenchidos</div>
+
+                <template x-if="filledSimpleFields.length === 0 && filledStockFields.length === 0">
+                    <div class="maintenance-summary-empty">
+                        Nenhum campo adicional preenchido ainda.
+                    </div>
+                </template>
+
+                <template x-for="field in filledSimpleFields" :key="field.slug">
+                    <div class="maintenance-summary-item">
+                        <span x-text="field.label"></span>
+                        <strong x-text="field.value"></strong>
+                    </div>
+                </template>
+
+                <template x-for="field in filledStockFields" :key="field.slug">
+                    <div class="maintenance-summary-stock">
+                        <div class="maintenance-summary-stock-top">
+                            <span x-text="field.label"></span>
+                            <strong x-text="field.name"></strong>
+                        </div>
+                        <div class="maintenance-summary-stock-details">
+                            <small>Qtd: <b x-text="formatNumber(field.quantity)"></b> <b x-text="field.unit"></b></small>
+                            <small>Unit: <b x-text="formatMoney(field.unitCost)"></b></small>
+                        </div>
+                        <div class="maintenance-summary-stock-total">
+                            <span>Subtotal</span>
+                            <strong x-text="formatMoney(field.subtotal)"></strong>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="maintenance-summary-divider">Custos</div>
+
+                @if($canViewCosts)
+                <div class="maintenance-summary-item">
+                    <span>{{ $executionType === 'external' ? 'Valor do serviço' : 'Custo adicional' }}</span>
+                    <strong x-text="formatMoney(extraCost || 0)"></strong>
+                </div>
+                @endif
+
+                <div class="maintenance-summary-total">
+                    <span>Total estimado</span>
+                    <strong x-text="formatMoney(totalEstimated)"></strong>
+                </div>
+            </div>
+
+            <div class="maintenance-actions">
+                <a href="{{ route('vehicle.maintenance.index', $vehicle->id) }}" class="maintenance-cancel-btn">
+                    Cancelar
+                </a>
+
+                <button type="submit" class="chm-page-button primary full">
+                    <i data-lucide="save"></i>
+                    {{ $replacementItem ? 'Confirmar correção' : 'Adicionar procedimento' }}
+                </button>
+            </div>
+        </div>
+    </aside>
+
+</div>
 
 
 
@@ -1093,6 +776,10 @@
     function maintenanceSummary() {
         return {
             extraCost: {{ old('extra_cost', 0) ?: 0 }},
+            providerName: @json(old('provider_name', '')),
+            providerDocument: @json(old('provider_document', '')),
+            fiscalNumber: @json(old('fiscal_document_number', '')),
+            fiscalDate: @json(old('fiscal_document_issued_at', '')),
 
             simpleFields: {
                 @foreach($procedure->fields as $field)

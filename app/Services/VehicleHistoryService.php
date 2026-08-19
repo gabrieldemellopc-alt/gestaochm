@@ -10,6 +10,7 @@ use App\Models\TireInstallation;
 use App\Models\TireMeasurement;
 use App\Models\Vehicle;
 use App\Models\VehicleOperation;
+use App\Models\VehicleReadingCorrection;
 use Illuminate\Support\Collection;
 
 class VehicleHistoryService
@@ -24,7 +25,8 @@ class VehicleHistoryService
         $vehicle->loadMissing(['division', 'location', 'currentAllocation.location']);
         $events = collect();
 
-        $logs = $vehicle->updateLogs()->with('user')->latest('created_at')->get();
+        // created_at continua sendo auditoria; a posição no histórico de leituras usa a data efetiva.
+        $logs = $vehicle->updateLogs()->with('user')->orderByRaw('COALESCE(read_at, created_at) DESC')->get();
         $locationNames = \App\Models\Location::whereIn('id', $logs->where('type', 'location')
             ->flatMap(fn ($log) => [$log->old_value, $log->new_value])->filter()->unique())->pluck('name', 'id');
         foreach ($logs as $log) {
@@ -37,8 +39,25 @@ class VehicleHistoryService
             $after = $isLocation ? $locationNames->get($log->new_value, 'Não informado') : ($log->new_value ?? 'Não informado') . $unit;
             $events->push($this->event($isLocation ? 'location' : ($isStatus ? 'operational' : 'reading'), $label,
                 $isLocation ? 'Localização atualizada' : ($isStatus ? 'Status do veículo alterado' : ($isHours ? 'Horímetro atualizado' : 'Hodômetro atualizado')),
-                $log->read_at ?? $log->created_at, $before . ' → ' . $after, array_filter(['Origem' => $log->source, 'Responsável' => $log->user?->name]), null, null, false));
+                $log->read_at ?? $log->created_at, $before . ' → ' . $after, array_filter(['Origem' => $log->source, 'Responsável' => $log->user?->name, 'Status da leitura' => $log->reading_status]), null, null, false));
         }
+
+        VehicleReadingCorrection::query()->where('vehicle_id', $vehicle->id)->with(['evidence', 'user'])->get()
+            ->each(function (VehicleReadingCorrection $correction) use ($events, $vehicle) {
+                $before = $correction->originalLog?->new_value;
+                $description = $correction->new_km !== null
+                    ? number_format((float) ($before ?? 0), 0, ',', '.').' km → '.number_format((float) $correction->new_km, 0, ',', '.').' km'
+                    : 'Correção administrativa de leitura.';
+                $details = array_filter(['Data efetiva' => optional($correction->effective_at)->format('d/m/Y'), 'Responsável' => $correction->user?->name, 'Motivo' => $correction->reason]);
+                $event = $this->event('reading', 'Correção administrativa', 'Correção administrativa de hodômetro', $correction->effective_at ?: $correction->created_at, $description, $details);
+                if ($correction->evidence?->status === 'ready' && $correction->evidence->path) {
+                    $event['url'] = route('vehicles.reading-correction.evidence.download', [$vehicle, $correction->evidence]);
+                    $event['url_label'] = 'Visualizar evidência';
+                } elseif ($correction->evidence) {
+                    $event['details']['Evidência'] = 'Evidência indisponível';
+                }
+                $events->push($event);
+            });
 
         $fillings = $scope(FuelFilling::query())->where('vehicle_id', $vehicle->id)->with(['product', 'tank'])->latest('filled_at')->get();
         foreach ($fillings as $filling) {
@@ -71,7 +90,7 @@ class VehicleHistoryService
         }
 
         $photos = MaintenancePhoto::where('tenant_id', $vehicle->tenant_id)->whereHas('maintenanceRecord', fn ($q) => $q->where('vehicle_id', $vehicle->id)->whereNull('deleted_at'))->with('maintenanceRecord')->get();
-        foreach ($photos as $photo) $events->push($this->event('maintenance', 'Manutenção', 'Foto registrada na manutenção', $photo->created_at, $photo->caption ?: $photo->original_name, ['OM' => '#' . $photo->maintenance_record_id], route('vehicles.maintenance.show', [$vehicle, $photo->maintenanceRecord]), $photo->url));
+        foreach ($photos as $photo) $events->push($this->event('maintenance', 'Manutenção', 'Foto adicionada à manutenção #' . $photo->maintenance_record_id, $photo->created_at, $photo->caption ?: $photo->original_name, ['OM' => '#' . $photo->maintenance_record_id], route('vehicles.maintenance.show', [$vehicle, $photo->maintenanceRecord])));
 
         $installations = TireInstallation::where('tenant_id', $vehicle->tenant_id)->where('vehicle_id', $vehicle->id)->with('tire')->get();
         foreach ($installations as $installation) {

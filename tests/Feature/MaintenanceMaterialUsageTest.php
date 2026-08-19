@@ -13,9 +13,64 @@ class MaintenanceMaterialUsageTest extends TestCase
 {
     public function test_material_routes_are_registered(): void
     {
-        foreach (['search', 'store', 'cancel', 'replace'] as $action) {
+        foreach (['search', 'store', 'direct.store', 'cancel', 'replace'] as $action) {
             $this->assertNotNull(app('router')->getRoutes()->getByName("vehicles.maintenance.materials.{$action}"));
         }
+    }
+
+    public function test_direct_purchase_can_reuse_an_active_item_in_the_same_context(): void
+    {
+        $service = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+
+        $this->assertStringContainsString("'stock_item_id' => ['nullable', 'integer']", $controller);
+        $this->assertStringContainsString("->whereKey(\$data['stock_item_id'])", $service);
+        $this->assertStringContainsString("->where('tenant_id', \$maintenance->tenant_id)->where('location_id', \$locationId)", $service);
+        $this->assertStringContainsString("->where('active', true)->lockForUpdate()->first()", $service);
+        $this->assertStringContainsString("if (! empty(\$data['stock_item_id']))", $service);
+    }
+
+    public function test_direct_purchase_requires_a_context_category_and_normalizes_units_for_new_items(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+        $service = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
+
+        $this->assertStringContainsString("['UNID', 'L', 'KG', 'G', 'Outro']", $controller);
+        $this->assertStringContainsString("'unit_other'", $controller);
+        $this->assertStringContainsString("Informe uma categoria para o novo item", $service);
+        $this->assertStringContainsString("where('tenant_id', \$maintenance->tenant_id)->exists()", $service);
+    }
+
+    public function test_direct_purchase_uses_total_cost_to_calculate_unit_cost(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+        $view = file_get_contents(resource_path('views/vehicle/partials/maintenance-materials-summary.blade.php'));
+
+        $this->assertStringContainsString("round((float) \$data['total_cost'] / (int) \$data['quantity'], 2)", $controller);
+        $this->assertStringContainsString('Custo unitário calculado', $view);
+        $this->assertStringContainsString('Calculado automaticamente com base no custo total e na quantidade.', $view);
+    }
+
+    public function test_direct_purchase_keeps_the_entry_then_usage_sequence_atomic(): void
+    {
+        $service = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
+        $entry = strpos($service, '$entries->record($item');
+        $usage = strpos($service, '$this->createUsage($maintenance', $entry);
+
+        $this->assertStringContainsString('return DB::transaction(function () use ($maintenance, $data, $user, $entries)', $service);
+        $this->assertNotFalse($entry);
+        $this->assertNotFalse($usage);
+        $this->assertLessThan($usage, $entry);
+    }
+
+    public function test_direct_purchase_view_reuses_the_existing_stock_search(): void
+    {
+        $panel = file_get_contents(resource_path('views/vehicle/partials/maintenance-materials-summary.blade.php'));
+
+        $this->assertStringContainsString('Comprar / lançar material direto', $panel);
+        $this->assertStringContainsString("route('vehicles.maintenance.materials.search'", $panel);
+        $this->assertStringContainsString('name="stock_item_id"', $panel);
+        $this->assertStringContainsString('x-on:input.debounce.300ms="search()"', $panel);
     }
 
     public function test_permissions_separate_use_and_cancellation(): void

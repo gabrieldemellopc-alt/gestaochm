@@ -20,12 +20,14 @@
 @php($canEditItems = $canEditItems ?? false)
 @php($canEditExtraCosts = $canEditExtraCosts ?? false)
 @php($canViewCosts = $canViewCosts ?? false)
+@php($isMaintenanceDetail = $isMaintenanceDetail ?? false)
+@php($isMaintenanceOpen = $isMaintenanceOpen ?? (bool) $openMaintenance)
 
 
 
 <div
     class="maintenance-index-page"
-    x-data="{}"
+    x-data="{ previousMaintenancesOpen: false }"
 >
 
 
@@ -40,7 +42,7 @@
 
             <span class="maintenance-kicker">
 
-                Manutenção
+                {{ $isMaintenanceDetail ? 'Ordem de manutenção' : 'Manutenção' }}
 
             </span>
 
@@ -48,7 +50,7 @@
 
             <h1>
 
-                Manutenção do veículo {{ $vehicle->name }}
+                {{ $isMaintenanceDetail ? 'Ordem #'.$openMaintenance->id : 'Manutenção do veículo '.$vehicle->name }}
 
             </h1>
 
@@ -56,7 +58,7 @@
 
             <p>
 
-                Acompanhe a situação de manutenção, alertas e procedimentos disponíveis para este veículo.
+                {{ $isMaintenanceDetail ? 'Consulte os dados, custos, fotos e acontecimentos desta manutenção.' : 'Acompanhe a situação de manutenção, alertas e procedimentos disponíveis para este veículo.' }}
 
             </p>
 
@@ -254,7 +256,7 @@
 
     </div>
 
-    @if($alertProcedures->count())
+    @if(! $isMaintenanceDetail && $alertProcedures->count())
         <section class="maintenance-alert-strip">
             <div class="maintenance-alert-strip-head">
                 <span>Alertas</span>
@@ -289,7 +291,7 @@
         @php($photoCount = $openMaintenance->photos->count())
         <section
             class="maintenance-open-card"
-            x-data="{ cancelModal: false, closeModal: false }"
+            x-data="{ cancelModal: false, closeModal: false, reopenModal: false }"
         >
             <div class="maintenance-open-top">
                 <div class="maintenance-open-main">
@@ -299,16 +301,22 @@
 
                     <div>
                         <span class="maintenance-kicker">
-                            Manutenção em andamento
+                            {{ $openMaintenance->cancelled_at ? 'Manutenção cancelada' : ($isMaintenanceOpen ? 'Manutenção em andamento' : 'Manutenção encerrada') }}
                         </span>
 
                         <h2>
-                            #{{ $openMaintenance->id }} — Veículo em manutenção
+                            #{{ $openMaintenance->id }} — {{ $openMaintenance->cancelled_at ? 'Ordem cancelada' : ($isMaintenanceOpen ? 'Veículo em manutenção' : 'Ordem encerrada') }}
                         </h2>
 
                         <p>
                             Aberta em
                             {{ optional($openMaintenance->started_at)->format('d/m/Y H:i') }}
+                            @if($openMaintenance->finished_at)
+                                · encerrada em {{ optional($openMaintenance->finished_at)->format('d/m/Y H:i') }}
+                            @endif
+                            @if($openMaintenance->cancelled_at)
+                                · cancelada em {{ optional($openMaintenance->cancelled_at)->format('d/m/Y H:i') }} por {{ $openMaintenance->canceller?->name ?? 'responsável não informado' }}
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -346,6 +354,12 @@
                         Encerrar manutenção
                     </button>
 @endif
+
+                    @if(! $isMaintenanceOpen && ! $openMaintenance->cancelled_at && ($maintenancePermissions['reopen'] ?? false))
+                        <button type="button" class="chm-page-button maintenance-reopen-button" @click="reopenModal = true">
+                            <i data-lucide="rotate-ccw"></i> Reabrir manutenção
+                        </button>
+                    @endif
                 </div>
             </div>
 
@@ -354,7 +368,7 @@
                 @if($openMaintenance->maintenance_category)
                     <span class="maintenance-info-badge maintenance-category-badge"><i data-lucide="tag"></i>{{ \App\Services\MaintenanceService::maintenanceCategories()[$openMaintenance->maintenance_category] ?? 'Outros' }}</span>
                 @endif
-                <span class="maintenance-info-badge"><i data-lucide="clock"></i>Parado há {{ $openMaintenance->started_at ? $openMaintenance->started_at->diffForHumans(null, true) : '—' }}</span>
+                <span class="maintenance-info-badge"><i data-lucide="clock"></i>{{ $isMaintenanceOpen ? 'Parado há '.($openMaintenance->started_at ? $openMaintenance->started_at->diffForHumans(null, true) : '—') : ($openMaintenance->finished_at ? 'Encerrada em '.$openMaintenance->finished_at->format('d/m/Y H:i') : 'Ordem cancelada') }}</span>
                 <span class="maintenance-info-badge"><i data-lucide="circle-dollar-sign"></i>Total @if($maintenancePermissions['view_costs'] ?? false)<span data-maintenance-total>R$ {{ number_format($openMaintenance->total_cost ?? 0, 2, ',', '.') }}</span>@else Valor restrito @endif</span>
                 <span class="maintenance-info-badge"><i data-lucide="images"></i>Fotos {{ $photoCount }}/{{ $maxPhotos }}</span>
             </div>
@@ -370,7 +384,7 @@
                     <div>
                         <span class="maintenance-kicker">Evidências da ordem</span>
                         <h3>Fotos da manutenção</h3>
-                        <p class="maintenance-photo-guidance">Inclua pelo menos 2 fotos para encerrar a ordem. Se houver mais de um problema ou serviço, envie uma imagem de cada item a ser corrigido.</p>
+                        <p class="maintenance-photo-guidance">{{ $isMaintenanceOpen ? 'Inclua pelo menos 2 fotos para encerrar a ordem. Se houver mais de um problema ou serviço, envie uma imagem de cada item a ser corrigido.' : 'As fotos desta ordem ficam disponíveis para consulta nesta página.' }}</p>
                     </div>
                     <div class="maintenance-photo-limits">
                     <span class="maintenance-photo-counter {{ $photoCount >= $minPhotos ? 'complete' : 'pending' }}">{{ $photoCount < $minPhotos ? $photoCount.'/'.$minPhotos.' fotos obrigatórias' : $photoCount.'/'.$maxPhotos.' fotos enviadas' }}</span>
@@ -484,6 +498,20 @@
                 </div>
             </div>
 
+            @if(! $isMaintenanceOpen && ! $openMaintenance->cancelled_at && ($maintenancePermissions['reopen'] ?? false))
+                <div x-show="reopenModal" x-cloak class="maintenance-modal-backdrop" @click.self="reopenModal = false">
+                    <div class="maintenance-close-modal">
+                        <h3>Reabrir ordem de manutenção</h3>
+                        <p>O veículo voltará ao status de manutenção e um novo período de indisponibilidade será iniciado.</p>
+                        <form method="POST" action="{{ route('vehicles.maintenance.reopen', [$vehicle->id, $openMaintenance->id]) }}">
+                            @csrf
+                            <div class="form-group"><label>Motivo da reabertura</label><textarea name="reason" rows="4" class="form-input" required minlength="5" placeholder="Informe por que esta ordem está sendo reaberta..."></textarea></div>
+                            <div class="maintenance-modal-actions"><button type="button" class="maintenance-cancel-btn" @click="reopenModal = false">Cancelar</button><button type="submit" class="chm-page-button maintenance-reopen-button">Confirmar reabertura</button></div>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
             <div
                 x-show="closeModal"
                 x-cloak
@@ -544,9 +572,9 @@
             </div>
 
             {{-- maintenance-open-actions-grid-permission-wrapper --}}
-            @if($maintenancePermissions['change_status'] ?? false
+            @if($isMaintenanceOpen && ($maintenancePermissions['change_status'] ?? false
                 || $maintenancePermissions['add_items'] ?? false
-                || $maintenancePermissions['add_extra_costs'] ?? false)
+                || $maintenancePermissions['add_extra_costs'] ?? false))
             <div class="maintenance-open-actions-grid">
 
 
@@ -851,6 +879,35 @@
                                             <small>
                                                 {{ optional($item->performed_at)->format('d/m/Y') }}
                                             </small>
+                                            @if($item->maintenance_type === 'external' && ($item->provider_name || $item->provider_document || $item->fiscal_document_number || $item->fiscal_document_issued_at))
+                                                <small class="maintenance-external-service-detail">
+                                                    @if($item->provider_name)
+                                                        <span>{{ $item->provider_name }}</span>
+                                                    @endif
+
+                                                    @if($item->provider_document)
+                                                        <span>
+                                                            {{ strlen($item->provider_document) === 14
+                                                                ? preg_replace('/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $item->provider_document)
+                                                                : (strlen($item->provider_document) === 11
+                                                                    ? preg_replace('/^(\d{3})(\d{3})(\d{3})(\d{2})$/', '$1.$2.$3-$4', $item->provider_document)
+                                                                    : $item->provider_document) }}
+                                                        </span>
+                                                    @endif
+
+                                                    @if($item->fiscal_document_number)
+                                                        <span>NFS-e {{ $item->fiscal_document_number }}</span>
+                                                    @endif
+
+                                                    @if($item->fiscal_document_issued_at)
+                                                        <span>{{ optional($item->fiscal_document_issued_at)->format('d/m/Y') }}</span>
+                                                    @endif
+
+                                                    @if($canViewCosts)
+                                                        <span>R$ {{ number_format($item->extra_cost ?? 0, 2, ',', '.') }}</span>
+                                                    @endif
+                                                </small>
+                                            @endif
                                         </div>
 
                                         <div class="maintenance-open-item-cost">
@@ -1063,6 +1120,7 @@
     @endif
 
 
+@if(! $isMaintenanceDetail)
 <div class="maintenance-workspace">
     {{-- PROCEDIMENTOS --}}
 
@@ -1176,10 +1234,13 @@
 
 </div>
 
-<div class="maintenance-workspace">
+<div class="maintenance-workspace maintenance-previous-history" x-data="{ open: false }">
+    <button type="button" class="maintenance-previous-toggle" x-on:click="open = !open" :aria-expanded="open">
+        <span x-text="open ? 'Ocultar manutenções anteriores' : 'Ver manutenções anteriores'">Ver manutenções anteriores</span>
+        <i data-lucide="chevron-down" :class="{ 'is-rotated': open }"></i>
+    </button>
 
-
-<section class="maintenance-history-card">
+<section class="maintenance-history-card" x-show="open" x-cloak>
     <div class="maintenance-section-title">
         <div>
             <span>Histórico</span>
@@ -1243,6 +1304,7 @@
 </section>
 
 </div>
+@endif
 
 
 </div>

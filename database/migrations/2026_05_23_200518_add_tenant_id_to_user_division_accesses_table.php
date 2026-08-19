@@ -18,12 +18,19 @@ return new class extends Migration
                 ->cascadeOnDelete();
         });
 
-        DB::statement("
-            UPDATE user_division_accesses uda
-            JOIN divisions d ON d.id = uda.division_id
-            SET uda.tenant_id = d.tenant_id
-            WHERE uda.tenant_id IS NULL
-        ");
+        // Backfill the tenant from each access record's division. Query Builder
+        // keeps this historical migration compatible with both MySQL and SQLite.
+        DB::table('user_division_accesses as uda')
+            ->join('divisions as d', 'd.id', '=', 'uda.division_id')
+            ->whereNull('uda.tenant_id')
+            ->orderBy('uda.id')
+            ->select('uda.id', 'd.tenant_id')
+            ->each(function (object $access): void {
+                DB::table('user_division_accesses')
+                    ->where('id', $access->id)
+                    ->whereNull('tenant_id')
+                    ->update(['tenant_id' => $access->tenant_id]);
+            });
 
         Schema::table('user_division_accesses', function (Blueprint $table) {
             $table

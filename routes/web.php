@@ -79,6 +79,8 @@ Route::get('/maintenance-photo-upload/{token}', [PublicMaintenancePhotoControlle
     ->middleware('throttle:60,1')->name('public.maintenance-photos.show');
 Route::post('/maintenance-photo-upload/{token}', [PublicMaintenancePhotoController::class, 'store'])
     ->middleware('throttle:20,1')->name('public.maintenance-photos.store');
+Route::get('/reading-corrections/evidence/{token}', [VehicleReadingCorrectionController::class, 'publicEvidence'])->middleware('throttle:60,1')->name('reading-corrections.evidence.show');
+Route::post('/reading-corrections/evidence/{token}', [VehicleReadingCorrectionController::class, 'uploadEvidence'])->middleware('throttle:10,1')->name('reading-corrections.evidence.upload');
 
 
 
@@ -445,6 +447,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/vehicles/{vehicle}/reading-correction/preview', [VehicleReadingCorrectionController::class, 'preview'])
         ->name('vehicles.reading-correction.preview');
+    Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCorrectionController::class, 'createEvidence'])->name('vehicles.reading-correction.evidence.create');
+    Route::get('/vehicles/{vehicle}/reading-correction/evidence/{evidence}/status', [VehicleReadingCorrectionController::class, 'evidenceStatus'])->name('vehicles.reading-correction.evidence.status');
+    Route::get('/vehicles/{vehicle}/reading-correction/evidence/{evidence}/download', [VehicleReadingCorrectionController::class, 'downloadEvidence'])->name('vehicles.reading-correction.evidence.download');
 
     Route::post('/vehicles/{vehicle}/reading-correction', [VehicleReadingCorrectionController::class, 'store'])
         ->name('vehicles.reading-correction.store');
@@ -560,6 +565,8 @@ Route::middleware('auth')->group(function () {
         ->name('vehicles.maintenance.materials.search');
     Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials', [MaintenanceController::class, 'storeMaterial'])
         ->name('vehicles.maintenance.materials.store');
+    Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials/direct', [MaintenanceController::class, 'storeDirectMaterial'])
+        ->name('vehicles.maintenance.materials.direct.store');
     Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials/{usage}/cancel', [MaintenanceController::class, 'cancelMaterial'])
         ->name('vehicles.maintenance.materials.cancel');
     Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials/{usage}/replace', [MaintenanceController::class, 'replaceMaterial'])
@@ -1037,6 +1044,11 @@ Route::middleware('auth')->group(function () {
                 'storeFilling'
 
             )->name('fillings.store');
+
+            Route::get('/fillings/history', 'fillingsHistory')->name('fillings.history');
+            Route::post('/fillings/{filling}/cancel', 'cancelFilling')->name('fillings.cancel');
+            Route::get('/receipts/history', 'receiptsHistory')->name('receipts.history');
+            Route::post('/receipts/{receipt}/cancel', 'cancelReceipt')->name('receipts.cancel');
 
 
 

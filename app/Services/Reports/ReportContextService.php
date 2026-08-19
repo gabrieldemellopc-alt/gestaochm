@@ -105,6 +105,7 @@ class ReportContextService
     public function vehicleUpdateLogsQuery(array $context, int $vehicleId): Builder
     {
         return VehicleUpdateLog::query()
+            ->usableReading()
             ->where('vehicle_id', $vehicleId)
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id);

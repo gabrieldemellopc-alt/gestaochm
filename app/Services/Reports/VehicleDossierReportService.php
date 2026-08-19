@@ -642,6 +642,9 @@ class VehicleDossierReportService
                     'procedure_name' => $item->procedure?->name ?? 'Item de manutencao',
                     'maintenance_type' => $item->maintenance_type,
                     'provider_name' => $item->provider_name,
+                    'provider_document' => $item->maintenance_type === 'external' ? $item->provider_document : null,
+                    'fiscal_document_number' => $item->maintenance_type === 'external' ? $item->fiscal_document_number : null,
+                    'fiscal_document_issued_at' => $item->maintenance_type === 'external' ? optional($item->fiscal_document_issued_at)->format('Y-m-d') : null,
                     'performed_km' => $item->performed_km,
                     'performed_hours' => $item->performed_hours,
                     'performed_at' => $item->performed_at,
@@ -979,6 +982,7 @@ class VehicleDossierReportService
     private function kmHrLogs(array $context, Vehicle $vehicle, array $filters): Collection
     {
         return VehicleUpdateLog::query()
+            ->usableReading()
             ->with('user')
             ->where('vehicle_id', $vehicle->id)
             ->where('division_id', $context['division']->id)

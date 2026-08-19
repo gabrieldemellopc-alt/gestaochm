@@ -430,6 +430,9 @@ class MaintenanceService
                     $executionType === 'external'
                         ? ($data['provider_name'] ?? null)
                         : null,
+                'provider_document' => $executionType === 'external' ? ($data['provider_document'] ?? null) : null,
+                'fiscal_document_number' => $executionType === 'external' ? ($data['fiscal_document_number'] ?? null) : null,
+                'fiscal_document_issued_at' => $executionType === 'external' ? ($data['fiscal_document_issued_at'] ?? null) : null,
                 'notes' => $data['notes'] ?? null,
             ]);
     

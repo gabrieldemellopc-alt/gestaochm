@@ -3,162 +3,110 @@
 namespace App\Http\Controllers;
 
 use App\Models\FuelFilling;
-use App\Models\MaintenanceRecord;
-use App\Models\TireInstallation;
-use App\Models\TireMeasurement;
 use App\Models\Vehicle;
-use App\Models\VehicleOperation;
+use App\Models\VehicleReadingCorrection;
+use App\Models\VehicleReadingCorrectionEvidence;
 use App\Models\VehicleUpdateLog;
 use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
 use App\Services\Permissions\ProfilePermissionService;
-use App\Services\VehicleReadingService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
+use App\Services\VehicleReadingReconciliationService;
+use App\Services\VideoEvidenceProcessor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\PngWriter;
 
 class VehicleReadingCorrectionController extends Controller
 {
-    public function preview(Request $request, Vehicle $vehicle): JsonResponse
+    public function createEvidence(Request $request, Vehicle $vehicle)
     {
         $this->authorizeCorrection($vehicle);
-        $data = $this->validated($request, false);
-
-        return response()->json([
-            'impacts' => $this->impacts($vehicle, $data)->values(),
-        ]);
+        VehicleReadingCorrectionEvidence::query()->where('vehicle_id',$vehicle->id)->where('initiated_by',$request->user()->id)->whereIn('status',['pending','processing'])->update(['status'=>'expired']);
+        $token = Str::random(64);
+        $url = route('reading-corrections.evidence.show',$token);
+        $qr = (new Builder(writer: new PngWriter(), data: $url, size: 180))->build();
+        $evidence = VehicleReadingCorrectionEvidence::create(['tenant_id'=>$vehicle->tenant_id,'vehicle_id'=>$vehicle->id,'initiated_by'=>$request->user()->id,'token_hash'=>hash('sha256',$token),'expires_at'=>now()->addMinutes(20),'status'=>'pending']);
+        return response()->json(['id'=>$evidence->id,'url'=>$url,'qr'=>'data:image/png;base64,'.base64_encode($qr->getString())]);
     }
 
-    public function store(Request $request, Vehicle $vehicle): RedirectResponse
+    public function evidenceStatus(Request $request, Vehicle $vehicle, VehicleReadingCorrectionEvidence $evidence)
+    {
+        $this->authorizeCorrection($vehicle); abort_unless($evidence->vehicle_id === $vehicle->id, 404);
+        if ($evidence->status === 'pending' && $evidence->expires_at->isPast()) $evidence->update(['status'=>'expired']);
+        return response()->json(['status'=>$evidence->fresh()->status,'available'=>$evidence->isAvailable(),'uploaded_at'=>optional($evidence->used_at)->format('d/m/Y H:i'),'duration'=>$evidence->duration_seconds,'view_url'=>$evidence->isAvailable()?route('vehicles.reading-correction.evidence.download',[$vehicle,$evidence]):null]);
+    }
+
+    public function publicEvidence(string $token)
+    {
+        $e = $this->byToken($token);
+        $mode = match (true) {
+            $e->expires_at->isPast() || $e->status === 'expired' => 'expired',
+            $e->status === 'pending' => 'pending',
+            $e->status === 'processing' => 'processing',
+            $e->status === 'ready' => 'ready',
+            default => 'failed',
+        };
+
+        return response()->view('vehicle.reading-correction-evidence', ['token' => $token, 'evidence' => $e, 'mode' => $mode], in_array($mode, ['expired', 'failed'], true) ? 410 : 200);
+    }
+    public function uploadEvidence(Request $request, string $token, VideoEvidenceProcessor $processor)
+    {
+        $e=$this->byToken($token); abort_if($e->status !== 'pending'||$e->expires_at->isPast(),410);
+        $request->validate(['video'=>['required','file','mimetypes:video/mp4,video/quicktime,video/webm,video/3gpp','max:15360']]); // 15 MB bruto
+        $f=$request->file('video'); $tempOut=tempnam(sys_get_temp_dir(),'reading-evidence-').'.mp4'; $e->update(['status'=>'processing']);
+        $result=$processor->process($f->getRealPath(),$tempOut);
+        if($result['status'] !== 'ready') { @unlink($tempOut); $e->update(['status'=>$result['status']==='unavailable'?'pending':'failed']); throw ValidationException::withMessages(['video'=>$result['message']]); }
+        $path='protected/vehicle-reading-evidence/'.$e->vehicle_id.'/'.Str::uuid().'.mp4'; Storage::disk('local')->put($path,file_get_contents($tempOut)); @unlink($tempOut);
+        $e->update(['status'=>'ready','used_at'=>now(),'disk'=>'local','path'=>$path,'original_name'=>$f->getClientOriginalName(),'mime_type'=>'video/mp4','size_bytes'=>Storage::disk('local')->size($path),'duration_seconds'=>$result['duration'],'checksum'=>hash_file('sha256',Storage::disk('local')->path($path))]);
+        return back()->with('success','Vídeo recebido. Volte ao computador para concluir a correção.');
+    }
+
+    public function preview(Request $r, Vehicle $vehicle) { $this->authorizeCorrection($vehicle); $d=$this->validated($r,false); return response()->json(['impacts'=>$this->impacts($vehicle,$d),'target'=>$this->target($vehicle,$d)]); }
+    public function store(Request $r, Vehicle $vehicle)
+    {
+        $this->authorizeCorrection($vehicle); $d=$this->validated($r,true);
+        DB::transaction(function() use($r,$vehicle,$d) {
+            $e=VehicleReadingCorrectionEvidence::query()->whereKey($d['evidence_id'])->where('vehicle_id',$vehicle->id)->lockForUpdate()->firstOrFail(); if(!$e->isAvailable()) throw ValidationException::withMessages(['evidence_id'=>'A evidência em vídeo pronta é obrigatória.']);
+            $t=$this->target($vehicle,$d, true); $impacts=$this->impacts($vehicle,$d);
+            $c=VehicleReadingCorrection::create(['tenant_id'=>$vehicle->tenant_id,'division_id'=>$vehicle->division_id,'location_id'=>$vehicle->location_id,'vehicle_id'=>$vehicle->id,'user_id'=>$r->user()->id,'original_log_id'=>$t['log']?->id,'original_fuel_filling_id'=>$t['filling']?->id,'new_km'=>$d['new_km']??null,'new_hours'=>$d['new_hours']??null,'reason'=>$d['reason'],'effective_at'=>$t['date'],'impacts'=>$impacts,'ip_address'=>$r->ip(),'user_agent'=>Str::limit((string)$r->userAgent(),2000)]);
+            foreach(['km'=>'new_km','hours'=>'new_hours'] as $type=>$field) if(isset($d[$field])) {
+                if($t['log'] && $t['log']->type===$type) $t['log']->update(['reading_status'=>'ignored','reading_issue'=>'Substituída por correção administrativa #'.$c->id,'reviewed_by'=>$r->user()->id,'reviewed_at'=>now()]);
+                if($type==='km' && $t['filling']) $t['filling']->update(['vehicle_km_status'=>'ignored','vehicle_km_issue'=>'Substituída por correção administrativa #'.$c->id,'vehicle_km_reviewed_by'=>$r->user()->id,'vehicle_km_reviewed_at'=>now()]);
+                $log=VehicleUpdateLog::create(['vehicle_id'=>$vehicle->id,'user_id'=>$r->user()->id,'division_id'=>$vehicle->division_id,'location_id'=>$vehicle->location_id,'type'=>$type,'source'=>'administrative_correction','read_at'=>$t['date'],'old_value'=>$t['value'][$type]??null,'new_value'=>$d[$field],'observation'=>'Correção administrativa #'.$c->id.'. Motivo: '.$d['reason']]); if($type==='km')$c->update(['corrected_log_id'=>$log->id]);
+            }
+            $e->update(['correction_id'=>$c->id]); $latest=app(VehicleReadingReconciliationService::class)->latestValid($vehicle); $vehicle->update(['current_km'=>$latest['km']??null,'last_km_update_at'=>$latest['date']??null]);
+            app(AuditLogService::class)->updated($vehicle,['tenant_id'=>$vehicle->tenant_id,'division_id'=>$vehicle->division_id,'location_id'=>$vehicle->location_id,'module'=>'fleet','summary'=>'Correção administrativa de hodômetro #'.$c->id,'metadata'=>['correction_id'=>$c->id,'evidence_id'=>$e->id,'impacts'=>$impacts],'reason'=>$d['reason']]);
+        }); return back()->with('success','Correção administrativa registrada e leitura reconciliada.');
+    }
+    public function downloadEvidence(Vehicle $vehicle, VehicleReadingCorrectionEvidence $evidence)
     {
         $this->authorizeCorrection($vehicle);
-        $data = $this->validated($request, true);
-        $impacts = $this->impacts($vehicle, $data);
-
-        DB::transaction(function () use ($vehicle, $data, $impacts) {
-            $lockedVehicle = Vehicle::query()->whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
-            $before = $lockedVehicle->only(['current_km', 'current_hours']);
-            $service = app(VehicleReadingService::class);
-            $changed = false;
-
-            if (array_key_exists('new_km', $data) && $data['new_km'] !== null) {
-                $changed = $service->correctKm($lockedVehicle, $data['new_km'], auth()->user(), $data['reason']) || $changed;
-            }
-
-            if (array_key_exists('new_hours', $data) && $data['new_hours'] !== null) {
-                $changed = $service->correctHours($lockedVehicle, $data['new_hours'], auth()->user(), $data['reason']) || $changed;
-            }
-
-            if (! $changed) {
-                throw ValidationException::withMessages([
-                    'reading_correction' => 'Informe ao menos uma leitura diferente da atual.',
-                ]);
-            }
-
-            app(AuditLogService::class)->updated($lockedVehicle, [
-                'tenant_id' => $lockedVehicle->tenant_id,
-                'division_id' => $lockedVehicle->division_id,
-                'location_id' => $lockedVehicle->location_id,
-                'module' => 'fleet',
-                'summary' => 'Leitura do veículo corrigida administrativamente.',
-                'before_data' => $before,
-                'after_data' => $lockedVehicle->fresh()->only(['current_km', 'current_hours']),
-                'metadata' => [
-                    'impact_count' => $impacts->count(),
-                    'impact_references' => $impacts->pluck('reference')->values()->all(),
-                ],
-                'reason' => $data['reason'],
-            ]);
-        });
-
-        return back()->with('success', 'Leitura corrigida com sucesso.');
+        abort_unless((int) $evidence->vehicle_id === (int) $vehicle->id && $evidence->status === 'ready' && $evidence->path && Storage::disk($evidence->disk ?: 'local')->exists($evidence->path), 404);
+        $path = Storage::disk($evidence->disk ?: 'local')->path($evidence->path);
+        return response()->file($path, ['Content-Type' => $evidence->mime_type ?: 'video/mp4', 'Content-Disposition' => 'inline; filename="'.($evidence->original_name ?: 'evidencia.mp4').'"']);
     }
-
-    private function validated(Request $request, bool $requireConfirmation): array
+    private function validated(Request $r,bool $confirm):array { $rules=['target_log_id'=>['nullable','integer'],'target_filling_id'=>['nullable','integer'],'new_km'=>['nullable','numeric','min:0','required_without:new_hours'],'new_hours'=>['nullable','numeric','min:0','required_without:new_km'],'reason'=>['required','string','max:1000', function ($attribute, $value, $fail) { if (count(preg_split('/\s+/u', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY)) < 8) $fail('O motivo da correção deve conter pelo menos 8 palavras.'); }],'evidence_id'=>['required','integer']]; if($confirm)$rules['impact_confirmed']=['accepted']; return $r->validate($rules); }
+    private function target(Vehicle $v,array $d,bool $lock=false):array { $logs=VehicleUpdateLog::query()->where('vehicle_id',$v->id); $fillings=FuelFilling::query()->where('vehicle_id',$v->id); if($lock){$logs->lockForUpdate();$fillings->lockForUpdate();} $log=isset($d['target_log_id'])?$logs->findOrFail($d['target_log_id']):null; $f=isset($d['target_filling_id'])?$fillings->findOrFail($d['target_filling_id']):null; if(!$f && $log?->fuel_filling_id) $f=$fillings->findOrFail($log->fuel_filling_id); if(!$log&&!$f)throw ValidationException::withMessages(['target_log_id'=>'Selecione a leitura incorreta que será substituída.']); if($lock && (($log && !$log->is_reading_usable) || ($f && !$f->is_km_reading_usable))) throw ValidationException::withMessages(['target_log_id'=>'Esta leitura já foi revisada ou corrigida por outro gestor.']); return ['log'=>$log,'filling'=>$f,'date'=>$log?->read_at??$log?->created_at??$f?->filled_at,'value'=>['km'=>$log?->type==='km'?$log->new_value:$f?->vehicle_km,'hours'=>$log?->type==='hours'?$log->new_value:$f?->vehicle_hours]]; }
+    private function impacts(Vehicle $v,array $d):array { $t=$this->target($v,$d); return array_values(array_filter([ $t['log'] ? ['type'=>'Leitura que será corrigida','reference'=>'Registrada em '.($t['date']?->format('d/m/Y H:i') ?? 'data não informada')] : null, $t['filling'] ? ['type'=>'Abastecimento relacionado','reference'=>'O cálculo de consumo poderá ser atualizado.'] : null, ['type'=>'Quilometragem atual do veículo','reference'=>'Será reconciliada utilizando a última leitura válida.'] ])); }
+    private function byToken(string $token):VehicleReadingCorrectionEvidence { return VehicleReadingCorrectionEvidence::query()->where('token_hash',hash('sha256',$token))->firstOrFail(); }
+    private function authorizeCorrection(Vehicle $v): void
     {
-        $rules = [
-            'new_km' => ['nullable', 'numeric', 'min:0', 'required_without:new_hours'],
-            'new_hours' => ['nullable', 'numeric', 'min:0', 'required_without:new_km'],
-            'reason' => ['required', 'string', 'min:10', 'max:1000'],
+        $user = auth()->user();
+        $location = $user ? app(ActiveContextService::class)->activeLocation($user) : null;
+        $permission = app(ProfilePermissionService::class)->allows($user, 'vehicles.correct_readings');
+        $checks = [
+            'authenticated' => (bool) $user,
+            'permission' => $permission,
+            'tenant_match' => $user && (int) $v->tenant_id === (int) $user->tenant_id,
+            'division_match' => (int) $v->division_id === (int) session('active_division_id'),
+            'location_present' => (bool) $location,
+            'location_match' => $location && (int) $v->location_id === (int) $location->id,
         ];
 
-        if ($requireConfirmation) {
-            $rules['impact_confirmed'] = ['accepted'];
-        }
-
-        return $request->validate($rules, [
-            'new_km.required_without' => 'Informe o novo KM ou o novo horímetro.',
-            'new_hours.required_without' => 'Informe o novo KM ou o novo horímetro.',
-            'reason.required' => 'Informe o motivo da correção.',
-            'reason.min' => 'O motivo da correção deve ter pelo menos 10 caracteres.',
-            'impact_confirmed.accepted' => 'Você precisa confirmar que entende os impactos da correção.',
-        ]);
-    }
-
-    private function authorizeCorrection(Vehicle $vehicle): void
-    {
-        $location = app(ActiveContextService::class)->activeLocation(auth()->user());
-
-        abort_unless(
-            $location
-            && (int) $vehicle->tenant_id === (int) auth()->user()->tenant_id
-            && (int) $vehicle->division_id === (int) session('active_division_id')
-            && (int) $vehicle->location_id === (int) $location->id,
-            403
-        );
-
-        abort_unless(
-            app(ProfilePermissionService::class)->allows(auth()->user(), 'vehicles.correct_readings'),
-            403,
-            'Você não tem permissão para corrigir leituras do veículo.'
-        );
-    }
-
-    private function impacts(Vehicle $vehicle, array $data): Collection
-    {
-        $items = collect();
-        $km = $data['new_km'] ?? null;
-        $hours = $data['new_hours'] ?? null;
-
-        if ($km !== null) {
-            VehicleUpdateLog::query()->where('vehicle_id', $vehicle->id)->where('type', 'km')->where('new_value', '>', $km)->get()
-                ->each(fn ($row) => $items->push($this->impact('Histórico de leitura', $row->created_at, $row->new_value, 'KM', 'VehicleUpdateLog #'.$row->id)));
-            FuelFilling::query()->where('vehicle_id', $vehicle->id)->where('vehicle_km', '>', $km)->get()
-                ->each(fn ($row) => $items->push($this->impact('Abastecimento', $row->filled_at, $row->vehicle_km, 'KM', 'FuelFilling #'.$row->id)));
-            MaintenanceRecord::query()->where('vehicle_id', $vehicle->id)->where('performed_km', '>', $km)->get()
-                ->each(fn ($row) => $items->push($this->impact('Manutenção', $row->performed_at ?? $row->created_at, $row->performed_km, 'KM', 'MaintenanceRecord #'.$row->id)));
-            VehicleOperation::query()->where('vehicle_id', $vehicle->id)->where(fn ($q) => $q->where('start_vehicle_km', '>', $km)->orWhere('end_vehicle_km', '>', $km))->get()
-                ->each(fn ($row) => $items->push($this->impact('Operação', $row->end_datetime_reported ?? $row->start_datetime_reported, max((float) $row->start_vehicle_km, (float) $row->end_vehicle_km), 'KM', 'VehicleOperation #'.$row->id)));
-            TireInstallation::query()->where('vehicle_id', $vehicle->id)->where(fn ($q) => $q->where('installed_km', '>', $km)->orWhere('removed_km', '>', $km))->get()
-                ->each(fn ($row) => $items->push($this->impact('Instalação/remoção de pneu', $row->removed_at ?? $row->installed_at, max((float) $row->installed_km, (float) $row->removed_km), 'KM', 'TireInstallation #'.$row->id)));
-            TireMeasurement::query()->where('vehicle_id', $vehicle->id)->where('vehicle_km', '>', $km)->get()
-                ->each(fn ($row) => $items->push($this->impact('Medição de pneu', $row->measured_at, $row->vehicle_km, 'KM', 'TireMeasurement #'.$row->id)));
-        }
-
-        if ($hours !== null) {
-            VehicleUpdateLog::query()->where('vehicle_id', $vehicle->id)->where('type', 'hours')->where('new_value', '>', $hours)->get()
-                ->each(fn ($row) => $items->push($this->impact('Histórico de leitura', $row->created_at, $row->new_value, 'h', 'VehicleUpdateLog #'.$row->id)));
-            FuelFilling::query()->where('vehicle_id', $vehicle->id)->where('vehicle_hours', '>', $hours)->get()
-                ->each(fn ($row) => $items->push($this->impact('Abastecimento', $row->filled_at, $row->vehicle_hours, 'h', 'FuelFilling #'.$row->id)));
-            MaintenanceRecord::query()->where('vehicle_id', $vehicle->id)->where('performed_hours', '>', $hours)->get()
-                ->each(fn ($row) => $items->push($this->impact('Manutenção', $row->performed_at ?? $row->created_at, $row->performed_hours, 'h', 'MaintenanceRecord #'.$row->id)));
-            VehicleOperation::query()->where('vehicle_id', $vehicle->id)->where(fn ($q) => $q->where('start_vehicle_hours', '>', $hours)->orWhere('end_vehicle_hours', '>', $hours))->get()
-                ->each(fn ($row) => $items->push($this->impact('Operação', $row->end_datetime_reported ?? $row->start_datetime_reported, max((float) $row->start_vehicle_hours, (float) $row->end_vehicle_hours), 'h', 'VehicleOperation #'.$row->id)));
-        }
-
-        return $items->sortByDesc('date')->values();
-    }
-
-    private function impact(string $type, mixed $date, mixed $value, string $unit, string $reference): array
-    {
-        return [
-            'type' => $type,
-            'date' => $date ? \Carbon\Carbon::parse($date)->format('d/m/Y H:i') : '-',
-            'value' => number_format((float) $value, $unit === 'KM' ? 0 : 1, ',', '.').' '.$unit,
-            'reference' => $reference,
-        ];
+        abort_unless(! in_array(false, $checks, true), 403);
     }
 }

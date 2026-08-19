@@ -13,7 +13,7 @@ body.reading-correction-open { overflow: hidden; }
 .reading-correction-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
 .reading-correction-field label { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .reading-correction-field label span { color: #69768a; font-size: 9px; }
-.reading-correction-field input,.reading-correction-field textarea { width: 100%; border: 1px solid rgba(203,213,225,.16); border-radius: 8px; padding: 10px 12px; color: #f1f5f9; background: #151e30; outline: none; }
+.reading-correction-field input,.reading-correction-field textarea,.reading-correction-field select { width: 100%; border: 1px solid rgba(203,213,225,.16); border-radius: 8px; padding: 10px 12px; color: #f1f5f9; background: #151e30; outline: none; }
 .reading-correction-field input:focus,.reading-correction-field textarea:focus { border-color: rgba(224,82,91,.55); box-shadow: 0 0 0 3px rgba(224,82,91,.09); }
 .reading-correction-analyze { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 8px; border: 1px solid #495a78; border-radius: 8px; color: #dbe3ee; background: #2b3852; font-size: 12px; font-weight: 800; cursor: pointer; }
 .reading-correction-impact:empty { display: none; }
@@ -32,8 +32,16 @@ body.reading-correction-open { overflow: hidden; }
 .reading-correction-impact-state.is-success { color: #9bcbaa; }
 .reading-correction-impact-state.is-error { color: #ef9ba1; background: rgba(224,82,91,.07); }
 .reading-correction-warning { display: flex; align-items: flex-start; gap: 9px; padding: 11px 12px; border: 1px solid rgba(210,183,122,.28); border-radius: 8px; color: #e4d4a8; background: rgba(210,183,122,.07); font-size: 11px; line-height: 1.4; }
+.reading-correction-warning input { flex:0 0 auto; margin-top:2px; }
+.reading-correction-warning strong,.reading-correction-warning small { display:block; }
+.reading-correction-warning small { margin-top:3px; color:#b9c3d3; }
+.reading-correction-field label .is-invalid { color:#e99aa0; }
+.reading-correction-impact-state { border:1px solid rgba(92,153,220,.25); border-radius:8px; color:#b9cbe3; background:rgba(57,112,179,.10); }
 .reading-correction-actions { display: grid; flex: 0 0 auto; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 22px 18px; border-top: 1px solid rgba(203,213,225,.13); background: #202a40; }
 .reading-correction-actions button { min-height: 40px; border: 1px solid rgba(203,213,225,.16); border-radius: 8px; color: #dbe3ee; background: rgba(255,255,255,.04); font-size: 12px; font-weight: 800; cursor: pointer; }
 .reading-correction-actions button[type="submit"] { border-color: rgba(224,82,91,.45); color: #fff; background: #b84249; }
 .reading-correction-actions button:disabled { opacity: .42; cursor: not-allowed; }
+.reading-correction-evidence { padding: 14px; border: 1px solid rgba(92,153,220,.35); border-radius: 10px; text-align: center; background: rgba(37,99,235,.08); }
+.reading-correction-evidence p { margin: 7px 0; color: #cbd5e1; font-size: 12px; line-height: 1.45; }
+.reading-correction-evidence img { display:block; width:180px; height:180px; margin:12px auto; padding:8px; background:#fff; border-radius:8px; }
 @media (max-width:680px) { .reading-correction-overlay { padding: 10px; } .reading-correction-modal { max-height: calc(100vh - 20px); } .reading-correction-grid,.reading-correction-actions { grid-template-columns: 1fr; } .reading-correction-current,.reading-correction-impact-item { grid-template-columns: 1fr; } }
