@@ -11,6 +11,7 @@ use App\Models\TireMeasurement;
 use App\Models\Vehicle;
 use App\Models\VehicleOperation;
 use App\Models\VehicleReadingCorrection;
+use App\Models\SystemAuditLog;
 use Illuminate\Support\Collection;
 
 class VehicleHistoryService
@@ -82,7 +83,7 @@ class VehicleHistoryService
             if ($maintenance->finished_at) $events->push($this->event('maintenance', 'Manutenção', 'OM encerrada', $maintenance->finished_at, $maintenance->closure_notes, $details, route('vehicles.maintenance.show', [$vehicle, $maintenance]), null, $maintenance->cancelled_at !== null));
         }
 
-        $usages = MaintenanceMaterialUsage::where('tenant_id', $vehicle->tenant_id)->where('location_id', $vehicle->location_id)->whereHas('maintenanceRecord', fn ($q) => $q->where('vehicle_id', $vehicle->id)->whereNull('deleted_at'))->with(['stockItem', 'maintenanceRecord'])->get();
+        $usages = MaintenanceMaterialUsage::where('tenant_id', $vehicle->tenant_id)->whereHas('maintenanceRecord', fn ($q) => $q->where('vehicle_id', $vehicle->id)->whereNull('deleted_at'))->with(['stockItem', 'maintenanceRecord'])->get();
         foreach ($usages as $usage) {
             $details = ['Material' => $usage->stockItem?->name ?? 'Item de estoque', 'Quantidade' => number_format((float) $usage->quantity, 2, ',', '.'), 'OM' => '#' . $usage->maintenance_record_id];
             if ($permissions['maintenance_costs']) $details['Custo'] = 'R$ ' . number_format((float) $usage->total_cost, 2, ',', '.');
@@ -106,6 +107,13 @@ class VehicleHistoryService
             $events->push($this->event('operational', 'Operacional', 'Movimentação iniciada', $operation->start_datetime_reported ?: $operation->created_at, $operation->start_observation, ['Km' => $operation->start_vehicle_km ? number_format((float) $operation->start_vehicle_km, 0, ',', '.') . ' km' : null]));
             if ($operation->end_datetime_reported) $events->push($this->event('operational', 'Operacional', 'Movimentação encerrada', $operation->end_datetime_reported, $operation->end_observation, ['Km' => $operation->end_vehicle_km ? number_format((float) $operation->end_vehicle_km, 0, ',', '.') . ' km' : null]));
         }
+
+        SystemAuditLog::query()->where('auditable_type', Vehicle::class)->where('auditable_id', $vehicle->id)->where('action', 'vehicle_transferred')->with('user')->get()
+            ->each(function (SystemAuditLog $audit) use ($events) {
+                $from = ($audit->before_data['location_name'] ?? 'Origem não informada');
+                $to = ($audit->after_data['location_name'] ?? 'Destino não informado');
+                $events->push($this->event('location', 'Transferência de localidade', 'Veículo transferido', $audit->created_at, $from.' → '.$to, array_filter(['Responsável' => $audit->user?->name, 'Motivo' => $audit->reason])));
+            });
 
         $events = $events->filter(fn ($event) => $event['occurred_at'])->sortByDesc('occurred_at')->values();
         return ['events' => $events, 'summary' => ['fillings' => $fillings->count(), 'maintenances' => $maintenances->count(), 'tires' => $installations->where('active', true)->count(), 'last_update' => $events->first()['occurred_at'] ?? null, 'total_cost' => ($permissions['fuel_costs'] && $permissions['maintenance_costs']) ? $fillings->whereNull('cancelled_at')->sum('total_cost') + $maintenances->whereNull('cancelled_at')->sum('total_cost') : null]];

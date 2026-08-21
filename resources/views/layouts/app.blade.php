@@ -324,5 +324,8 @@ document.addEventListener('DOMContentLoaded', function () {
     updateButtons();
 });
 </script>
+@if(request()->routeIs('vehicles.edit'))
+    @include('vehicle.partials.transfer-ui')
+@endif
 </body>
 </html>

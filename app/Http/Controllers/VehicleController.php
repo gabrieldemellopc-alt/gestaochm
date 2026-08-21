@@ -30,6 +30,7 @@ use App\Services\VehicleHistoryService;
 use App\Models\VehicleDowntimePeriod;
 use App\Models\SystemAuditLog;
 use Illuminate\Support\Collection;
+use App\Services\VehicleTransferService;
 
 class VehicleController extends Controller
 
@@ -1199,8 +1200,10 @@ class VehicleController extends Controller
             'location_id' => [
                 'required',
                 'exists:locations,id',
-                Rule::in([$vehicle->location_id]),
             ],
+
+            'transfer_reason' => ['nullable', 'string', 'max:2000'],
+            'transfer_confirmed' => ['nullable', 'accepted'],
 
 
             'procedures' => [
@@ -1324,6 +1327,31 @@ class VehicleController extends Controller
         }
 
         $oldData = $vehicle->replicate();
+
+        $isTransfer = (int) $validated['division_id'] !== (int) $vehicle->division_id
+            || (int) $validated['location_id'] !== (int) $vehicle->location_id;
+
+        if ($isTransfer) {
+            $destination = Location::query()
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('division_id', $validated['division_id'])
+                ->whereKey($validated['location_id'])
+                ->first();
+
+            if (! $destination) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['location_id' => 'A localidade selecionada não pertence à divisão informada.']);
+            }
+
+            $reason = trim((string) ($validated['transfer_reason'] ?? ''));
+            if (str_word_count($reason, 0, 'À-ÿ') < 5) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['transfer_reason' => 'O motivo da transferência deve conter pelo menos 5 palavras.']);
+            }
+            if (! $request->boolean('transfer_confirmed')) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['transfer_confirmed' => 'Confirme que está ciente da transferência do veículo.']);
+            }
+
+            $vehicle = app(VehicleTransferService::class)->transfer($vehicle, $destination, $reason, $request->user());
+        }
 
 
         /*
