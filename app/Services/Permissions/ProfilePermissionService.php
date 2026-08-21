@@ -251,29 +251,32 @@ class ProfilePermissionService
             return false;
         }
 
-        if ((int) $user->id === 1 || userHasProfile('admin')) {
-            return true;
-        }
-
-        if (userHasProfile('manager')) {
-            return true;
-        }
-
-        $profile = $scope['profile'] ?? $this->currentProfile($user);
+        $tenantId = $user->tenant_id;
+        $divisionId = $scope['division_id'] ?? session('active_division_id');
+        $locationId = $scope['location_id'] ?? session('active_location_id');
+        $module = $scope['module'] ?? 'fleet';
+        $profile = $scope['profile'] ?? $this->currentProfile($user, $divisionId, $locationId, $module);
 
         if (! $profile) {
             return false;
         }
 
-        $default = $this->defaultFor($profile, $permissionKey);
-        $tenantId = $user->tenant_id;
-        $divisionId = $scope['division_id'] ?? session('active_division_id');
-        $locationId = $scope['location_id'] ?? session('active_location_id');
-        $module = $scope['module'] ?? 'fleet';
-
         $override = $this->bestOverride($tenantId, $divisionId, $locationId, $module, $profile, $permissionKey);
 
-        return $override?->allowed ?? $default;
+        if ((int) $user->id === 1) {
+            return true;
+        }
+
+        // An explicit row is authoritative, including for manager/admin profiles.
+        if ($override !== null) {
+            return $override->allowed;
+        }
+
+        if (in_array($profile, ['admin', 'manager'], true)) {
+            return true;
+        }
+
+        return $this->defaultFor($profile, $permissionKey);
     }
 
     private function resolveScope(User $user, array $filters): array
@@ -491,10 +494,10 @@ class ProfilePermissionService
             ->exists();
     }
 
-    private function currentProfile(User $user): ?string
+    private function currentProfile(User $user, ?int $divisionId = null, ?int $locationId = null, string $module = 'fleet'): ?string
     {
-        $divisionId = session('active_division_id');
-        $locationId = session('active_location_id');
+        $divisionId ??= session('active_division_id');
+        $locationId ??= session('active_location_id');
 
         if (! $divisionId) {
             return null;
@@ -504,7 +507,7 @@ class ProfilePermissionService
             ->where('tenant_id', $user->tenant_id)
             ->where('user_id', $user->id)
             ->where('division_id', $divisionId)
-            ->where('module', 'fleet')
+            ->where('module', $module)
             ->where('active', true)
             ->where(function ($query) use ($locationId) {
                 if ($locationId) {
@@ -520,4 +523,5 @@ class ProfilePermissionService
             ->orderByRaw('location_id is null')
             ->value('profile');
     }
+
 }

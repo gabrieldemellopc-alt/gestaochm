@@ -5,6 +5,7 @@
 @endpush
 
 @section('content')
+    @php($canConfigurePermissions = app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'admin.permissions.configure'))
     <main class="settings-page">
         <header class="settings-header">
             <span>Gestão administrativa</span>
@@ -14,6 +15,7 @@
 
         <nav class="settings-tabs" aria-label="Abas de configurações">
             @foreach(['general' => 'Geral', 'fiscal-documents' => 'Documentos fiscais', 'permissions' => 'Permissões', 'system' => 'Sistema'] as $key => $label)
+                @continue($key === 'permissions' && ! $canConfigurePermissions)
                 <a href="{{ route('settings.index', ['tab' => $key]) }}" class="{{ $tab === $key ? 'is-active' : '' }}">{{ $label }}</a>
             @endforeach
         </nav>
@@ -54,7 +56,7 @@
         </form>
     </div>
 </section>
-        @elseif($tab === 'permissions')
+        @elseif($tab === 'permissions' && $canConfigurePermissions)
             <section class="settings-card"><i data-lucide="shield-check"></i><div><h2>Permissões</h2><p>As permissões continuam disponíveis na tela atual.</p><a class="settings-action" href="{{ route('permissions.index') }}">Abrir permissões <i data-lucide="arrow-up-right"></i></a></div></section>
         @else
             <section class="settings-card"><i data-lucide="server-cog"></i><div><h2>Sistema</h2><p>Informações e preferências técnicas poderão ser exibidas aqui futuramente.</p></div></section>

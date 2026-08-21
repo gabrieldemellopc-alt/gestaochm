@@ -148,7 +148,6 @@ return [
             'label' => 'Administração',
             'description' => 'Permissões administrativas sensíveis. Neste bloco são apenas catálogo/preparação.',
             'permissions' => [
-                'admin.users.manage' => ['label' => 'Gerenciar usuários', 'default' => ['supervisor' => false]],
                 'admin.access.manage' => ['label' => 'Gerenciar acessos', 'default' => ['supervisor' => false]],
                 'admin.permissions.configure' => ['label' => 'Configurar permissões', 'default' => ['supervisor' => false]],
             ],

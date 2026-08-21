@@ -59,8 +59,8 @@ class StockItemDetailsTest extends TestCase
 
         $this->assertSame('Ver detalhamento dos itens do estoque', $permission['label']);
         $this->assertFalse($permission['default']['supervisor']);
-        $this->assertStringContainsString("userHasProfile('admin')", $service);
-        $this->assertStringContainsString("userHasProfile('manager')", $service);
+        $this->assertStringContainsString("in_array(\$profile, ['admin', 'manager'], true)", $service);
+        $this->assertStringContainsString('if ($override !== null)', $service);
     }
 
     public function test_stock_cards_reuse_existing_entry_modal_and_detail_page_has_requested_sections(): void

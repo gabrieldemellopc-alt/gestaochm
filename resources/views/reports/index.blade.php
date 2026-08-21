@@ -312,7 +312,7 @@
                 @endif
 
                 {{-- DOSSIÊ --}}
-                @if($canReport('reports.vehicle_dossier'))
+                @if($canReport('reports.vehicle_dossier') && $canReport('vehicles.view_dossier'))
                     <a
                         href="{{ route(
                             'reports.vehicle-dossier.index'

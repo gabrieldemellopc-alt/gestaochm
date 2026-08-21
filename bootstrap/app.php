@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         
             'profile' =>
                 \App\Http\Middleware\CheckProfileAccess::class,
+
+            'permission' =>
+                \App\Http\Middleware\CheckPermission::class,
         
         ]);
     })

@@ -16,6 +16,7 @@
 
 
 @section('content')
+@php($canCreateVehicle = app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'vehicles.create'))
 
 <div class="vehicles-page">
 
@@ -63,6 +64,7 @@
 
     
 
+            @if($canCreateVehicle)
             <a
 
                 href="{{ route('vehicles.create') }}"
@@ -78,6 +80,7 @@
                 Novo veículo
 
             </a>
+            @endif
 
     
 

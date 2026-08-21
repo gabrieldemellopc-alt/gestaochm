@@ -96,7 +96,7 @@
 
 
         {{-- DASHBOARD --}}
-
+        @if(app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'navigation.dashboard'))
         <a
             href="{{ route('dashboard') }}"
             title="Dashboard"
@@ -110,11 +110,20 @@
                 Dashboard
             </span>
         </a>
+        @endif
 
 
 
         {{-- VEÍCULOS --}}
-
+        @php
+            $sidebarPermissionService = app(\App\Services\Permissions\ProfilePermissionService::class);
+            $sidebarCurrentUser = auth()->user();
+            $sidebarCanPermission = fn (string $permissionKey) => $sidebarCurrentUser
+                && $sidebarPermissionService->allows($sidebarCurrentUser, $permissionKey);
+            $sidebarCanAccessVehicles = $sidebarCanPermission('navigation.vehicles')
+                && $sidebarCanPermission('vehicles.view');
+        @endphp
+        @if($sidebarCanAccessVehicles)
         <a
 
             href="{{ route('vehicles.index') }}"
@@ -148,6 +157,7 @@
 
 
         </a>
+        @endif
 
 
 
@@ -155,26 +165,6 @@
 
 
 
-        @php
-            $sidebarPermissionService = app(\App\Services\Permissions\ProfilePermissionService::class);
-            $sidebarCanPermission = function (string $permissionKey) use ($sidebarPermissionService) {
-                $sidebarCurrentUser = auth()->user();
-
-                if (! $sidebarCurrentUser) {
-                    return false;
-                }
-
-                if (userHasProfile('admin') || userHasProfile('manager')) {
-                    return true;
-                }
-
-                if (! userHasProfile('supervisor')) {
-                    return true;
-                }
-
-                return $sidebarPermissionService->allows($sidebarCurrentUser, $permissionKey);
-            };
-        @endphp
         @if((userHasProfile('supervisor') || userHasProfile('manager') || userHasProfile('admin')) && $sidebarCanPermission('navigation.fuel'))
 
         {{-- ABASTECIMENTOS --}}

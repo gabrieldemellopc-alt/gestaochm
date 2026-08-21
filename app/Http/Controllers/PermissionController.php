@@ -129,9 +129,6 @@ class PermissionController extends Controller
     {
         $user = auth()->user();
 
-        abort_unless(
-            $user && ((int) $user->id === 1 || userHasProfile('admin') || userHasProfile('manager')),
-            403
-        );
+        abort_unless(app(ProfilePermissionService::class)->allows($user, 'admin.permissions.configure'), 403);
     }
 }

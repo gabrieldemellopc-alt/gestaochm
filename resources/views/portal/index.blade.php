@@ -2,7 +2,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/pages/portal.css') }}?v=4">
-@if($canManageAccessControl ?? false)
+@if(($canManageAccessControl ?? false) && app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'admin.access.manage'))
     <link rel="stylesheet" href="{{ asset('css/access-control.css') }}?v=2">
 @endif
 @endpush
@@ -11,6 +11,8 @@
     $pageTitle = 'Portal Corporativo';
     $pageSubtitle = 'Ambiente administrativo e operacional CHM';
     $activePortalTab = $activePortalTab ?? 'divisions';
+    $canManageAccessVisual = ($canManageAccessControl ?? false)
+        && app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'admin.access.manage');
 @endphp
 
 @section('content')
@@ -37,7 +39,7 @@
             <span>Divis&otilde;es</span>
         </a>
 
-        @if($canManageAccessControl ?? false)
+        @if($canManageAccessVisual)
             <a
                 href="{{ route('portal', ['tab' => 'access-control']) }}"
                 class="portal-tab {{ $activePortalTab === 'access-control' ? 'active' : '' }}"
@@ -49,7 +51,7 @@
         @endif
     </nav>
 
-    @if($activePortalTab === 'access-control' && ($canManageAccessControl ?? false))
+    @if($activePortalTab === 'access-control' && $canManageAccessVisual)
         <section class="portal-access-panel" aria-labelledby="portalAccessTitle">
             <div class="portal-section-heading portal-access-heading">
                 <div>

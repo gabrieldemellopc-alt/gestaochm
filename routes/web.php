@@ -196,23 +196,23 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/permissions', [PermissionController::class, 'index'])
         ->name('permissions.index')
-        ->middleware('module:fleet');
+        ->middleware(['module:fleet', 'permission:admin.permissions.configure']);
 
     Route::patch('/permissions', [PermissionController::class, 'update'])
         ->name('permissions.update')
-        ->middleware('module:fleet');
+        ->middleware(['module:fleet', 'permission:admin.permissions.configure']);
 
     Route::post('/permissions/reset', [PermissionController::class, 'reset'])
         ->name('permissions.reset')
-        ->middleware('module:fleet');
+        ->middleware(['module:fleet', 'permission:admin.permissions.configure']);
 
     Route::post('/permissions/apply-to-division', [PermissionController::class, 'applyToDivision'])
         ->name('permissions.apply-to-division')
-        ->middleware('module:fleet');
+        ->middleware(['module:fleet', 'permission:admin.permissions.configure']);
 
     Route::post('/permissions/copy-from-location', [PermissionController::class, 'copyFromLocation'])
         ->name('permissions.copy-from-location')
-        ->middleware('module:fleet');
+        ->middleware(['module:fleet', 'permission:admin.permissions.configure']);
 
 
 
@@ -246,7 +246,7 @@ Route::middleware('auth')->group(function () {
 
         [DashboardController::class, 'index']
 
-    )->name('dashboard');
+    )->name('dashboard')->middleware('permission:navigation.dashboard');
 
 
 
@@ -300,6 +300,8 @@ Route::middleware('auth')->group(function () {
 
 
     Route::prefix('daily-checklists')
+
+        ->middleware('permission:navigation.checklists')
 
         ->name('daily-checklists.')
 
@@ -367,6 +369,8 @@ Route::middleware('auth')->group(function () {
 
 
 
+    Route::middleware('permission:vehicles.view')->group(function () {
+
     Route::get(
 
         '/vehicles',
@@ -383,7 +387,7 @@ Route::middleware('auth')->group(function () {
 
         [VehicleController::class, 'create']
 
-    )->name('vehicles.create');
+    )->name('vehicles.create')->middleware('permission:vehicles.create');
 
 
 
@@ -393,7 +397,7 @@ Route::middleware('auth')->group(function () {
 
         [VehicleController::class, 'store']
 
-    )->name('vehicles.store');
+    )->name('vehicles.store')->middleware('permission:vehicles.create');
 
 
 
@@ -403,7 +407,7 @@ Route::middleware('auth')->group(function () {
 
         [VehicleController::class, 'edit']
 
-    )->name('vehicles.edit');
+    )->name('vehicles.edit')->middleware('permission:vehicles.update');
 
 
 
@@ -413,7 +417,7 @@ Route::middleware('auth')->group(function () {
 
         [VehicleController::class, 'update']
 
-    )->name('vehicles.update');
+    )->name('vehicles.update')->middleware('permission:vehicles.update');
 
 
 
@@ -433,7 +437,7 @@ Route::middleware('auth')->group(function () {
 
         [VehicleController::class, 'updateKm']
 
-    )->name('vehicles.update-km');
+    )->name('vehicles.update-km')->middleware('permission:vehicles.update_km_hours');
 
 
 
@@ -443,7 +447,7 @@ Route::middleware('auth')->group(function () {
 
         [VehicleController::class, 'updateHours']
 
-    )->name('vehicles.update-hours');
+    )->name('vehicles.update-hours')->middleware('permission:vehicles.update_km_hours');
 
     Route::post('/vehicles/{vehicle}/reading-correction/preview', [VehicleReadingCorrectionController::class, 'preview'])
         ->name('vehicles.reading-correction.preview');
@@ -738,6 +742,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/operations/{operation}/close', [VehicleOperationController::class, 'finish'])
 
         ->name('operations.finish');
+
+    });
 
 
 
@@ -1083,6 +1089,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware([
 
             'module:fleet',
+            'permission:navigation.checklists',
 
         ])
 
@@ -1124,7 +1131,7 @@ Route::middleware('auth')->group(function () {
 
         [ChecklistController::class, 'toggleItem']
 
-    )->name('checklists.items.toggle.legacy');
+    )->name('checklists.items.toggle.legacy')->middleware('permission:navigation.checklists');
 
 
 
@@ -1143,6 +1150,8 @@ Route::middleware('auth')->group(function () {
 
 
     Route::prefix('checklist-executions')
+
+        ->middleware('permission:navigation.checklists')
 
         ->name('checklist-executions.')
 
@@ -1264,7 +1273,7 @@ Route::middleware('auth')->group(function () {
 
                 'vehicleDossier'
 
-            )->name('vehicle-dossier.index');
+            )->name('vehicle-dossier.index')->middleware('permission:vehicles.view_dossier');
 
 
 
@@ -1274,7 +1283,7 @@ Route::middleware('auth')->group(function () {
 
                 'pdf'
 
-            )->name('vehicle-dossier.pdf');
+            )->name('vehicle-dossier.pdf')->middleware('permission:vehicles.view_dossier');
 
 
 
@@ -1409,6 +1418,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware([
 
             'profile:admin,tenant-admin',
+            'permission:admin.access.manage',
 
         ])
 

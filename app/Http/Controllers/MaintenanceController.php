@@ -42,6 +42,7 @@ class MaintenanceController extends Controller
         if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) { return $redirect; }
         $this->assertMaintenanceRelation($vehicle, $maintenance);
         $this->authorizeMaintenancePermission('maintenance.use_materials');
+        $this->authorizeMaintenancePermission('stock.consume_maintenance');
         $data = $request->validate([
             'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -93,6 +94,7 @@ class MaintenanceController extends Controller
         $this->assertMaintenanceRelation($vehicle, $maintenance);
         abort_unless((int) $usage->maintenance_record_id === (int) $maintenance->id, 404);
         $this->authorizeMaintenancePermission('maintenance.cancel_materials');
+        $this->authorizeMaintenancePermission('stock.consume_maintenance');
         $data = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:2000']]);
         $service->cancel($maintenance, $usage, $data['reason'], auth()->user());
         if ($request->expectsJson()) {
@@ -108,6 +110,7 @@ class MaintenanceController extends Controller
         abort_unless((int) $usage->maintenance_record_id === (int) $maintenance->id, 404);
         $this->authorizeMaintenancePermission('maintenance.cancel_materials');
         $this->authorizeMaintenancePermission('maintenance.use_materials');
+        $this->authorizeMaintenancePermission('stock.consume_maintenance');
         $data = $request->validate([
             'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string', 'max:2000'],

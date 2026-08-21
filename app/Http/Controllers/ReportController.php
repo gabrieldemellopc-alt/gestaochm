@@ -154,7 +154,7 @@ class ReportController extends Controller
 
     public function exportMaintenance(Request $request)
     {
-        $this->authorizeReportPermission('reports.maintenance', 'reports.export_pdf');
+        $this->authorizeReportPermission('reports.maintenance', 'reports.view_operational', 'reports.export_pdf');
 
         $context = $this->reportContext->resolve();
 
@@ -187,7 +187,7 @@ class ReportController extends Controller
 
     public function exportMaintenanceExcel(Request $request)
     {
-        $this->authorizeReportPermission('reports.maintenance', 'reports.export_excel');
+        $this->authorizeReportPermission('reports.maintenance', 'reports.view_operational', 'reports.export_excel');
 
         $context = $this->reportContext->resolve();
 
@@ -423,12 +423,12 @@ class ReportController extends Controller
     }
 
 
-    private function authorizeReportPermission(string $permissionKey, ?string $exportPermissionKey = null): void
+    private function authorizeReportPermission(string $permissionKey, ?string ...$additionalPermissionKeys): void
     {
         abort_unless($this->canReportPermission($permissionKey), 403);
 
-        if ($exportPermissionKey) {
-            abort_unless($this->canReportPermission($exportPermissionKey), 403);
+        foreach ($additionalPermissionKeys as $additionalPermissionKey) {
+            abort_unless($this->canReportPermission($additionalPermissionKey), 403);
         }
     }
 
