@@ -534,6 +534,13 @@ class ReportController extends Controller
         // sao detalhamentos e nao entram em nova soma nos indicadores.
         $totalCost = $operationalMaintenances->sum('total_cost');
         $averageCost = $operationalMaintenances->count() > 0 ? $totalCost / $operationalMaintenances->count() : 0;
+        $costComposition = [
+            'service_count' => $operationalMaintenances->flatMap->items->count(),
+            'service_total' => $operationalMaintenances->flatMap->items->sum('total_cost'),
+            'extra_cost_count' => $operationalMaintenances->flatMap->extraCosts->count(),
+            'extra_cost_total' => $operationalMaintenances->flatMap->extraCosts->sum('amount'),
+            'grand_total' => $totalCost,
+        ];
 
         $procedureStats = $allItems
             ->groupBy(fn (array $item) => $item['procedure_name'] ?? 'Sem procedimento')
@@ -613,6 +620,7 @@ class ReportController extends Controller
             'displayMaintenanceCount' => $displayMaintenances->count(),
             'cancelledCount' => $cancelledMaintenances->count(),
             'totalCost' => $totalCost,
+            'costComposition' => $costComposition,
             'averageCost' => $averageCost,
             'procedureStats' => $procedureStats->toArray(),
             'vehicleCosts' => $vehicleCosts->toArray(),
@@ -968,18 +976,6 @@ class ReportController extends Controller
 
     private function maintenanceForPdf(MaintenanceRecord $maintenance): MaintenanceRecord
     {
-        if ($maintenance->items->isNotEmpty()) {
-            return $maintenance;
-        }
-
-        $maintenance->setRelation('items', collect([
-            (object) [
-                'procedure' => $maintenance->procedure,
-                'maintenance_type' => $maintenance->maintenance_type,
-                'total_cost' => $maintenance->total_cost,
-            ],
-        ]));
-
         return $maintenance;
     }
 

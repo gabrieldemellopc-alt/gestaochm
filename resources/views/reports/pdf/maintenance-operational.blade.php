@@ -23,6 +23,23 @@
 
     <div class="notice">Valores monetários restritos para este perfil.</div>
 
+    <div class="notice">
+        <strong>Ordens de manutenção</strong><br>
+        {{ $maintenanceCount }} registros<br>
+        {{ $costComposition['service_count'] }} serviços registrados
+    </div>
+
+    <h2>Composição dos custos</h2>
+    <table>
+        <tbody>
+            <tr><td>Serviços</td><td>{{ $costComposition['service_count'] }} registros</td><td>R$ {{ number_format($costComposition['service_total'], 2, ',', '.') }}</td></tr>
+            @if($costComposition['extra_cost_count'] > 0)
+                <tr><td>Custos avulsos</td><td>{{ $costComposition['extra_cost_count'] }} registros</td><td>R$ {{ number_format($costComposition['extra_cost_total'], 2, ',', '.') }}</td></tr>
+            @endif
+            <tr><td><strong>Total consolidado</strong></td><td></td><td><strong>R$ {{ number_format($costComposition['grand_total'], 2, ',', '.') }}</strong></td></tr>
+        </tbody>
+    </table>
+
     <table>
         <thead>
             <tr>
@@ -31,8 +48,9 @@
                 <th>Saída</th>
                 <th>Veículo</th>
                 <th>Placa</th>
-                <th>Serviços</th>
+                <th>Composição</th>
                 <th>Status</th>
+                <th>Valor</th>
             </tr>
         </thead>
         <tbody>
@@ -44,16 +62,29 @@
                     <td>{{ $maintenance->vehicle->name ?? '-' }}</td>
                     <td>{{ $maintenance->vehicle->plate ?? '-' }}</td>
                     <td>
-                        @forelse($maintenance->items as $item)
-                            <div>{{ $item->procedure->name ?? '-' }}</div>
-                        @empty
-                            -
-                        @endforelse
+                        @php
+                            $services = $maintenance->items;
+                            $extraCosts = $maintenance->extraCosts;
+                        @endphp
+
+                        @if($services->isNotEmpty())
+                            <div>
+                                {{ $services->count() === 1 ? 'Serviço' : 'Serviços' }}<br>
+                                {{ $services->count() }} · R$ {{ number_format($services->sum('total_cost'), 2, ',', '.') }}
+                            </div>
+                        @endif
+                        @if($extraCosts->isNotEmpty())
+                            <div>
+                                {{ $extraCosts->count() === 1 ? 'Custo avulso' : 'Custos avulsos' }}<br>
+                                {{ $extraCosts->count() }} · R$ {{ number_format($extraCosts->sum('amount'), 2, ',', '.') }}
+                            </div>
+                        @endif
                     </td>
                     <td>{{ $maintenance->workflow_status ?? '-' }}</td>
+                    <td>R$ {{ number_format($maintenance->total_cost, 2, ',', '.') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7">Nenhuma manutenção encontrada no período.</td></tr>
+                <tr><td colspan="8">Nenhuma manutenção encontrada no período.</td></tr>
             @endforelse
         </tbody>
     </table>

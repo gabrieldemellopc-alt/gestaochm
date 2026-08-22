@@ -34,7 +34,6 @@
         @endif
     </article>
 @endforeach
-
 @foreach($maintenance->procedureMaterialMovements as $movement)
     @php($procedureName = $movement->maintenanceRecordItem?->procedure?->name ?? 'Procedimento não informado')
     <article class="maintenance-materials-list-item maintenance-material-entry maintenance-material-entry--procedure">
