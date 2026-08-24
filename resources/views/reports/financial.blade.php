@@ -1,12 +1,15 @@
 @extends('layouts.app')
-
+@push('styles')<link rel="stylesheet" href="{{ asset('css/pages/reports-financial.css') }}?v=1">@endpush
 @section('content')
-<div class="reports-page">
-    <div class="reports-header"><div><span>RELATÓRIOS</span><h1>Financeiro</h1><p>Custos operacionais consolidados por unidade.</p></div></div>
-    @if(($error ?? null))<div class="alert alert-warning">{{ $error }}</div>@else
-    <form method="GET" class="report-filters"><label>Início<input type="date" name="start_date" value="{{ $filters['start_date']->format('Y-m-d') }}"></label><label>Fim<input type="date" name="end_date" value="{{ $filters['end_date']->format('Y-m-d') }}"></label><button type="submit">Aplicar filtros</button></form>
-    @if(! $filters['period_is_valid'])<div class="alert alert-warning">A data inicial não pode ser maior que a data final.</div>@endif
-    <div class="report-summary-grid"><article><span>Manutenções</span><strong>R$ {{ number_format($maintenance_total,2,',','.') }}</strong></article><article><span>Abastecimentos</span><strong>R$ {{ number_format($fuel_total,2,',','.') }}</strong></article><article><span>Despesas da oficina</span><strong>R$ {{ number_format($workshop_expenses_total,2,',','.') }}</strong></article><article><span>Consumíveis da oficina</span><strong>R$ {{ number_format($workshop_consumption_total,2,',','.') }}</strong></article><article><span>Total</span><strong>R$ {{ number_format($total,2,',','.') }}</strong></article></div>
-    @endif
-</div>
+<main class="chm-financial-report">
+<header class="chm-financial-report__header"><div><span>RELATÓRIOS</span><h1>Financeiro</h1><p>Custos operacionais consolidados por unidade.</p></div><a href="{{ route('reports.index') }}"><i data-lucide="arrow-left"></i> Voltar para relatórios</a></header>
+@if($error ?? null)<div class="chm-financial-report__notice">{{ $error }}</div>@else
+<form method="GET" class="chm-financial-report__filters"><div><strong>Período do relatório</strong><small>Unidade: {{ $context['location']->name ?? 'Não informada' }}</small></div><label>Data inicial<input type="date" name="start_date" value="{{ $filters['start_date']->format('Y-m-d') }}"></label><label>Data final<input type="date" name="end_date" value="{{ $filters['end_date']->format('Y-m-d') }}"></label><button><i data-lucide="filter"></i> Aplicar filtros</button></form>
+@if(! $filters['period_is_valid'])<div class="chm-financial-report__notice">A data inicial não pode ser maior que a data final.</div>@endif
+<section class="chm-financial-report__kpis">
+@foreach([['Manutenções','wrench',$maintenance_total],['Abastecimentos','fuel',$fuel_total],['Despesas da oficina','receipt',$workshop_expenses_total],['Consumíveis da oficina','package-minus',$workshop_consumption_total]] as [$label,$icon,$amount])<article><i data-lucide="{{ $icon }}"></i><span>{{ $label }}</span><strong>R$ {{ number_format($amount,2,',','.') }}</strong></article>@endforeach
+<article class="is-total"><i data-lucide="wallet-cards"></i><span>Custo operacional total</span><strong>R$ {{ number_format($total,2,',','.') }}</strong></article></section>
+<section class="chm-financial-report__notice"><i data-lucide="info"></i><p>O total considera manutenções, abastecimentos, despesas da oficina e consumíveis internos. Entradas de estoque não são contabilizadas novamente como custo operacional.</p></section>
+@if($total <= 0)<section class="chm-financial-report__empty"><i data-lucide="wallet"></i> Nenhum custo operacional registrado no período selecionado.</section>@endif
+@endif</main>
 @endsection
