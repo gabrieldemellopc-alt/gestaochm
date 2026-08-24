@@ -2,331 +2,665 @@
 
 
 
+
+
+
+
 @push('styles')
+
+
 
 <link
 
+
+
     rel="stylesheet"
 
+
+
     href="{{ asset('css/pages/vehicles.css') }}?v=3"
+
 >
 
+
+
 @endpush
+
+
+
+
 
 
 
 @section('content')
 @php($canCreateVehicle = app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'vehicles.create'))
 
+
 <div class="vehicles-page">
+
+
+
+
 
 
 
     {{-- HEADER --}}
 
+
+
     <div class="vehicles-header">
 
+
+
     
+
+
 
         <div>
 
+
+
     
+
+
 
             <span class="vehicles-kicker">
 
+
+
                 Operacional
+
+
 
             </span>
 
+
+
     
+
+
 
             <h1>
 
+
+
                 Veículos
+
+
 
             </h1>
 
+
+
     
+
+
 
             <p>
 
+
+
                 Gestão operacional da frota
+
+
 
             </p>
 
+
+
     
+
+
 
         </div>
 
+
+
     
+
+
 
         <div class="vehicles-header-actions">
 
+
+
     
+
+
 
             @if($canCreateVehicle)
             <a
 
+
                 href="{{ route('vehicles.create') }}"
+
+
 
                 class="chm-page-button primary"
 
+
+
             >
+
+
 
                 <i data-lucide="plus"></i>
 
+
+
     
 
+
+
                 Novo veículo
+
+
 
             </a>
             @endif
 
+
     
+
+
 
         </div>
 
+
+
     
+
+
 
     </div>    {{-- FILTROS --}}
 
+
+
     <div class="vehicles-filters">
+        <div class="vehicles-filter-group">
+            <label class="vehicles-filter-label">Frota</label>
+            <div class="vehicles-filter-actions">
+                @foreach(['internal' => 'Internos', 'aggregated' => 'Agregados', 'all' => 'Toda a frota'] as $value => $label)
+                    <a class="vehicles-filter" href="{{ route('vehicles.index', ['fleet_relation' => $value]) }}" @if($fleetRelation === $value) aria-current="page" @endif>{{ $label }}</a>
+                @endforeach
+            </div>
+        </div>
+
+
 
     
+
+
 
         {{-- BUSCA --}}
 
+
+
         <div class="filter-group">
+
+
 
     
 
+
+
             <label class="vehicles-filter-label">
+
+
 
                 Buscar
 
+
+
             </label>
 
+
+
     
+
+
 
             <div class="vehicles-search-wrap">
 
+
+
             
+
+
 
                 <i data-lucide="search"></i>
 
+
+
             
+
+
 
                 <input
 
+
+
                     type="text"
+
+
 
                     placeholder="Nome, placa, marca, modelo, ano..."
 
+
+
                     class="vehicles-search"
+
+
 
                     id="vehicleSearch"
 
+
+
                 >
+
+
 
             
 
+
+
             </div>
 
+
+
     
+
+
 
         </div>
 
+
+
     
+
+
 
         {{-- STATUS OPERACIONAL --}}
 
+
+
         <div class="filter-group">
+
+
 
     
 
+
+
             <label class="vehicles-filter-label">
+
+
 
                 Operação
 
+
+
             </label>
+
+
 
     
 
+
+
             <select
 
+
+
                 class="vehicles-filter"
+
+
 
                 id="operationalFilter"
 
+
+
             >
 
+
+
     
+
+
 
                 <option value="">
 
+
+
                     Todos
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="operational">
 
+
+
                     Operacional
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="maintenance">
 
+
+
                     Em manutenção
+
+
 
                 </option>
 
+
+
     
+
+
 
             </select>
 
+
+
     
+
+
 
         </div>
 
+
+
     
+
+
 
         {{-- SITUAÇÃO --}}
 
+
+
         <div class="filter-group">
+
+
 
     
 
+
+
             <label class="vehicles-filter-label">
+
+
 
                 Situação
 
+
+
             </label>
+
+
 
     
 
+
+
             <select
 
+
+
                 class="vehicles-filter"
+
+
 
                 id="statusFilter"
 
+
+
             >
 
+
+
     
+
+
 
                 <option value="">
 
+
+
                     Todos
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="active">
 
+
+
                     Ativo
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="inactive">
 
+
+
                     Inativo
+
+
 
                 </option>
 
+
+
     
+
+
 
             </select>
 
+
+
     
+
+
 
         </div>
 
+
+
     
+
+
 
         {{-- TIPO --}}
 
+
+
         <div class="filter-group">
 
+
+
     
+
+
 
             <label class="vehicles-filter-label">
 
+
+
                 Tipo
+
+
 
             </label>
 
+
+
     
+
+
 
             <select
 
+
+
                 class="vehicles-filter"
+
+
 
                 id="typeFilter"
 
+
+
             >
 
+
+
     
+
+
 
                 <option value="">
 
+
+
                     Todos
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="lixo">
 
+
+
                     Caminhão de lixo
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="cacamba">
 
+
+
                     Caçamba
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="bau">
 
+
+
                     Baú
+
+
 
                 </option>
 
+
+
     
+
+
 
                 <option value="trator">
 
+
+
                     Trator
+
+
 
                 </option>
 
+
+
     
+
+
 
             </select>
 
+
+
     
+
+
 
         </div>
 
+
+
     
+
+
 
     </div>
 
+
+
     {{-- TABELA --}}
 
+
+
     <div class="vehicles-table-wrapper">
+
+
+
+
 
 
 
@@ -334,7 +668,15 @@
 
 
 
+
+
+
+
             <thead>
+
+
+
+
 
 
 
@@ -342,67 +684,135 @@
 
 
 
+
+
+
+
                     <th>
+
+
 
                         Veículo
 
+
+
                     </th>
 
 
 
+
+
+
+
                     <th>
+
+
 
                         Placa
 
+
+
                     </th>
 
 
 
+
+
+
+
                     <th>
+
+
 
                         KM
 
+
+
                     </th>
+
+
+
+
 
 
 
                     <th class="mobile-hide">
 
+
+
                         Horas
 
+
+
                     </th>
+
+
+
+
 
 
 
                     <th>
 
+
+
                         Status
+
+
 
                     </th>
 
 
 
+
+
+
+
                     <th class="mobile-hide">
+
+
 
                         Última manutenção
 
+
+
                     </th>
 
 
 
+
+
+
+
                     <th class="mobile-hide">
+
+
 
                         Alertas
 
+
+
                     </th>
+
+
+
+
 
 
 
                     <th class="mobile-hide">
 
+
+
                         Ações
 
+
+
                     </th>
+
+
+
+
 
 
 
@@ -410,7 +820,15 @@
 
 
 
+
+
+
+
             </thead>
+
+
+
+
 
 
 
@@ -418,35 +836,71 @@
 
 
 
+
+
+
+
                 @foreach($vehicles as $vehicle)
+
+
+
+
 
 
 
                 <tr
 
+
+
                     class="vehicle-row"
+
+
 
                     data-name="{{ strtolower($vehicle->name) }}"
 
+
+
                     data-plate="{{ strtolower($vehicle->plate) }}"
+
+
 
                     data-brand="{{ strtolower($vehicle->brand) }}"
 
+
+
                     data-model="{{ strtolower($vehicle->model) }}"
+
+
 
                     data-year="{{ strtolower($vehicle->year) }}"
 
+
+
                     data-operational="{{ $vehicle->operational_status }}"
+
+
 
                     data-status="{{ $vehicle->status }}"
 
+
+
                     data-type="{{ $vehicle->type }}"
+
+
 
                 >
 
+
+
                         {{-- VEÍCULO --}}
 
+
+
                         <td>
+
+
+
+
 
 
 
@@ -454,33 +908,67 @@
 
 
 
+
+
+
+
                                 <div class="vehicle-icon">
+
+
+
+
 
 
 
                                     <img
 
+
+
                                         src="{{
+
+
 
                                             asset(
 
+
+
                                                 'images/' .
+
+
 
                                                 ($vehicle->type ?? 'lixo') .
 
+
+
                                                 '.png'
+
+
 
                                             )
 
+
+
                                         }}"
 
+
+
                                         alt="{{ $vehicle->type }}"
+
+
 
                                     >
 
 
 
+
+
+
+
                                 </div>
+
+
+
+
 
 
 
@@ -488,7 +976,15 @@
 
 
 
+
+
+
+
                                     <strong>
+
+
+
+
 
 
 
@@ -496,7 +992,15 @@
 
 
 
+
+
+
+
                                     </strong>
+
+
+
+
 
 
 
@@ -504,9 +1008,19 @@
 
 
 
+
+
+
+
                                         {{ $vehicle->brand }}
 
+
+
                                         {{ $vehicle->model }}
+
+
+
+
 
 
 
@@ -514,7 +1028,15 @@
 
 
 
+
+
+
+
                                 </div>
+
+
+
+
 
 
 
@@ -522,13 +1044,27 @@
 
 
 
+
+
+
+
                         </td>
+
+
+
+
 
 
 
                         {{-- PLACA --}}
 
+
+
                         <td>
+
+
+
+
 
 
 
@@ -536,7 +1072,15 @@
 
 
 
+
+
+
+
                                 {{ $vehicle->plate }}
+
+
+
+
 
 
 
@@ -544,27 +1088,55 @@
 
 
 
+
+
+
+
                         </td>
+
+
+
+
 
 
 
                         {{-- KM --}}
 
+
+
                         <td>
+
+
+
+
 
 
 
                             {{ number_format(
 
+
+
                                 $vehicle->current_km,
+
+
 
                                 0,
 
+
+
                                 ',',
+
+
 
                                 '.'
 
+
+
                             ) }}
+
+
+
+
 
 
 
@@ -572,9 +1144,19 @@
 
 
 
+
+
+
+
                         {{-- HORAS --}}
 
+
+
                         <td class="mobile-hide">
+
+
+
+
 
 
 
@@ -582,37 +1164,75 @@
 
 
 
+
+
+
+
                         </td>
+
+
+
+
 
 
 
                         {{-- STATUS --}}
 
+
+
                         <td class="vehicle-status-cell">
+
+
+
+
 
 
 
                             <span
 
+
+
                                 class="
+
+
 
                                     vehicle-status-badge
 
+
+
                                     {{ $vehicle->operational_status }}
 
+
+
                                 "
+
+
 
                             >
 
 
 
+
+
+
+
                                 @if(
+
+
 
                                     $vehicle->operational_status ==
 
+
+
                                     'operational'
 
+
+
                                 )
+
+
+
+
 
 
 
@@ -620,13 +1240,27 @@
 
 
 
+
+
+
+
                                 @elseif(
+
+
 
                                     $vehicle->operational_status ==
 
+
+
                                     'maintenance'
 
+
+
                                 )
+
+
+
+
 
 
 
@@ -634,7 +1268,15 @@
 
 
 
+
+
+
+
                                 @else
+
+
+
+
 
 
 
@@ -642,7 +1284,15 @@
 
 
 
+
+
+
+
                                 @endif
+
+
+
+
 
 
 
@@ -650,13 +1300,27 @@
 
 
 
+
+
+
+
                         </td>
+
+
+
+
 
 
 
                         {{-- ÚLTIMA --}}
 
+
+
                         <td class="mobile-hide">
+
+
+
+
 
 
 
@@ -664,7 +1328,15 @@
 
 
 
+
+
+
+
                                 <div class="last-maintenance-cell">
+
+
+
+
 
 
 
@@ -672,11 +1344,23 @@
 
 
 
+
+
+
+
                                         {{
+
                                             $vehicle->last_maintenance?->items?->first()?->procedure?->name
+
                                             ?? $vehicle->last_maintenance?->procedure?->name
+
                                             ?? 'Ordem de manutenção'
+
                                         }}
+
+
+
+
 
 
 
@@ -684,23 +1368,47 @@
 
 
 
+
+
+
+
                                     <small>
+
+
+
+
 
 
 
                                         {{
 
+
+
                                             optional(
+
+
 
                                                 $vehicle
 
+
+
                                                 ->last_maintenance
+
+
 
                                                 ->performed_at
 
+
+
                                             )->format('d/m/Y')
 
+
+
                                         }}
+
+
+
+
 
 
 
@@ -708,11 +1416,23 @@
 
 
 
+
+
+
+
                                 </div>
 
 
 
+
+
+
+
                             @else
+
+
+
+
 
 
 
@@ -720,7 +1440,15 @@
 
 
 
+
+
+
+
                             @endif
+
+
+
+
 
 
 
@@ -728,9 +1456,19 @@
 
 
 
+
+
+
+
                         {{-- ALERTAS --}}
 
+
+
                         <td class="mobile-hide">
+
+
+
+
 
 
 
@@ -738,33 +1476,67 @@
 
 
 
+
+
+
+
                                 <span
+
+
 
                                     class="
 
+
+
                                         table-alert
+
+
 
                                         {{
 
+
+
                                             $vehicle
+
+
 
                                             ->main_alert['status']
 
+
+
                                         }}
 
+
+
                                     "
+
+
 
                                 >
 
 
 
+
+
+
+
                                     {{
+
+
 
                                         $vehicle
 
+
+
                                         ->main_alert['message']
 
+
+
                                     }}
+
+
+
+
 
 
 
@@ -772,7 +1544,15 @@
 
 
 
+
+
+
+
                             @else
+
+
+
+
 
 
 
@@ -780,7 +1560,15 @@
 
 
 
+
+
+
+
                                     Sem alertas
+
+
+
+
 
 
 
@@ -788,61 +1576,123 @@
 
 
 
+
+
+
+
                             @endif
 
 
 
+
+
+
+
                         </td>
+
+
+
+
 
 
 
                         {{-- AÇÕES --}}
 
+
+
                         <td>
 
+
+
                         
+
+
 
                             <div class="table-actions">
 
+
+
                         
 
+
+
                                 <a
+
+
 
                                     href="{{ route('vehicles.details', $vehicle) }}"
 
+
+
                                     class="table-btn table-btn-primary"
 
+
+
                                 >
+
+
 
                                     <i data-lucide="external-link"></i>
 
+
+
                                     Painel
+
+
 
                                 </a>
 
+
+
                         
+
+
 
                                 <a
 
+
+
                                     href="{{ route('vehicles.edit', $vehicle) }}"
+
+
 
                                     class="table-btn"
 
+
+
                                 >
+
+
 
                                     <i data-lucide="pencil"></i>
 
+
+
                                     Editar
+
+
 
                                 </a>
 
+
+
                         
+
+
 
                             </div>
 
+
+
                         
 
+
+
                         </td>
+
+
+
+
 
 
 
@@ -850,7 +1700,15 @@
 
 
 
+
+
+
+
                 @endforeach
+
+
+
+
 
 
 
@@ -858,331 +1716,663 @@
 
 
 
+
+
+
+
         </table>
+
+
 
     </div>
 
 
 
+
+
+
+
         {{-- MOBILE CARDS --}}
+
+
 
         <div class="mobile-vehicles-list">
 
+
+
         
+
+
 
             @foreach($vehicles as $vehicle)
 
+
+
         
+
+
 
                 <div
 
+
+
                     class="mobile-vehicle-card vehicle-card-filter"
+
+
 
                     data-name="{{ strtolower($vehicle->name) }}"
 
+
+
                     data-plate="{{ strtolower($vehicle->plate) }}"
+
+
 
                     data-brand="{{ strtolower($vehicle->brand) }}"
 
+
+
                     data-model="{{ strtolower($vehicle->model) }}"
+
+
 
                     data-year="{{ strtolower($vehicle->year) }}"
 
+
+
                     data-operational="{{ $vehicle->operational_status }}"
+
+
 
                     data-status="{{ $vehicle->status }}"
 
+
+
                     data-type="{{ $vehicle->type }}"
+
+
 
                 >        
 
+
+
                     <div class="mobile-vehicle-top">
 
+
+
         
+
+
 
                         <div class="mobile-vehicle-icon">
 
+
+
                             <img
+
+
 
                                 src="{{
 
+
+
                                     asset(
+
+
 
                                         'images/' .
 
+
+
                                         ($vehicle->type ?? 'lixo') .
+
+
 
                                         '.png'
 
+
+
                                     )
+
+
 
                                 }}"
 
+
+
                                 alt="{{ $vehicle->type }}"
+
+
 
                             >
 
+
+
                         </div>
 
+
+
         
+
+
 
                         <div class="mobile-vehicle-info">
 
+
+
         
 
+
+
                             <strong>
+
+
 
                                 {{ $vehicle->name }}
 
+
+
                             </strong>
 
+
+
         
+
+
 
                             <span>
 
+
+
                                 {{ $vehicle->brand }}
+
+
 
                                 {{ $vehicle->model }}
 
+
+
                             </span>
 
+
+
         
+
+
 
                         </div>
 
+
+
         
+
+
 
                         <span class="
 
+
+
                             mobile-status
+
+
 
                             {{ $vehicle->operational_status }}
 
+
+
                         ">
 
+
+
         
+
+
 
                             @if(
 
+
+
                                 $vehicle->operational_status ==
+
+
 
                                 'operational'
 
+
+
                             )
 
+
+
         
+
+
 
                                 Operacional
 
+
+
         
+
+
 
                             @elseif(
 
+
+
                                 $vehicle->operational_status ==
+
+
 
                                 'maintenance'
 
+
+
                             )
 
+
+
         
+
+
 
                                 Oficina
 
+
+
         
+
+
 
                             @else
 
+
+
         
+
+
 
                                 Inativo
 
+
+
         
+
+
 
                             @endif
 
+
+
         
+
+
 
                         </span>
 
+
+
         
+
+
 
                     </div>
 
+
+
         
+
+
 
                     <div class="mobile-vehicle-data">
 
+
+
         
+
+
 
                         <div>
 
+
+
         
+
+
 
                             <small>Placa</small>
 
+
+
         
 
+
+
                             <strong>
+
+
 
                                 {{ $vehicle->plate }}
 
+
+
                             </strong>
 
+
+
         
+
+
 
                         </div>
 
+
+
         
+
+
 
                         <div>
 
+
+
         
+
+
 
                             <small>KM</small>
 
+
+
         
+
+
 
                             <strong>
 
+
+
         
+
+
 
                                 {{
 
+
+
                                     number_format(
+
+
 
                                         $vehicle->current_km,
 
+
+
                                         0,
+
+
 
                                         ',',
 
+
+
                                         '.'
+
+
 
                                     )
 
+
+
                                 }}
 
+
+
         
+
+
 
                             </strong>
 
+
+
         
+
+
 
                         </div>
 
+
+
         
+
+
 
                         <div>
 
+
+
         
+
+
 
                             <small>Horas</small>
 
+
+
         
+
+
 
                             <strong>
 
+
+
         
+
+
 
                                 {{ $vehicle->current_hours }}h
 
+
+
         
+
+
 
                             </strong>
 
+
+
         
+
+
 
                         </div>
 
+
+
         
+
+
 
                     </div>
 
+
+
         
+
+
 
                     @if($vehicle->main_alert)
 
+
+
         
+
+
 
                         <div class="
 
+
+
                             mobile-alert
 
+
+
                             {{
+
+
 
                                 $vehicle->main_alert['status']
 
+
+
                             }}
+
+
 
                         ">
 
+
+
         
+
+
 
                             {{
 
+
+
                                 $vehicle->main_alert['message']
+
+
 
                             }}
 
+
+
         
+
+
 
                         </div>
 
+
+
         
+
+
 
                     @endif
 
+
+
         
+
+
 
                     <div class="mobile-vehicle-actions">
 
+
+
                     
 
+
+
                         <a
+
+
 
                             href="{{ route('vehicles.details', $vehicle) }}"
 
+
+
                             class="mobile-vehicle-button primary"
 
+
+
                         >
+
+
 
                             <i data-lucide="external-link"></i>
 
+
+
                             Ir até o veículo
+
+
 
                         </a>
 
+
+
                     
+
+
 
                         <a
 
+
+
                             href="{{ route('vehicles.edit', $vehicle) }}"
+
+
 
                             class="mobile-vehicle-button"
 
+
+
                         >
+
+
 
                             <i data-lucide="pencil"></i>
 
+
+
                             Editar
+
+
 
                         </a>
 
+
+
                     
+
+
 
                     </div>
 
+
+
         
+
+
 
                 </div>
 
+
+
         
+
+
 
             @endforeach
 
+
+
         
 
+
+
         </div>
+
+
+
+
 
 
 
@@ -1190,7 +2380,15 @@
 
 
 
+
+
+
+
 <script>
+
+
+
+
 
 
 
@@ -1198,39 +2396,79 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
     const searchInput =
+
+
 
         document.getElementById('vehicleSearch');
 
 
 
+
+
+
+
     const operationalFilter =
+
+
 
         document.getElementById('operationalFilter');
 
 
 
+
+
+
+
     const statusFilter =
+
+
 
         document.getElementById('statusFilter');
 
 
 
+
+
+
+
     const typeFilter =
+
+
 
         document.getElementById('typeFilter');
 
 
 
+
+
+
+
     const rows =
+
+
 
         document.querySelectorAll('.vehicle-row');
 
 
 
+
+
+
+
     const cards =
 
+
+
         document.querySelectorAll('.vehicle-card-filter');
+
+
+
+
 
 
 
@@ -1238,27 +2476,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
         const search =
+
+
 
             searchInput.value.toLowerCase();
 
 
 
+
+
+
+
         const operational =
+
+
 
             operationalFilter.value;
 
 
 
+
+
+
+
         const status =
+
+
 
             statusFilter.value;
 
 
 
+
+
+
+
         const type =
 
+
+
             typeFilter.value;
+
+
+
+
 
 
 
@@ -1266,75 +2532,151 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
             const searchable =
+
+
 
                 `
 
+
+
                     ${row.dataset.name}
+
+
 
                     ${row.dataset.plate}
 
+
+
                     ${row.dataset.brand}
+
+
 
                     ${row.dataset.model}
 
+
+
                     ${row.dataset.year}
+
+
 
                 `;
 
 
 
+
+
+
+
             const matchSearch =
+
+
 
                 searchable.includes(search);
 
 
 
+
+
+
+
             const matchOperational =
 
+
+
                 !operational ||
+
+
 
                 row.dataset.operational === operational;
 
 
 
+
+
+
+
             const matchStatus =
 
+
+
                 !status ||
+
+
 
                 row.dataset.status === status;
 
 
 
+
+
+
+
             const matchType =
 
+
+
                 !type ||
+
+
 
                 row.dataset.type === type;
 
 
 
+
+
+
+
             const visible =
+
+
 
                 matchSearch &&
 
+
+
                 matchOperational &&
 
+
+
                 matchStatus &&
+
+
 
                 matchType;
 
 
 
+
+
+
+
             row.style.display =
+
+
 
                 visible
 
+
+
                     ? ''
+
+
 
                     : 'none';
 
+
+
         });
+
+
+
+
 
 
 
@@ -1342,117 +2684,235 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
             const searchable =
+
+
 
                 `
 
+
+
                     ${card.dataset.name}
+
+
 
                     ${card.dataset.plate}
 
+
+
                     ${card.dataset.brand}
+
+
 
                     ${card.dataset.model}
 
+
+
                     ${card.dataset.year}
+
+
 
                 `;
 
 
 
+
+
+
+
             const matchSearch =
+
+
 
                 searchable.includes(search);
 
 
 
+
+
+
+
             const matchOperational =
 
+
+
                 !operational ||
+
+
 
                 card.dataset.operational === operational;
 
 
 
+
+
+
+
             const matchStatus =
 
+
+
                 !status ||
+
+
 
                 card.dataset.status === status;
 
 
 
+
+
+
+
             const matchType =
 
+
+
                 !type ||
+
+
 
                 card.dataset.type === type;
 
 
 
+
+
+
+
             const visible =
+
+
 
                 matchSearch &&
 
+
+
                 matchOperational &&
 
+
+
                 matchStatus &&
+
+
 
                 matchType;
 
 
 
+
+
+
+
             card.style.display =
+
+
 
                 visible
 
+
+
                     ? ''
+
+
 
                     : 'none';
 
+
+
         });
+
+
 
     }
 
 
 
+
+
+
+
     searchInput.addEventListener(
+
+
 
         'input',
 
+
+
         applyFilters
 
+
+
     );
+
+
+
+
 
 
 
     operationalFilter.addEventListener(
 
+
+
         'change',
+
+
 
         applyFilters
 
+
+
     );
+
+
+
+
 
 
 
     statusFilter.addEventListener(
 
+
+
         'change',
+
+
 
         applyFilters
 
+
+
     );
+
+
+
+
 
 
 
     typeFilter.addEventListener(
 
+
+
         'change',
+
+
 
         applyFilters
 
+
+
     );
+
+
+
+
 
 
 
@@ -1460,6 +2920,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
 </script>
+
+
 
 @endsection
