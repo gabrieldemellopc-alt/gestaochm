@@ -326,6 +326,8 @@
 
 
 
+                    @if($canManageStockItems || $canManageStockCategories)
+                        <div class="stock-category-actions">
                     @if($canManageStockItems)
 <button
 
@@ -357,7 +359,6 @@
 @endif
 
                     @if($canManageStockCategories)
-                        <div class="stock-category-actions">
                             <button type="button" class="stock-category-action" onclick='openCategoryEditModal({{ $category->id }}, @json($category->name))'>
                                 <i data-lucide="pencil"></i>
                                 Editar
@@ -372,6 +373,7 @@
                                 <i data-lucide="trash-2"></i>
                                 Excluir
                             </button>
+                    @endif
                         </div>
                     @endif
 
