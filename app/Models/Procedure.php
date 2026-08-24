@@ -42,6 +42,12 @@ class Procedure extends Model
         return $this->hasMany(MaintenanceRecord::class);
     }
 
+    public function stockItems()
+    {
+        return $this->belongsToMany(StockItem::class, 'procedure_stock_items')
+            ->withTimestamps();
+    }
+
     public function location()
     {
         return $this->belongsTo(Location::class);

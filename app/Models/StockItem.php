@@ -39,4 +39,10 @@ class StockItem extends Model
     {
         return $this->hasMany(StockMovement::class);
     }
+
+    public function procedures()
+    {
+        return $this->belongsToMany(Procedure::class, 'procedure_stock_items')
+            ->withTimestamps();
+    }
 }
