@@ -55,7 +55,7 @@ class VehicleController extends Controller
 
 
         $fleetRelation = $request->query('fleet_relation', Vehicle::FLEET_RELATION_INTERNAL);
-        abort_unless(in_array($fleetRelation, [Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, 'all'], true), 404);
+        abort_unless(in_array($fleetRelation, [Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, Vehicle::FLEET_RELATION_RENTED, 'all'], true), 404);
         $vehicles = Vehicle::with([
 
 
@@ -258,7 +258,9 @@ class VehicleController extends Controller
 
 
 
-        if (strlen($rawPlate) >= 4) {
+        if ($rawPlate === '') {
+            $request->merge(['plate' => null]);
+        } elseif (strlen($rawPlate) >= 4) {
 
 
 
@@ -987,7 +989,9 @@ class VehicleController extends Controller
 
 
 
-        if (strlen($rawPlate) >= 4) {
+        if ($rawPlate === '') {
+            $request->merge(['plate' => null]);
+        } elseif (strlen($rawPlate) >= 4) {
 
 
 

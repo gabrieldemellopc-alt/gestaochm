@@ -603,13 +603,18 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (event) => {
         plateInput.value =
             maskPlate(plateInput.value);
-        if (!isValidPlate(plateInput.value)) {
+        if (plateInput.value && !isValidPlate(plateInput.value)) {
             event.preventDefault();
             showPlateError();
             plateInput.focus();
             return false;
         }
         hidePlateError();
+
+        if (!plateInput.value && !window.confirm('Este veículo será salvo sem placa. Confirma que ele realmente não possui placa?')) {
+            event.preventDefault();
+            return false;
+        }
     });
 });
 </script>

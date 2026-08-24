@@ -1537,6 +1537,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         hidePlateError();
 
+        if (!plateInput.value && !window.confirm('Este veículo será salvo sem placa. Confirma que ele realmente não possui placa?')) {
+            event.preventDefault();
+            return false;
+        }
+
 
 
     });
