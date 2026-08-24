@@ -216,11 +216,29 @@
 
 
 
-@if(
-    $sidebarCanPermission('navigation.workshop')
-    || $sidebarCanPermission('navigation.tires')
-    || $sidebarCanPermission('navigation.stock')
-)
+@php
+    $sidebarWorkshopItems = collect([
+        ['permission' => 'navigation.workshop', 'route' => 'workshop.index', 'active' => 'workshop.index', 'label' => 'Oficina', 'dropdown_label' => 'Visão geral', 'icon' => 'layout-dashboard'],
+        ['permission' => 'navigation.tires', 'route' => 'workshop.tires.index', 'active' => 'workshop.tires.*', 'label' => 'Controle de pneus', 'dropdown_label' => 'Controle de pneus', 'icon' => 'circle-dot'],
+        ['permission' => 'navigation.stock', 'route' => 'stock.index', 'active' => 'stock.*', 'label' => 'Estoque', 'dropdown_label' => 'Estoque', 'icon' => 'boxes'],
+        ['permission' => 'navigation.workshop', 'route' => 'procedures.index', 'active' => 'procedures.*', 'label' => 'Procedimentos', 'dropdown_label' => 'Procedimentos', 'icon' => 'clipboard-list'],
+    ])->filter(fn (array $item) => $sidebarCanPermission($item['permission']))->values();
+    $sidebarWorkshopIsFlat = $sidebarWorkshopItems->count() <= 5;
+@endphp
+
+@if($sidebarWorkshopItems->isNotEmpty())
+@if($sidebarWorkshopIsFlat)
+    @foreach($sidebarWorkshopItems as $workshopItem)
+        <a
+            href="{{ route($workshopItem['route']) }}"
+            title="{{ $workshopItem['label'] }}"
+            class="sidebar-link {{ request()->routeIs($workshopItem['active']) ? 'active' : '' }}"
+        >
+            <span class="sidebar-icon"><i data-lucide="{{ $workshopItem['icon'] }}"></i></span>
+            <span class="sidebar-link-text">{{ $workshopItem['label'] }}</span>
+        </a>
+    @endforeach
+@else
     <div class="sidebar-group sidebar-workshop-group">
 
         <button
@@ -255,64 +273,19 @@
                 Oficina
             </div>
 
-            @if($sidebarCanPermission('navigation.workshop'))
+            @foreach($sidebarWorkshopItems as $workshopItem)
                 <a
-                    href="{{ route('workshop.index') }}"
-                    class="sidebar-workshop-menu-link {{
-                        request()->routeIs('workshop.index')
-                            ? 'active'
-                            : ''
-                    }}"
+                    href="{{ route($workshopItem['route']) }}"
+                    class="sidebar-workshop-menu-link {{ request()->routeIs($workshopItem['active']) ? 'active' : '' }}"
                 >
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Visão geral</span>
+                    <i data-lucide="{{ $workshopItem['icon'] }}"></i>
+                    <span>{{ $workshopItem['dropdown_label'] }}</span>
                 </a>
-            @endif
-
-            @if($sidebarCanPermission('navigation.tires'))
-                <a
-                    href="{{ route('workshop.tires.index') }}"
-                    class="sidebar-workshop-menu-link {{
-                        request()->routeIs('workshop.tires.*')
-                            ? 'active'
-                            : ''
-                    }}"
-                >
-                    <i data-lucide="circle-dot"></i>
-                    <span>Controle de pneus</span>
-                </a>
-            @endif
-
-            @if($sidebarCanPermission('navigation.stock'))
-                <a
-                    href="{{ route('stock.index') }}"
-                    class="sidebar-workshop-menu-link {{
-                        request()->routeIs('stock.*')
-                            ? 'active'
-                            : ''
-                    }}"
-                >
-                    <i data-lucide="boxes"></i>
-                    <span>Estoque</span>
-                </a>
-            @endif
-
-            @if($sidebarCanPermission('navigation.workshop'))
-                <a
-                    href="{{ route('procedures.index') }}"
-                    class="sidebar-workshop-menu-link {{
-                        request()->routeIs('procedures.*')
-                            ? 'active'
-                            : ''
-                    }}"
-                >
-                    <i data-lucide="clipboard-list"></i>
-                    <span>Procedimentos</span>
-                </a>
-            @endif
+            @endforeach
         </div>
 
     </div>
+@endif
 @endif
 
 

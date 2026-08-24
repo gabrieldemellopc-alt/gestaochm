@@ -125,6 +125,7 @@ return [
                 'reports.vehicle_dossier' => ['label' => 'Ver dossiê do veículo', 'default' => ['supervisor' => false]],
                 'reports.maintenance' => ['label' => 'Ver relatório de manutenções', 'default' => ['supervisor' => false]],
                 'reports.fuel' => ['label' => 'Ver relatório de abastecimentos', 'default' => ['supervisor' => false]],
+                'reports.financial' => ['label' => 'Ver relatório financeiro', 'default' => ['supervisor' => false]],
                 'reports.stock' => ['label' => 'Ver relatório de estoque', 'default' => ['supervisor' => false]],
                 'reports.tires' => ['label' => 'Ver relatório de pneus', 'default' => ['supervisor' => false]],
                 'reports.export_pdf' => ['label' => 'Exportar PDF', 'default' => ['supervisor' => false]],

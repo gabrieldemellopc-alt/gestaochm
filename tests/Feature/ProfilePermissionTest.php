@@ -128,6 +128,53 @@ class ProfilePermissionTest extends TestCase
             ->assertDontSee('Abrir permissões');
     }
 
+    public function test_workshop_navigation_is_flat_when_the_visible_set_has_at_most_five_items(): void
+    {
+        [$user, , $division, $location] = $this->supervisorContext();
+
+        $this->actingAs($user)->withSession([
+            'active_division_id' => $division->id,
+            'active_location_id' => $location->id,
+        ])->view('layouts.sidebar')
+            ->assertSee('>Oficina<', false)
+            ->assertSee('>Controle de pneus<', false)
+            ->assertSee('>Estoque<', false)
+            ->assertSee('>Procedimentos<', false)
+            ->assertDontSee('id="sidebarWorkshopButton"', false)
+            ->assertDontSee('>Visão geral<', false);
+    }
+
+    public function test_workshop_flat_navigation_keeps_each_permission_filter(): void
+    {
+        [$user, , $division, $location] = $this->supervisorContext();
+        ProfilePermissionOverride::create([
+            'tenant_id' => $user->tenant_id,
+            'division_id' => $division->id,
+            'location_id' => $location->id,
+            'module' => 'fleet',
+            'profile' => 'supervisor',
+            'permission_key' => 'navigation.stock',
+            'allowed' => false,
+        ]);
+
+        $this->actingAs($user)->withSession([
+            'active_division_id' => $division->id,
+            'active_location_id' => $location->id,
+        ])->view('layouts.sidebar')
+            ->assertDontSee('>Estoque<', false)
+            ->assertSee('>Oficina<', false)
+            ->assertDontSee('id="sidebarWorkshopButton"', false);
+    }
+
+    public function test_workshop_sidebar_keeps_the_dropdown_fallback_rule_for_a_larger_collection(): void
+    {
+        $sidebar = file_get_contents(resource_path('views/layouts/sidebar.blade.php'));
+
+        $this->assertStringContainsString('$sidebarWorkshopItems->count() <= 5', $sidebar);
+        $this->assertStringContainsString('@else', $sidebar);
+        $this->assertStringContainsString('id="sidebarWorkshopButton"', $sidebar);
+    }
+
     private function supervisorContext(): array
     {
         $tenant = Tenant::create(['name' => 'Tenant de teste']);
