@@ -137,7 +137,7 @@ class ProfilePermissionTest extends TestCase
             'active_location_id' => $location->id,
         ])->view('layouts.sidebar')
             ->assertSee('>Oficina<', false)
-            ->assertSee('>Controle de pneus<', false)
+            ->assertSee('>Pneus<', false)
             ->assertSee('>Estoque<', false)
             ->assertSee('>Procedimentos<', false)
             ->assertDontSee('id="sidebarWorkshopButton"', false)

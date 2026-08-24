@@ -44,6 +44,7 @@ class MaintenanceMaterialService
             $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>now()]);
             $entry->update(['maintenance_record_id'=>$maintenance->id]);
             $usage = $this->createUsage($maintenance, ['stock_item_id'=>$item->id,'quantity'=>$data['quantity'],'notes'=>$data['notes']??null], $user);
+            $usage->update(['purchase_entry_movement_id' => $entry->id]);
             MaintenanceService::recalculateTotalCost($maintenance);
             $this->audit($usage, 'created', 'maintenance_material_direct_purchase', null, ['stock_entry_movement_id'=>$entry->id]);
             return $usage;

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\MaintenanceRecord;
+use App\Models\MaintenanceMaterialUsage;
 use App\Models\MaintenanceRecordValue;
 use App\Models\Procedure;
 use App\Models\StockItem;
@@ -101,6 +102,31 @@ class MaintenanceService
                 $movement->update([
                     'reversal_movement_id' => $reverseMovement->id,
                 ]);
+
+                $usage = MaintenanceMaterialUsage::query()
+                    ->where('maintenance_record_id', $maintenance->id)
+                    ->where('stock_movement_id', $movement->id)
+                    ->whereNull('cancelled_at')
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($usage) {
+                    $usage->update([
+                        'cancelled_at' => now(),
+                        'cancelled_by' => $user->id,
+                        'cancel_reason' => $reason,
+                        'reversal_movement_id' => $reverseMovement->id,
+                    ]);
+
+                    if ($usage->purchase_entry_movement_id) {
+                        $reverseMovements->push(self::reverseDirectPurchaseEntry(
+                            $maintenance,
+                            $usage,
+                            $reason,
+                            $user
+                        ));
+                    }
+                }
     
                 $stockItem->quantity = (float) $stockItem->quantity + (float) $movement->quantity;
                 $stockItem->save();
@@ -124,6 +150,8 @@ class MaintenanceService
                     'reason' => $reason,
                 ]);
             }
+
+            self::recalculateTotalCost($maintenance);
     
             $maintenance->update([
                 'workflow_status' => 'cancelled',
@@ -969,6 +997,56 @@ class MaintenanceService
             })
             ->orderBy('id')
             ->get();
+    }
+
+    private static function reverseDirectPurchaseEntry(
+        MaintenanceRecord $maintenance,
+        MaintenanceMaterialUsage $usage,
+        string $reason,
+        User $user
+    ): StockMovement {
+        $entry = StockMovement::query()
+            ->whereKey($usage->purchase_entry_movement_id)
+            ->where('tenant_id', $maintenance->tenant_id)
+            ->where('maintenance_record_id', $maintenance->id)
+            ->where('stock_item_id', $usage->stock_item_id)
+            ->where('movement_type', 'in')
+            ->whereNull('reversal_movement_id')
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $item = StockItem::query()
+            ->where('tenant_id', $entry->tenant_id)
+            ->where('location_id', $entry->location_id)
+            ->whereKey($entry->stock_item_id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $reverse = StockMovement::create([
+            'tenant_id' => $entry->tenant_id,
+            'location_id' => $entry->location_id,
+            'stock_item_id' => $entry->stock_item_id,
+            'maintenance_record_id' => $maintenance->id,
+            'maintenance_record_item_id' => null,
+            'movement_type' => 'out',
+            'quantity' => $entry->quantity,
+            'unit_cost' => $entry->unit_cost,
+            'total_cost' => $entry->total_cost,
+            'description' => 'Estorno da compra direta da manutenção #'.$maintenance->id.': '.$reason,
+            'reversed_from_movement_id' => $entry->id,
+            'moved_at' => now(),
+        ]);
+
+        $entry->update([
+            'cancelled_at' => now(),
+            'cancelled_by' => $user->id,
+            'cancel_reason' => $reason,
+            'reversal_movement_id' => $reverse->id,
+        ]);
+
+        $item->decrement('quantity', (float) $entry->quantity);
+
+        return $reverse;
     }
 
     public static function serviceStatuses(): array

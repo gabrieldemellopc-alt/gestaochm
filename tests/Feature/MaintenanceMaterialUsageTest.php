@@ -131,9 +131,11 @@ class MaintenanceMaterialUsageTest extends TestCase
                 Schema::create($table, fn ($blueprint) => $blueprint->id());
             }
             (require database_path('migrations/2026_08_12_000001_create_maintenance_material_usages_table.php'))->up();
+            (require database_path('migrations/2026_08_24_000001_add_purchase_entry_movement_to_maintenance_material_usages_table.php'))->up();
             $this->assertTrue(Schema::hasColumns('maintenance_material_usages', [
                 'stock_movement_id', 'quantity', 'unit_cost', 'total_cost', 'cancelled_at',
                 'cancel_reason', 'reversal_movement_id', 'replaced_by_usage_id', 'replaces_usage_id',
+                'purchase_entry_movement_id',
             ]));
         } finally {
             DB::purge('material_schema_test');
@@ -160,6 +162,18 @@ class MaintenanceMaterialUsageTest extends TestCase
         $this->assertLessThan($replacement, $reverse);
         $this->assertStringContainsString("'movement_type' => 'in'", $service);
         $this->assertStringContainsString("'reversal_movement_id' => \$reverse->id", $service);
+    }
+
+    public function test_direct_purchase_persists_an_explicit_entry_link_and_maintenance_cancellation_reverses_it(): void
+    {
+        $materialService = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
+        $maintenanceService = file_get_contents(app_path('Services/MaintenanceService.php'));
+
+        $this->assertStringContainsString("purchase_entry_movement_id' => \$entry->id", $materialService);
+        $this->assertStringContainsString('where(\'stock_movement_id\', $movement->id)', $maintenanceService);
+        $this->assertStringContainsString('reverseDirectPurchaseEntry', $maintenanceService);
+        $this->assertStringContainsString("'movement_type' => 'out'", $maintenanceService);
+        $this->assertStringContainsString("'cancelled_at' => now()", $maintenanceService);
     }
 
     public function test_total_only_adds_active_direct_materials_once(): void
