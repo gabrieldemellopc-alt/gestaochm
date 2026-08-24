@@ -18,6 +18,7 @@ use App\Services\MaintenanceService;
 use App\Services\MaintenanceMaterialService;
 use App\Services\StockEntryService;
 use App\Services\TenantFiscalSettingService;
+use App\Services\AggregatedVehiclePolicy;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class MaintenanceController extends Controller
@@ -170,6 +171,7 @@ class MaintenanceController extends Controller
         }
 
         $this->authorizeMaintenancePermission('maintenance.open');
+        app(AggregatedVehiclePolicy::class)->ensureMaintenanceAllowed($vehicle, $vehicle->location);
 
         $data = $request->validate([
             'started_at' => ['required', 'date'],

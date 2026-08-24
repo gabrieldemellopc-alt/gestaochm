@@ -36,7 +36,7 @@ class VehicleController extends Controller
 
 {
 
-    public function index()
+    public function index(Request $request)
 
     {
 
@@ -54,6 +54,8 @@ class VehicleController extends Controller
         }
 
 
+        $fleetRelation = $request->query('fleet_relation', Vehicle::FLEET_RELATION_INTERNAL);
+        abort_unless(in_array($fleetRelation, [Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, 'all'], true), 404);
         $vehicles = Vehicle::with([
 
 
@@ -73,6 +75,7 @@ class VehicleController extends Controller
             ->where('tenant_id', auth()->user()->tenant_id)
             ->where('division_id', $activeDivisionId)
             ->where('location_id', $activeLocation->id)
+            ->when($fleetRelation !== 'all', fn ($query) => $query->where('fleet_relation', $fleetRelation))
             /*
 
 
@@ -160,7 +163,7 @@ class VehicleController extends Controller
 
 
 
-            compact('vehicles')
+            compact('vehicles', 'fleetRelation')
 
 
 
@@ -323,6 +326,8 @@ class VehicleController extends Controller
 
 
 
+            'fleet_relation' => ['nullable', Rule::in([Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, Vehicle::FLEET_RELATION_RENTED])],
+
             'division_id' => [
 
                 'required',
@@ -347,6 +352,7 @@ class VehicleController extends Controller
                 'string',
 
             ],
+            'fleet_relation' => ['nullable', Rule::in([Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, Vehicle::FLEET_RELATION_RENTED])],
 
             'tire_layout' => [
 
@@ -641,6 +647,8 @@ class VehicleController extends Controller
             'year' =>
 
                 $validated['year'] ?? null,
+
+            'fleet_relation' => $validated['fleet_relation'] ?? Vehicle::FLEET_RELATION_INTERNAL,
 
             'tire_layout' =>
 
@@ -1177,6 +1185,8 @@ class VehicleController extends Controller
 
             ],
 
+            'fleet_relation' => ['nullable', Rule::in([Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, Vehicle::FLEET_RELATION_RENTED])],
+
 
 
             'division_id' => [
@@ -1444,6 +1454,8 @@ class VehicleController extends Controller
             'type' =>
 
                 $validated['type'],
+
+            'fleet_relation' => $validated['fleet_relation'] ?? $vehicle->fleet_relation ?? Vehicle::FLEET_RELATION_INTERNAL,
 
             'tire_layout' =>
 

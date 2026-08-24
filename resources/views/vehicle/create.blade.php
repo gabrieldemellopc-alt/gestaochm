@@ -301,6 +301,13 @@
 
                 </select>
 
+                <label>Vínculo com a frota</label>
+                <select name="fleet_relation" class="form-input">
+                    <option value="internal" @selected(old('fleet_relation', 'internal') === 'internal')>Frota interna</option>
+                    <option value="aggregated" @selected(old('fleet_relation') === 'aggregated')>Agregado</option>
+                    <option value="rented" @selected(old('fleet_relation') === 'rented')>Alugado</option>
+                </select>
+
             </div>
 
 

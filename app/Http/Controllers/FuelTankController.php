@@ -10,6 +10,7 @@ use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use App\Services\FuelService;
+
 use App\Services\TenantFiscalSettingService;
 use App\Services\Permissions\ProfilePermissionService;
 use Illuminate\Http\Request;
@@ -125,7 +126,9 @@ class FuelTankController extends Controller
             'selectedFuelVehicleId' => request('fuel_vehicle_id') ?: old('vehicle_id'),
             'fuelPermissions' => $fuelPermissions,
             'canViewFuelReport' => $canViewFuelReport,
+
             'externalFuelDocumentRequired' => app(TenantFiscalSettingService::class)->requires('external_fuel_filling'),
+
             'fuelReceiptInvoiceRequired' => app(TenantFiscalSettingService::class)->requires('fuel_receipt'),
         ]);
     }
@@ -297,6 +300,8 @@ class FuelTankController extends Controller
                 : 'fuel.fill_internal',
             $context
         );
+        $vehicle = \App\Models\Vehicle::query()->where('id', $request->input('vehicle_id'))->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->first();
+        if ($vehicle) app(\App\Services\AggregatedVehiclePolicy::class)->ensureFuelAllowed($vehicle, $context['location']);
 
         if ($source === FuelFilling::SOURCE_EXTERNAL_STATION && app(TenantFiscalSettingService::class)->requires('external_fuel_filling')) {
             $request->validate(['document_number' => ['required', 'string', 'max:255']], ['document_number.required' => 'Documento fiscal obrigatório para abastecimento externo.']);

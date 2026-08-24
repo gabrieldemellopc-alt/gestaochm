@@ -40,6 +40,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 
 use App\Http\Controllers\StockController;
+
 use App\Http\Controllers\SettingsController;
 
 use App\Http\Controllers\VehicleController;
@@ -181,6 +182,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/fiscal-documents/{fiscalDocument}/file', [FiscalDocumentController::class, 'file'])->name('fiscal-documents.file')->middleware('module:fleet');
 
+
+
     Route::post('/fiscal-documents/import/parse', [FiscalDocumentImportController::class, 'parse'])
         ->name('fiscal-documents.import.parse')->middleware(['module:fleet', 'throttle:10,1']);
     Route::post('/fiscal-documents/import/confirm', [FiscalDocumentImportController::class, 'confirm'])
@@ -188,12 +191,22 @@ Route::middleware('auth')->group(function () {
 
 
     Route::get('/settings', [SettingsController::class, 'index'])
+
         ->name('settings.index')
+
         ->middleware('module:fleet');
 
+
+
     Route::patch('/settings/fiscal-documents', [SettingsController::class, 'updateFiscalDocuments'])
+
         ->name('settings.fiscal-documents.update')
+
         ->middleware('module:fleet');
+    Route::patch('/settings/aggregated-vehicles', [SettingsController::class, 'updateAggregatedVehicles'])
+        ->name('settings.aggregated-vehicles.update')->middleware('module:fleet');
+
+
 
     Route::get('/permissions', [PermissionController::class, 'index'])
         ->name('permissions.index')
@@ -788,11 +801,15 @@ Route::middleware('auth')->group(function () {
 
         )->name('index');
 
+
+
         Route::get('/maintenance-dashboard', [WorkshopController::class, 'maintenanceDashboard'])->name('maintenance-dashboard');
 
 
 
         Route::get('/tires/dashboard', [WorkshopTireController::class, 'dashboard'])->name('tires.dashboard');
+
+
 
         Route::get(
 
@@ -1028,6 +1045,8 @@ Route::middleware('auth')->group(function () {
                 'index'
 
             )->name('tanks.index');
+
+
 
             Route::get('/consumption-dashboard', 'consumptionDashboard')->name('consumption-dashboard');
 

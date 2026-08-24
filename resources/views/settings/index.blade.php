@@ -14,7 +14,7 @@
         </header>
 
         <nav class="settings-tabs" aria-label="Abas de configurações">
-            @foreach(['general' => 'Geral', 'fiscal-documents' => 'Documentos fiscais', 'permissions' => 'Permissões', 'system' => 'Sistema'] as $key => $label)
+            @foreach(['general' => 'Geral', 'aggregated-vehicles' => 'Veículos agregados', 'fiscal-documents' => 'Documentos fiscais', 'permissions' => 'Permissões', 'system' => 'Sistema'] as $key => $label)
                 @continue($key === 'permissions' && ! $canConfigurePermissions)
                 <a href="{{ route('settings.index', ['tab' => $key]) }}" class="{{ $tab === $key ? 'is-active' : '' }}">{{ $label }}</a>
             @endforeach
@@ -22,6 +22,8 @@
 
         @if($tab === 'general')
             <section class="settings-card"><i data-lucide="settings"></i><div><h2>Configurações gerais</h2><p>Preferências administrativas do sistema serão reunidas aqui.</p></div></section>
+        @elseif($tab === 'aggregated-vehicles')
+            <section class="settings-card settings-fiscal-card"><i data-lucide="truck"></i><div class="settings-fiscal-content"><h2>Veículos agregados</h2><p>Estas permissões controlam ações operacionais dos veículos agregados da unidade ativa.</p><form method="POST" action="{{ route('settings.aggregated-vehicles.update') }}" class="settings-fiscal-form">@csrf @method('PATCH')<label class="settings-fiscal-routine"><span class="settings-fiscal-routine-copy"><strong>Permitir abastecimentos</strong><small>Permite lançar abastecimentos para agregados.</small></span><input type="hidden" name="allow_aggregated_fuel" value="0"><input type="checkbox" name="allow_aggregated_fuel" value="1" @checked($location?->allow_aggregated_fuel)></label><label class="settings-fiscal-routine"><span class="settings-fiscal-routine-copy"><strong>Permitir abertura de OM/manutenção</strong><small>Permite abrir manutenção para agregados.</small></span><input type="hidden" name="allow_aggregated_maintenance" value="0"><input type="checkbox" name="allow_aggregated_maintenance" value="1" @checked($location?->allow_aggregated_maintenance)></label><button class="settings-action" type="submit">Salvar configurações</button></form></div></section>
         @elseif($tab === 'fiscal-documents')
             <section class="settings-card settings-fiscal-card">
     <i data-lucide="receipt-text"></i>
