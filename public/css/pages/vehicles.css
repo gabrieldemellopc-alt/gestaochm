@@ -768,6 +768,34 @@ textarea.form-input {
     gap: 10px;
 }
 
+.vehicle-edit-page .vehicle-procedures-header {
+    align-items: center;
+}
+
+.vehicle-edit-page .vehicle-procedures-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.vehicle-edit-page .vehicle-procedures-actions button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--vehicles-muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.vehicle-edit-page .vehicle-procedures-actions button:hover,
+.vehicle-edit-page .vehicle-procedures-actions button:focus-visible {
+    color: var(--vehicles-text);
+    text-decoration: underline;
+}
+
 .procedure-pill {
     position: relative;
     display: inline-flex;
