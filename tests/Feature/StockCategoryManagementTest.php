@@ -98,6 +98,30 @@ class StockCategoryManagementTest extends TestCase
         $this->assertNotNull($other);
     }
 
+    public function test_workshop_consumable_is_persisted_as_true_or_false_on_create_and_update(): void
+    {
+        $category = StockCategory::create(['tenant_id' => $this->context['tenant']->id, 'name' => 'Oficina']);
+        $payload = ['stock_category_id' => $category->id, 'name' => 'Graxa', 'unit' => 'KG', 'minimum_quantity' => 2];
+
+        $this->post(route('stock.items.store'), $payload + ['is_workshop_consumable' => '1'])->assertRedirect();
+        $enabled = StockItem::where('name', 'Graxa')->firstOrFail();
+        $this->assertTrue($enabled->is_workshop_consumable);
+        $this->assertSame(0.0, (float) $enabled->quantity);
+        $this->assertSame(0.0, (float) $enabled->unit_cost);
+
+        $this->post(route('stock.items.store'), array_merge($payload, ['name' => 'Filtro']))->assertRedirect();
+        $disabled = StockItem::where('name', 'Filtro')->firstOrFail();
+        $this->assertFalse($disabled->is_workshop_consumable);
+
+        $this->put(route('stock.items.update', $disabled), ['name' => 'Filtro', 'unit' => 'UNID', 'minimum_quantity' => 2, 'is_workshop_consumable' => '1'])->assertRedirect();
+        $this->assertTrue($disabled->fresh()->is_workshop_consumable);
+
+        $this->put(route('stock.items.update', $disabled), ['name' => 'Filtro', 'unit' => 'UNID', 'minimum_quantity' => 2])->assertRedirect();
+        $this->assertFalse($disabled->fresh()->is_workshop_consumable);
+        $this->assertSame(0.0, (float) $disabled->fresh()->quantity);
+        $this->assertSame(0.0, (float) $disabled->fresh()->unit_cost);
+    }
+
     public function test_categories_of_another_tenant_and_users_without_permission_are_blocked(): void
     {
         $otherTenant = Tenant::create(['name' => 'Outro tenant']);

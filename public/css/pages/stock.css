@@ -5364,6 +5364,51 @@ html[data-chm-theme="corporate-light"] .stock-modal-overlay .stock-edit-content 
     color: rgba(255,255,255,.52);
 }
 
+/* Isolated from the generic .form-group input rule in custom.css. */
+.stock-modal-overlay .stock-checkbox-field {
+    margin: 0;
+}
+
+.stock-modal-overlay .stock-checkbox-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    color: var(--stock-text);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.25;
+    cursor: pointer;
+}
+
+.stock-modal-overlay .stock-checkbox-input[type="checkbox"] {
+    appearance: auto;
+    box-sizing: border-box;
+    flex: 0 0 18px;
+    width: 18px !important;
+    min-width: 18px;
+    height: 18px !important;
+    min-height: 18px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 4px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    accent-color: #b9434c;
+    cursor: pointer;
+}
+
+.stock-modal-overlay .stock-checkbox-help {
+    display: block;
+    max-width: 100%;
+    margin-top: 7px;
+    color: var(--stock-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
 @media (max-width: 760px) {
     .stock-item-create-grid {
         grid-template-columns: 1fr;
@@ -6011,6 +6056,89 @@ html[data-chm-theme="corporate-light"] .stock-detail-page { --detail-surface:var
     #editItemModal .stock-item-history-list {
         max-height: 300px;
     }
+}
+
+/* Create/edit item dialogs: keep chrome visible and scroll only their body. */
+#itemModal.stock-modal-overlay,
+#editItemModal.stock-modal-overlay {
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    box-sizing: border-box;
+}
+
+#itemModal .stock-item-modal-card,
+#editItemModal .stock-edit-item-modal-card {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: calc(100dvh - 32px);
+    min-height: 0;
+    overflow: hidden;
+}
+
+#itemModal .stock-modal-header,
+#itemModal .stock-modal-actions,
+#editItemModal .stock-item-modal-sidebar,
+#editItemModal .stock-modal-actions {
+    flex-shrink: 0;
+}
+
+#itemModal .stock-modal-form {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#itemModal .stock-item-create-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+#itemModal .stock-modal-actions {
+    margin-bottom: 0;
+}
+
+#editItemModal .stock-item-modal-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    height: auto;
+    overflow: hidden;
+}
+
+#editItemModal .stock-item-modal-main {
+    min-height: 0;
+}
+
+#editItemModal .stock-edit-item-modal-card.is-editing .stock-item-modal-main {
+    overflow: hidden;
+}
+
+#editItemModal .stock-edit-item-modal-card.is-editing .details-edit-mode {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#editItemModal .stock-edit-item-modal-card.is-editing .stock-item-modal-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+#editItemModal .stock-edit-item-modal-card.is-editing #saveItemBtn {
+    flex-shrink: 0;
+    margin-bottom: 0;
 }
 
 /* Stock item modal history refinement */

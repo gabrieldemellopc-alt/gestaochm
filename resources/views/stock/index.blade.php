@@ -1046,12 +1046,12 @@
                     </small>
                 </div>
 
-                <div class="form-group full-width">
-                    <label class="stock-workshop-consumable-toggle">
-                        <input type="checkbox" name="is_workshop_consumable" value="1">
+                <div class="form-group full-width stock-checkbox-field">
+                    <label class="stock-checkbox-row">
+                        <input class="stock-checkbox-input" type="checkbox" name="is_workshop_consumable" value="1" @checked(old('is_workshop_consumable'))>
                         <span>Consumível da oficina</span>
                     </label>
-                    <small class="stock-field-hint">Permite utilizar este item em lançamentos de consumo interno da oficina, sem vínculo com veículo.</small>
+                    <small class="stock-checkbox-help">Permite utilizar este item em lançamentos de consumo interno da oficina, sem vínculo com veículo.</small>
                 </div>
 
                 <div class="form-group full-width">
@@ -1451,12 +1451,12 @@
 
                         </div>
 
-                        <div class="form-group full-width">
-                            <label class="stock-workshop-consumable-toggle">
-                                <input type="checkbox" id="inputItemWorkshopConsumable" name="is_workshop_consumable" value="1">
+                        <div class="form-group full-width stock-checkbox-field">
+                            <label class="stock-checkbox-row">
+                                <input class="stock-checkbox-input" type="checkbox" id="inputItemWorkshopConsumable" name="is_workshop_consumable" value="1" @checked(old('is_workshop_consumable'))>
                                 <span>Consumível da oficina</span>
                             </label>
-                            <small class="stock-field-hint">Permite utilizar este item em lançamentos de consumo interno da oficina, sem vínculo com veículo.</small>
+                            <small class="stock-checkbox-help">Permite utilizar este item em lançamentos de consumo interno da oficina, sem vínculo com veículo.</small>
                         </div>
 
 
@@ -2114,7 +2114,7 @@ function enableItemEdit()
 
         .querySelector('.details-edit-mode')
 
-        .style.display = 'block';
+        .style.display = 'flex';
 
 
 

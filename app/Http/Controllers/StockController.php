@@ -398,7 +398,9 @@ class StockController extends Controller
             'is_workshop_consumable' => ['nullable', 'boolean'],
         ]);
 
-        DB::transaction(function () use ($validated, $tenantId, $activeLocation) {
+        $isWorkshopConsumable = (bool) ($validated['is_workshop_consumable'] ?? false);
+
+        DB::transaction(function () use ($validated, $tenantId, $activeLocation, $isWorkshopConsumable) {
             $item = StockItem::create([
                 'tenant_id' => $tenantId,
                 'location_id' => $activeLocation->id,
@@ -411,7 +413,7 @@ class StockController extends Controller
                 'unit_cost' => 0,
                 'observation' => $validated['observation'] ?? null,
                 'active' => true,
-                'is_workshop_consumable' => $request->boolean('is_workshop_consumable'),
+                'is_workshop_consumable' => $isWorkshopConsumable,
             ]);
 
             if ($item->quantity > 0) {
@@ -447,9 +449,11 @@ class StockController extends Controller
             'is_workshop_consumable' => ['nullable', 'boolean'],
         ]);
 
+        $isWorkshopConsumable = (bool) ($validated['is_workshop_consumable'] ?? false);
+
         $item->update([
             ...$validated,
-            'is_workshop_consumable' => $request->boolean('is_workshop_consumable'),
+            'is_workshop_consumable' => $isWorkshopConsumable,
         ]);
 
         return redirect()->back();
