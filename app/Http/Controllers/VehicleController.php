@@ -1862,7 +1862,11 @@ class VehicleController extends Controller
 
 
         $procedures =
-            Procedure::with('fields.stockCategory')
+            Procedure::with(['fields.stockCategory', 'stockItems' => function ($query) use ($vehicle) {
+                $query->where('tenant_id', $vehicle->tenant_id)
+                    ->where('location_id', $vehicle->location_id)
+                    ->where('active', true);
+            }])
                 ->where('tenant_id', $vehicle->tenant_id)
                 ->where('location_id', $vehicle->location_id)
                 ->get();
@@ -2863,6 +2867,11 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
             $query
                 ->where('tenant_id', $vehicle->tenant_id)
                 ->where('location_id', $vehicle->location_id);
+        },
+        'procedures.stockItems' => function ($query) use ($vehicle) {
+            $query->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id)
+                ->where('active', true);
         },
         'procedures.fields.stockCategory.items' => function ($query) use ($vehicle) {
             $query
