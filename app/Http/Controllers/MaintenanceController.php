@@ -361,6 +361,11 @@ class MaintenanceController extends Controller
         $vehicle->load(['division', 'location']);
 
         $procedure = Procedure::with([
+            'stockItems' => function ($query) use ($vehicle) {
+                $query->where('tenant_id', $vehicle->tenant_id)
+                    ->where('location_id', $vehicle->location_id)
+                    ->where('active', true);
+            },
             'fields.stockCategory.items' => function ($query) use ($vehicle) {
                 $query
                     ->where('tenant_id', $vehicle->tenant_id)
@@ -650,7 +655,10 @@ class MaintenanceController extends Controller
         $procedures = Procedure::query()
             ->where('tenant_id', $vehicle->tenant_id)
             ->where('location_id', $vehicle->location_id)
-            ->with(['fields.stockCategory.items' => fn ($query) => $query
+            ->with(['stockItems' => fn ($query) => $query
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->where('location_id', $vehicle->location_id)
+                ->where('active', true), 'fields.stockCategory.items' => fn ($query) => $query
                 ->where('tenant_id', $vehicle->tenant_id)
                 ->where('location_id', $vehicle->location_id)
                 ->where('active', true)])

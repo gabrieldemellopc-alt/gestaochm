@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Procedure;
 use App\Models\StockCategory;
+use App\Models\StockItem;
 use App\Services\ActiveContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -34,10 +35,9 @@ class ProcedureController extends Controller
             return $this->missingActiveLocationRedirect();
         }
 
-        $categories = StockCategory::where('tenant_id', auth()->user()->tenant_id)
-            ->get();
+        [$categories, $stockItems] = $this->stockConfigurationOptions($activeLocation->id);
 
-        return view('procedures.create', compact('categories'));
+        return view('procedures.create', compact('categories', 'stockItems'));
     }
 
     public function store(Request $request)
@@ -59,6 +59,7 @@ class ProcedureController extends Controller
         );
 
         $this->createFields($procedure, $validated['fields'] ?? []);
+        $procedure->stockItems()->sync($validated['stock_item_ids'] ?? []);
 
         return redirect()
             ->route('procedures.index')
@@ -71,12 +72,11 @@ class ProcedureController extends Controller
             return $redirect;
         }
 
-        $procedure->load('fields');
+        $procedure->load(['fields', 'stockItems']);
 
-        $categories = StockCategory::where('tenant_id', auth()->user()->tenant_id)
-            ->get();
+        [$categories, $stockItems] = $this->stockConfigurationOptions($procedure->location_id);
 
-        return view('procedures.edit', compact('procedure', 'categories'));
+        return view('procedures.edit', compact('procedure', 'categories', 'stockItems'));
     }
 
     public function update(Request $request, Procedure $procedure)
@@ -90,6 +90,7 @@ class ProcedureController extends Controller
         $procedure->update($this->procedureAttributes($request, $validated));
         $procedure->fields()->delete();
         $this->createFields($procedure, $validated['fields'] ?? []);
+        $procedure->stockItems()->sync($validated['stock_item_ids'] ?? []);
 
         return redirect()
             ->route('procedures.index')
@@ -109,6 +110,11 @@ class ProcedureController extends Controller
             'interval_hours' => ['exclude_unless:validity_hours,1', 'required', 'numeric', 'min:1'],
             'interval_days' => ['exclude_unless:validity_period,1', 'required', 'numeric', 'min:1'],
             'can_be_internal' => ['required', 'boolean'],
+            'stock_item_ids' => ['nullable', 'array'],
+            'stock_item_ids.*' => ['integer', Rule::exists('stock_items', 'id')->where(fn ($query) => $query
+                ->where('tenant_id', $tenantId)
+                ->where('location_id', $this->activeLocation()->id)
+                ->where('active', true))],
             'fields' => ['nullable', 'array'],
             'fields.*.label' => ['required_with:fields', 'string', 'max:255'],
             'fields.*.field_type' => ['required_with:fields', 'string', 'in:text,number,stock_item'],
@@ -131,6 +137,17 @@ class ProcedureController extends Controller
             'fields.*.field_type.required_with' => 'Informe o tipo do campo adicional.',
             'fields.*.field_type.in' => 'O tipo do campo adicional é inválido.',
         ]);
+    }
+
+    private function stockConfigurationOptions(int $locationId): array
+    {
+        $tenantId = auth()->user()->tenant_id;
+
+        return [
+            StockCategory::where('tenant_id', $tenantId)->orderBy('name')->get(),
+            StockItem::query()->where('tenant_id', $tenantId)->where('location_id', $locationId)
+                ->where('active', true)->orderBy('name')->get(['id', 'name', 'unit', 'stock_category_id']),
+        ];
     }
 
     private function procedureAttributes(Request $request, array $validated, array $extra = []): array

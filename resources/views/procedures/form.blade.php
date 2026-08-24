@@ -186,7 +186,20 @@
 
             
             </div>
-            {{-- VALIDADE --}}
+            <div class="form-group full-width">
+                <label for="procedureStockItems">Itens permitidos neste procedimento</label>
+                <select id="procedureStockItems" name="stock_item_ids[]" class="form-input" multiple size="8">
+                    @php($selectedStockItemIds = old('stock_item_ids', $isEdit ? $procedure->stockItems->pluck('id')->all() : []))
+                    @foreach($stockItems as $stockItem)
+                        <option value="{{ $stockItem->id }}" @selected(in_array($stockItem->id, $selectedStockItemIds))>
+                            {{ $stockItem->name }} — {{ $stockItem->unit }}
+                        </option>
+                    @endforeach
+                </select>
+                <small>Quando houver itens selecionados, eles têm precedência sobre a categoria usada como fallback.</small>
+            </div>
+
+            {{-- VALIDADE --}}
             <div class="form-group validity-section">
                     
                     <label>

@@ -624,7 +624,7 @@
                                         {{ $field->required ? 'required' : '' }}
                                     >
                                         <option value="" data-name="" data-unit="" data-cost="0">Selecione o item</option>
-                                        @foreach(($field->stockCategory->items ?? []) as $stockItem)
+                                        @foreach($procedure->stockItems->isNotEmpty() ? $procedure->stockItems : ($field->stockCategory->items ?? []) as $stockItem)
                                             <option
                                                 value="{{ $stockItem->id }}"
                                                 data-name="{{ $stockItem->name }}"
@@ -636,8 +636,10 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @if($field->stockCategory)
-                                        <small class="field-help">Categoria: {{ $field->stockCategory->name }}</small>
+                                    @if($procedure->stockItems->isNotEmpty())
+                                        <small class="field-help">Itens permitidos neste procedimento.</small>
+                                    @elseif($field->stockCategory)
+                                        <small class="field-help">Categoria (fallback): {{ $field->stockCategory->name }}</small>
                                     @endif
                                 </div>
 
@@ -652,7 +654,7 @@
                                         min="1"
                                         name="fields[{{ $field->slug }}_quantity]"
                                         class="form-input"
-                                        value="{{ old('fields.' . $field->slug . '_quantity', 1) }}"
+                                        value="{{ old('fields.' . $field->slug . '_quantity') }}"
                                         x-model.number="stockFields['{{ $field->slug }}'].quantity"
                                         {{ $field->required ? 'required' : '' }}
                                     >

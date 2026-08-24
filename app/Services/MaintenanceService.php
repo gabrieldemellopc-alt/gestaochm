@@ -380,7 +380,7 @@ class MaintenanceService
     
             $vehicle = $maintenance->vehicle;
     
-            $procedure = Procedure::with('fields')
+            $procedure = Procedure::with(['fields', 'stockItems'])
                 ->where('tenant_id', $vehicle->tenant_id)
                 ->where('location_id', $vehicle->location_id)
                 ->findOrFail($data['procedure_id']);
@@ -396,7 +396,8 @@ class MaintenanceService
                 $stockItems = self::lockAndValidateStockItems(
                     $stockUsage,
                     $vehicle,
-                    $isReplacement
+                    $isReplacement,
+                    $procedure
                 );
             }
             
@@ -443,7 +444,7 @@ class MaintenanceService
                 $value = $fieldValues[$field->slug] ?? null;
     
                 $quantity = $field->field_type === 'stock_item'
-                    ? ($fieldValues[$field->slug.'_quantity'] ?? 1)
+                    ? ($fieldValues[$field->slug.'_quantity'] ?? null)
                     : 1;
     
                 MaintenanceRecordItemValue::create([
@@ -816,7 +817,12 @@ class MaintenanceService
                     return null;
                 }
 
-                $quantity = (float) ($fieldValues[$field->slug.'_quantity'] ?? 1);
+                if (! array_key_exists($field->slug.'_quantity', $fieldValues)) {
+                    throw ValidationException::withMessages([
+                        "fields.{$field->slug}_quantity" => 'Informe a quantidade utilizada.',
+                    ]);
+                }
+                $quantity = (float) $fieldValues[$field->slug.'_quantity'];
 
                 if ($quantity <= 0) {
                     throw ValidationException::withMessages([
@@ -838,7 +844,8 @@ class MaintenanceService
     private static function lockAndValidateStockItems(
         Collection $stockUsage,
         Vehicle $vehicle,
-        bool $isReplacement = false
+        bool $isReplacement = false,
+        ?Procedure $procedure = null
     ): Collection {
         if ($stockUsage->isEmpty()) {
             return collect();
@@ -864,10 +871,14 @@ class MaintenanceService
             $item = $stockItems->get($usage['item_id']);
             $field = $usage['field'];
 
+            $hasSpecificItems = $procedure && $procedure->stockItems->isNotEmpty();
+            $isAllowed = $hasSpecificItems
+                ? ($item && $procedure->stockItems->contains('id', $item->id))
+                : ($item && $field->stock_category_id && (int) $item->stock_category_id === (int) $field->stock_category_id);
+
             if (
                 ! $item
-                || ! $field->stock_category_id
-                || (int) $item->stock_category_id !== (int) $field->stock_category_id
+                || ! $isAllowed
             ) {
                 throw ValidationException::withMessages([
                     "fields.{$field->slug}" =>
