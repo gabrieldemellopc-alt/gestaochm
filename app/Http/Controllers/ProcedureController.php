@@ -31,7 +31,9 @@ class ProcedureController extends Controller
 
     public function create()
     {
-        if (! $this->activeLocation()) {
+        $activeLocation = $this->activeLocation();
+
+        if (! $activeLocation) {
             return $this->missingActiveLocationRedirect();
         }
 
