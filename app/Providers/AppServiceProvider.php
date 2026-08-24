@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use App\Models\UserDivisionAccess;
 use App\Services\ActiveContextService;
+use App\View\Composers\WorkshopFinancialComposer;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        View::composer('workshop.index', WorkshopFinancialComposer::class);
+
         Gate::define('viewAuditLogs', function (User $user) {
             $divisionId = session('active_division_id');
 

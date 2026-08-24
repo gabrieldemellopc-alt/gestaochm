@@ -707,6 +707,8 @@
 
 
 
+@include('workshop.partials.financial')
+
 <div id="workshopMaintenanceDashboard" class="workshop-dashboard-modal" hidden aria-labelledby="workshopDashboardTitle" role="dialog" aria-modal="true">
     <div class="workshop-dashboard-card">
         <button type="button" class="workshop-dashboard-close" onclick="closeWorkshopMaintenanceDashboard()" aria-label="Fechar painel">×</button>

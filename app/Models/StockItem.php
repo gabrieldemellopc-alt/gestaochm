@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class StockItem extends Model
 {
+    protected $casts = [
+        'is_workshop_consumable' => 'boolean',
+    ];
+
     protected $fillable = [
         'tenant_id',
         'location_id',
@@ -17,6 +21,7 @@ class StockItem extends Model
         'unit_cost',
         'stock_category_id',
         'active',
+        'is_workshop_consumable',
         'observation',
     ];
 

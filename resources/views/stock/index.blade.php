@@ -1004,6 +1004,14 @@
                 </div>
 
                 <div class="form-group full-width">
+                    <label class="stock-workshop-consumable-toggle">
+                        <input type="checkbox" name="is_workshop_consumable" value="1">
+                        <span>Consumível da oficina</span>
+                    </label>
+                    <small class="stock-field-hint">Permite utilizar este item em lançamentos de consumo interno da oficina, sem vínculo com veículo.</small>
+                </div>
+
+                <div class="form-group full-width">
                     <label>Observação</label>
                     <textarea
                         name="observation"
@@ -1398,6 +1406,14 @@
 
 
 
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="stock-workshop-consumable-toggle">
+                                <input type="checkbox" id="inputItemWorkshopConsumable" name="is_workshop_consumable" value="1">
+                                <span>Consumível da oficina</span>
+                            </label>
+                            <small class="stock-field-hint">Permite utilizar este item em lançamentos de consumo interno da oficina, sem vínculo com veículo.</small>
                         </div>
 
 
@@ -2390,6 +2406,8 @@ async function openEditItemModal(id)
         .value =
 
             item.minimum_quantity;
+
+    document.getElementById('inputItemWorkshopConsumable').checked = Boolean(item.is_workshop_consumable);
 
 
 

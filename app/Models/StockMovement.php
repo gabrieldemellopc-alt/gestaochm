@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class StockMovement extends Model
 {
+    public const WORKSHOP_CONSUMPTION_PREFIX = 'WORKSHOP_CONSUMPTION:';
+
     protected $fillable = [
         'tenant_id',
         'location_id',
@@ -37,6 +39,8 @@ class StockMovement extends Model
 
     protected $casts = [
         'cancelled_at' => 'datetime',
+        'quantity' => 'decimal:2',
+        'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
         'moved_at' => 'datetime',
     ];

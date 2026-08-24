@@ -52,6 +52,7 @@ use App\Http\Controllers\WorkshopTireController;
 use App\Http\Controllers\LocationController;
 
 use App\Http\Controllers\WorkshopController;
+use App\Http\Controllers\WorkshopExpenseController;
 
 use App\Http\Controllers\VehicleOperationController;
 
@@ -847,6 +848,11 @@ Route::middleware('auth')->group(function () {
 
         )->name('tires.update');
 
+        Route::post('/expenses', [WorkshopExpenseController::class, 'store'])->name('expenses.store');
+        Route::put('/expenses/{expense}', [WorkshopExpenseController::class, 'update'])->name('expenses.update');
+        Route::delete('/expenses/{expense}', [WorkshopExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::post('/consumption', [WorkshopExpenseController::class, 'consume'])->name('consumption.store');
+
 
 
     });
@@ -1254,6 +1260,8 @@ Route::middleware('auth')->group(function () {
                 'fuel'
 
             )->name('fuel.index');
+
+            Route::get('/financial', 'financial')->name('financial.index');
 
 
 

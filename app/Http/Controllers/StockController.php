@@ -286,6 +286,7 @@ class StockController extends Controller
             'unit' => ['required', 'string', 'max:50'],
             'minimum_quantity' => ['nullable', 'numeric', 'min:0'],
             'observation' => ['nullable', 'string'],
+            'is_workshop_consumable' => ['nullable', 'boolean'],
         ]);
 
         DB::transaction(function () use ($validated, $tenantId, $activeLocation) {
@@ -301,6 +302,7 @@ class StockController extends Controller
                 'unit_cost' => 0,
                 'observation' => $validated['observation'] ?? null,
                 'active' => true,
+                'is_workshop_consumable' => $request->boolean('is_workshop_consumable'),
             ]);
 
             if ($item->quantity > 0) {
@@ -333,9 +335,13 @@ class StockController extends Controller
             'unit' => ['required', 'string', 'max:50'],
             'minimum_quantity' => ['required', 'numeric', 'min:0'],
             'observation' => ['nullable', 'string'],
+            'is_workshop_consumable' => ['nullable', 'boolean'],
         ]);
 
-        $item->update($validated);
+        $item->update([
+            ...$validated,
+            'is_workshop_consumable' => $request->boolean('is_workshop_consumable'),
+        ]);
 
         return redirect()->back();
     }
