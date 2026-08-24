@@ -374,7 +374,7 @@ class VehicleController extends Controller
 
             'plate' => [
 
-                'required',
+                'nullable',
 
                 'regex:/^[A-Z]{3}-[A-Z0-9]{4}$/',
 
@@ -1059,7 +1059,7 @@ class VehicleController extends Controller
 
             'plate' => [
 
-                'required',
+                'nullable',
 
                 'regex:/^[A-Z]{3}-[A-Z0-9]{4}$/',
 

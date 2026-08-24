@@ -66,6 +66,72 @@ class VehicleReadingService
         );
     }
 
+    public function registerInitialKm(
+        Vehicle $vehicle,
+        float|int $value,
+        User $user,
+        CarbonInterface|string|null $readAt = null,
+        ?string $observation = null,
+    ): void {
+        if (VehicleUpdateLog::query()->where('vehicle_id', $vehicle->id)->where('type', 'km')->exists()) {
+            throw ValidationException::withMessages([
+                'vehicle' => 'O veículo já possui histórico de KM e não aceita leitura inicial.',
+            ]);
+        }
+
+        $effectiveAt = $this->effectiveDate($readAt);
+        $vehicle->update([
+            'current_km' => $value,
+            'last_km_update_at' => $effectiveAt,
+        ]);
+
+        VehicleUpdateLog::create([
+            'vehicle_id' => $vehicle->id,
+            'user_id' => $user->id,
+            'division_id' => $vehicle->division_id,
+            'location_id' => $vehicle->location_id,
+            'type' => 'km',
+            'source' => 'initial_registration',
+            'read_at' => $effectiveAt,
+            'old_value' => null,
+            'new_value' => $value,
+            'observation' => $observation ?? 'Cadastro inicial.',
+        ]);
+    }
+
+    public function registerInitialHours(
+        Vehicle $vehicle,
+        float|int $value,
+        User $user,
+        CarbonInterface|string|null $readAt = null,
+        ?string $observation = null,
+    ): void {
+        if (VehicleUpdateLog::query()->where('vehicle_id', $vehicle->id)->where('type', 'hours')->exists()) {
+            throw ValidationException::withMessages([
+                'vehicle' => 'O veículo já possui histórico de horas e não aceita leitura inicial.',
+            ]);
+        }
+
+        $effectiveAt = $this->effectiveDate($readAt);
+        $vehicle->update([
+            'current_hours' => $value,
+            'last_hours_update_at' => $effectiveAt,
+        ]);
+
+        VehicleUpdateLog::create([
+            'vehicle_id' => $vehicle->id,
+            'user_id' => $user->id,
+            'division_id' => $vehicle->division_id,
+            'location_id' => $vehicle->location_id,
+            'type' => 'hours',
+            'source' => 'initial_registration',
+            'read_at' => $effectiveAt,
+            'old_value' => null,
+            'new_value' => $value,
+            'observation' => $observation ?? 'Cadastro inicial.',
+        ]);
+    }
+
     /**
      * Records a past KM reading without regressing the vehicle's current operational counter.
      */
