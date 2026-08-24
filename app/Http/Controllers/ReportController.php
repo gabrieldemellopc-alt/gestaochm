@@ -12,6 +12,7 @@ use App\Models\Procedure;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\Reports\FuelReportService;
+use App\Services\Reports\FinancialReportService;
 use App\Services\Reports\ReportContextService;
 use App\Services\Reports\ReportPayloadSanitizer;
 use App\Services\Reports\StockReportService;
@@ -235,6 +236,12 @@ class ReportController extends Controller
         ]);
     }
 
+    public function financial(Request $request, FinancialReportService $financialReport)
+    {
+        $this->authorizeReportPermission('reports.financial', 'reports.view_costs');
+        return view('reports.financial', $financialReport->build($request->query()));
+    }
+
     public function stock(Request $request, StockReportService $stockReport)
     {
         $this->authorizeReportPermission('reports.stock');
@@ -446,6 +453,7 @@ class ReportController extends Controller
             'reports.vehicle_dossier',
             'reports.maintenance',
             'reports.fuel',
+            'reports.financial',
             'reports.stock',
             'reports.tires',
             'reports.export_pdf',

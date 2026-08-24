@@ -17,6 +17,7 @@
         'reports.fuel',
         'reports.vehicle_dossier',
         'reports.stock',
+        'reports.financial',
     ];
     $hasAvailableReports = collect($availableReportKeys)->contains(fn (string $key) => $canReport($key));
     $canOpenMaintenanceExport = $canReport('reports.maintenance') && ($canExportReportPdf || $canExportReportExcel);
@@ -364,6 +365,7 @@
         $canReport('reports.tires')
         || $canReport('reports.fuel')
         || $canReport('reports.stock')
+        || $canReport('reports.financial')
     )
         <section class="reports-index-section">
             <div class="reports-index-section-header">
@@ -382,6 +384,14 @@
             </div>
 
             <div class="reports-index-compact-grid">
+
+                @if($canReport('reports.financial'))
+                    <a href="{{ route('reports.financial.index') }}" class="reports-index-compact-card fuel">
+                        <div class="reports-index-compact-head"><div class="reports-index-card-icon"><i data-lucide="chart-no-axes-combined"></i></div><span class="reports-index-card-category">Financeiro</span></div>
+                        <div class="reports-index-compact-content"><h3>Relatório Financeiro</h3><p>Manutenções, abastecimentos, despesas da oficina e consumíveis sem duplicar entradas de estoque.</p><div class="reports-index-compact-info"><span>Custos operacionais</span><span>Por período</span><span>Por unidade</span></div></div>
+                        <div class="reports-index-card-action"><span>Abrir relatório</span><i data-lucide="arrow-right"></i></div>
+                    </a>
+                @endif
 
                 {{-- PNEUS --}}
                 @if($canReport('reports.tires'))
