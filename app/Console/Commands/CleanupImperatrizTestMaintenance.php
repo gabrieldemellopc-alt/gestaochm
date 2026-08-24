@@ -45,7 +45,7 @@ class CleanupImperatrizTestMaintenance extends Command
         try {
             DB::transaction(function () use ($audit): void {
                 $this->deleteAuditRows($audit);
-                DB::table('stock_items')->whereIn('id', $audit['item_ids'])->update(['quantity' => 0]);
+                DB::table('stock_items')->whereIn('id', $audit['itemIds'])->update(['quantity' => 0]);
                 $after = $this->audit();
                 if ($after['maintenance'] || $after['movements'] || array_filter($after['balances'])) {
                     throw new RuntimeException('Validação pós-limpeza falhou.');
@@ -73,6 +73,7 @@ class CleanupImperatrizTestMaintenance extends Command
             ->get(['sm.id', 'sm.tenant_id', 'sm.location_id', 'sm.stock_item_id', 'si.name as item', 'sm.movement_type', 'sm.quantity', 'sm.unit_cost', 'sm.total_cost', 'sm.maintenance_record_id', 'sm.reversal_movement_id', 'sm.reversed_from_movement_id', 'sm.cancelled_at', 'sm.invoice_number', 'sm.supplier_name', 'sm.description', 'sm.created_at']);
         $movementIds = $movements->pluck('id')->map(fn ($id) => (int) $id)->all();
         $itemIds = $movements->pluck('stock_item_id')->unique()->map(fn ($id) => (int) $id)->all();
+        sort($itemIds);
         $items = $itemIds ? DB::table('stock_items')->whereIn('id', $itemIds)->orderBy('name')->get(['id', 'name', 'quantity', 'unit', 'location_id']) : collect();
         $usages = DB::table('maintenance_material_usages')->whereIn('maintenance_record_id', $maintenanceIds)->get();
         $children = [];
@@ -83,6 +84,7 @@ class CleanupImperatrizTestMaintenance extends Command
         $maintenanceMovements = $movements->whereIn('id', self::MAINTENANCE_MOVEMENT_IDS);
         $safe = $maintenance->count() === 1
             && $movements->count() === count($targetMovementIds)
+            && $itemIds === [28, 29]
             && $items->count() === 2
             && $manual
             && (int) $manual->tenant_id === self::TENANT_ID
