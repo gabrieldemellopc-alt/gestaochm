@@ -7,6 +7,25 @@ class Vehicle extends Model
     public const FLEET_RELATION_AGGREGATED = 'aggregated';
     public const FLEET_RELATION_RENTED = 'rented';
 
+    public const TYPES = [
+        'automovel' => ['label' => 'Automóvel', 'icon' => 'automovel.png'],
+        'caminhonete' => ['label' => 'Caminhonete', 'icon' => 'caminhonete.png'],
+        'onibus' => ['label' => 'Ônibus', 'icon' => 'onibus.png'],
+        'lixo' => ['label' => 'Caminhão de lixo / Compactador', 'icon' => 'lixo.png'],
+        'cacamba' => ['label' => 'Caçamba', 'icon' => 'cacamba.png'],
+        'bau' => ['label' => 'Baú', 'icon' => 'bau.png'],
+        'pipa' => ['label' => 'Caminhão pipa', 'icon' => 'pipa.png'],
+        'carroceria_aberta' => ['label' => 'Carroceria aberta', 'icon' => 'carroceria_aberta.png'],
+        'prancha' => ['label' => 'Prancha', 'icon' => 'prancha.png'],
+        'trator' => ['label' => 'Trator', 'icon' => 'trator.png'],
+        'retroescavadeira' => ['label' => 'Retroescavadeira', 'icon' => 'retro.png'],
+        'varredeira' => ['label' => 'Varredeira', 'icon' => 'bobcat.png'],
+    ];
+
+    public static function typeOptions(): array { return self::TYPES; }
+    public static function typeValues(): array { return array_keys(self::TYPES); }
+    public static function iconForType(?string $type): string { return self::TYPES[$type]['icon'] ?? self::TYPES['automovel']['icon']; }
+
     protected $fillable = [
         'tenant_id',
         'name',
@@ -93,20 +112,7 @@ class Vehicle extends Model
     }
     public function getTypeIconAttribute()
     {
-        return match($this->type) {
-    
-            'automovel' => 'automovel.png',
-            'prancha' => 'prancha.png',
-            'lixo' => 'lixo.png',
-    
-            'cacamba' => 'cacamba.png',
-    
-            'bau' => 'bau.png',
-    
-            'trator' => 'trator.png',
-    
-            default => 'automovel.png',
-        };
+        return self::iconForType($this->type);
     }
     public function updateLogs()
     {
@@ -147,4 +153,3 @@ class Vehicle extends Model
             ->latestOfMany();
     }
 }
-

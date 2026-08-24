@@ -2648,7 +2648,7 @@ select.form-input {
 }
 .vehicle-edit-hero.vehicle-edit-hero--compact {
     display: grid;
-    grid-template-columns: 170px minmax(0, 1fr);
+    grid-template-columns: 160px minmax(0, 1fr);
     gap: 28px;
     align-items: center;
 
@@ -2690,7 +2690,7 @@ select.form-input {
 
 .vehicle-edit-hero-fields {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px;
     align-items: end;
 }

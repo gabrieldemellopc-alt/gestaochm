@@ -7,16 +7,9 @@
 @endpush
 @section('content')
 @php
-    $vehicleTypeIcons = [
-        'automovel' => 'automovel.png',
-        'prancha'   => 'prancha.png',
-        'lixo'      => 'lixo.png',
-        'cacamba'   => 'cacamba.png',
-        'bau'       => 'bau.png',
-        'trator'    => 'trator.png',
-    ];
+    $vehicleTypes = \App\Models\Vehicle::typeOptions();
     $selectedType = old('type', $vehicle->type ?? 'automovel');
-    $selectedIcon = $vehicleTypeIcons[$selectedType] ?? 'automovel.png';
+    $selectedIcon = \App\Models\Vehicle::iconForType($selectedType);
 @endphp
 <div class="vehicle-edit-header vehicle-edit-page">
     <div>
@@ -106,43 +99,12 @@
                 id="vehicleTypeSelect"
                 class="form-input"
             >
-                <option
-                    value="automovel"
-                    @selected(old('type', $vehicle->type) == 'automovel')
-                >
-                    Automóvel
-                </option>
-                <option
-                    value="prancha"
-                    @selected(old('type', $vehicle->type) == 'prancha')
-                >
-                    Prancha
-                </option>
-                <option
-                    value="lixo"
-                    @selected(old('type', $vehicle->type) == 'lixo')
-                >
-                    Caminhão de lixo
-                </option>
-                <option
-                    value="cacamba"
-                    @selected(old('type', $vehicle->type) == 'cacamba')
-                >
-                    Caçamba
-                </option>
-                <option
-                    value="bau"
-                    @selected(old('type', $vehicle->type) == 'bau')
-                >
-                    Baú
-                </option>
-                <option
-                    value="trator"
-                    @selected(old('type', $vehicle->type) == 'trator')
-                >
-                    Trator
-                </option>
+                @foreach($vehicleTypes as $value => $type)
+                    <option value="{{ $value }}" @selected(old('type', $vehicle->type) === $value)>{{ $type['label'] }}</option>
+                @endforeach
             </select>
+        </div>
+        <div class="form-group">
             <label>Vínculo com a frota</label>
             <select name="fleet_relation" class="form-input">
                 <option value="internal" @selected(old('fleet_relation', $vehicle->fleet_relation ?? 'internal') === 'internal')>Frota interna</option>
@@ -657,14 +619,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('vehicleTypeSelect');
     const typePreview =
         document.getElementById('vehicleTypePreview');
-    const vehicleTypeIcons = {
-        automovel: "{{ asset('images/automovel.png') }}",
-        prancha: "{{ asset('images/prancha.png') }}",
-        lixo: "{{ asset('images/lixo.png') }}",
-        cacamba: "{{ asset('images/cacamba.png') }}",
-        bau: "{{ asset('images/bau.png') }}",
-        trator: "{{ asset('images/trator.png') }}",
-    };
+    const vehicleTypeIcons = @json(collect($vehicleTypes)->map(fn ($type) => asset('images/'.$type['icon'])));
     function updateVehicleTypePreview() {
         if (
             ! typeSelect

@@ -19,27 +19,13 @@
 
 @php
 
-    $vehicleTypeIcons = [
-
-        'automovel' => 'automovel.png',
-
-        'prancha'   => 'prancha.png',
-
-        'lixo'      => 'lixo.png',
-
-        'cacamba'   => 'cacamba.png',
-
-        'bau'       => 'bau.png',
-
-        'trator'    => 'trator.png',
-
-    ];
+    $vehicleTypes = \App\Models\Vehicle::typeOptions();
 
 
 
     $selectedType = old('type', 'automovel');
 
-    $selectedIcon = $vehicleTypeIcons[$selectedType] ?? 'automovel.png';
+    $selectedIcon = \App\Models\Vehicle::iconForType($selectedType);
 
 @endphp
 
@@ -287,27 +273,21 @@
 
                 >
 
-                    <option value="automovel" @selected(old('type') == 'automovel')>Automóvel</option>
-
-                    <option value="prancha" @selected(old('type') == 'prancha')>Prancha</option>
-
-                    <option value="lixo" @selected(old('type') == 'lixo')>Caminhão de lixo</option>
-
-                    <option value="cacamba" @selected(old('type') == 'cacamba')>Caçamba</option>
-
-                    <option value="bau" @selected(old('type') == 'bau')>Baú</option>
-
-                    <option value="trator" @selected(old('type') == 'trator')>Trator</option>
+                    @foreach($vehicleTypes as $value => $type)
+                        <option value="{{ $value }}" @selected(old('type', 'automovel') === $value)>{{ $type['label'] }}</option>
+                    @endforeach
 
                 </select>
 
+            </div>
+
+            <div class="form-group">
                 <label>Vínculo com a frota</label>
                 <select name="fleet_relation" class="form-input">
                     <option value="internal" @selected(old('fleet_relation', 'internal') === 'internal')>Frota interna</option>
                     <option value="aggregated" @selected(old('fleet_relation') === 'aggregated')>Agregado</option>
                     <option value="rented" @selected(old('fleet_relation') === 'rented')>Alugado</option>
                 </select>
-
             </div>
 
 
@@ -1577,21 +1557,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        const vehicleTypeIcons = {
-
-            automovel: "{{ asset('images/automovel.png') }}",
-
-            prancha: "{{ asset('images/prancha.png') }}",
-
-            lixo: "{{ asset('images/lixo.png') }}",
-
-            cacamba: "{{ asset('images/cacamba.png') }}",
-
-            bau: "{{ asset('images/bau.png') }}",
-
-            trator: "{{ asset('images/trator.png') }}",
-
-        };
+        const vehicleTypeIcons = @json(collect($vehicleTypes)->map(fn ($type) => asset('images/'.$type['icon'])));
 
 
 

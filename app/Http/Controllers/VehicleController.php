@@ -351,6 +351,8 @@ class VehicleController extends Controller
 
                 'string',
 
+                Rule::in(Vehicle::typeValues()),
+
             ],
             'fleet_relation' => ['nullable', Rule::in([Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, Vehicle::FLEET_RELATION_RENTED])],
 
@@ -1182,6 +1184,8 @@ class VehicleController extends Controller
                 'required',
 
                 'string',
+
+                Rule::in(Vehicle::typeValues()),
 
             ],
 
