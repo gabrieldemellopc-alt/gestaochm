@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\TenantFiscalSettingService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
@@ -36,6 +37,18 @@ class StockController extends Controller
 
         $categories = StockCategory::query()
             ->where('tenant_id', $tenantId)
+            ->withCount([
+                'items as items_count' => function ($query) use ($tenantId, $activeLocation) {
+                    $query
+                        ->where('tenant_id', $tenantId)
+                        ->where('location_id', $activeLocation->id);
+                },
+                'items as other_location_items_count' => function ($query) use ($tenantId, $activeLocation) {
+                    $query
+                        ->where('tenant_id', $tenantId)
+                        ->where('location_id', '!=', $activeLocation->id);
+                },
+            ])
             ->with([
                 'items' => function ($query) use ($tenantId, $activeLocation) {
                     $query
@@ -248,15 +261,111 @@ class StockController extends Controller
         $this->authorizeStockPermission('stock.manage_categories');
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => $this->categoryNameRules(),
         ]);
 
-        StockCategory::create([
-            'tenant_id' => auth()->user()->tenant_id,
-            'name' => $validated['name'],
+        $tenantId = auth()->user()->tenant_id;
+        $category = DB::transaction(function () use ($validated, $tenantId) {
+            $name = trim($validated['name']);
+            $this->ensureCategoryNameIsAvailable($name, $tenantId);
+
+            return StockCategory::create([
+                'tenant_id' => $tenantId,
+                'name' => $name,
+            ]);
+        });
+
+        app(AuditLogService::class)->created($category, [
+            'tenant_id' => $tenantId,
+            'module' => 'stock',
+            'summary' => 'Categoria de estoque criada.',
         ]);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Categoria criada com sucesso.');
+    }
+
+    public function updateCategory(Request $request, StockCategory $category)
+    {
+        $this->ensureCategoryInActiveContext($category);
+        $this->authorizeStockPermission('stock.manage_categories');
+
+        $validated = $request->validate(['name' => $this->categoryNameRules()]);
+        $tenantId = auth()->user()->tenant_id;
+
+        DB::transaction(function () use ($category, $validated, $tenantId) {
+            $category = StockCategory::query()->where('tenant_id', $tenantId)->lockForUpdate()->findOrFail($category->id);
+            $before = $category->toArray();
+            $name = trim($validated['name']);
+            $this->ensureCategoryNameIsAvailable($name, $tenantId, $category->id);
+            $category->update(['name' => $name]);
+
+            app(AuditLogService::class)->updated($category, [
+                'tenant_id' => $tenantId,
+                'module' => 'stock',
+                'summary' => 'Categoria de estoque atualizada.',
+                'before_data' => $before,
+                'after_data' => $category->toArray(),
+            ]);
+        });
+
+        return redirect()->back()->with('success', 'Categoria atualizada com sucesso.');
+    }
+
+    public function destroyCategory(StockCategory $category)
+    {
+        $this->ensureCategoryInActiveContext($category);
+        $this->authorizeStockPermission('stock.manage_categories');
+        $tenantId = auth()->user()->tenant_id;
+
+        $result = DB::transaction(function () use ($category, $tenantId) {
+            $category = StockCategory::query()->where('tenant_id', $tenantId)->lockForUpdate()->findOrFail($category->id);
+            $activeLocation = $this->activeLocation();
+            $localItemsCount = StockItem::query()
+                ->where('tenant_id', $tenantId)
+                ->where('stock_category_id', $category->id)
+                ->where('location_id', $activeLocation->id)
+                ->lockForUpdate()
+                ->count();
+
+            if ($localItemsCount > 0) {
+                return ['local_items_count' => $localItemsCount, 'other_location_items_count' => 0];
+            }
+
+            // StockCategory has no location_id in the actual schema.  A category
+            // with items elsewhere is therefore shared and cannot be deleted
+            // without nulling those foreign keys.
+            $otherLocationItemsCount = StockItem::query()
+                ->where('tenant_id', $tenantId)
+                ->where('stock_category_id', $category->id)
+                ->where('location_id', '!=', $activeLocation->id)
+                ->lockForUpdate()
+                ->count();
+
+            if ($otherLocationItemsCount > 0) {
+                return ['local_items_count' => 0, 'other_location_items_count' => $otherLocationItemsCount];
+            }
+
+            $before = $category->toArray();
+            app(AuditLogService::class)->deleted($category, [
+                'tenant_id' => $tenantId,
+                'module' => 'stock',
+                'summary' => 'Categoria de estoque excluída.',
+                'before_data' => $before,
+            ]);
+            $category->delete();
+
+            return ['local_items_count' => 0, 'other_location_items_count' => 0];
+        });
+
+        if ($result['local_items_count'] > 0) {
+            return redirect()->back()->with('error', "Esta categoria não pode ser excluída porque possui {$result['local_items_count']} itens vinculados nesta unidade.");
+        }
+
+        if ($result['other_location_items_count'] > 0) {
+            return redirect()->back()->with('error', "Esta categoria é compartilhada e não pode ser excluída porque possui {$result['other_location_items_count']} itens vinculados em outra unidade.");
+        }
+
+        return redirect()->back()->with('success', 'Categoria excluída com sucesso.');
     }
 
     public function storeItem(Request $request)
@@ -587,6 +696,46 @@ class StockController extends Controller
     {
         return app(ActiveContextService::class)
             ->activeLocation(auth()->user());
+    }
+
+    private function ensureCategoryInActiveContext(StockCategory $category): void
+    {
+        if (! $this->activeLocation()) {
+            abort(403, 'Selecione uma unidade para continuar.');
+        }
+
+        if ((int) $category->tenant_id !== (int) auth()->user()->tenant_id) {
+            abort(403);
+        }
+    }
+
+    private function categoryNameRules(): array
+    {
+        return [
+            'required',
+            'string',
+            'max:255',
+            function (string $attribute, mixed $value, \Closure $fail) {
+                if (trim((string) $value) === '') {
+                    $fail('Informe o nome da categoria.');
+                }
+            },
+        ];
+    }
+
+    private function ensureCategoryNameIsAvailable(string $name, int $tenantId, ?int $exceptCategoryId = null): void
+    {
+        $exists = StockCategory::query()
+            ->where('tenant_id', $tenantId)
+            ->whereRaw('LOWER(name) = ?', [Str::lower($name)])
+            ->when($exceptCategoryId, fn ($query) => $query->whereKeyNot($exceptCategoryId))
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'name' => 'Já existe uma categoria com este nome neste tenant.',
+            ]);
+        }
     }
 
     private function ensureItemInActiveContext(StockItem $item)

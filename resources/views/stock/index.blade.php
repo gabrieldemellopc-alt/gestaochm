@@ -310,7 +310,7 @@
 
                             <span>
 
-                                {{ $category->items->count() }}
+                                {{ $category->items_count }}
 
                                 item(ns) cadastrado(s)
 
@@ -353,8 +353,27 @@
 
                         Novo item
 
-                    </button>
+</button>
 @endif
+
+                    @if($canManageStockCategories)
+                        <div class="stock-category-actions">
+                            <button type="button" class="stock-category-action" onclick='openCategoryEditModal({{ $category->id }}, @json($category->name))'>
+                                <i data-lucide="pencil"></i>
+                                Editar
+                            </button>
+                            <button
+                                type="button"
+                                class="stock-category-action danger"
+                                @disabled($category->items_count > 0 || $category->other_location_items_count > 0)
+                                title="{{ $category->items_count > 0 ? 'Categoria em uso por '.$category->items_count.' itens nesta unidade' : ($category->other_location_items_count > 0 ? 'Categoria compartilhada e em uso por '.$category->other_location_items_count.' itens em outra unidade' : 'Excluir categoria') }}"
+                                onclick='openCategoryDeleteModal({{ $category->id }}, @json($category->name))'
+                            >
+                                <i data-lucide="trash-2"></i>
+                                Excluir
+                            </button>
+                        </div>
+                    @endif
 
 
 
@@ -722,11 +741,7 @@
 
 
 
-                <h2>
-
-                    Nova categoria
-
-                </h2>
+                <h2 id="categoryModalTitle">Nova categoria</h2>
 
 
 
@@ -754,11 +769,15 @@
 
             class="stock-modal-form"
 
+            id="categoryForm"
+
         >
 
 
 
             @csrf
+
+            <input type="hidden" name="_method" id="categoryFormMethod">
 
 
 
@@ -779,6 +798,8 @@
                     type="text"
 
                     name="name"
+
+                    id="categoryName"
 
                     class="form-input"
 
@@ -826,7 +847,7 @@
 
 
 
-                    Salvar categoria
+                    <span id="categorySubmitLabel">Salvar categoria</span>
 
                 </button>
 
@@ -844,6 +865,28 @@
 
 
 
+</div>
+
+<div class="stock-modal-overlay" id="categoryDeleteModal" style="display:none;">
+    <div class="stock-category-modal-card stock-confirm-modal-card">
+        <button type="button" onclick="closeCategoryDeleteModal()" class="stock-modal-close"><i data-lucide="x"></i></button>
+        <div class="stock-modal-header">
+            <div class="stock-modal-icon"><i data-lucide="triangle-alert"></i></div>
+            <div>
+                <span>Estoque</span>
+                <h2>Excluir categoria</h2>
+                <p id="categoryDeleteMessage">Esta ação não poderá ser desfeita.</p>
+            </div>
+        </div>
+        <form method="POST" action="" class="stock-modal-form" id="categoryDeleteForm">
+            @csrf
+            @method('DELETE')
+            <div class="stock-modal-actions">
+                <button type="button" class="stock-modal-cancel" onclick="closeCategoryDeleteModal()">Cancelar</button>
+                <button class="chm-page-button danger" type="submit"><i data-lucide="trash-2"></i> Excluir categoria</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 
@@ -2186,6 +2229,12 @@ function openCategoryModal()
 {
     if (!canManageStockCategories) { return; }
 
+    document.getElementById('categoryForm').action = @json(route('stock.categories.store'));
+    document.getElementById('categoryFormMethod').value = '';
+    document.getElementById('categoryModalTitle').innerText = 'Nova categoria';
+    document.getElementById('categorySubmitLabel').innerText = 'Salvar categoria';
+    document.getElementById('categoryName').value = '';
+
     document
 
         .getElementById('categoryModal')
@@ -2206,6 +2255,34 @@ function closeCategoryModal()
 
         .style.display = 'none';
 
+}
+
+function openCategoryEditModal(id, name)
+{
+    if (!canManageStockCategories) { return; }
+
+    document.getElementById('categoryForm').action = @json(url('/stock/categories')) + '/' + id;
+    document.getElementById('categoryFormMethod').value = 'PUT';
+    document.getElementById('categoryModalTitle').innerText = 'Editar categoria';
+    document.getElementById('categorySubmitLabel').innerText = 'Salvar alterações';
+    document.getElementById('categoryName').value = name;
+    document.getElementById('categoryModal').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+function openCategoryDeleteModal(id, name)
+{
+    if (!canManageStockCategories) { return; }
+
+    document.getElementById('categoryDeleteForm').action = @json(url('/stock/categories')) + '/' + id;
+    document.getElementById('categoryDeleteMessage').innerText = 'Deseja excluir a categoria “' + name + '”? Esta ação não poderá ser desfeita.';
+    document.getElementById('categoryDeleteModal').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeCategoryDeleteModal()
+{
+    document.getElementById('categoryDeleteModal').style.display = 'none';
 }
 
 

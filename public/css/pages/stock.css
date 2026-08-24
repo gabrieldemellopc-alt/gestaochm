@@ -4616,6 +4616,32 @@ html[data-chm-theme="corporate-light"] .stock-modal-overlay {
     border-bottom: 1px solid var(--stock-border);
 }
 
+.stock-page .stock-category-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.stock-page .stock-category-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid var(--stock-border-strong);
+    border-radius: 7px;
+    color: var(--stock-text);
+    background: transparent;
+    font-size: .78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.stock-page .stock-category-action:hover { background: var(--stock-surface-soft); }
+.stock-page .stock-category-action.danger { color: var(--stock-danger); }
+.stock-page .stock-category-action:disabled { cursor: not-allowed; opacity: .5; }
+
 .stock-page .stock-items-grid {
     gap: 12px;
     padding: 16px 18px 18px;

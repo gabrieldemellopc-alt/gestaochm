@@ -925,6 +925,10 @@ Route::middleware('auth')->group(function () {
 
             )->name('categories.store');
 
+            Route::put('/categories/{category}', 'updateCategory')->name('categories.update');
+
+            Route::delete('/categories/{category}', 'destroyCategory')->name('categories.destroy');
+
 
 
             Route::post(
