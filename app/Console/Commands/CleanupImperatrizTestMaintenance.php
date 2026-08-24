@@ -18,7 +18,9 @@ class CleanupImperatrizTestMaintenance extends Command
     private const TENANT_ID = 1;
     private const DIVISION_ID = 1;
     private const LOCATION_ID = 3;
-    private const ITEM_NAMES = ['Mangueira hidráulica', 'Capa para mangueira hidráulica'];
+    private const MAINTENANCE_ID = 63;
+    private const MANUAL_MOVEMENT_ID = 110;
+    private const MAINTENANCE_MOVEMENT_IDS = [111, 112, 113, 114, 115];
 
     public function handle(): int
     {
@@ -60,40 +62,51 @@ class CleanupImperatrizTestMaintenance extends Command
 
     private function audit(): array
     {
-        $items = DB::table('stock_items')->where('tenant_id', self::TENANT_ID)->where('location_id', self::LOCATION_ID)
-            ->whereIn('name', self::ITEM_NAMES)->orderBy('name')->get(['id', 'name', 'quantity', 'unit', 'location_id']);
-        $itemIds = $items->pluck('id')->map(fn ($id) => (int) $id)->all();
-        $maintenanceIds = DB::table('maintenance_records as mr')->join('vehicles as v', 'v.id', '=', 'mr.vehicle_id')
-            ->where('mr.tenant_id', self::TENANT_ID)->where('v.division_id', self::DIVISION_ID)->where('v.location_id', self::LOCATION_ID)
-            ->whereNotNull('mr.cancelled_at')->whereExists(fn ($query) => $query->selectRaw('1')->from('stock_movements as sm')->whereColumn('sm.maintenance_record_id', 'mr.id')->whereIn('sm.stock_item_id', $itemIds))
-            ->pluck('mr.id')->map(fn ($id) => (int) $id)->all();
-        $maintenance = $maintenanceIds ? DB::table('maintenance_records')->whereIn('id', $maintenanceIds)->get(['id', 'workflow_status', 'vehicle_id', 'created_at', 'cancelled_at']) : collect();
-        $movements = $maintenanceIds ? DB::table('stock_movements as sm')->join('stock_items as si', 'si.id', '=', 'sm.stock_item_id')
-            ->whereIn('sm.maintenance_record_id', $maintenanceIds)->orderBy('sm.id')
-            ->get(['sm.id', 'sm.stock_item_id', 'si.name as item', 'sm.movement_type', 'sm.quantity', 'sm.maintenance_record_id', 'sm.reversal_movement_id', 'sm.reversed_from_movement_id', 'sm.cancelled_at', 'sm.description', 'sm.created_at']) : collect();
+        $maintenanceIds = [self::MAINTENANCE_ID];
+        $maintenance = DB::table('maintenance_records as mr')->join('vehicles as v', 'v.id', '=', 'mr.vehicle_id')
+            ->where('mr.id', self::MAINTENANCE_ID)->where('mr.tenant_id', self::TENANT_ID)
+            ->where('v.division_id', self::DIVISION_ID)->where('v.location_id', self::LOCATION_ID)
+            ->get(['mr.id', 'mr.workflow_status', 'mr.vehicle_id', 'mr.created_at', 'mr.cancelled_at']);
+        $targetMovementIds = array_merge([self::MANUAL_MOVEMENT_ID], self::MAINTENANCE_MOVEMENT_IDS);
+        $movements = DB::table('stock_movements as sm')->join('stock_items as si', 'si.id', '=', 'sm.stock_item_id')
+            ->whereIn('sm.id', $targetMovementIds)->orderBy('sm.id')
+            ->get(['sm.id', 'sm.tenant_id', 'sm.location_id', 'sm.stock_item_id', 'si.name as item', 'sm.movement_type', 'sm.quantity', 'sm.unit_cost', 'sm.total_cost', 'sm.maintenance_record_id', 'sm.reversal_movement_id', 'sm.reversed_from_movement_id', 'sm.cancelled_at', 'sm.invoice_number', 'sm.supplier_name', 'sm.description', 'sm.created_at']);
         $movementIds = $movements->pluck('id')->map(fn ($id) => (int) $id)->all();
-        $usages = $maintenanceIds ? DB::table('maintenance_material_usages')->whereIn('maintenance_record_id', $maintenanceIds)->get() : collect();
+        $itemIds = $movements->pluck('stock_item_id')->unique()->map(fn ($id) => (int) $id)->all();
+        $items = $itemIds ? DB::table('stock_items')->whereIn('id', $itemIds)->orderBy('name')->get(['id', 'name', 'quantity', 'unit', 'location_id']) : collect();
+        $usages = DB::table('maintenance_material_usages')->whereIn('maintenance_record_id', $maintenanceIds)->get();
         $children = [];
         foreach (['maintenance_record_items', 'maintenance_record_values', 'maintenance_record_extra_costs', 'maintenance_record_status_logs', 'maintenance_photos', 'maintenance_photo_upload_tokens'] as $table) {
             $children[$table] = $maintenanceIds && Schema::hasTable($table) ? DB::table($table)->whereIn('maintenance_record_id', $maintenanceIds)->count() : 0;
         }
-        $otherMovements = $itemIds ? DB::table('stock_movements')->whereIn('stock_item_id', $itemIds)->whereNotIn('id', $movementIds ?: [0])->count() : 0;
-        $safe = $items->count() === 2 && count($maintenanceIds) === 1 && $movements->isNotEmpty() && $otherMovements === 0;
-        $reason = $safe ? 'Apenas uma OM cancelada candidata e nenhum movimento externo nos dois itens.' : 'Foram encontrados itens/OMs/movimentos fora do conjunto exclusivo de teste.';
+        $manual = $movements->firstWhere('id', self::MANUAL_MOVEMENT_ID);
+        $maintenanceMovements = $movements->whereIn('id', self::MAINTENANCE_MOVEMENT_IDS);
+        $safe = $maintenance->count() === 1
+            && $movements->count() === count($targetMovementIds)
+            && $items->count() === 2
+            && $manual
+            && (int) $manual->tenant_id === self::TENANT_ID
+            && (int) $manual->location_id === self::LOCATION_ID
+            && (int) $manual->stock_item_id === 28
+            && $manual->movement_type === 'in'
+            && (float) $manual->quantity === 1.0
+            && $maintenanceMovements->count() === count(self::MAINTENANCE_MOVEMENT_IDS)
+            && $maintenanceMovements->every(fn ($movement) => (int) $movement->tenant_id === self::TENANT_ID && (int) $movement->location_id === self::LOCATION_ID && (int) $movement->maintenance_record_id === self::MAINTENANCE_ID);
+        $reason = $safe ? 'Os IDs autorizados e seus vínculos continuam exatamente como confirmados.' : 'Pelo menos um ID, contexto ou vínculo autorizado divergiu.';
 
-        return compact('items', 'itemIds', 'maintenance', 'maintenanceIds', 'movements', 'movementIds', 'usages', 'children', 'otherMovements', 'safe', 'reason') + ['balances' => $items->pluck('quantity', 'name')->all()];
+        return compact('items', 'itemIds', 'maintenance', 'maintenanceIds', 'movements', 'movementIds', 'usages', 'children', 'safe', 'reason') + ['balances' => $items->pluck('quantity', 'name')->all()];
     }
 
     private function render(array $audit): void
     {
-        $this->line('TEST MAINTENANCE TO DELETE');
+        $this->line('OM TO DELETE');
         $this->table(['ID', 'Status', 'Vehicle', 'Created', 'Cancelled'], $audit['maintenance']->map(fn ($row) => [$row->id, $row->workflow_status, $row->vehicle_id, $row->created_at, $row->cancelled_at])->all());
-        $this->line('STOCK MOVEMENTS TO DELETE');
-        $this->table(['ID', 'Item', 'Type', 'Qty', 'OM', 'Reversal', 'Cancelled', 'Description'], $audit['movements']->map(fn ($row) => [$row->id, $row->item, $row->movement_type, $row->quantity, $row->maintenance_record_id, $row->reversal_movement_id ?: $row->reversed_from_movement_id, $row->cancelled_at, $row->description])->all());
+        $this->line('TEST MOVEMENTS TO DELETE');
+        $this->table(['ID', 'Item', 'Type', 'Qty', 'OM', 'Reversal', 'Cancelled', 'Source'], $audit['movements']->map(fn ($row) => [$row->id, $row->item, $row->movement_type, $row->quantity, $row->maintenance_record_id, $row->reversal_movement_id ?: $row->reversed_from_movement_id, $row->cancelled_at, $row->invoice_number ?: $row->description])->all());
         $this->line('MATERIAL USAGES TO DELETE: '.$audit['usages']->count());
         $this->line('MAINTENANCE CHILDREN: '.json_encode($audit['children']));
         $this->table(['Item', 'Balance before', 'Balance after'], $audit['items']->map(fn ($item) => [$item->name, $item->quantity.' '.$item->unit, '0 '.$item->unit])->all());
-        $this->line('OTHER MOVEMENTS FOR THESE ITEMS: '.$audit['otherMovements']);
+        $this->line('SAFE '.($audit['safe'] ? 'YES' : 'NO').' — '.$audit['reason']);
     }
 
     private function deleteAuditRows(array $audit): void
