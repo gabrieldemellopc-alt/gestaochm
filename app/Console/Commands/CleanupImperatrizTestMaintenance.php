@@ -46,9 +46,11 @@ class CleanupImperatrizTestMaintenance extends Command
             DB::transaction(function () use ($audit): void {
                 $this->deleteAuditRows($audit);
                 DB::table('stock_items')->whereIn('id', $audit['itemIds'])->update(['quantity' => 0]);
-                $after = $this->audit();
-                if ($after['maintenance'] || $after['movements'] || array_filter($after['balances'])) {
-                    throw new RuntimeException('Validação pós-limpeza falhou.');
+                $validation = $this->postCleanupValidation($audit);
+                $this->renderPostCleanupValidation($validation);
+
+                if ($validation['failed']) {
+                    throw new RuntimeException('Validação pós-limpeza falhou: '.implode('; ', $validation['failed']));
                 }
             });
         } catch (\Throwable $exception) {
@@ -121,5 +123,54 @@ class CleanupImperatrizTestMaintenance extends Command
         DB::table('maintenance_record_items')->whereIn('maintenance_record_id', $ids)->delete();
         DB::table('stock_movements')->whereIn('id', $audit['movementIds'])->delete();
         DB::table('maintenance_records')->whereIn('id', $ids)->delete();
+    }
+
+    private function postCleanupValidation(array $audit): array
+    {
+        $maintenanceId = self::MAINTENANCE_ID;
+        $movementIds = array_merge([self::MANUAL_MOVEMENT_ID], self::MAINTENANCE_MOVEMENT_IDS);
+        $checks = [
+            'OM 63 exists' => DB::table('maintenance_records')->whereKey($maintenanceId)->exists() === false,
+            'Movements 110-115 remaining' => DB::table('stock_movements')->whereIn('id', $movementIds)->count() === 0,
+            'Material usages remaining' => DB::table('maintenance_material_usages')->where('maintenance_record_id', $maintenanceId)->count() === 0,
+        ];
+
+        foreach (array_keys($audit['children']) as $table) {
+            $checks[$table.' remaining'] = ! Schema::hasTable($table)
+                || DB::table($table)->where('maintenance_record_id', $maintenanceId)->count() === 0;
+        }
+
+        $items = DB::table('stock_items')->whereIn('id', [28, 29])->get(['id', 'name', 'quantity']);
+        $checks['Stock item 28 exists'] = $items->contains('id', 28);
+        $checks['Stock item 29 exists'] = $items->contains('id', 29);
+        $checks['Stock item 28 quantity'] = (float) ($items->firstWhere('id', 28)->quantity ?? -1) === 0.0;
+        $checks['Stock item 29 quantity'] = (float) ($items->firstWhere('id', 29)->quantity ?? -1) === 0.0;
+
+        return [
+            'checks' => $checks,
+            'failed' => collect($checks)->filter(fn ($passed) => ! $passed)->keys()->all(),
+            'maintenance_exists' => ! $checks['OM 63 exists'],
+            'movements_remaining' => DB::table('stock_movements')->whereIn('id', $movementIds)->count(),
+            'usages_remaining' => DB::table('maintenance_material_usages')->where('maintenance_record_id', $maintenanceId)->count(),
+            'children' => collect(array_keys($audit['children']))->mapWithKeys(fn ($table) => [$table => Schema::hasTable($table) ? DB::table($table)->where('maintenance_record_id', $maintenanceId)->count() : 0])->all(),
+            'items' => $items,
+        ];
+    }
+
+    private function renderPostCleanupValidation(array $validation): void
+    {
+        $this->line('POST CLEANUP VALIDATION');
+        $this->line('OM 63 exists: '.($validation['maintenance_exists'] ? 'YES' : 'NO'));
+        $this->line('Movements 110-115 remaining: '.$validation['movements_remaining']);
+        $this->line('Material usages remaining: '.$validation['usages_remaining']);
+        foreach ($validation['children'] as $table => $count) {
+            $this->line($table.' remaining: '.$count);
+        }
+        foreach ($validation['items'] as $item) {
+            $this->line('Item '.$item->id.' quantity: '.$item->quantity);
+        }
+        if ($validation['failed']) {
+            $this->error('FAILED CHECKS: '.implode('; ', $validation['failed']));
+        }
     }
 }
