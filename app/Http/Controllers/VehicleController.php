@@ -1203,7 +1203,7 @@ class VehicleController extends Controller
             ],
 
             'transfer_reason' => ['nullable', 'string', 'max:2000'],
-            'transfer_confirmed' => ['nullable', 'accepted'],
+            'transfer_confirmed' => ['nullable'],
 
 
             'procedures' => [
@@ -1219,8 +1219,7 @@ class VehicleController extends Controller
             'procedures.*' => [
                 Rule::exists('procedures', 'id')
                     ->where(fn ($query) => $query
-                        ->where('tenant_id', $vehicle->tenant_id)
-                        ->where('location_id', $vehicle->location_id)),
+                        ->where('tenant_id', $vehicle->tenant_id)),
             ],
 
 
@@ -1309,6 +1308,12 @@ class VehicleController extends Controller
         ]);
 
 
+
+        $procedureIds = $this->procedureIdsInContext(
+            $validated['procedures'] ?? [],
+            (int) $vehicle->tenant_id,
+            (int) $validated['location_id']
+        );
 
         /*
 
@@ -1662,11 +1667,7 @@ class VehicleController extends Controller
 
 
 
-            $this->procedureIdsInContext(
-                $validated['procedures'] ?? [],
-                (int) $vehicle->tenant_id,
-                (int) $vehicle->location_id
-            )
+            $procedureIds
 
 
         );
