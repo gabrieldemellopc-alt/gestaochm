@@ -27,6 +27,7 @@ class SeedImperatrizWorkshop extends Command
         }
 
         [$categories, $items, $procedures] = $this->definition();
+        $procedureCategories = $this->procedureCategories();
         $existingCategories = StockCategory::where('tenant_id', $tenantId)->get()->keyBy(fn ($c) => $this->key($c->name));
         if ($existingCategories->has($this->key('Bateriasa')) && ! $existingCategories->has($this->key('Baterias'))) {
             $existingCategories->put($this->key('Baterias'), $existingCategories->get($this->key('Bateriasa')));
@@ -45,9 +46,17 @@ class SeedImperatrizWorkshop extends Command
         $this->table(['PROCEDURES TO CREATE', 'Interno', 'Itens vinculados'], array_map(fn ($name, $links) => [$name, 'SIM', count($links)], array_keys($procedures), $procedures));
         $links = []; foreach ($procedures as $procedure => $itemNames) foreach ($itemNames as $itemName) $links[] = [$procedure, $itemName];
         $this->table(['PROCEDURE ITEMS', 'Stock Item'], $links);
+        $categoryUpdates = Procedure::query()->where('tenant_id', $tenantId)->where('location_id', $locationId)
+            ->with('fields.stockCategory')->get()->keyBy('name');
+        $this->table(['PROCEDURE CATEGORY UPDATES', 'Categoria atual', 'Categoria correta', 'Action'], collect($procedureCategories)
+            ->map(function ($category, $name) use ($categoryUpdates) {
+                $field = $categoryUpdates->get($name)?->fields->firstWhere('field_type', 'stock_item');
+                $current = $field?->stockCategory?->name ?? '—';
+                return [$name, $current, $category, $current === $category ? 'KEEP' : 'UPDATE'];
+            })->values()->all());
         if (! $commit) { $this->info('SAFE YES — dry-run: nenhuma alteração foi gravada.'); return self::SUCCESS; }
 
-        DB::transaction(function () use ($tenantId, $locationId, $categories, $items, $procedures) {
+        DB::transaction(function () use ($tenantId, $locationId, $categories, $items, $procedures, $procedureCategories) {
             $categoryByKey = StockCategory::where('tenant_id', $tenantId)->get()->keyBy(fn ($c) => $this->key($c->name));
             // Corrige somente o typo global conhecido, sem criar uma categoria duplicada.
             $typo = $categoryByKey->get($this->key('Bateriasa'));
@@ -63,7 +72,9 @@ class SeedImperatrizWorkshop extends Command
             }
             foreach ($procedures as $name => $names) {
                 $procedure = Procedure::firstOrCreate(['tenant_id' => $tenantId, 'location_id' => $locationId, 'name' => $name], ['can_be_internal' => true, 'validity_km' => false, 'validity_hours' => false, 'validity_period' => false, 'interval_km' => 0, 'interval_hours' => 0, 'interval_days' => 0]);
-                $procedure->fields()->firstOrCreate(['slug' => 'materiais_utilizados'], ['label' => 'Materiais utilizados', 'field_type' => 'stock_item', 'required' => false, 'has_quantity' => true, 'sort_order' => 0]);
+                $field = $procedure->fields()->firstOrCreate(['slug' => 'materiais_utilizados'], ['label' => 'Materiais utilizados', 'field_type' => 'stock_item', 'required' => false, 'has_quantity' => true, 'sort_order' => 0]);
+                $categoryId = $categoryByKey[$this->key($procedureCategories[$name])]->id;
+                if ((int) $field->stock_category_id !== (int) $categoryId) $field->update(['stock_category_id' => $categoryId]);
                 $procedure->stockItems()->syncWithoutDetaching(collect($names)->map(fn ($item) => $itemByName[$item]->id)->all());
             }
         });
@@ -71,6 +82,10 @@ class SeedImperatrizWorkshop extends Command
     }
 
     private function key(string $value): string { return Str::lower(Str::ascii(trim($value))); }
+    private function procedureCategories(): array
+    {
+        return ['Troca / reposição de óleo hidráulico'=>'Óleos','Troca de óleo da transmissão'=>'Óleos','Lubrificação / engraxamento'=>'Lubrificantes','Manutenção de mangueira hidráulica'=>'Hidráulica','Manutenção pneumática'=>'Pneumática','Manutenção do sistema de iluminação'=>'Elétrica e iluminação','Manutenção elétrica'=>'Elétrica e iluminação','Substituição de bateria'=>'Baterias','Manutenção do sistema de freios'=>'Freios','Manutenção de cardan'=>'Cardan e transmissão','Manutenção da embreagem'=>'Embreagem','Manutenção de suspensão / molas'=>'Suspensão','Troca de amortecedor'=>'Suspensão','Troca de filtro de ar'=>'Filtros','Manutenção de cilindro hidráulico'=>'Hidráulica'];
+    }
     private function definition(): array
     {
         $categories = ['Óleos','Lubrificantes','Hidráulica','Pneumática','Freios','Elétrica e iluminação','Baterias','Cardan e transmissão','Embreagem','Suspensão','Filtros'];
