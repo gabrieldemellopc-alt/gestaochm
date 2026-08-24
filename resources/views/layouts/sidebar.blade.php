@@ -219,7 +219,7 @@
 @php
     $sidebarWorkshopItems = collect([
         ['permission' => 'navigation.workshop', 'route' => 'workshop.index', 'active' => 'workshop.index', 'label' => 'Oficina', 'dropdown_label' => 'Visão geral', 'icon' => 'layout-dashboard'],
-        ['permission' => 'navigation.tires', 'route' => 'workshop.tires.index', 'active' => 'workshop.tires.*', 'label' => 'Controle de pneus', 'dropdown_label' => 'Controle de pneus', 'icon' => 'circle-dot'],
+        ['permission' => 'navigation.tires', 'route' => 'workshop.tires.index', 'active' => 'workshop.tires.*', 'label' => 'Pneus', 'dropdown_label' => 'Pneus', 'icon' => 'circle-dot'],
         ['permission' => 'navigation.stock', 'route' => 'stock.index', 'active' => 'stock.*', 'label' => 'Estoque', 'dropdown_label' => 'Estoque', 'icon' => 'boxes'],
         ['permission' => 'navigation.workshop', 'route' => 'procedures.index', 'active' => 'procedures.*', 'label' => 'Procedimentos', 'dropdown_label' => 'Procedimentos', 'icon' => 'clipboard-list'],
     ])->filter(fn (array $item) => $sidebarCanPermission($item['permission']))->values();
