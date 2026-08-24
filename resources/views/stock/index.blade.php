@@ -33,9 +33,27 @@
     $canCancelStockMovement = (bool) $stockPermissions['cancel_movement'];
     $canViewStockCosts = (bool) $stockPermissions['view_costs'];
     $canImportFiscalDocument = (bool) $stockPermissions['import_invoice'];
+    $stockFilterCategories = $categories->map(fn($category) => [
+        'id' => (string) $category->id,
+        'name' => $category->name,
+    ])->values();
 @endphp
 
-<div class="stock-page">
+<div
+    class="stock-page"
+    x-data='{
+        query: "",
+        categories: @json($stockFilterCategories),
+        selectedCategoryIds: @json($stockFilterCategories->pluck("id")->all()),
+        categoryMenuOpen: false,
+        normalize(value) { return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase(); },
+        isSelected(id) { return this.selectedCategoryIds.includes(String(id)); },
+        toggleCategory(id) { id = String(id); this.selectedCategoryIds = this.isSelected(id) ? this.selectedCategoryIds.filter(selectedId => selectedId !== id) : [...this.selectedCategoryIds, id]; },
+        toggleAll() { this.selectedCategoryIds = this.selectedCategoryIds.length === this.categories.length ? [] : this.categories.map(category => category.id); },
+        itemMatches(categoryId, itemName, brand, categoryName) { const term = this.normalize(this.query); return this.isSelected(categoryId) && (!term || this.normalize(categoryName).includes(term) || this.normalize(itemName).includes(term) || this.normalize(brand).includes(term)); },
+        categoryMatches(categoryId, categoryName) { if (!this.isSelected(categoryId)) return false; const term = this.normalize(this.query); return !term || this.normalize(categoryName).includes(term) || Array.from(this.$root.querySelectorAll(`[data-stock-item][data-category-id="${categoryId}"]`)).some(item => this.normalize(item.dataset.itemName).includes(term) || this.normalize(item.dataset.itemBrand).includes(term)); }
+    }'
+>
 
 
 
@@ -142,126 +160,47 @@
 
     {{-- RESUMO --}}
 
-    <div class="stock-summary-grid">
+    <div class="stock-filter-bar">
+        <label class="stock-search-field">
+            <i data-lucide="search"></i>
+            <input type="search" x-model.debounce.150ms="query" placeholder="Buscar item ou categoria..." aria-label="Buscar item ou categoria">
+        </label>
 
+        <div class="stock-compact-kpis">
+            <div class="stock-category-filter" @click.outside="categoryMenuOpen = false">
+                <button type="button" class="stock-compact-kpi stock-category-kpi" @click="categoryMenuOpen = !categoryMenuOpen" :aria-expanded="categoryMenuOpen.toString()">
+                    <i data-lucide="boxes"></i>
+                    <span>Categorias <strong x-text="selectedCategoryIds.length + '/' + categories.length"></strong></span>
+                    <i data-lucide="chevron-down" class="stock-category-chevron" :class="{ 'is-open': categoryMenuOpen }"></i>
+                </button>
 
-
-        <div class="stock-summary-card">
-
-
-
-            <div class="stock-summary-icon">
-
-                <i data-lucide="boxes"></i>
-
+                <div class="stock-category-popover" x-show="categoryMenuOpen" x-cloak x-transition.origin.top.right>
+                    <strong>Categorias</strong>
+                    <label class="stock-category-option stock-category-option-all" x-effect="$refs.selectAll.indeterminate = selectedCategoryIds.length > 0 && selectedCategoryIds.length < categories.length">
+                        <input type="checkbox" x-ref="selectAll" :checked="selectedCategoryIds.length === categories.length" @change="toggleAll()">
+                        <span>Selecionar todas</span>
+                    </label>
+                    <div class="stock-category-option-list">
+                        <template x-for="category in categories" :key="category.id">
+                            <label class="stock-category-option">
+                                <input type="checkbox" :checked="isSelected(category.id)" @change="toggleCategory(category.id)">
+                                <span x-text="category.name"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
             </div>
 
-
-
-            <div>
-
-                <span>
-
-                    Categorias
-
-                </span>
-
-
-
-                <strong>
-
-                    {{ $categories->count() }}
-
-                </strong>
-
-            </div>
-
-
-
-        </div>
-
-
-
-        <div class="stock-summary-card">
-
-
-
-            <div class="stock-summary-icon">
-
+            <div class="stock-compact-kpi">
                 <i data-lucide="package"></i>
-
+                <span>Itens <strong>{{ $categories->sum(fn($category) => $category->items->count()) }}</strong></span>
             </div>
 
-
-
-            <div>
-
-                <span>
-
-                    Itens cadastrados
-
-                </span>
-
-
-
-                <strong>
-
-                    {{ $categories->sum(fn($category) => $category->items->count()) }}
-
-                </strong>
-
-            </div>
-
-
-
-        </div>
-
-
-
-        <div class="stock-summary-card warning">
-
-
-
-            <div class="stock-summary-icon">
-
+            <div class="stock-compact-kpi warning">
                 <i data-lucide="triangle-alert"></i>
-
+                <span>Atenção <strong>{{ $categories->sum(fn($category) => $category->items->whereIn('stock_status', ['warning', 'danger'])->count()) }}</strong></span>
             </div>
-
-
-
-            <div>
-
-                <span>
-
-                    Atenção no estoque
-
-                </span>
-
-
-
-                <strong>
-
-                    {{
-
-                        $categories->sum(function ($category) {
-
-                            return $category->items->whereIn('stock_status', ['warning', 'danger'])->count();
-
-                        })
-
-                    }}
-
-                </strong>
-
-            </div>
-
-
-
         </div>
-
-
-
     </div>
 
 
@@ -276,7 +215,14 @@
 
 
 
-            <div class="stock-category-card">
+            <div
+                class="stock-category-card"
+                data-stock-category
+                data-category-id="{{ $category->id }}"
+                data-category-name="{{ $category->name }}"
+                x-show="categoryMatches({{ $category->id }}, @js($category->name))"
+                x-cloak
+            >
 
 
 
@@ -402,6 +348,12 @@
                             "
 
                             onclick="openEditItemModal({{ $item->id }})"
+                            data-stock-item
+                            data-category-id="{{ $category->id }}"
+                            data-item-name="{{ $item->name }}"
+                            data-item-brand="{{ $item->brand }}"
+                            x-show="itemMatches({{ $category->id }}, @js($item->name), @js($item->brand), @js($category->name))"
+                            x-cloak
 
                         >
 
@@ -676,6 +628,19 @@
 
 
         @endforelse
+
+        @if($categories->isNotEmpty())
+            <div class="stock-filter-empty" x-show="selectedCategoryIds.length === 0" x-cloak>
+                <i data-lucide="boxes"></i>
+                <strong>Nenhuma categoria selecionada.</strong>
+                <p>Selecione ao menos uma categoria para visualizar seus itens.</p>
+            </div>
+            <div class="stock-filter-empty" x-show="selectedCategoryIds.length > 0 && !categories.some(category => categoryMatches(category.id, category.name))" x-cloak>
+                <i data-lucide="search-x"></i>
+                <strong>Nenhum item ou categoria encontrado.</strong>
+                <p>Revise sua busca ou ajuste as categorias selecionadas.</p>
+            </div>
+        @endif
 
 
 
