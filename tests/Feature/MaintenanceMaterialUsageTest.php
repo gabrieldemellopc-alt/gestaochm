@@ -147,7 +147,7 @@ class MaintenanceMaterialUsageTest extends TestCase
     {
         $service = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
         $this->assertStringContainsString("->lockForUpdate()->firstOrFail()", $service);
-        $this->assertStringContainsString("'maintenance_record_item_id' => null", $service);
+        $this->assertStringContainsString("'maintenance_record_item_id' => \$maintenanceItemId", $service);
         $this->assertStringContainsString('Saldo insuficiente', $service);
         $this->assertStringContainsString("'movement_type' => 'out'", $service);
     }

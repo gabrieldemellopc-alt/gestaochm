@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class MaintenanceMaterialUsage extends Model
 {
     protected $fillable = [
-        'tenant_id', 'location_id', 'maintenance_record_id', 'stock_item_id',
+        'tenant_id', 'location_id', 'maintenance_record_id', 'maintenance_record_item_id', 'stock_item_id',
         'stock_movement_id', 'purchase_entry_movement_id', 'quantity', 'unit_cost', 'total_cost', 'notes',
         'created_by', 'cancelled_at', 'cancelled_by', 'cancel_reason',
         'reversal_movement_id', 'replaced_by_usage_id', 'replaces_usage_id',
@@ -22,6 +22,7 @@ class MaintenanceMaterialUsage extends Model
     public function scopeActive(Builder $query): Builder { return $query->whereNull('cancelled_at'); }
     public function scopeCancelled(Builder $query): Builder { return $query->whereNotNull('cancelled_at'); }
     public function maintenanceRecord() { return $this->belongsTo(MaintenanceRecord::class); }
+    public function maintenanceRecordItem() { return $this->belongsTo(MaintenanceRecordItem::class); }
     public function stockItem() { return $this->belongsTo(StockItem::class); }
     public function stockMovement() { return $this->belongsTo(StockMovement::class); }
     public function purchaseEntryMovement() { return $this->belongsTo(StockMovement::class, 'purchase_entry_movement_id'); }

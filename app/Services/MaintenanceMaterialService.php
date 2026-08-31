@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\MaintenanceMaterialUsage;
 use App\Models\MaintenanceRecord;
+use App\Models\MaintenanceRecordItem;
 use App\Models\StockItem;
 use App\Models\StockCategory;
 use App\Models\StockMovement;
@@ -42,8 +43,16 @@ class MaintenanceMaterialService
             if (! $item) $item = StockItem::create(['tenant_id'=>$maintenance->tenant_id,'location_id'=>$locationId,'name'=>$data['name'],'brand'=>$data['brand']??null,'stock_category_id'=>$data['stock_category_id']??null,'unit'=>$data['unit'],'quantity'=>0,'unit_cost'=>0,'minimum_quantity'=>0,'active'=>true,'observation'=>'Criado por compra direta da manutenção #'.$maintenance->id]);
             $total = round((float) $data['total_cost'], 2);
             $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>now()]);
-            $entry->update(['maintenance_record_id'=>$maintenance->id]);
-            $usage = $this->createUsage($maintenance, ['stock_item_id'=>$item->id,'quantity'=>$data['quantity'],'notes'=>$data['notes']??null], $user);
+            $entry->update([
+                'maintenance_record_id' => $maintenance->id,
+                'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,
+            ]);
+            $usage = $this->createUsage($maintenance, [
+                'stock_item_id' => $item->id,
+                'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,
+                'quantity' => $data['quantity'],
+                'notes' => $data['notes'] ?? null,
+            ], $user);
             $usage->update(['purchase_entry_movement_id' => $entry->id]);
             MaintenanceService::recalculateTotalCost($maintenance);
             $this->audit($usage, 'created', 'maintenance_material_direct_purchase', null, ['stock_entry_movement_id'=>$entry->id]);
@@ -109,6 +118,15 @@ class MaintenanceMaterialService
 
     private function createUsage(MaintenanceRecord $maintenance, array $data, User $user, ?int $replaces = null): MaintenanceMaterialUsage
     {
+        $maintenanceItemId = $data['maintenance_record_item_id'] ?? null;
+        if ($maintenanceItemId) {
+            MaintenanceRecordItem::query()
+                ->whereKey($maintenanceItemId)
+                ->where('maintenance_record_id', $maintenance->id)
+                ->whereNull('cancelled_at')
+                ->lockForUpdate()
+                ->firstOrFail();
+        }
         $item = StockItem::query()
             ->whereKey($data['stock_item_id'])
             ->where('tenant_id', $maintenance->tenant_id)
@@ -124,7 +142,7 @@ class MaintenanceMaterialService
             'location_id' => $maintenance->vehicle->location_id,
             'stock_item_id' => $item->id,
             'maintenance_record_id' => $maintenance->id,
-            'maintenance_record_item_id' => null,
+            'maintenance_record_item_id' => $maintenanceItemId,
             'movement_type' => 'out', 'quantity' => $quantity,
             'unit_cost' => $unitCost, 'total_cost' => round($quantity * $unitCost, 2),
             'description' => 'Material utilizado diretamente na manutenção #'.$maintenance->id,
@@ -135,6 +153,7 @@ class MaintenanceMaterialService
             'tenant_id' => $maintenance->tenant_id,
             'location_id' => $maintenance->vehicle->location_id,
             'maintenance_record_id' => $maintenance->id,
+            'maintenance_record_item_id' => $maintenanceItemId,
             'stock_item_id' => $item->id, 'stock_movement_id' => $movement->id,
             'quantity' => $quantity, 'unit_cost' => $unitCost,
             'total_cost' => round($quantity * $unitCost, 2),
@@ -163,7 +182,7 @@ class MaintenanceMaterialService
         $reverse = StockMovement::create([
             'tenant_id' => $usage->tenant_id, 'location_id' => $usage->location_id,
             'stock_item_id' => $usage->stock_item_id, 'maintenance_record_id' => $maintenance->id,
-            'maintenance_record_item_id' => null, 'movement_type' => 'in',
+            'maintenance_record_item_id' => $usage->maintenance_record_item_id, 'movement_type' => 'in',
             'quantity' => $usage->quantity, 'unit_cost' => $usage->unit_cost,
             'total_cost' => $usage->total_cost, 'reversed_from_movement_id' => $movement->id,
             'description' => 'Devolução de material da manutenção #'.$maintenance->id.': '.$reason,

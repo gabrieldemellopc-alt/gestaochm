@@ -66,6 +66,11 @@ class MaintenanceRecordItem extends Model
         return $this->hasMany(StockMovement::class, 'maintenance_record_item_id');
     }
 
+    public function materialUsages()
+    {
+        return $this->hasMany(MaintenanceMaterialUsage::class);
+    }
+
     public function canceller()
     {
         return $this->belongsTo(User::class, 'cancelled_by');
