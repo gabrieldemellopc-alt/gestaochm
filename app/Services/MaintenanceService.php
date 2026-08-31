@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceMaterialUsage;
 use App\Models\MaintenanceRecordValue;
@@ -1101,9 +1102,10 @@ class MaintenanceService
     public static function close(
         MaintenanceRecord $maintenance,
         string $vehicleStatusAfter,
-        ?string $closureNotes = null
+        ?string $closureNotes = null,
+        ?string $finishedAt = null
     ): MaintenanceRecord {
-        return DB::transaction(function () use ($maintenance, $vehicleStatusAfter, $closureNotes) {
+        return DB::transaction(function () use ($maintenance, $vehicleStatusAfter, $closureNotes, $finishedAt) {
             $maintenance = MaintenanceRecord::query()
                 ->with(['vehicle'])
                 ->whereKey($maintenance->id)
@@ -1136,6 +1138,23 @@ class MaintenanceService
                     'maintenance' => 'Manutenções canceladas não podem ser encerradas.',
                 ]);
             }
+
+            // datetime-local does not include an offset; Carbon therefore follows the
+            // application's existing timezone convention when parsing this value.
+            $effectiveFinishedAt = $finishedAt ? Carbon::parse($finishedAt) : now();
+            $openedAt = $maintenance->started_at ?? $maintenance->created_at;
+
+            if ($openedAt && $effectiveFinishedAt->lt($openedAt)) {
+                throw ValidationException::withMessages([
+                    'finished_at' => 'A data e hora do encerramento não pode ser anterior à abertura da manutenção.',
+                ]);
+            }
+
+            if ($effectiveFinishedAt->gt(now())) {
+                throw ValidationException::withMessages([
+                    'finished_at' => 'A data e hora do encerramento não pode ser futura.',
+                ]);
+            }
     
             if (! $maintenance->hasAnyActiveComposition()) {
                 throw ValidationException::withMessages([
@@ -1151,7 +1170,7 @@ class MaintenanceService
     
             $maintenance->update([
                 'workflow_status' => 'closed',
-                'finished_at' => now(),
+                'finished_at' => $effectiveFinishedAt,
                 'closed_by' => auth()->id(),
                 'closure_notes' => $closureNotes,
             ]);

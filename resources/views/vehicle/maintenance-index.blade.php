@@ -544,6 +544,19 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="maintenance-finished-at">Data e hora do encerramento</label>
+
+                            <input
+                                id="maintenance-finished-at"
+                                name="finished_at"
+                                type="datetime-local"
+                                class="form-input"
+                                value="{{ old('finished_at', now()->format('Y-m-d\TH:i')) }}"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
                             <label>Observações de encerramento</label>
 
                             <textarea

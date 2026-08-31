@@ -955,13 +955,24 @@ class MaintenanceController extends Controller
                 'required',
                 'in:operational,inactive,inoperant,accident,support,testing,transfer,transferred',
             ],
+            'finished_at' => [
+                'required',
+                'date',
+                Rule::date()
+                    ->afterOrEqual($maintenance->started_at ?? $maintenance->created_at)
+                    ->beforeOrEqual(now()),
+            ],
             'closure_notes' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'finished_at.after_or_equal' => 'A data e hora do encerramento não pode ser anterior à abertura da manutenção.',
+            'finished_at.before_or_equal' => 'A data e hora do encerramento não pode ser futura.',
         ]);
 
         MaintenanceService::close(
             $maintenance,
             $data['vehicle_status_after'],
-            $data['closure_notes'] ?? null
+            $data['closure_notes'] ?? null,
+            $data['finished_at'] ?? null
         );
 
         return redirect()
