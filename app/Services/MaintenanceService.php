@@ -470,18 +470,45 @@ class MaintenanceService
     
             foreach ($procedure->fields as $field) {
                 $value = $fieldValues[$field->slug] ?? null;
-    
+            
+                // Serviço externo não utiliza nem registra consumo do estoque interno.
+                if (
+                    $executionType !== 'internal'
+                    && $field->field_type === 'stock_item'
+                ) {
+                    continue;
+                }
+            
                 $quantity = $field->field_type === 'stock_item'
                     ? ($fieldValues[$field->slug.'_quantity'] ?? null)
                     : 1;
-    
+            
+                // Proteção adicional para consumo interno.
+                if (
+                    $field->field_type === 'stock_item'
+                    && $value
+                    && ($quantity === null || (float) $quantity <= 0)
+                ) {
+                    throw ValidationException::withMessages([
+                        $field->slug.'_quantity' => 'Informe uma quantidade válida para o material utilizado.',
+                    ]);
+                }
+            
+                // Campo de estoque não utilizado não precisa gerar valor vazio.
+                if (
+                    $field->field_type === 'stock_item'
+                    && ! $value
+                ) {
+                    continue;
+                }
+            
                 MaintenanceRecordItemValue::create([
                     'maintenance_record_item_id' => $item->id,
                     'procedure_field_id' => $field->id,
                     'value' => $value,
                     'quantity' => $quantity,
                 ]);
-    
+            
                 if (
                     $executionType !== 'internal'
                     || $field->field_type !== 'stock_item'
