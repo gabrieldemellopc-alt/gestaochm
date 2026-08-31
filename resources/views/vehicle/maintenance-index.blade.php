@@ -1019,6 +1019,14 @@
                                                         <i class="bi bi-arrow-clockwise"></i>
                                                         Corrigir serviço
                                                     </a>
+                                                    <form method="POST" action="{{ route('vehicles.maintenance.items.destroy', [$vehicle->id, $openMaintenance->id, $item->id]) }}" onsubmit="return confirm('Excluir serviço?\n\nO serviço será removido desta manutenção. Custos, consumos e movimentos de estoque vinculados a ele serão revertidos. Os demais serviços da OM não serão alterados.')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="maintenance-inline-edit-button maintenance-delete-action">
+                                                            <i class="bi bi-trash3"></i>
+                                                            Excluir serviço
+                                                        </button>
+                                                    </form>
                                                 @endif
                                             @endif
                                         </div>

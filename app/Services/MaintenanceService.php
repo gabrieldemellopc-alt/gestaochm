@@ -798,6 +798,48 @@ class MaintenanceService
         });
     }
 
+    public static function deleteItem(MaintenanceRecord $maintenance, MaintenanceRecordItem $item, User $user): MaintenanceRecordItem
+    {
+        return DB::transaction(function () use ($maintenance, $item, $user) {
+            $maintenance = self::editableMaintenance($maintenance);
+            $item = MaintenanceRecordItem::query()->with('procedure')->where('maintenance_record_id', $maintenance->id)->whereKey($item->id)->lockForUpdate()->firstOrFail();
+            if ($item->cancelled_at) {
+                throw ValidationException::withMessages(['item' => 'Este serviço já foi excluído ou substituído.']);
+            }
+
+            $reason = 'Serviço excluído pelo usuário';
+            $before = $item->toArray();
+            $usages = MaintenanceMaterialUsage::query()->where('maintenance_record_id', $maintenance->id)->where('maintenance_record_item_id', $item->id)->whereNull('cancelled_at')->lockForUpdate()->get()->keyBy('stock_movement_id');
+            $movements = StockMovement::query()->where('maintenance_record_id', $maintenance->id)->where('maintenance_record_item_id', $item->id)->where('movement_type', 'out')->whereNull('cancelled_at')->whereNull('reversal_movement_id')->lockForUpdate()->get();
+
+            foreach ($movements as $movement) {
+                $stockItem = StockItem::query()->whereKey($movement->stock_item_id)->lockForUpdate()->firstOrFail();
+                $reverse = StockMovement::create([
+                    'tenant_id'=>$movement->tenant_id, 'location_id'=>$movement->location_id, 'stock_item_id'=>$movement->stock_item_id,
+                    'maintenance_record_id'=>$maintenance->id, 'maintenance_record_item_id'=>$item->id, 'movement_type'=>'in',
+                    'quantity'=>$movement->quantity, 'unit_cost'=>$movement->unit_cost, 'total_cost'=>$movement->total_cost,
+                    'description'=>'Reversão pela exclusão do serviço #'.$item->id, 'reversed_from_movement_id'=>$movement->id, 'moved_at'=>now(),
+                ]);
+                $movement->update(['cancelled_at'=>now(), 'cancelled_by'=>$user->id, 'cancel_reason'=>$reason, 'reversal_movement_id'=>$reverse->id]);
+                $stockItem->increment('quantity', (float) $movement->quantity);
+                if ($usage = $usages->get($movement->id)) {
+                    $usage->update(['cancelled_at'=>now(), 'cancelled_by'=>$user->id, 'cancel_reason'=>$reason, 'reversal_movement_id'=>$reverse->id]);
+                    if ($usage->purchase_entry_movement_id) self::reverseDirectPurchaseEntry($maintenance, $usage, $reason, $user);
+                }
+            }
+
+            $item->update(['cancelled_at'=>now(), 'cancelled_by'=>$user->id, 'cancel_reason'=>$reason, 'cancellation_type'=>'deleted']);
+            $maintenanceAfter = self::recalculateTotalCost($maintenance);
+            app(AuditLogService::class)->updated($item->fresh(), [
+                'tenant_id'=>$maintenance->tenant_id, 'division_id'=>$maintenance->vehicle->division_id, 'location_id'=>$maintenance->vehicle->location_id,
+                'module'=>'maintenance', 'summary'=>'Serviço da manutenção #'.$maintenance->id.' excluído.',
+                'before_data'=>$before, 'after_data'=>$item->fresh()->toArray(), 'reason'=>$reason,
+                'metadata'=>['event'=>'maintenance_item_deleted','maintenance_record_id'=>$maintenance->id,'maintenance_record_item_id'=>$item->id,'procedure_id'=>$item->procedure_id,'maintenance_type'=>$item->maintenance_type,'total_cost_removed'=>$before['total_cost'],'user_id'=>$user->id],
+            ]);
+            return $item->fresh();
+        });
+    }
+
     private static function reverseItemStock(
         MaintenanceRecord $maintenance,
         MaintenanceRecordItem $item,

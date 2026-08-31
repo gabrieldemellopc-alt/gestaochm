@@ -4612,6 +4612,16 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     font-size: 14px;
 }
 
+.maintenance-delete-action {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, .35);
+}
+
+.maintenance-delete-action:hover {
+    color: #fff;
+    background: rgba(239, 68, 68, .18);
+}
+
 .maintenance-procedure-option {
     min-width: 0;
     padding: 12px;

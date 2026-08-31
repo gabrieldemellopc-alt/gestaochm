@@ -558,6 +558,11 @@ Route::middleware('auth')->group(function () {
         [MaintenanceController::class, 'replaceItem']
     )->name('vehicles.maintenance.items.replace');
 
+    Route::delete(
+        '/vehicles/{vehicle}/maintenance/{maintenance}/items/{item}',
+        [MaintenanceController::class, 'destroyItem']
+    )->name('vehicles.maintenance.items.destroy');
+
 
     Route::post(
         '/vehicles/{vehicle}/maintenance/{maintenance}/close',

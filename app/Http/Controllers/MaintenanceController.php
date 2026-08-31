@@ -64,6 +64,7 @@ class MaintenanceController extends Controller
         $requiredInvoice = app(TenantFiscalSettingService::class)->requires('stock_entry');
         $data = $request->validate([
             'stock_item_id' => ['nullable', 'integer'],
+            'maintenance_record_item_id' => ['nullable', 'integer'],
             'name' => ['required', 'string', 'max:255'],
             'brand' => ['nullable', 'string', 'max:255'],
             'stock_category_id' => ['nullable', 'integer'],
@@ -587,6 +588,18 @@ class MaintenanceController extends Controller
         return redirect()
             ->route('vehicle.maintenance.index', $vehicle->id)
             ->with('success', 'Serviço substituído com sucesso.');
+    }
+
+    public function destroyItem(Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceRecordItem $item)
+    {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) return $redirect;
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        abort_unless((int) $item->maintenance_record_id === (int) $maintenance->id, 404);
+        $this->authorizeMaintenancePermission('maintenance.edit_items');
+
+        MaintenanceService::deleteItem($maintenance, $item, auth()->user());
+
+        return back()->with('success', 'Serviço excluído e efeitos vinculados revertidos com sucesso.');
     }
 
     public function show(
