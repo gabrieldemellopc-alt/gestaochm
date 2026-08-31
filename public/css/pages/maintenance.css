@@ -4563,6 +4563,55 @@ html[data-chm-theme="corporate-light"] .maintenance-create-page textarea {
     margin-bottom: 14px;
 }
 
+.maintenance-procedure-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 18px 0;
+}
+
+.maintenance-procedure-search > .bi-search {
+    position: absolute;
+    left: 14px;
+    z-index: 1;
+    color: currentColor;
+    opacity: .65;
+    pointer-events: none;
+}
+
+.maintenance-procedure-search .form-input {
+    width: 100%;
+    padding-left: 42px;
+    padding-right: 42px;
+}
+
+.maintenance-procedure-search-clear {
+    position: absolute;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    color: currentColor;
+    background: transparent;
+    cursor: pointer;
+}
+
+.maintenance-procedure-search-clear:hover {
+    background: rgba(148, 163, 184, .14);
+}
+
+.maintenance-procedure-search-empty {
+    margin: 12px 0 0;
+    color: var(--muted, #94a3b8);
+    font-size: 14px;
+}
+
 .maintenance-procedure-option {
     min-width: 0;
     padding: 12px;
@@ -5249,7 +5298,7 @@ html.maintenance-modal-open { overflow:hidden; }
     letter-spacing: 0.03em;
 }
 
-.execution-badge [data-lucide] {
+.execution-badge .bi {
     width: 14px;
     height: 14px;
     flex-shrink: 0;

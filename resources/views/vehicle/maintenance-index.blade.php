@@ -665,7 +665,19 @@
                     x-data="{
                         procedureId: @js((string) old('procedure_id', '')),
                         executionType: @js(old('execution_type', 'external')),
+                        procedureSearch: '',
                         internalAvailability: @js($procedures->mapWithKeys(fn ($procedure) => [(string) $procedure->id => (bool) $procedure->can_be_internal])),
+                        normalizeProcedureName(value) {
+                            return String(value || '')
+                                .normalize('NFD')
+                                .replace(/[\u0300-\u036f]/g, '')
+                                .toLowerCase()
+                                .trim();
+                        },
+                        matchesProcedure(name) {
+                            const search = this.normalizeProcedureName(this.procedureSearch);
+                            return !search || this.normalizeProcedureName(name).includes(search);
+                        },
                         canBeInternal() {
                             return this.internalAvailability[this.procedureId] === true;
                         },
@@ -691,6 +703,29 @@
                                 <p>Inclua um procedimento executado nesta parada.</p>
                             </div>
 
+                            @if($procedures->isNotEmpty())
+                                <div class="maintenance-procedure-search">
+                                    <i class="bi bi-search" aria-hidden="true"></i>
+                                    <input
+                                        type="search"
+                                        class="form-input"
+                                        placeholder="Buscar procedimento..."
+                                        aria-label="Buscar procedimento"
+                                        x-model="procedureSearch"
+                                    >
+                                    <button
+                                        type="button"
+                                        class="maintenance-procedure-search-clear"
+                                        x-show="procedureSearch"
+                                        x-cloak
+                                        @click="procedureSearch = ''"
+                                        aria-label="Limpar busca de procedimento"
+                                    >
+                                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            @endif
+
 <form
                                 method="GET"
                                 action="{{ route('vehicles.maintenance.items.create', [$vehicle->id, $openMaintenance->id]) }}"
@@ -698,12 +733,13 @@
                             >
                                 <input type="hidden" name="procedure_id" x-model="procedureId">
 
-                                <div class="maintenance-procedure-picker">
+                                <div class="maintenance-procedure-picker" x-ref="procedurePicker">
                                     @forelse($procedures as $procedure)
                                         <button
                                             type="button"
                                             class="maintenance-procedure-option"
                                             :class="{ 'is-active': procedureId === @js((string) $procedure->id) }"
+                                            x-show="matchesProcedure(@js($procedure->name))"
                                             @click="selectProcedure(@js((string) $procedure->id))"
                                             :aria-pressed="procedureId === @js((string) $procedure->id)"
                                         >
@@ -714,6 +750,11 @@
                                         <div class="maintenance-open-items-empty">Nenhum procedimento disponível para este veículo.</div>
                                     @endforelse
                                 </div>
+                                @if($procedures->isNotEmpty())
+                                    <p class="maintenance-procedure-search-empty" x-show="procedureSearch && ![...$refs.procedurePicker.querySelectorAll('.maintenance-procedure-option')].some(option => option.style.display !== 'none')" x-cloak>
+                                        Nenhum procedimento encontrado.
+                                    </p>
+                                @endif
 
                                 <div
                                     class="maintenance-action-placeholder"
