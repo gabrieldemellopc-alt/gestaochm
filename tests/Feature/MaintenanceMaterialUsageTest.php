@@ -127,15 +127,17 @@ class MaintenanceMaterialUsageTest extends TestCase
         ]);
         DB::setDefaultConnection('material_schema_test');
         try {
-            foreach (['tenants', 'locations', 'maintenance_records', 'stock_items', 'stock_movements', 'users'] as $table) {
+            foreach (['tenants', 'locations', 'maintenance_records', 'maintenance_record_items', 'stock_items', 'stock_movements', 'users'] as $table) {
                 Schema::create($table, fn ($blueprint) => $blueprint->id());
             }
             (require database_path('migrations/2026_08_12_000001_create_maintenance_material_usages_table.php'))->up();
             (require database_path('migrations/2026_08_24_000001_add_purchase_entry_movement_to_maintenance_material_usages_table.php'))->up();
+            (require database_path('migrations/2026_08_31_110000_add_used_at_to_maintenance_material_usages_table.php'))->up();
             $this->assertTrue(Schema::hasColumns('maintenance_material_usages', [
                 'stock_movement_id', 'quantity', 'unit_cost', 'total_cost', 'cancelled_at',
                 'cancel_reason', 'reversal_movement_id', 'replaced_by_usage_id', 'replaces_usage_id',
                 'purchase_entry_movement_id',
+                'used_at',
             ]));
         } finally {
             DB::purge('material_schema_test');
@@ -150,6 +152,38 @@ class MaintenanceMaterialUsageTest extends TestCase
         $this->assertStringContainsString("'maintenance_record_item_id' => \$maintenanceItemId", $service);
         $this->assertStringContainsString('Saldo insuficiente', $service);
         $this->assertStringContainsString("'movement_type' => 'out'", $service);
+        $this->assertStringContainsString("'moved_at' => \$data['used_at']", $service);
+        $this->assertStringContainsString("'used_at' => \$data['used_at']", $service);
+    }
+
+    public function test_material_use_date_is_required_validated_and_defaults_to_now_in_both_forms(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+        $view = file_get_contents(resource_path('views/vehicle/partials/maintenance-materials-summary.blade.php'));
+
+        $this->assertSame(2, substr_count($controller, "'used_at' => ['required', 'date'"));
+        $this->assertStringContainsString('used_at.after_or_equal', $controller);
+        $this->assertStringContainsString('used_at.before_or_equal', $controller);
+        $this->assertSame(2, substr_count($view, 'name="used_at"'));
+        $this->assertSame(2, substr_count($view, "now()->format('Y-m-d\\TH:i')"));
+    }
+
+    public function test_direct_purchase_uses_the_same_operational_datetime_for_entry_and_consumption(): void
+    {
+        $service = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
+
+        $this->assertStringContainsString("'moved_at'=>\$data['used_at']", $service);
+        $this->assertStringContainsString("'used_at' => \$data['used_at']", $service);
+    }
+
+    public function test_direct_purchase_uses_its_exact_purchase_cost_without_repricing_existing_stock(): void
+    {
+        $service = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
+
+        $this->assertStringContainsString('$purchaseUnitCost = round($total / (int) $data[\'quantity\'], 2);', $service);
+        $this->assertStringContainsString("'unit_cost_override' => \$purchaseUnitCost", $service);
+        $this->assertStringContainsString("update(['unit_cost' => \$previousUnitCost])", $service);
+        $this->assertStringContainsString("array_key_exists('unit_cost_override', \$data)", $service);
     }
 
     public function test_cancellation_and_replacement_reverse_before_new_consumption(): void

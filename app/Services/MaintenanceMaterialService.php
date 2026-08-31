@@ -22,6 +22,7 @@ class MaintenanceMaterialService
             $maintenance = $this->editable($maintenance);
             $locationId = $maintenance->vehicle->location_id;
             $item = null;
+            $isExistingItem = ! empty($data['stock_item_id']);
             if (! empty($data['stock_item_id'])) {
                 $item = StockItem::query()->whereKey($data['stock_item_id'])
                     ->where('tenant_id', $maintenance->tenant_id)->where('location_id', $locationId)
@@ -42,6 +43,8 @@ class MaintenanceMaterialService
             }
             if (! $item) $item = StockItem::create(['tenant_id'=>$maintenance->tenant_id,'location_id'=>$locationId,'name'=>$data['name'],'brand'=>$data['brand']??null,'stock_category_id'=>$data['stock_category_id']??null,'unit'=>$data['unit'],'quantity'=>0,'unit_cost'=>0,'minimum_quantity'=>0,'active'=>true,'observation'=>'Criado por compra direta da manutenção #'.$maintenance->id]);
             $total = round((float) $data['total_cost'], 2);
+            $purchaseUnitCost = round($total / (int) $data['quantity'], 2);
+            $previousUnitCost = (float) $item->unit_cost;
             $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>$data['used_at']]);
             $entry->update([
                 'maintenance_record_id' => $maintenance->id,
@@ -53,8 +56,17 @@ class MaintenanceMaterialService
                 'quantity' => $data['quantity'],
                 'used_at' => $data['used_at'],
                 'notes' => $data['notes'] ?? null,
+                'unit_cost_override' => $purchaseUnitCost,
             ], $user);
             $usage->update(['purchase_entry_movement_id' => $entry->id]);
+
+            // A purchase tied to immediate consumption must not reprice stock
+            // that was already on hand. A new item keeps the cost convention
+            // established by its entry after the complete entry/out pair.
+            if ($isExistingItem) {
+                StockItem::query()->whereKey($item->id)->update(['unit_cost' => $previousUnitCost]);
+            }
+
             MaintenanceService::recalculateTotalCost($maintenance);
             $this->audit($usage, 'created', 'maintenance_material_direct_purchase', null, ['stock_entry_movement_id'=>$entry->id]);
             return $usage;
@@ -137,7 +149,9 @@ class MaintenanceMaterialService
         if ((float) $item->quantity < $quantity) {
             throw ValidationException::withMessages(['quantity' => 'Saldo insuficiente para a quantidade informada.']);
         }
-        $unitCost = (float) $item->unit_cost;
+        $unitCost = array_key_exists('unit_cost_override', $data)
+            ? (float) $data['unit_cost_override']
+            : (float) $item->unit_cost;
         $movement = StockMovement::create([
             'tenant_id' => $maintenance->tenant_id,
             'location_id' => $maintenance->vehicle->location_id,
