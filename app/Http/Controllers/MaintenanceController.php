@@ -46,7 +46,11 @@ class MaintenanceController extends Controller
         $this->authorizeMaintenancePermission('stock.consume_maintenance');
         $data = $request->validate([
             'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'integer', 'min:1'],
+            'used_at' => ['required', 'date', Rule::date()->afterOrEqual($maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at)->beforeOrEqual(now())],
             'notes' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'used_at.after_or_equal' => 'A data e hora do uso não pode ser anterior à abertura da manutenção.',
+            'used_at.before_or_equal' => 'A data e hora do uso não pode ser futura.',
         ]);
         $material = $service->add($maintenance, $data, auth()->user());
         if ($request->expectsJson()) {
@@ -72,9 +76,13 @@ class MaintenanceController extends Controller
             'unit_other' => [Rule::requiredIf($request->input('unit') === 'Outro'), 'nullable', 'string', 'max:50'],
             'quantity' => ['required', 'integer', 'min:1'],
             'total_cost' => ['required', 'numeric', 'min:0'],
+            'used_at' => ['required', 'date', Rule::date()->afterOrEqual($maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at)->beforeOrEqual(now())],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'invoice_number' => [Rule::requiredIf($requiredInvoice), 'nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'used_at.after_or_equal' => 'A data e hora do uso não pode ser anterior à abertura da manutenção.',
+            'used_at.before_or_equal' => 'A data e hora do uso não pode ser futura.',
         ]);
         if (empty($data['stock_item_id'])) {
             if (! in_array($data['unit'], ['UNID', 'L', 'KG', 'G', 'Outro'], true)) {

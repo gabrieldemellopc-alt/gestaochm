@@ -42,7 +42,7 @@ class MaintenanceMaterialService
             }
             if (! $item) $item = StockItem::create(['tenant_id'=>$maintenance->tenant_id,'location_id'=>$locationId,'name'=>$data['name'],'brand'=>$data['brand']??null,'stock_category_id'=>$data['stock_category_id']??null,'unit'=>$data['unit'],'quantity'=>0,'unit_cost'=>0,'minimum_quantity'=>0,'active'=>true,'observation'=>'Criado por compra direta da manutenção #'.$maintenance->id]);
             $total = round((float) $data['total_cost'], 2);
-            $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>now()]);
+            $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>$data['used_at']]);
             $entry->update([
                 'maintenance_record_id' => $maintenance->id,
                 'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,
@@ -51,6 +51,7 @@ class MaintenanceMaterialService
                 'stock_item_id' => $item->id,
                 'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,
                 'quantity' => $data['quantity'],
+                'used_at' => $data['used_at'],
                 'notes' => $data['notes'] ?? null,
             ], $user);
             $usage->update(['purchase_entry_movement_id' => $entry->id]);
@@ -146,7 +147,7 @@ class MaintenanceMaterialService
             'movement_type' => 'out', 'quantity' => $quantity,
             'unit_cost' => $unitCost, 'total_cost' => round($quantity * $unitCost, 2),
             'description' => 'Material utilizado diretamente na manutenção #'.$maintenance->id,
-            'moved_at' => now(),
+            'moved_at' => $data['used_at'],
         ]);
         $item->decrement('quantity', $quantity);
         return MaintenanceMaterialUsage::create([
@@ -157,6 +158,7 @@ class MaintenanceMaterialService
             'stock_item_id' => $item->id, 'stock_movement_id' => $movement->id,
             'quantity' => $quantity, 'unit_cost' => $unitCost,
             'total_cost' => round($quantity * $unitCost, 2),
+            'used_at' => $data['used_at'],
             'notes' => $data['notes'] ?? null, 'created_by' => $user->id,
             'replaces_usage_id' => $replaces,
         ]);

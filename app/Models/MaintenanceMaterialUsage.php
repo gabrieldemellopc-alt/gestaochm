@@ -10,13 +10,13 @@ class MaintenanceMaterialUsage extends Model
     protected $fillable = [
         'tenant_id', 'location_id', 'maintenance_record_id', 'maintenance_record_item_id', 'stock_item_id',
         'stock_movement_id', 'purchase_entry_movement_id', 'quantity', 'unit_cost', 'total_cost', 'notes',
-        'created_by', 'cancelled_at', 'cancelled_by', 'cancel_reason',
+        'used_at', 'created_by', 'cancelled_at', 'cancelled_by', 'cancel_reason',
         'reversal_movement_id', 'replaced_by_usage_id', 'replaces_usage_id',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2', 'unit_cost' => 'decimal:2',
-        'total_cost' => 'decimal:2', 'cancelled_at' => 'datetime',
+        'total_cost' => 'decimal:2', 'used_at' => 'datetime', 'cancelled_at' => 'datetime',
     ];
 
     public function scopeActive(Builder $query): Builder { return $query->whereNull('cancelled_at'); }
