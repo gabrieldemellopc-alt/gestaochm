@@ -39,7 +39,7 @@
     <div class="quick-update-header quick-update-header-v2">
         <div class="quick-update-heading">
             <span class="quick-update-kicker">
-                <i data-lucide="activity"></i>
+                <i class="bi bi-activity"></i>
                 Operacional
             </span>
 
@@ -52,21 +52,21 @@
         </div>
 
         <a href="{{ route('dashboard') }}" class="quick-update-back">
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
             Voltar ao dashboard
         </a>
     </div>
 
     @if(session('success'))
         <div class="quick-update-alert success">
-            <i data-lucide="check-circle"></i>
+            <i class="bi bi-check-circle"></i>
             <span>{{ session('success') }}</span>
         </div>
     @endif
 
     @if($errors->any())
         <div class="quick-update-alert danger">
-            <i data-lucide="triangle-alert"></i>
+            <i class="bi bi-exclamation-triangle"></i>
             <span>
                 Verifique os campos informados. Não é permitido lançar valores negativos
                 ou menores que a leitura atual.
@@ -112,7 +112,7 @@
                 </div>
 
                 <button type="submit" class="quick-update-save">
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
                     Salvar atualizações
                 </button>
             </div>
@@ -153,7 +153,7 @@
                                                     alt="Veículo"
                                                 >
                                             @else
-                                                <i data-lucide="truck"></i>
+                                                <i class="bi bi-truck"></i>
                                             @endif
                                         </div>
 
@@ -171,7 +171,7 @@
                                                 <div class="quick-update-tags">
                                                     @foreach($vehicle->operational_update_alerts as $alert)
                                                         <span class="quick-update-tag {{ $alert['status'] }}">
-                                                            <i data-lucide="triangle-alert"></i>
+                                                            <i class="bi bi-exclamation-triangle"></i>
                                                             {{ $alert['message'] }}
                                                         </span>
                                                     @endforeach
@@ -233,7 +233,7 @@
                             <tr>
                                 <td colspan="4">
                                     <div class="quick-empty">
-                                        <i data-lucide="inbox"></i>
+                                        <i class="bi bi-inbox"></i>
 
                                         <strong>Nenhum veículo cadastrado</strong>
 
@@ -254,7 +254,7 @@
                     </div>
 
                     <button type="submit" class="quick-update-save large">
-                        <i data-lucide="save"></i>
+                        <i class="bi bi-floppy"></i>
                         Salvar atualizações
                     </button>
                 </div>

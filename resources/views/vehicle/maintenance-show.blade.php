@@ -58,7 +58,7 @@
             class="maintenance-back-button"
             onclick="history.back()"
         >
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
             Voltar
         </button>
 
@@ -66,7 +66,7 @@
 
     @if($errors->any())
         <div class="chm-alert danger">
-            <i data-lucide="circle-alert"></i>
+            <i class="bi bi-exclamation-circle"></i>
             <span>{{ $errors->first() }}</span>
         </div>
     @endif
@@ -76,7 +76,7 @@
         <div class="maintenance-details-vehicle">
 
             <div class="maintenance-open-icon">
-                <i data-lucide="wrench"></i>
+                <i class="bi bi-wrench-adjustable"></i>
             </div>
 
             <div>
@@ -116,7 +116,7 @@
                 class="chm-page-button maintenance-pdf-button"
                 target="_blank"
             >
-                <i data-lucide="file-text"></i>
+                <i class="bi bi-file-earmark-text"></i>
                 PDF da ordem
             </a>
 @endif
@@ -132,7 +132,7 @@
                     class="chm-page-button maintenance-reopen-button"
                     @click="reopenModal = true"
                 >
-                    <i data-lucide="rotate-ccw"></i>
+                    <i class="bi bi-arrow-counterclockwise"></i>
                     Reabrir
                 </button>
 @endif
@@ -143,7 +143,7 @@
                     class="chm-page-button maintenance-delete-button"
                     @click="deleteModal = true"
                 >
-                    <i data-lucide="trash-2"></i>
+                    <i class="bi bi-trash"></i>
                     Apagar
                 </button>
 @endif
@@ -254,7 +254,7 @@
                                         "extra_cost" => (float) ($item->extra_cost ?? 0),
                                     ]), @js(route("vehicles.maintenance.items.update", [$vehicle->id, $maintenance->id, $item->id])))"
                                 >
-                                    <i data-lucide="pencil"></i>
+                                    <i class="bi bi-pencil"></i>
                                     Editar
                                 </button>
                             @endif
@@ -316,7 +316,7 @@
                                         "cost_date" => optional($extraCost->effective_cost_date)->format('Y-m-d'),
                                     ]), @js(route("vehicles.maintenance.extra-costs.update", [$vehicle->id, $maintenance->id, $extraCost->id])))"
                                 >
-                                    <i data-lucide="pencil"></i>
+                                    <i class="bi bi-pencil"></i>
                                     Editar
                                 </button>
                             @endif

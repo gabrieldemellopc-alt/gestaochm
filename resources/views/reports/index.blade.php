@@ -44,7 +44,7 @@
 
         <div class="reports-index-header-meta">
             <div class="reports-index-header-chip">
-                <i data-lucide="building-2"></i>
+                <i class="bi bi-buildings"></i>
 
                 <span>
                     <small>Unidade ativa</small>
@@ -55,7 +55,7 @@
             </div>
 
             <div class="reports-index-header-chip">
-                <i data-lucide="calendar-range"></i>
+                <i class="bi bi-calendar-range"></i>
 
                 <span>
                     <small>Período padrão</small>
@@ -64,7 +64,7 @@
             </div>
 
             <div class="reports-index-header-chip">
-                <i data-lucide="layout-grid"></i>
+                <i class="bi bi-grid"></i>
 
                 <span>
                     <small>Módulos disponíveis</small>
@@ -90,7 +90,7 @@
         >
             <div class="reports-index-overview-heading">
                 <span class="reports-index-overview-icon">
-                    <i data-lucide="activity"></i>
+                    <i class="bi bi-activity"></i>
                 </span>
 
                 <span>
@@ -237,7 +237,7 @@
                     >
                         <div class="reports-index-card-top">
                             <div class="reports-index-card-icon">
-                                <i data-lucide="wrench"></i>
+                                <i class="bi bi-wrench-adjustable"></i>
                             </div>
 
                             <span class="reports-index-card-category">
@@ -306,7 +306,7 @@
                                 onclick="openMaintenanceReportModal()"
                             >
                                 <span>Abrir relatório</span>
-                                <i data-lucide="arrow-right"></i>
+                                <i class="bi bi-arrow-right"></i>
                             </button>
                         @endif
                     </article>
@@ -322,7 +322,7 @@
                     >
                         <div class="reports-index-card-top">
                             <div class="reports-index-card-icon">
-                                <i data-lucide="clipboard-list"></i>
+                                <i class="bi bi-clipboard"></i>
                             </div>
 
                             <span class="reports-index-card-category">
@@ -349,7 +349,7 @@
 
                         <div class="reports-index-card-action">
                             <span>Abrir dossiê</span>
-                            <i data-lucide="arrow-right"></i>
+                            <i class="bi bi-arrow-right"></i>
                         </div>
                     </a>
                 @endif
@@ -387,9 +387,9 @@
 
                 @if($canReport('reports.financial'))
                     <a href="{{ route('reports.financial.index') }}" class="reports-index-compact-card fuel">
-                        <div class="reports-index-compact-head"><div class="reports-index-card-icon"><i data-lucide="chart-no-axes-combined"></i></div><span class="reports-index-card-category">Financeiro</span></div>
+                        <div class="reports-index-compact-head"><div class="reports-index-card-icon"><i class="bi bi-bar-chart-line"></i></div><span class="reports-index-card-category">Financeiro</span></div>
                         <div class="reports-index-compact-content"><h3>Relatório Financeiro</h3><p>Manutenções, abastecimentos, despesas da oficina e consumíveis sem duplicar entradas de estoque.</p><div class="reports-index-compact-info"><span>Custos operacionais</span><span>Por período</span><span>Por unidade</span></div></div>
-                        <div class="reports-index-card-action"><span>Abrir relatório</span><i data-lucide="arrow-right"></i></div>
+                        <div class="reports-index-card-action"><span>Abrir relatório</span><i class="bi bi-arrow-right"></i></div>
                     </a>
                 @endif
 
@@ -401,7 +401,7 @@
                     >
                         <div class="reports-index-compact-head">
                             <div class="reports-index-card-icon">
-                                <i data-lucide="circle-dot"></i>
+                                <i class="bi bi-circle"></i>
                             </div>
 
                             <span class="reports-index-card-category">
@@ -426,7 +426,7 @@
 
                         <div class="reports-index-card-action">
                             <span>Abrir relatório</span>
-                            <i data-lucide="arrow-right"></i>
+                            <i class="bi bi-arrow-right"></i>
                         </div>
                     </a>
                 @endif
@@ -439,7 +439,7 @@
                     >
                         <div class="reports-index-compact-head">
                             <div class="reports-index-card-icon">
-                                <i data-lucide="fuel"></i>
+                                <i class="bi bi-fuel-pump"></i>
                             </div>
 
                             <span class="reports-index-card-category">
@@ -464,7 +464,7 @@
 
                         <div class="reports-index-card-action">
                             <span>Abrir painel</span>
-                            <i data-lucide="arrow-right"></i>
+                            <i class="bi bi-arrow-right"></i>
                         </div>
                     </a>
                 @endif
@@ -477,7 +477,7 @@
                     >
                         <div class="reports-index-compact-head">
                             <div class="reports-index-card-icon">
-                                <i data-lucide="package-search"></i>
+                                <i class="bi bi-box-seam"></i>
                             </div>
 
                             <span class="reports-index-card-category">
@@ -505,7 +505,7 @@
 
                         <div class="reports-index-card-action">
                             <span>Abrir relatório</span>
-                            <i data-lucide="arrow-right"></i>
+                            <i class="bi bi-arrow-right"></i>
                         </div>
                     </a>
                 @endif
@@ -517,7 +517,7 @@
     @unless($hasAvailableReports)
         <section class="reports-index-empty">
             <span class="reports-index-empty-icon">
-                <i data-lucide="lock"></i>
+                <i class="bi bi-lock"></i>
             </span>
 
             <div>
@@ -541,7 +541,7 @@
                     <p>Configure os parâmetros da exportação</p>
                 </div>
                 <button class="report-modal-close" onclick="closeReportModal()">
-                    <i data-lucide="x"></i>
+                    <i class="bi bi-x-lg"></i>
                 </button>
             </div>
 
@@ -605,13 +605,13 @@
                         <div class="report-export-grid">
                             @if($canExportReportPdf)
                                 <button class="report-export-card active" type="button" data-type="pdf" onclick="selectExportType(this)">
-                                    <i data-lucide="file-text"></i>
+                                    <i class="bi bi-file-earmark-text"></i>
                                     PDF
                                 </button>
                             @endif
                             @if($canExportReportExcel)
                                 <button class="report-export-card {{ $canExportReportPdf ? '' : 'active' }}" type="button" data-type="excel" onclick="selectExportType(this)">
-                                    <i data-lucide="sheet"></i>
+                                    <i class="bi bi-file-earmark-spreadsheet"></i>
                                     Excel
                                 </button>
                             @endif

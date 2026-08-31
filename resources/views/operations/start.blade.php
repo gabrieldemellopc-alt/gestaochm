@@ -41,7 +41,7 @@
 
         <a href="{{ route('vehicles.details', $vehicle->id) }}" class="chm-page-button secondary">
 
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
             Voltar ao veículo
 
@@ -271,7 +271,7 @@
 
             <button type="submit" class="chm-page-button primary">
 
-                <i data-lucide="play"></i>
+                <i class="bi bi-play-fill"></i>
 
                 Iniciar operação
 

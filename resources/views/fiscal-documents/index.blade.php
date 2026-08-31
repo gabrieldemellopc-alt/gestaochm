@@ -20,9 +20,6 @@
                 this.selectedFiscalDocument = item;
                 this.detailOpen = true;
                 this.$nextTick(() => {
-                    if (window.lucide) {
-                        lucide.createIcons();
-                    }
                 });
             },
             closeFiscalDocument() {
@@ -52,7 +49,7 @@
 
         @if($period_error)
             <div class="fiscal-alert">
-                <i data-lucide="triangle-alert"></i>
+                <i class="bi bi-exclamation-triangle"></i>
                 <span>{{ $period_error }}</span>
             </div>
         @endif
@@ -120,7 +117,7 @@
                         Limpar
                     </a>
                     <button type="submit" class="fiscal-button primary">
-                        <i data-lucide="search"></i>
+                        <i class="bi bi-search"></i>
                         Aplicar filtros
                     </button>
                 </div>
@@ -226,7 +223,7 @@
                                             class="fiscal-row-link"
                                             @click='openFiscalDocument(@json($document))'
                                         >
-                                            <i data-lucide="eye"></i>
+                                            <i class="bi bi-eye"></i>
                                             Ver detalhes
                                         </button>
                                     @else
@@ -238,7 +235,7 @@
                             <tr>
                                 <td colspan="9">
                                     <div class="fiscal-empty-state">
-                                        <i data-lucide="file-search"></i>
+                                        <i class="bi bi-file-earmark-text"></i>
                                         <strong>Nenhum documento encontrado</strong>
                                         <p>
                                             Ajuste o período, revise os filtros ou marque a opção para incluir
@@ -269,7 +266,7 @@
                 aria-labelledby="fiscal-detail-title"
             >
                 <button type="button" class="fiscal-detail-close" @click="closeFiscalDocument()" aria-label="Fechar detalhes">
-                    <i data-lucide="x"></i>
+                    <i class="bi bi-x-lg"></i>
                 </button>
 
                 <template x-if="selectedFiscalDocument">
@@ -313,7 +310,7 @@
 
                         <section class="fiscal-detail-section">
                             <div class="fiscal-detail-section-title">
-                                <i data-lucide="file-text"></i>
+                                <i class="bi bi-file-earmark-text"></i>
                                 <h3>Detalhes do lançamento</h3>
                             </div>
 
@@ -328,7 +325,7 @@
                         </section>
 
                         <template x-if="selectedFiscalDocument.fiscal_items">
-                            <section class="fiscal-detail-section"><div class="fiscal-detail-section-title"><i data-lucide="package"></i><h3>Itens da nota fiscal</h3></div>
+                            <section class="fiscal-detail-section"><div class="fiscal-detail-section-title"><i class="bi bi-box-seam"></i><h3>Itens da nota fiscal</h3></div>
                                 <div class="fiscal-detail-grid"><template x-for="item in selectedFiscalDocument.fiscal_items" :key="item.description"><div class="fiscal-detail-field full"><span x-text="item.description"></span><strong x-text="item.category + ' · ' + item.quantity + ' ' + item.unit + ' · R$ ' + Number(item.total_value).toLocaleString('pt-BR',{minimumFractionDigits:2})"></strong><small x-text="'Estoque: ' + item.stock_item + ' · Movimento #' + (item.movement_id || '-') + (item.created_stock_item ? ' · Item criado' : '')"></small></div></template></div>
                             </section>
                         </template>
@@ -357,9 +354,9 @@
                             </button>
 
                             @if($canOpenFiscalOrigin)
-                                <template x-if="selectedFiscalDocument.file_url"><a class="fiscal-button secondary" :href="selectedFiscalDocument.file_url"><i data-lucide="download"></i>Arquivo original</a></template>`r`n                                <template x-if="selectedFiscalDocument.origin_url">
+                                <template x-if="selectedFiscalDocument.file_url"><a class="fiscal-button secondary" :href="selectedFiscalDocument.file_url"><i class="bi bi-download"></i>Arquivo original</a></template>`r`n                                <template x-if="selectedFiscalDocument.origin_url">
                                     <a class="fiscal-button secondary" :href="selectedFiscalDocument.origin_url">
-                                        <i data-lucide="external-link"></i>
+                                        <i class="bi bi-box-arrow-up-right"></i>
                                         Abrir origem
                                     </a>
                                 </template>

@@ -16,7 +16,7 @@
     <header class="portal-header portal-division-header">
         <div>
             <a href="{{ route('portal') }}" class="portal-back-link">
-                <i data-lucide="arrow-left"></i>
+                <i class="bi bi-arrow-left"></i>
                 Voltar ao portal
             </a>
             <span class="portal-eyebrow">Divisão operacional</span>
@@ -24,7 +24,7 @@
             <p>Escolha um módulo para acessar as operações desta divisão.</p>
         </div>
         <div class="portal-header-mark division-mark" aria-hidden="true">
-            <i data-lucide="layers-3"></i>
+            <i class="bi bi-layers"></i>
         </div>
     </header>
 
@@ -45,7 +45,7 @@
 
                 <div class="portal-icon">
 
-                    <i data-lucide="truck"></i>
+                    <i class="bi bi-truck"></i>
 
                 </div>
 
@@ -83,7 +83,7 @@
                 <span class="portal-coming-soon">Em breve</span>
                 <div class="portal-card-top">
                     <div class="portal-icon portal-placeholder-icon">
-                        <i data-lucide="{{ $placeholderModule['icon'] }}"></i>
+                        <i class="{{ chm_icon($placeholderModule['icon']) }}"></i>
                     </div>
                     <div>
                         <h3>{{ $placeholderModule['name'] }}</h3>

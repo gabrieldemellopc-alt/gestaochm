@@ -25,7 +25,7 @@
     <header class="stock-detail-hero">
         <div>
             <div class="stock-detail-navigation">
-                <a class="stock-detail-back" href="{{ route('stock.index') }}"><i data-lucide="arrow-left"></i> Voltar para estoque</a>
+                <a class="stock-detail-back" href="{{ route('stock.index') }}"><i class="bi bi-arrow-left"></i> Voltar para estoque</a>
                 <span class="stock-detail-category">Categoria: {{ $item->category?->name ?? 'Sem categoria' }}</span>
             </div>
             <h1>{{ $item->name }}</h1>
@@ -33,9 +33,9 @@
         </div>
         <div class="stock-detail-hero-actions">
             <span class="stock-status-badge {{ $item->stock_status }}">{{ $statusLabels[$item->stock_status] ?? 'Adequado' }}</span>
-            <button type="button" class="stock-detail-report" onclick="openStockReportModal()"><i data-lucide="file-text"></i> Gerar relatório</button>
+            <button type="button" class="stock-detail-report" onclick="openStockReportModal()"><i class="bi bi-file-earmark-text"></i> Gerar relatório</button>
             @if($canCreateEntry)
-                <a class="stock-detail-entry" href="{{ route('stock.index', ['entry' => $item->id]) }}"><i data-lucide="plus"></i> Nova entrada</a>
+                <a class="stock-detail-entry" href="{{ route('stock.index', ['entry' => $item->id]) }}"><i class="bi bi-plus-lg"></i> Nova entrada</a>
             @endif
         </div>
     </header>
@@ -109,7 +109,7 @@
                     <div><span>Data</span><strong>{{ ($movement->moved_at ?? $movement->created_at)?->format('d/m/Y') }}</strong></div>
                     <div><span>Quantidade</span><strong>{{ number_format($movement->quantity, 2, ',', '.') }} {{ $item->unit }}</strong></div>
                     <div><span>Origem</span><strong>{{ $movement->maintenance_record_item_id ? 'Procedimento'.($movement->maintenanceRecordItem?->procedure?->name ? ': '.$movement->maintenanceRecordItem->procedure->name : '') : 'Material direto' }}</strong></div>
-                    @if($maintenance && $vehicle)<a href="{{ route('vehicles.maintenance.show', [$vehicle, $maintenance]) }}">Abrir OM <i data-lucide="arrow-up-right"></i></a>@endif
+                    @if($maintenance && $vehicle)<a href="{{ route('vehicles.maintenance.show', [$vehicle, $maintenance]) }}">Abrir OM <i class="bi bi-arrow-up-right"></i></a>@endif
                 </article>
             @empty
                 <p class="stock-detail-empty">Este item ainda não possui consumo vinculado a manutenções.</p>
@@ -122,7 +122,7 @@
     <div class="stock-report-modal" role="dialog" aria-modal="true" aria-labelledby="stockReportTitle">
         <div class="stock-report-modal-header">
             <div><span>Relatório PDF</span><h2 id="stockReportTitle">Período do relatório</h2></div>
-            <button type="button" onclick="closeStockReportModal()" aria-label="Fechar"><i data-lucide="x"></i></button>
+            <button type="button" onclick="closeStockReportModal()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
         </div>
         <form action="{{ route('stock.items.report.pdf', $item) }}" method="GET" target="_blank" onsubmit="closeStockReportModal()">
             <div class="stock-report-fields">
@@ -131,7 +131,7 @@
             </div>
             <div class="stock-report-actions">
                 <button type="button" class="stock-report-cancel" onclick="closeStockReportModal()">Cancelar</button>
-                <button type="submit" class="stock-detail-entry"><i data-lucide="file-down"></i> Gerar PDF</button>
+                <button type="submit" class="stock-detail-entry"><i class="bi bi-file-earmark-arrow-down"></i> Gerar PDF</button>
             </div>
         </form>
     </div>

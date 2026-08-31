@@ -25,7 +25,7 @@
             <p>Escolha uma divis&atilde;o operacional ou acesse ferramentas administrativas do ambiente.</p>
         </div>
         <div class="portal-header-mark" aria-hidden="true">
-            <i data-lucide="building-2"></i>
+            <i class="bi bi-buildings"></i>
         </div>
     </header>
 
@@ -35,7 +35,7 @@
             class="portal-tab {{ $activePortalTab === 'divisions' ? 'active' : '' }}"
             aria-current="{{ $activePortalTab === 'divisions' ? 'page' : 'false' }}"
         >
-            <i data-lucide="layout-grid"></i>
+            <i class="bi bi-grid"></i>
             <span>Divis&otilde;es</span>
         </a>
 
@@ -45,7 +45,7 @@
                 class="portal-tab {{ $activePortalTab === 'access-control' ? 'active' : '' }}"
                 aria-current="{{ $activePortalTab === 'access-control' ? 'page' : 'false' }}"
             >
-                <i data-lucide="shield-check"></i>
+                <i class="bi bi-shield-check"></i>
                 <span>Controle de acessos</span>
             </a>
         @endif
@@ -65,7 +65,7 @@
                     class="chm-page-add-btn portal-access-add-btn"
                     onclick="openNewUserModal()"
                 >
-                    <i data-lucide="plus"></i>
+                    <i class="bi bi-plus-lg"></i>
                     <span>Novo usu&aacute;rio</span>
                 </button>
             </div>

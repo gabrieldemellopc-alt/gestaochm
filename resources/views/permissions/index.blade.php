@@ -30,21 +30,21 @@
 
         @if(session('success'))
             <div class="permissions-alert success">
-                <i data-lucide="check-circle"></i>
+                <i class="bi bi-check-circle"></i>
                 {{ session('success') }}
             </div>
         @endif
 
         @if($errors->any())
             <div class="permissions-alert warning">
-                <i data-lucide="triangle-alert"></i>
+                <i class="bi bi-exclamation-triangle"></i>
                 {{ $errors->first() }}
             </div>
         @endif
 
         <section class="permissions-context-panel">
             <div class="permissions-context-copy">
-                <i data-lucide="shield-check"></i>
+                <i class="bi bi-shield-check"></i>
                 <div>
                     <span>Escopo da configuração</span>
                     <p>
@@ -227,7 +227,7 @@
 
                             <div class="permission-group-meta">
                                 <span>{{ $activeCount }} / {{ $totalCount }} ativas</span>
-                                <i data-lucide="chevron-down" :class="{ 'is-open': open }"></i>
+                                <i class="bi bi-chevron-down" :class="{ 'is-open': open }"></i>
                             </div>
                         </button>
 
@@ -270,7 +270,7 @@
             <footer class="permissions-actions">
                 <a href="{{ route('permissions.index', $scope) }}" class="permissions-button secondary">Restaurar visualização</a>
                 <button type="submit" class="permissions-button primary">
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
                     Salvar permissões
                 </button>
             </footer>

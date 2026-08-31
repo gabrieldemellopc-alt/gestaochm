@@ -61,7 +61,7 @@
                 href="{{ route('vehicles.index') }}"
                 class="dossier-hero-button secondary"
             >
-                <i data-lucide="arrow-left"></i>
+                <i class="bi bi-arrow-left"></i>
                 Voltar para veículos
             </a>
     
@@ -73,7 +73,7 @@
                     target="_blank"
                     rel="noopener"
                 >
-                    <i data-lucide="file-text"></i>
+                    <i class="bi bi-file-earmark-text"></i>
                     Gerar PDF
                 </a>
 @endif

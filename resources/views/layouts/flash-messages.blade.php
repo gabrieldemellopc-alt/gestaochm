@@ -4,7 +4,7 @@
 
         <div class="flash-icon">
 
-            <i data-lucide="circle-check-big"></i>
+            <i class="bi bi-check-circle"></i>
 
         </div>
 
@@ -28,7 +28,7 @@
 
         <div class="flash-icon">
 
-            <i data-lucide="circle-alert"></i>
+            <i class="bi bi-exclamation-circle"></i>
 
         </div>
 

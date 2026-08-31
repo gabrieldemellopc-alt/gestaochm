@@ -45,13 +45,13 @@
 
             </p>
             
-            <button type="button" class="workshop-maintenance-dashboard-button" onclick="openWorkshopMaintenanceDashboard()"><i data-lucide="chart-column"></i><span>Painel de manutenção</span></button>
+            <button type="button" class="workshop-maintenance-dashboard-button" onclick="openWorkshopMaintenanceDashboard()"><i class="bi bi-bar-chart-line"></i><span>Painel de manutenção</span></button>
             <div class="workshop-shortcut-list workshop-shortcut-list-horizontal">
             
                 <a href="{{ route('workshop.tires.index') }}" class="workshop-shortcut-card">
             
                     <div>
-                        <i data-lucide="circle-dot"></i>
+                        <i class="bi bi-circle"></i>
                     </div>
             
                     <section>
@@ -59,14 +59,14 @@
                         <span>Estoque, instalações, sulco e alertas.</span>
                     </section>
             
-                    <i data-lucide="arrow-up-right"></i>
+                    <i class="bi bi-arrow-up-right"></i>
             
                 </a>
             
                 <a href="{{ route('stock.index') }}" class="workshop-shortcut-card">
             
                     <div>
-                        <i data-lucide="boxes"></i>
+                        <i class="bi bi-boxes"></i>
                     </div>
             
                     <section>
@@ -74,14 +74,14 @@
                         <span>Itens, categorias e movimentações.</span>
                     </section>
             
-                    <i data-lucide="arrow-up-right"></i>
+                    <i class="bi bi-arrow-up-right"></i>
             
                 </a>
             
                 <a href="{{ route('procedures.index') }}" class="workshop-shortcut-card">
             
                     <div>
-                        <i data-lucide="clipboard-list"></i>
+                        <i class="bi bi-clipboard"></i>
                     </div>
             
                     <section>
@@ -89,7 +89,7 @@
                         <span>Regras de manutenção e execução.</span>
                     </section>
             
-                    <i data-lucide="arrow-up-right"></i>
+                    <i class="bi bi-arrow-up-right"></i>
             
                 </a>
             
@@ -103,7 +103,7 @@
 
             <div class="workshop-hero-panel-icon">
 
-                <i data-lucide="wrench"></i>
+                <i class="bi bi-wrench-adjustable"></i>
 
             </div>
 
@@ -142,7 +142,7 @@
         <div class="workshop-summary-card">
             <div class="workshop-summary-icon">
 
-                <i data-lucide="truck"></i>
+                <i class="bi bi-truck"></i>
 
             </div>
 
@@ -165,7 +165,7 @@
         <div class="workshop-summary-card">
             <div class="workshop-summary-icon danger">
 
-                <i data-lucide="triangle-alert"></i>
+                <i class="bi bi-exclamation-triangle"></i>
 
             </div>
 
@@ -188,7 +188,7 @@
         <div class="workshop-summary-card">
             <div class="workshop-summary-icon warning">
 
-                <i data-lucide="circle-dot"></i>
+                <i class="bi bi-circle"></i>
 
             </div>
 
@@ -211,7 +211,7 @@
         <div class="workshop-summary-card">
             <div class="workshop-summary-icon">
 
-                <i data-lucide="clipboard-list"></i>
+                <i class="bi bi-clipboard"></i>
 
             </div>
 
@@ -259,7 +259,7 @@
 
                     Ver frota
 
-                    <i data-lucide="arrow-right"></i>
+                    <i class="bi bi-arrow-right"></i>
 
                 </a>
 
@@ -327,7 +327,7 @@
         
                                 <div class="workshop-vehicle-avatar">
         
-                                    <i data-lucide="truck"></i>
+                                    <i class="bi bi-truck"></i>
         
                                 </div>
         
@@ -422,7 +422,7 @@
         
                             <strong>
                                 Ver manutenção
-                                <i data-lucide="arrow-right"></i>
+                                <i class="bi bi-arrow-right"></i>
                             </strong>
         
                         </div>
@@ -439,7 +439,7 @@
         
                 <div>
         
-                    <i data-lucide="check-circle-2"></i>
+                    <i class="bi bi-check-circle"></i>
         
                 </div>
         
@@ -487,7 +487,7 @@
 
                     Abrir
 
-                    <i data-lucide="arrow-right"></i>
+                    <i class="bi bi-arrow-right"></i>
 
                 </a>
 
@@ -569,7 +569,7 @@
 
                     Abrir
 
-                    <i data-lucide="arrow-right"></i>
+                    <i class="bi bi-arrow-right"></i>
 
                 </a>
 
@@ -645,7 +645,7 @@
 
                     Abrir
 
-                    <i data-lucide="arrow-right"></i>
+                    <i class="bi bi-arrow-right"></i>
 
                 </a>
 

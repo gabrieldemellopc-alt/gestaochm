@@ -144,7 +144,7 @@
 
 
 
-                <i data-lucide="plus"></i>
+                <i class="bi bi-plus-lg"></i>
 
 
 
@@ -218,7 +218,7 @@
 
 
 
-                <i data-lucide="search"></i>
+                <i class="bi bi-search"></i>
 
 
 
@@ -1635,7 +1635,7 @@
 
 
 
-                                    <i data-lucide="external-link"></i>
+                                    <i class="bi bi-box-arrow-up-right"></i>
 
 
 
@@ -1667,7 +1667,7 @@
 
 
 
-                                    <i data-lucide="pencil"></i>
+                                    <i class="bi bi-pencil"></i>
 
 
 
@@ -2299,7 +2299,7 @@
 
 
 
-                            <i data-lucide="external-link"></i>
+                            <i class="bi bi-box-arrow-up-right"></i>
 
 
 
@@ -2331,7 +2331,7 @@
 
 
 
-                            <i data-lucide="pencil"></i>
+                            <i class="bi bi-pencil"></i>
 
 
 

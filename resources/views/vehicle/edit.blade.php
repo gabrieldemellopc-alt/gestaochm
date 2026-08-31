@@ -29,7 +29,7 @@
             href="{{ route('vehicles.index') }}"
             class="chm-page-button secondary"
         >
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
             Voltar para veículos
         </a>
     </div>
@@ -521,7 +521,7 @@
                 type="submit"
                 class="chm-page-button primary"
             >
-                <i data-lucide="save"></i>
+                <i class="bi bi-floppy"></i>
         
                 Salvar alterações
             </button>

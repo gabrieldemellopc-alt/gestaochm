@@ -76,7 +76,7 @@
 
         >
 
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
 
 
@@ -1283,7 +1283,7 @@
 
         >
 
-            <i data-lucide="save"></i>
+            <i class="bi bi-floppy"></i>
 
 
 

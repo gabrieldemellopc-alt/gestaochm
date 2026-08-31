@@ -109,7 +109,7 @@
 
         >
 
-            <i data-lucide="file-text"></i>
+            <i class="bi bi-file-earmark-text"></i>
 
             Gerar relatório
 
@@ -123,7 +123,7 @@
 
         >
 
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
             Voltar ao dashboard
 
@@ -634,7 +634,7 @@
 
                             >
 
-                                <i data-lucide="refresh-cw"></i>
+                                <i class="bi bi-arrow-clockwise"></i>
 
                                 Remover / trocar pneu
 
@@ -651,7 +651,7 @@
 
                             >
 
-                                <i data-lucide="save"></i>
+                                <i class="bi bi-floppy"></i>
 
                                 Salvar medição
 
@@ -675,7 +675,7 @@
                                     @json($vehicle->current_km ?? 0)
                                 )'
                             >
-                                <i data-lucide="refresh-cw"></i>
+                                <i class="bi bi-arrow-clockwise"></i>
                                 Remover / trocar pneu
                             </button>
                         </div>
@@ -689,7 +689,7 @@
 
 
 
-                        <i data-lucide="circle-off"></i>
+                        <i class="bi bi-slash-circle"></i>
 
 
 
@@ -770,7 +770,7 @@
 
                         >
 
-                            <i data-lucide="search"></i>
+                            <i class="bi bi-search"></i>
 
                             Selecionar pneu do estoque
 
@@ -874,7 +874,7 @@
 
             >
 
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
 
             </button>
 
@@ -892,7 +892,7 @@
 
 
 
-                <i data-lucide="search"></i>
+                <i class="bi bi-search"></i>
 
 
 
@@ -970,7 +970,7 @@
 
                         <div class="tire-picker-item-icon">
 
-                            <i data-lucide="circle-dot"></i>
+                            <i class="bi bi-circle"></i>
 
                         </div>
 
@@ -1062,7 +1062,7 @@
 
 
 
-                        <i data-lucide="search-x"></i>
+                        <i class="bi bi-search"></i>
 
 
 
@@ -1230,7 +1230,7 @@
 
             >
 
-                <i data-lucide="check-circle"></i>
+                <i class="bi bi-check-circle"></i>
 
                 Confirmar instalação
 
@@ -1329,7 +1329,7 @@
 
             >
 
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
 
             </button>
 
@@ -1570,7 +1570,7 @@
 
             <div class="tire-remove-warning">
 
-                <i data-lucide="info"></i>
+                <i class="bi bi-info-circle"></i>
 
 
 
@@ -1612,7 +1612,7 @@
 
                 >
 
-                    <i data-lucide="check-circle"></i>
+                    <i class="bi bi-check-circle"></i>
 
                     Confirmar remoção
 
@@ -1769,12 +1769,6 @@ function vehicleTiresPage() {
 
             this.$nextTick(() => {
 
-                if (window.lucide) {
-
-                    lucide.createIcons();
-
-                }
-
             });
 
         },
@@ -1831,12 +1825,6 @@ function vehicleTiresPage() {
 
             this.$nextTick(() => {
 
-                if (window.lucide) {
-
-                    lucide.createIcons();
-
-                }
-
 
 
                 const input =
@@ -1876,12 +1864,6 @@ function vehicleTiresPage() {
 
 
             this.$nextTick(() => {
-
-                if (window.lucide) {
-
-                    lucide.createIcons();
-
-                }
 
             });
 

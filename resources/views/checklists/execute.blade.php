@@ -192,7 +192,7 @@
                 class="execution-submit-button"
             >
 
-                <i data-lucide="clipboard-check"></i>
+                <i class="bi bi-clipboard-check"></i>
 
                 Finalizar checklist
 

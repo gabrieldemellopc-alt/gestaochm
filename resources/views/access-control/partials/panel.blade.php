@@ -46,7 +46,7 @@
 
     >
 
-        <i data-lucide="plus"></i>
+        <i class="bi bi-plus-lg"></i>
 
         <span>Novo usuário</span>
 
@@ -163,7 +163,7 @@
 
 
 
-                                        <i data-lucide="shield-check"></i>
+                                        <i class="bi bi-shield-check"></i>
 
 
 
@@ -319,7 +319,7 @@
 
                         >
 
-                            <i data-lucide="shield"></i>
+                            <i class="bi bi-shield"></i>
 
                             <span>Editar</span>
 
@@ -385,7 +385,7 @@
 
                 <div class="chm-modal-icon">
 
-                    <i data-lucide="shield-check"></i>
+                    <i class="bi bi-shield-check"></i>
 
                 </div>
 
@@ -433,7 +433,7 @@
 
             >
 
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
 
             </button>
 
@@ -499,7 +499,7 @@
 
 
 
-                        <i data-lucide="user-round"></i>
+                        <i class="bi bi-person"></i>
 
 
 
@@ -639,7 +639,7 @@
 
 
 
-                        <i data-lucide="key-round"></i>
+                        <i class="bi bi-key"></i>
 
 
 
@@ -832,7 +832,7 @@
 
                         >
 
-                            <i data-lucide="plus"></i>
+                            <i class="bi bi-plus-lg"></i>
 
                             <span>Adicionar</span>
 
@@ -908,7 +908,7 @@
 
                         <div class="chm-empty-access">
 
-                            <i data-lucide="layers-3"></i>
+                            <i class="bi bi-layers"></i>
 
 
 
@@ -970,7 +970,7 @@
 
                 >
 
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
 
                     Criar usuário
 
@@ -1028,7 +1028,7 @@
 
                 <div class="chm-modal-icon">
 
-                    <i data-lucide="shield-check"></i>
+                    <i class="bi bi-shield-check"></i>
 
                 </div>
 
@@ -1076,7 +1076,7 @@
 
             >
 
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
 
             </button>
 
@@ -1144,7 +1144,7 @@
 
 
 
-                        <i data-lucide="user-round"></i>
+                        <i class="bi bi-person"></i>
 
 
 
@@ -1330,7 +1330,7 @@
 
 
 
-                        <i data-lucide="key-round"></i>
+                        <i class="bi bi-key"></i>
 
 
 
@@ -1532,7 +1532,7 @@
 
                         >
 
-                            <i data-lucide="plus"></i>
+                            <i class="bi bi-plus-lg"></i>
 
                             <span>Adicionar</span>
 
@@ -1642,7 +1642,7 @@
 
                 >
 
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
 
                     Salvar alterações
 
@@ -1788,8 +1788,6 @@ function closeNewUserModal()
 </script>
 
 <script>
-
-lucide.createIcons();
 
 </script>
 
@@ -2039,7 +2037,7 @@ function addAccess() {
 
         <button type="button" onclick="removeAccess(this)">
 
-            <i data-lucide="x"></i>
+            <i class="bi bi-x-lg"></i>
 
         </button>
 
@@ -2052,14 +2050,6 @@ function addAccess() {
 
 
     accessIndex++;
-
-
-
-    if (window.lucide) {
-
-        lucide.createIcons();
-
-    }
 
 }
 
@@ -2087,7 +2077,7 @@ function removeAccess(button) {
 
             <div class="chm-empty-access">
 
-                <i data-lucide="layers-3"></i>
+                <i class="bi bi-layers"></i>
 
 
 
@@ -2108,14 +2098,6 @@ function removeAccess(button) {
             </div>
 
         `;
-
-
-
-        if (window.lucide) {
-
-            lucide.createIcons();
-
-        }
 
     }
 
@@ -2247,14 +2229,6 @@ function openEditUserModal(userId)
 
         .add('active');
 
-
-
-    if (window.lucide) {
-
-        lucide.createIcons();
-
-    }
-
 }
 
 
@@ -2287,7 +2261,7 @@ function renderEditEmptyState()
 
         <div class="chm-empty-access">
 
-            <i data-lucide="layers-3"></i>
+            <i class="bi bi-layers"></i>
 
 
 
@@ -2308,14 +2282,6 @@ function renderEditEmptyState()
         </div>
 
     `;
-
-
-
-    if (window.lucide) {
-
-        lucide.createIcons();
-
-    }
 
 }
 
@@ -2459,7 +2425,7 @@ function appendEditAccessItem(access)
 
         <button type="button" onclick="removeEditAccess(this)">
 
-            <i data-lucide="x"></i>
+            <i class="bi bi-x-lg"></i>
 
         </button>
 
@@ -2472,14 +2438,6 @@ function appendEditAccessItem(access)
 
 
     editAccessIndex++;
-
-
-
-    if (window.lucide) {
-
-        lucide.createIcons();
-
-    }
 
 }
 

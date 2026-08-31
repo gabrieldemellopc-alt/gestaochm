@@ -135,7 +135,7 @@
             "
 
         >
-            <i data-lucide="menu"></i>
+            <i class="bi bi-list"></i>
         </button>
 
             
@@ -155,7 +155,7 @@
             title="Recolher menu lateral"
         >
             <i
-                data-lucide="panel-left-close"
+                class="bi bi-layout-sidebar-inset"
                 data-sidebar-collapse-icon
             ></i>
         </button>
@@ -280,7 +280,7 @@
                     @if($availableLocations->count() <= 1) disabled @endif
                 >
                     <span class="topbar-location-trigger-label">
-                        <i data-lucide="map-pin"></i>
+                        <i class="bi bi-geo-alt"></i>
         
                         <span>Unidade</span>
                     </span>
@@ -289,7 +289,7 @@
         
                     @if($availableLocations->count() > 1)
                         <i
-                            data-lucide="chevron-down"
+                            class="bi bi-chevron-down"
                             class="topbar-location-chevron"
                             :class="{ 'is-open': open }"
                         ></i>
@@ -326,7 +326,7 @@
                                     :aria-selected="selectedId == '{{ $location->id }}'"
                                 >
                                     <span class="topbar-location-option-marker">
-                                        <i data-lucide="map-pin"></i>
+                                        <i class="bi bi-geo-alt"></i>
                                     </span>
         
                                     <span class="topbar-location-option-copy">
@@ -343,7 +343,7 @@
                                         class="topbar-location-option-check"
                                         x-show="selectedId == '{{ $location->id }}'"
                                     >
-                                        <i data-lucide="check"></i>
+                                        <i class="bi bi-check-lg"></i>
                                     </span>
                                 </button>
                             @endforeach
@@ -363,11 +363,11 @@
             title="Ativar modo claro corporativo"
         >
             <span class="chm-theme-toggle-icon chm-theme-toggle-icon-dark" aria-hidden="true">
-                <i data-lucide="moon"></i>
+                <i class="bi bi-moon"></i>
             </span>
 
             <span class="chm-theme-toggle-icon chm-theme-toggle-icon-light" aria-hidden="true">
-                <i data-lucide="sun"></i>
+                <i class="bi bi-sun"></i>
             </span>
 
             <span class="chm-theme-toggle-label" data-chm-theme-label>
@@ -450,7 +450,7 @@
 
                 <i
 
-                    data-lucide="chevron-down"
+                    class="bi bi-chevron-down"
 
                     class="user-chevron"
 
@@ -521,7 +521,7 @@
                         role="menuitem"
                         x-ref="firstDropdownItem"
                     >
-                        <i data-lucide="building-2"></i>
+                        <i class="bi bi-buildings"></i>
                         Trocar divisão
                     </a>
                 @endif
@@ -538,7 +538,7 @@
 
 
 
-                    <i data-lucide="user"></i>
+                    <i class="bi bi-person"></i>
 
 
 
@@ -559,7 +559,7 @@
 
 
 
-                    <i data-lucide="shield"></i>
+                    <i class="bi bi-shield"></i>
 
 
 
@@ -580,7 +580,7 @@
 
 
 
-                    <i data-lucide="settings"></i>
+                    <i class="bi bi-gear"></i>
 
 
 
@@ -616,7 +616,7 @@
 
 
 
-                        <i data-lucide="log-out"></i>
+                        <i class="bi bi-box-arrow-right"></i>
 
 
 

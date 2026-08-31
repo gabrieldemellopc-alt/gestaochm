@@ -73,7 +73,7 @@
             class="maintenance-back-button"
             onclick="history.back()"
         >
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
             Voltar
         </button>
@@ -266,7 +266,7 @@
             <div class="maintenance-alert-strip-list">
                 @foreach($alertProcedures as $alert)
                     <div class="maintenance-alert-pill {{ $alert['status'] }}">
-                        <i data-lucide="{{ $alert['status'] === 'danger' ? 'circle-alert' : 'triangle-alert' }}"></i>
+                        <i class="{{ chm_icon($alert['status'] === 'danger' ? 'circle-alert' : 'triangle-alert') }}"></i>
 
                         <div>
                             <strong>{{ $alert['procedure'] }}</strong>
@@ -280,7 +280,7 @@
 
     @if($errors->any())
         <div class="chm-alert danger">
-            <i data-lucide="circle-alert"></i>
+            <i class="bi bi-exclamation-circle"></i>
             <span style="vertical-align: top;">{{ $errors->first() }}</span>
         </div>
     @endif
@@ -296,7 +296,7 @@
             <div class="maintenance-open-top">
                 <div class="maintenance-open-main">
                     <div class="maintenance-open-icon">
-                        <i data-lucide="wrench"></i>
+                        <i class="bi bi-wrench-adjustable"></i>
                     </div>
 
                     <div>
@@ -328,7 +328,7 @@
                         class="chm-page-button maintenance-pdf-button"
                         target="_blank"
                     >
-                        <i data-lucide="file-text"></i>
+                        <i class="bi bi-file-earmark-text"></i>
                         PDF da ordem
                     </a>
 @endif
@@ -339,7 +339,7 @@
                         class="chm-page-button maintenance-cancel-button"
                         @click="cancelModal = true"
                     >
-                        <i data-lucide="x-circle"></i>
+                        <i class="bi bi-x-circle"></i>
                         Cancelar manutenção
                     </button>
 @endif
@@ -350,14 +350,14 @@
                         class="chm-page-button maintenance-close-button"
                         @click="closeModal = true"
                     >
-                        <i data-lucide="check-circle"></i>
+                        <i class="bi bi-check-circle"></i>
                         Encerrar manutenção
                     </button>
 @endif
 
                     @if(! $isMaintenanceOpen && ! $openMaintenance->cancelled_at && ($maintenancePermissions['reopen'] ?? false))
                         <button type="button" class="chm-page-button maintenance-reopen-button" @click="reopenModal = true">
-                            <i data-lucide="rotate-ccw"></i> Reabrir manutenção
+                            <i class="bi bi-arrow-counterclockwise"></i> Reabrir manutenção
                         </button>
                     @endif
                 </div>
@@ -366,11 +366,11 @@
             <div class="maintenance-open-badges maintenance-open-summary">
                 <span class="maintenance-service-badge status-{{ $openMaintenance->service_status }}">{{ \App\Services\MaintenanceService::serviceStatuses()[$openMaintenance->service_status] ?? 'Não informado' }}</span>
                 @if($openMaintenance->maintenance_category)
-                    <span class="maintenance-info-badge maintenance-category-badge"><i data-lucide="tag"></i>{{ \App\Services\MaintenanceService::maintenanceCategories()[$openMaintenance->maintenance_category] ?? 'Outros' }}</span>
+                    <span class="maintenance-info-badge maintenance-category-badge"><i class="bi bi-tag"></i>{{ \App\Services\MaintenanceService::maintenanceCategories()[$openMaintenance->maintenance_category] ?? 'Outros' }}</span>
                 @endif
-                <span class="maintenance-info-badge"><i data-lucide="clock"></i>{{ $isMaintenanceOpen ? 'Parado há '.($openMaintenance->started_at ? $openMaintenance->started_at->diffForHumans(null, true) : '—') : ($openMaintenance->finished_at ? 'Encerrada em '.$openMaintenance->finished_at->format('d/m/Y H:i') : 'Ordem cancelada') }}</span>
-                <span class="maintenance-info-badge"><i data-lucide="circle-dollar-sign"></i>Total @if($maintenancePermissions['view_costs'] ?? false)<span data-maintenance-total>R$ {{ number_format($openMaintenance->total_cost ?? 0, 2, ',', '.') }}</span>@else Valor restrito @endif</span>
-                <span class="maintenance-info-badge"><i data-lucide="images"></i>Fotos {{ $photoCount }}/{{ $maxPhotos }}</span>
+                <span class="maintenance-info-badge"><i class="bi bi-clock"></i>{{ $isMaintenanceOpen ? 'Parado há '.($openMaintenance->started_at ? $openMaintenance->started_at->diffForHumans(null, true) : '—') : ($openMaintenance->finished_at ? 'Encerrada em '.$openMaintenance->finished_at->format('d/m/Y H:i') : 'Ordem cancelada') }}</span>
+                <span class="maintenance-info-badge"><i class="bi bi-currency-dollar"></i>Total @if($maintenancePermissions['view_costs'] ?? false)<span data-maintenance-total>R$ {{ number_format($openMaintenance->total_cost ?? 0, 2, ',', '.') }}</span>@else Valor restrito @endif</span>
+                <span class="maintenance-info-badge"><i class="bi bi-images"></i>Fotos {{ $photoCount }}/{{ $maxPhotos }}</span>
             </div>
 
             <nav class="maintenance-tabs" aria-label="Seções da ordem de manutenção" data-maintenance-tabs>
@@ -398,7 +398,7 @@
                         <article class="maintenance-photo-item" x-show="showAllPhotos || {{ $loop->index }} < 4" x-cloak>
                             <a class="maintenance-photo-preview" href="{{ $photo->url }}" target="_blank" rel="noopener">
                                 <img src="{{ $photo->url }}" alt="Foto da manutenção" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
-                                <span class="maintenance-photo-fallback" hidden><i data-lucide="image-off"></i>Imagem indisponível</span>
+                                <span class="maintenance-photo-fallback" hidden><i class="bi bi-image"></i>Imagem indisponível</span>
                             </a>
                             <small>{{ $photo->created_at->format('d/m/Y H:i') }}</small>
                             @if($maintenancePermissions['delete_photos'] ?? false)
@@ -418,28 +418,28 @@
                             x-data="{ selectedCount: 0, isSubmitting: false, updateSelectedFiles(event) { this.selectedCount = event.target.files.length }, selectedText() { return this.selectedCount === 0 ? 'Nenhum arquivo selecionado' : (this.selectedCount === 1 ? '1 foto selecionada' : this.selectedCount + ' fotos selecionadas') }, submitText() { if (this.isSubmitting) return 'Enviando...'; if (this.selectedCount === 0) return 'Selecione fotos para enviar'; return this.selectedCount === 1 ? 'Enviar 1 foto' : 'Enviar ' + this.selectedCount + ' fotos' } }"
                             @submit="isSubmitting = true">@csrf
                             <div class="maintenance-photo-picker-group">
-                                <label class="maintenance-file-picker" for="maintenance-photos-input"><i data-lucide="images"></i><span>Escolher fotos</span></label>
+                                <label class="maintenance-file-picker" for="maintenance-photos-input"><i class="bi bi-images"></i><span>Escolher fotos</span></label>
                                 <input id="maintenance-photos-input" class="maintenance-file-input" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple required @change="updateSelectedFiles($event)">
                                 <span class="maintenance-file-label" x-text="selectedText()">Nenhum arquivo selecionado</span>
                             </div>
                             <button class="maintenance-photo-submit" :class="{ 'is-ready': selectedCount > 0 && !isSubmitting, 'is-loading': isSubmitting }" type="submit" :disabled="selectedCount === 0 || isSubmitting">
-                                <i data-lucide="upload-cloud"></i><span x-text="submitText()">Selecione fotos para enviar</span>
+                                <i class="bi bi-cloud-upload"></i><span x-text="submitText()">Selecione fotos para enviar</span>
                             </button>
                         </form>
                     @endif
                     @if(($maintenancePermissions['generate_photo_qr'] ?? false) && !session('photo_upload_url') && $photoCount < $maxPhotos)
                         <form method="POST" action="{{ route('vehicles.maintenance.photos.token', [$vehicle, $openMaintenance]) }}">@csrf
-                            <button class="chm-page-button maintenance-qr-generate" type="submit"><i data-lucide="qr-code"></i>Gerar QR para celular</button>
+                            <button class="chm-page-button maintenance-qr-generate" type="submit"><i class="bi bi-qr-code"></i>Gerar QR para celular</button>
                         </form>
                     @endif
-                    @if($photoCount >= $maxPhotos)<p class="maintenance-photo-limit-reached"><i data-lucide="circle-check"></i>Limite de {{ $maxPhotos }} fotos atingido.</p>@endif
+                    @if($photoCount >= $maxPhotos)<p class="maintenance-photo-limit-reached"><i class="bi bi-check-circle"></i>Limite de {{ $maxPhotos }} fotos atingido.</p>@endif
                 </div>
                 @if(session('photo_upload_url'))
                     <div class="maintenance-qr-box">
                         <div class="maintenance-qr-image"><img src="{{ session('photo_upload_qr') }}" alt="QR Code para envio de fotos"></div>
                         <div class="maintenance-qr-content"><strong>Escaneie com o celular</strong><p>Este link expira em 30 minutos. Válido até {{ session('photo_upload_expires_at') }}.</p>
-                            <div class="maintenance-qr-link"><input id="maintenance-photo-url" readonly value="{{ session('photo_upload_url') }}"><button type="button" onclick="navigator.clipboard.writeText(document.getElementById('maintenance-photo-url').value)"><i data-lucide="copy"></i>Copiar link</button></div>
-                            @if(($maintenancePermissions['generate_photo_qr'] ?? false) && $photoCount < $maxPhotos)<form method="POST" action="{{ route('vehicles.maintenance.photos.token', [$vehicle, $openMaintenance]) }}">@csrf<button class="maintenance-new-qr" type="submit"><i data-lucide="refresh-cw"></i>Gerar novo QR</button></form>@endif
+                            <div class="maintenance-qr-link"><input id="maintenance-photo-url" readonly value="{{ session('photo_upload_url') }}"><button type="button" onclick="navigator.clipboard.writeText(document.getElementById('maintenance-photo-url').value)"><i class="bi bi-copy"></i>Copiar link</button></div>
+                            @if(($maintenancePermissions['generate_photo_qr'] ?? false) && $photoCount < $maxPhotos)<form method="POST" action="{{ route('vehicles.maintenance.photos.token', [$vehicle, $openMaintenance]) }}">@csrf<button class="maintenance-new-qr" type="submit"><i class="bi bi-arrow-clockwise"></i>Gerar novo QR</button></form>@endif
                         </div>
                     </div>
                 @endif
@@ -647,7 +647,7 @@
                                     class="chm-page-button primary full"
                                     :disabled="selectedStatus === currentStatus"
                                 >
-                                    <i data-lucide="refresh-cw"></i>
+                                    <i class="bi bi-arrow-clockwise"></i>
                                     Atualizar status
                                 </button>
                             </div>
@@ -751,7 +751,7 @@
                                         type="submit"
                                         class="chm-page-button primary full"
                                     >
-                                        <i data-lucide="plus"></i>
+                                        <i class="bi bi-plus-lg"></i>
                                         Adicionar procedimento
                                     </button>
                                 </div>
@@ -826,7 +826,7 @@
                                         type="submit"
                                         class="chm-page-button primary full"
                                     >
-                                        <i data-lucide="plus-circle"></i>
+                                        <i class="bi bi-plus-circle"></i>
                                         Lançar custo
                                     </button>
                                     </div>
@@ -959,7 +959,7 @@
                                                         action: @js(route('vehicles.maintenance.items.update', [$vehicle->id, $openMaintenance->id, $item->id]))
                                                     })"
                                                 >
-                                                    <i data-lucide="pencil"></i>
+                                                    <i class="bi bi-pencil"></i>
                                                     Editar
                                                 </button>
 
@@ -975,7 +975,7 @@
                                                             'replace_item' => $item->id,
                                                         ]) }}"
                                                     >
-                                                        <i data-lucide="refresh-cw"></i>
+                                                        <i class="bi bi-arrow-clockwise"></i>
                                                         Corrigir serviço
                                                     </a>
                                                 @endif
@@ -990,7 +990,7 @@
                                             @click="open = !open"
                                         >
                                             <span x-text="open ? 'Ocultar detalhes' : 'Ver itens consumidos'"></span>
-                                            <i data-lucide="chevron-down"></i>
+                                            <i class="bi bi-chevron-down"></i>
                                         </button>
 
                                         <div
@@ -1111,7 +1111,7 @@
                                                     action: @js(route('vehicles.maintenance.extra-costs.update', [$vehicle->id, $openMaintenance->id, $extraCost->id]))
                                                 })"
                                             >
-                                                <i data-lucide="pencil"></i>
+                                                <i class="bi bi-pencil"></i>
                                                 Editar
                                             </button>
                                         @endif
@@ -1157,7 +1157,7 @@
                 href="{{ route('vehicle.maintenance.create', $vehicle->id) }}"
                 class="chm-page-button primary"
             >
-                <i data-lucide="wrench"></i>
+                <i class="bi bi-wrench-adjustable"></i>
                 Abrir manutenção
             </a>
 @endif
@@ -1177,7 +1177,7 @@
                 <div class="maintenance-procedure-card">
                     <div class="maintenance-procedure-header">
                         <div class="maintenance-procedure-icon">
-                            <i data-lucide="wrench"></i>
+                            <i class="bi bi-wrench-adjustable"></i>
                         </div>
                         <div>
                             <h3>
@@ -1186,21 +1186,21 @@
                             <div class="maintenance-procedure-rules">
                                 @if($procedure->validity_km)
                                     <span>
-                                        <i data-lucide="gauge"></i>
+                                        <i class="bi bi-speedometer2"></i>
                                         {{ number_format($procedure->interval_km, 0, ',', '.') }} km
                                     </span>
                                 @endif
 
                                 @if($procedure->validity_hours)
                                     <span>
-                                        <i data-lucide="clock"></i>
+                                        <i class="bi bi-clock"></i>
                                         {{ number_format($procedure->interval_hours, 0, ',', '.') }} h
                                     </span>
                                 @endif
 
                                 @if($procedure->validity_period)
                                     <span>
-                                        <i data-lucide="calendar-days"></i>
+                                        <i class="bi bi-calendar-week"></i>
                                         {{ $procedure->interval_days }} dias
                                     </span>
                                 @endif
@@ -1213,7 +1213,7 @@
                                     !$procedure->validity_period
                                 )
                                     <span>
-                                        <i data-lucide="settings"></i>
+                                        <i class="bi bi-gear"></i>
                                         Manual
                                     </span>
                                 @endif
@@ -1225,7 +1225,7 @@
 
             @empty
                 <div class="maintenance-empty-fields">
-                    <i data-lucide="info"></i>
+                    <i class="bi bi-info-circle"></i>
                     <strong>
 
                         Nenhum procedimento vinculado
@@ -1250,7 +1250,7 @@
 <div class="maintenance-workspace maintenance-previous-history" x-data="{ open: false }">
     <button type="button" class="maintenance-previous-toggle" x-on:click="open = !open" :aria-expanded="open">
         <span x-text="open ? 'Ocultar manutenções anteriores' : 'Ver manutenções anteriores'">Ver manutenções anteriores</span>
-        <i data-lucide="chevron-down" :class="{ 'is-rotated': open }"></i>
+        <i class="bi bi-chevron-down" :class="{ 'is-rotated': open }"></i>
     </button>
 
 <section class="maintenance-history-card" x-show="open" x-cloak>

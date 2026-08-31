@@ -70,7 +70,7 @@
 
         >
 
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
 
 
@@ -331,7 +331,7 @@
 
 
 
-                        <i data-lucide="clipboard-wrench"></i>
+                        <i class="bi bi-clipboard2-pulse"></i>
 
 
 
@@ -728,7 +728,7 @@
 
                         >
 
-                            <i data-lucide="save"></i>
+                            <i class="bi bi-floppy"></i>
 
 
 

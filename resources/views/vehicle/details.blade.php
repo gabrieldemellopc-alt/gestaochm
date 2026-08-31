@@ -139,7 +139,7 @@
                     @endphp
 
                     <span class="vehicle-center-status {{ $statusConfig['class'] }}">
-                        <i data-lucide="{{ $statusConfig['icon'] }}"></i>
+                        <i class="{{ chm_icon($statusConfig['icon']) }}"></i>
                         {{ $statusConfig['label'] }}
                     </span>
 
@@ -205,7 +205,7 @@
 
             >
 
-                <i data-lucide="arrow-left"></i>
+                <i class="bi bi-arrow-left"></i>
 
                 <span>Veículos</span>
 
@@ -221,14 +221,14 @@
 
             >
 
-                <i data-lucide="pencil"></i>
+                <i class="bi bi-pencil"></i>
 
                 <span>Editar</span>
 
             </a>
             @if($canCorrectReadings)
                 <button type="button" class="vehicle-center-action" onclick="openReadingCorrectionModal()">
-                    <i data-lucide="undo-2"></i>
+                    <i class="bi bi-arrow-counterclockwise"></i>
                     <span>Corrigir KM/HR</span>
                 </button>
             @endif
@@ -240,7 +240,7 @@
                 aria-expanded="false"
                 onclick="openVehicleReportModal()"
             >
-                <i data-lucide="file-text"></i>
+                <i class="bi bi-file-earmark-text"></i>
                 <span>Relat&oacute;rio</span>
             </button>
 
@@ -322,29 +322,29 @@
                     <small>Ações rápidas</small>
                     <h3>Central do veículo</h3>
                 </div>
-                <i data-lucide="zap"></i>
+                <i class="bi bi-lightning-charge"></i>
             </div>
 
             <div class="vehicle-dash-actions-grid">
                 <a href="{{ route('vehicle.maintenance.index', $vehicle) }}" class="vehicle-dash-action">
-                    <i data-lucide="wrench"></i>
+                    <i class="bi bi-wrench-adjustable"></i>
                     <span>Manutenções</span>
                 </a>
 
                 <a href="{{ route('vehicles.tires.index', $vehicle) }}" class="vehicle-dash-action">
-                    <i data-lucide="circle-dot"></i>
+                    <i class="bi bi-circle"></i>
                     <span>Pneus</span>
                 </a>
 
                 @if($fuelEnabled)
                     <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}" class="vehicle-dash-action">
-                        <i data-lucide="fuel"></i>
+                        <i class="bi bi-fuel-pump"></i>
                         <span>Combustível</span>
                     </a>
                 @endif
 
                 <a href="{{ route('vehicles.history', $vehicle) }}" class="vehicle-dash-action">
-                    <i data-lucide="history"></i>
+                    <i class="bi bi-clock-history"></i>
                     <span>Histórico</span>
                 </a>
             </div>
@@ -357,7 +357,7 @@
                     <small>Atualização rápida</small>
                     <h3>KM e Horímetro</h3>
                 </div>
-                <i data-lucide="gauge"></i>
+                <i class="bi bi-speedometer2"></i>
             </div>
 
             <div class="vehicle-center-fields">
@@ -435,7 +435,7 @@
                 </div>
 
                 <div class="vehicle-dash-status-badge status-{{ $vehicle->operational_status }}">
-                    <i data-lucide="{{ $statusConfig['icon'] }}"></i>
+                    <i class="{{ chm_icon($statusConfig['icon']) }}"></i>
                     {{ $statusConfig['label'] }}
                 </div>
             </div>
@@ -479,7 +479,7 @@
             
                     <div class="vehicle-dash-maintenance-lock-text">
             
-                        <i data-lucide="lock-keyhole"></i>
+                        <i class="bi bi-lock"></i>
             
                         <div>
                             <strong>
@@ -498,7 +498,7 @@
                         href="{{ route('vehicle.maintenance.index', $vehicle) }}"
                         class="vehicle-dash-maintenance-link"
                     >
-                        <i data-lucide="wrench"></i>
+                        <i class="bi bi-wrench-adjustable"></i>
             
                         Ir para manutenção
                     </a>
@@ -515,7 +515,7 @@
                         editing = true;
                     "
                 >
-                    <i data-lucide="pencil"></i>
+                    <i class="bi bi-pencil"></i>
             
                     Alterar status
                 </button>
@@ -539,7 +539,7 @@
                         </div>
 
                         <button type="button" @click="editing = false">
-                            <i data-lucide="x"></i>
+                            <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
 
@@ -618,12 +618,12 @@
                     <small>Monitoramento</small>
                     <h3>Alertas do veículo</h3>
                 </div>
-                <i data-lucide="triangle-alert"></i>
+                <i class="bi bi-exclamation-triangle"></i>
             </div>
 
             @if(empty($vehicle->alerts))
                 <div class="vehicle-center-empty">
-                    <i data-lucide="check-circle"></i>
+                    <i class="bi bi-check-circle"></i>
                     <strong>Nenhum alerta ativo</strong>
                     <p>Este veículo não possui pendências no momento.</p>
                 </div>
@@ -631,7 +631,7 @@
                 <div class="vehicle-center-alert-list">
                     @foreach($vehicle->alerts as $alert)
                         <div class="vehicle-center-alert {{ $alert['status'] ?? 'warning' }}">
-                            <i data-lucide="triangle-alert"></i>
+                            <i class="bi bi-exclamation-triangle"></i>
 
                             <div>
                                 <strong>{{ $alert['message'] ?? 'Alerta operacional' }}</strong>
@@ -653,12 +653,12 @@
                     <small>Manutenção</small>
                     <h3>Últimos registros</h3>
                 </div>
-                <i data-lucide="wrench"></i>
+                <i class="bi bi-wrench-adjustable"></i>
             </div>
 
             @if($vehicle->maintenances->isEmpty())
                 <div class="vehicle-center-empty">
-                    <i data-lucide="clipboard-x"></i>
+                    <i class="bi bi-clipboard-x"></i>
                     <strong>Nenhuma manutenção registrada</strong>
                     <p>Os lançamentos de manutenção aparecerão aqui.</p>
                 </div>
@@ -687,12 +687,12 @@
                 <small>Histórico recente</small>
                 <h3>Atualizações operacionais</h3>
             </div>
-            <i data-lucide="clock-3"></i>
+            <i class="bi bi-clock"></i>
         </div>
 
         @if($vehicle->updateLogs->isEmpty())
             <div class="vehicle-center-empty">
-                <i data-lucide="inbox"></i>
+                <i class="bi bi-inbox"></i>
                 <strong>Nenhuma atualização registrada</strong>
                 <p>Alterações de KM, HR e status aparecerão aqui.</p>
             </div>
@@ -735,7 +735,7 @@
                 <h3 id="readingCorrectionTitle">Corrigir KM/horímetro</h3>
                 <p>Use somente para corrigir uma leitura lançada incorretamente.</p>
             </div>
-            <button type="button" onclick="closeReadingCorrectionModal()"><i data-lucide="x"></i></button>
+            <button type="button" onclick="closeReadingCorrectionModal()"><i class="bi bi-x-lg"></i></button>
         </div>
 
         <form method="POST" action="{{ route('vehicles.reading-correction.store', $vehicle) }}" class="reading-correction-form" id="readingCorrectionForm">
@@ -777,7 +777,7 @@
             <section class="reading-correction-evidence"><strong>Comprovação em vídeo</strong><p>Escaneie o QR Code com o celular e grave um vídeo de até 10 segundos mostrando a placa e o hodômetro/horímetro do veículo.</p><div id="readingCorrectionQr">Preparando QR Code…</div><p id="readingCorrectionEvidenceStatus">Aguardando envio do vídeo...</p></section>
             <section class="reading-correction-impact-area" aria-live="polite">
                 <div id="readingCorrectionImpacts" class="reading-correction-impact">
-                    <div class="reading-correction-impact-state"><i data-lucide="info"></i><div><strong>Impactos ainda não analisados</strong><p>Revise os impactos da correção antes de confirmar.</p></div></div>
+                    <div class="reading-correction-impact-state"><i class="bi bi-info-circle"></i><div><strong>Impactos ainda não analisados</strong><p>Revise os impactos da correção antes de confirmar.</p></div></div>
                 </div>
             </section>
             </div>
@@ -805,7 +805,7 @@
             </div>
 
             <button type="button" onclick="closeVehicleReportModal()" aria-label="Fechar relat&oacute;rio do ve&iacute;culo">
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
             </button>
         </div>
 
@@ -961,9 +961,9 @@
         const impacts = data.impacts || [];
         const impactItems = impacts.length
             ? impacts.map(item => `<article class="reading-correction-impact-item"><div><strong>${escapeReadingCorrectionHtml(item.type)}</strong><small>${escapeReadingCorrectionHtml(item.date)}</small></div><b>${escapeReadingCorrectionHtml(item.value)}</b><span>${escapeReadingCorrectionHtml(item.reference)}</span></article>`).join('')
-            : '<div class="reading-correction-impact-state is-success"><i data-lucide="circle-check"></i><div><strong>Nenhum lançamento potencialmente afetado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
+            : '<div class="reading-correction-impact-state is-success"><i class="bi bi-check-circle"></i><div><strong>Nenhum lançamento potencialmente afetado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
         target.innerHTML = `<label id="readingCorrectionConfirmation" class="reading-correction-impact-header"><input type="checkbox" name="impact_confirmed" value="1" required><span class="reading-correction-impact-copy"><strong>Lançamentos potencialmente afetados</strong><p>Esses registros não serão alterados automaticamente, mas podem precisar de conferência.</p><span class="reading-correction-warning-copy"><strong>Estou ciente dos impactos desta correção.</strong><small>Registros relacionados poderão ter seus indicadores recalculados, sem exclusão do histórico original.</small></span></span><span class="reading-correction-impact-badge">${impacts.length} registro${impacts.length === 1 ? '' : 's'}</span></label><div class="reading-correction-impact-list">${impactItems}</div>`;
-        if (window.lucide) lucide.createIcons();
+        
         const confirmation = document.querySelector('#readingCorrectionConfirmation input');
         if (confirmation) confirmation.addEventListener('change', updateReadingSubmit);
         readingImpactState = 'reviewed';
@@ -980,7 +980,7 @@
 
     function reasonWordCount(){return document.querySelector('#readingCorrectionForm [name="reason"]').value.trim().split(/\s+/).filter(Boolean).length;}
     function scrollToReadingImpacts() { requestAnimationFrame(() => { const container=document.querySelector('.reading-correction-body'); const impacts=document.getElementById('readingCorrectionImpacts'); if (!container || !impacts) return; const containerRect=container.getBoundingClientRect(); const impactsRect=impacts.getBoundingClientRect(); container.scrollTo({top:Math.max(0,container.scrollTop+impactsRect.top-containerRect.top-12),behavior:'smooth'}); clearTimeout(readingImpactHighlightTimer); impacts.classList.add('is-highlighted'); readingImpactHighlightTimer=setTimeout(()=>impacts.classList.remove('is-highlighted'),1800); }); }
-    function renderReadingImpactNotice() { const target=document.getElementById('readingCorrectionImpacts'); const stale=readingImpactState==='stale'; target.innerHTML=`<div class="reading-correction-impact-state"><i data-lucide="info"></i><div><strong>${stale?'Dados alterados após a análise':'Impactos ainda não analisados'}</strong><p>${stale?'Os dados foram alterados. Revise os impactos antes de confirmar.':'Revise os impactos da correção antes de confirmar.'}</p></div></div>`; if (window.lucide) lucide.createIcons(); }
+    function renderReadingImpactNotice() { const target=document.getElementById('readingCorrectionImpacts'); const stale=readingImpactState==='stale'; target.innerHTML=`<div class="reading-correction-impact-state"><i class="bi bi-info-circle"></i><div><strong>${stale?'Dados alterados após a análise':'Impactos ainda não analisados'}</strong><p>${stale?'Os dados foram alterados. Revise os impactos antes de confirmar.':'Revise os impactos da correção antes de confirmar.'}</p></div></div>`; }
     function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const readyForReview=readingEvidenceReady&&change&&words>=8&&f.target_log_id.value; const reviewed=readingImpactState==='reviewed'; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=reviewed?'Confirmar correção':'Revisar impactos'; button.type=reviewed?'submit':'button'; if(reviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!reviewed||confirmation?.checked)); }
 
     function escapeReadingCorrectionHtml(value) {

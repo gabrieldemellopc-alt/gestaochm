@@ -199,19 +199,6 @@
 
     @endauth
 
-
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-
-
-    <script>
-
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
-
     <script src="{{ asset('js/chm-theme.js') }}?v=1"></script>
 
     @stack('scripts')
@@ -251,18 +238,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
                 if (icon) {
-                    icon.setAttribute(
-                        'data-lucide',
-                        collapsed
-                            ? 'panel-left-open'
-                            : 'panel-left-close'
-                    );
+                    icon.className = collapsed ? 'bi bi-layout-sidebar-inset' : 'bi bi-layout-sidebar-inset';
                 }
             });
-
-        if (window.lucide) {
-            window.lucide.createIcons();
-        }
     }
 
     function setSidebarCollapsed(collapsed, persist = true) {

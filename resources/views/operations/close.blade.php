@@ -41,7 +41,7 @@
 
         <a href="{{ route('operations.index') }}" class="chm-page-button secondary">
 
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
             Voltar para operações
 
@@ -309,7 +309,7 @@
 
             <button type="submit" class="chm-page-button primary">
 
-                <i data-lucide="check-circle-2"></i>
+                <i class="bi bi-check-circle"></i>
 
                 Encerrar operação
 

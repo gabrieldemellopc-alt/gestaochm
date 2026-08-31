@@ -34,7 +34,7 @@
                 href="{{ route('workshop.index') }}"
                 class="chm-page-button secondary"
             >
-                <i data-lucide="arrow-left"></i>
+                <i class="bi bi-arrow-left"></i>
                 Voltar para oficina
             </a>
 
@@ -42,7 +42,7 @@
                 href="{{ route('procedures.create') }}"
                 class="chm-page-button primary"
             >
-                <i data-lucide="plus"></i>
+                <i class="bi bi-plus-lg"></i>
                 Novo procedimento
             </a>
 
@@ -55,7 +55,7 @@
 
         <div class="procedures-summary-card">
             <div class="procedures-summary-icon">
-                <i data-lucide="clipboard-list"></i>
+                <i class="bi bi-clipboard"></i>
             </div>
 
             <div>
@@ -67,7 +67,7 @@
 
         <div class="procedures-summary-card">
             <div class="procedures-summary-icon">
-                <i data-lucide="gauge"></i>
+                <i class="bi bi-speedometer2"></i>
             </div>
 
             <div>
@@ -79,7 +79,7 @@
 
         <div class="procedures-summary-card">
             <div class="procedures-summary-icon">
-                <i data-lucide="clock"></i>
+                <i class="bi bi-clock"></i>
             </div>
 
             <div>
@@ -91,7 +91,7 @@
 
         <div class="procedures-summary-card">
             <div class="procedures-summary-icon">
-                <i data-lucide="calendar-days"></i>
+                <i class="bi bi-calendar-week"></i>
             </div>
 
             <div>
@@ -142,7 +142,7 @@
                                 @if($procedure->validity_km)
 
                                     <span class="procedure-rule-badge km">
-                                        <i data-lucide="gauge"></i>
+                                        <i class="bi bi-speedometer2"></i>
 
                                         @if($procedure->interval_km > 0)
                                             {{ number_format($procedure->interval_km, 0, ',', '.') }} km
@@ -156,7 +156,7 @@
                                 @if($procedure->validity_hours)
 
                                     <span class="procedure-rule-badge hours">
-                                        <i data-lucide="clock"></i>
+                                        <i class="bi bi-clock"></i>
 
                                         @if($procedure->interval_hours > 0)
                                             {{ number_format($procedure->interval_hours, 0, ',', '.') }} h
@@ -170,7 +170,7 @@
                                 @if($procedure->validity_period)
 
                                     <span class="procedure-rule-badge days">
-                                        <i data-lucide="calendar-days"></i>
+                                        <i class="bi bi-calendar-week"></i>
 
                                         @if($procedure->interval_days > 0)
                                             {{ $procedure->interval_days }} dias
@@ -190,7 +190,7 @@
                                 )
 
                                     <span class="procedure-rule-badge muted">
-                                        <i data-lucide="settings"></i>
+                                        <i class="bi bi-gear"></i>
                                         Manual
                                     </span>
 
@@ -203,7 +203,7 @@
                     </div>
 
                     <div class="procedure-icon">
-                        <i data-lucide="clipboard-list"></i>
+                        <i class="bi bi-clipboard"></i>
                     </div>
 
                 </div>
@@ -224,7 +224,7 @@
 
                             <div class="field-pill">
 
-                                <i data-lucide="tag"></i>
+                                <i class="bi bi-tag"></i>
 
                                 {{ $field->label }}
 
@@ -234,7 +234,7 @@
 
                             <div class="procedure-empty-fields">
 
-                                <i data-lucide="info"></i>
+                                <i class="bi bi-info-circle"></i>
 
                                 Nenhum campo adicional
 
@@ -252,7 +252,7 @@
                         href="{{ route('procedures.edit', $procedure->id) }}"
                         class="procedure-edit-btn"
                     >
-                        <i data-lucide="pencil"></i>
+                        <i class="bi bi-pencil"></i>
 
                         Editar procedimento
                     </a>
@@ -266,7 +266,7 @@
             <div class="procedures-empty">
 
                 <div class="procedures-empty-icon">
-                    <i data-lucide="clipboard-x"></i>
+                    <i class="bi bi-clipboard-x"></i>
                 </div>
 
                 <strong>
@@ -281,7 +281,7 @@
                     href="{{ route('procedures.create') }}"
                     class="chm-page-button primary"
                 >
-                    <i data-lucide="plus"></i>
+                    <i class="bi bi-plus-lg"></i>
 
                     Criar primeiro procedimento
                 </a>

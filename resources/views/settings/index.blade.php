@@ -21,12 +21,12 @@
         </nav>
 
         @if($tab === 'general')
-            <section class="settings-card"><i data-lucide="settings"></i><div><h2>Configurações gerais</h2><p>Preferências administrativas do sistema serão reunidas aqui.</p></div></section>
+            <section class="settings-card"><i class="bi bi-gear"></i><div><h2>Configurações gerais</h2><p>Preferências administrativas do sistema serão reunidas aqui.</p></div></section>
         @elseif($tab === 'aggregated-vehicles')
-            <section class="settings-card settings-fiscal-card"><i data-lucide="truck"></i><div class="settings-fiscal-content"><h2>Veículos agregados</h2><p>Estas permissões controlam ações operacionais dos veículos agregados da unidade ativa.</p><form method="POST" action="{{ route('settings.aggregated-vehicles.update') }}" class="settings-fiscal-form">@csrf @method('PATCH')<label class="settings-fiscal-routine"><span class="settings-fiscal-routine-copy"><strong>Permitir abastecimentos</strong><small>Permite lançar abastecimentos para agregados.</small></span><input type="hidden" name="allow_aggregated_fuel" value="0"><input type="checkbox" name="allow_aggregated_fuel" value="1" @checked($location?->allow_aggregated_fuel)></label><label class="settings-fiscal-routine"><span class="settings-fiscal-routine-copy"><strong>Permitir abertura de OM/manutenção</strong><small>Permite abrir manutenção para agregados.</small></span><input type="hidden" name="allow_aggregated_maintenance" value="0"><input type="checkbox" name="allow_aggregated_maintenance" value="1" @checked($location?->allow_aggregated_maintenance)></label><button class="settings-action" type="submit">Salvar configurações</button></form></div></section>
+            <section class="settings-card settings-fiscal-card"><i class="bi bi-truck"></i><div class="settings-fiscal-content"><h2>Veículos agregados</h2><p>Estas permissões controlam ações operacionais dos veículos agregados da unidade ativa.</p><form method="POST" action="{{ route('settings.aggregated-vehicles.update') }}" class="settings-fiscal-form">@csrf @method('PATCH')<label class="settings-fiscal-routine"><span class="settings-fiscal-routine-copy"><strong>Permitir abastecimentos</strong><small>Permite lançar abastecimentos para agregados.</small></span><input type="hidden" name="allow_aggregated_fuel" value="0"><input type="checkbox" name="allow_aggregated_fuel" value="1" @checked($location?->allow_aggregated_fuel)></label><label class="settings-fiscal-routine"><span class="settings-fiscal-routine-copy"><strong>Permitir abertura de OM/manutenção</strong><small>Permite abrir manutenção para agregados.</small></span><input type="hidden" name="allow_aggregated_maintenance" value="0"><input type="checkbox" name="allow_aggregated_maintenance" value="1" @checked($location?->allow_aggregated_maintenance)></label><button class="settings-action" type="submit">Salvar configurações</button></form></div></section>
         @elseif($tab === 'fiscal-documents')
             <section class="settings-card settings-fiscal-card">
-    <i data-lucide="receipt-text"></i>
+    <i class="bi bi-receipt"></i>
     <div class="settings-fiscal-content">
         <h2>Obrigatoriedade de notas fiscais</h2>
         <p>Defina em quais rotinas o número/documento fiscal será obrigatório ou opcional.</p>
@@ -59,9 +59,9 @@
     </div>
 </section>
         @elseif($tab === 'permissions' && $canConfigurePermissions)
-            <section class="settings-card"><i data-lucide="shield-check"></i><div><h2>Permissões</h2><p>As permissões continuam disponíveis na tela atual.</p><a class="settings-action" href="{{ route('permissions.index') }}">Abrir permissões <i data-lucide="arrow-up-right"></i></a></div></section>
+            <section class="settings-card"><i class="bi bi-shield-check"></i><div><h2>Permissões</h2><p>As permissões continuam disponíveis na tela atual.</p><a class="settings-action" href="{{ route('permissions.index') }}">Abrir permissões <i class="bi bi-arrow-up-right"></i></a></div></section>
         @else
-            <section class="settings-card"><i data-lucide="server-cog"></i><div><h2>Sistema</h2><p>Informações e preferências técnicas poderão ser exibidas aqui futuramente.</p></div></section>
+            <section class="settings-card"><i class="bi bi-server"></i><div><h2>Sistema</h2><p>Informações e preferências técnicas poderão ser exibidas aqui futuramente.</p></div></section>
         @endif
     </main>
 @endsection

@@ -24,7 +24,7 @@
 
         <div class="operations-summary-card">
             <div class="operations-summary-icon active">
-                <i data-lucide="radio-tower"></i>
+                <i class="bi bi-broadcast"></i>
             </div>
 
             <div>
@@ -36,7 +36,7 @@
 
         <div class="operations-summary-card">
             <div class="operations-summary-icon">
-                <i data-lucide="users"></i>
+                <i class="bi bi-people"></i>
             </div>
 
             <div>
@@ -48,7 +48,7 @@
 
         <div class="operations-summary-card">
             <div class="operations-summary-icon">
-                <i data-lucide="check-circle-2"></i>
+                <i class="bi bi-check-circle"></i>
             </div>
 
             <div>
@@ -82,7 +82,7 @@
 
                 <div class="operation-vehicle">
                     <div class="operation-vehicle-icon">
-                        <i data-lucide="truck"></i>
+                        <i class="bi bi-truck"></i>
                     </div>
 
                     <div>
@@ -134,7 +134,7 @@
 
             <div class="operations-empty">
                 <div>
-                    <i data-lucide="radio-tower"></i>
+                    <i class="bi bi-broadcast"></i>
                 </div>
 
                 <strong>Nenhuma operação encontrada</strong>

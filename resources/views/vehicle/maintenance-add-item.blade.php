@@ -72,7 +72,7 @@
 
         >
 
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
 
 
@@ -415,7 +415,7 @@
                         </span>
                     </div>
                 </div>
-                <i data-lucide="clipboard-wrench"></i>
+                <i class="bi bi-clipboard2-pulse"></i>
             </div>
 
             <div class="maintenance-card-body">
@@ -569,7 +569,7 @@
                     <h3>{{ $procedure->name }}</h3>
                     <p>Preencha as informações complementares exigidas por este procedimento.</p>
                 </div>
-                <i data-lucide="list-checks"></i>
+                <i class="bi bi-list-check"></i>
             </div>
 
             <div class="maintenance-fields">
@@ -757,7 +757,7 @@
                 </a>
 
                 <button type="submit" class="chm-page-button primary full">
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
                     {{ $replacementItem ? 'Confirmar correção' : 'Adicionar procedimento' }}
                 </button>
             </div>

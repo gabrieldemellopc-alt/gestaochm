@@ -44,7 +44,7 @@
                 href="{{ route('workshop.tires.index') }}"
                 class="tire-history-back"
             >
-                <i data-lucide="arrow-left"></i>
+                <i class="bi bi-arrow-left"></i>
                 Voltar para pneus
             </a>
 
@@ -100,7 +100,7 @@
     </section>
 
     <aside class="tire-history-notice">
-        <i data-lucide="info"></i>
+        <i class="bi bi-info-circle"></i>
         <p>Alterações manuais de status anteriores não possuem histórico registrado.</p>
     </aside>
 
@@ -116,7 +116,7 @@
 
         @if($timeline->isEmpty())
             <div class="tire-history-empty">
-                <i data-lucide="history"></i>
+                <i class="bi bi-clock-history"></i>
                 <strong>Nenhum evento registrado</strong>
                 <p>Este pneu ainda não possui movimentações disponíveis para exibição.</p>
             </div>
@@ -137,19 +137,19 @@
                         <div class="tire-history-marker">
                             @switch($event['type'])
                                 @case('entry')
-                                    <i data-lucide="package-plus"></i>
+                                    <i class="bi bi-box-seam"></i>
                                     @break
                                 @case('installation')
-                                    <i data-lucide="truck"></i>
+                                    <i class="bi bi-truck"></i>
                                     @break
                                 @case('removal')
-                                    <i data-lucide="package-minus"></i>
+                                    <i class="bi bi-box-seam"></i>
                                     @break
                                 @case('measurement')
-                                    <i data-lucide="ruler"></i>
+                                    <i class="bi bi-rulers"></i>
                                     @break
                                 @case('retread')
-                                    <i data-lucide="refresh-cw"></i>
+                                    <i class="bi bi-arrow-clockwise"></i>
                                     @break
                             @endswitch
                         </div>

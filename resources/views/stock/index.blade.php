@@ -109,14 +109,14 @@
 
             >
 
-                <i data-lucide="arrow-left"></i>
+                <i class="bi bi-arrow-left"></i>
 
                 Voltar para oficina
 
             </a>
 
             <button type="button" class="chm-page-button secondary" onclick="window.openStockDashboard()">
-                <i data-lucide="bar-chart-3"></i>
+                <i class="bi bi-bar-chart"></i>
                 Painel de estoque
             </button>
 
@@ -126,7 +126,7 @@
                     class="chm-page-button secondary stock-import-invoice-trigger"
                     onclick="window.dispatchEvent(new CustomEvent('open-fiscal-import'))"
                 >
-                    <i data-lucide="file-up"></i>
+                    <i class="bi bi-file-earmark-arrow-up"></i>
                     Importar NF
                 </button>
             @endif
@@ -143,7 +143,7 @@
 
             >
 
-                <i data-lucide="plus"></i>
+                <i class="bi bi-plus-lg"></i>
 
                 Nova categoria
 
@@ -162,16 +162,16 @@
 
     <div class="stock-filter-bar">
         <label class="stock-search-field">
-            <i data-lucide="search"></i>
+            <i class="bi bi-search"></i>
             <input type="search" x-model.debounce.150ms="query" placeholder="Buscar item ou categoria..." aria-label="Buscar item ou categoria">
         </label>
 
         <div class="stock-compact-kpis">
             <div class="stock-category-filter" @click.outside="categoryMenuOpen = false">
                 <button type="button" class="stock-compact-kpi stock-category-kpi" @click="categoryMenuOpen = !categoryMenuOpen" :aria-expanded="categoryMenuOpen.toString()">
-                    <i data-lucide="boxes"></i>
+                    <i class="bi bi-boxes"></i>
                     <span>Categorias <strong x-text="selectedCategoryIds.length + '/' + categories.length"></strong></span>
-                    <i data-lucide="chevron-down" class="stock-category-chevron" :class="{ 'is-open': categoryMenuOpen }"></i>
+                    <i class="bi bi-chevron-down" class="stock-category-chevron" :class="{ 'is-open': categoryMenuOpen }"></i>
                 </button>
 
                 <div class="stock-category-popover" x-show="categoryMenuOpen" x-cloak x-transition.origin.top.right>
@@ -192,12 +192,12 @@
             </div>
 
             <div class="stock-compact-kpi">
-                <i data-lucide="package"></i>
+                <i class="bi bi-box-seam"></i>
                 <span>Itens <strong>{{ $categories->sum(fn($category) => $category->items->count()) }}</strong></span>
             </div>
 
             <div class="stock-compact-kpi warning">
-                <i data-lucide="triangle-alert"></i>
+                <i class="bi bi-exclamation-triangle"></i>
                 <span>Atenção <strong>{{ $categories->sum(fn($category) => $category->items->whereIn('stock_status', ['warning', 'danger'])->count()) }}</strong></span>
             </div>
         </div>
@@ -236,7 +236,7 @@
 
                         <div class="stock-category-icon">
 
-                            <i data-lucide="folder-kanban"></i>
+                            <i class="bi bi-folder"></i>
 
                         </div>
 
@@ -295,7 +295,7 @@
 
                     >
 
-                        <i data-lucide="plus"></i>
+                        <i class="bi bi-plus-lg"></i>
 
 
 
@@ -306,7 +306,7 @@
 
                     @if($canManageStockCategories)
                             <button type="button" class="stock-category-action" onclick='openCategoryEditModal({{ $category->id }}, @json($category->name))'>
-                                <i data-lucide="pencil"></i>
+                                <i class="bi bi-pencil"></i>
                                 Editar
                             </button>
                             <button
@@ -316,7 +316,7 @@
                                 title="{{ $category->items_count > 0 ? 'Categoria em uso por '.$category->items_count.' itens nesta unidade' : ($category->other_location_items_count > 0 ? 'Categoria compartilhada e em uso por '.$category->other_location_items_count.' itens em outra unidade' : 'Excluir categoria') }}"
                                 onclick='openCategoryDeleteModal({{ $category->id }}, @json($category->name))'
                             >
-                                <i data-lucide="trash-2"></i>
+                                <i class="bi bi-trash"></i>
                                 Excluir
                             </button>
                     @endif
@@ -365,7 +365,7 @@
 
                                 <div class="stock-item-icon">
 
-                                    <i data-lucide="package"></i>
+                                    <i class="bi bi-box-seam"></i>
 
                                 </div>
 
@@ -399,7 +399,7 @@
 
                                     <span class="stock-status-badge stock-item-status danger">
 
-                                        <i data-lucide="circle-alert"></i>
+                                        <i class="bi bi-exclamation-circle"></i>
 
                                         Crítico
 
@@ -413,7 +413,7 @@
 
                                     <span class="stock-status-badge stock-item-status warning">
 
-                                        <i data-lucide="triangle-alert"></i>
+                                        <i class="bi bi-exclamation-triangle"></i>
 
                                         Atenção
 
@@ -427,7 +427,7 @@
 
                                     <span class="stock-status-badge stock-item-status ok">
 
-                                        <i data-lucide="check-circle"></i>
+                                        <i class="bi bi-check-circle"></i>
 
                                         Adequado
 
@@ -481,7 +481,7 @@
                                 <div class="stock-card-actions">
                                     @if($canCreateStockEntry)
                                         <button type="button" class="stock-card-entry" onclick="event.stopPropagation(); openDirectEntry({{ $item->id }})">
-                                            <i data-lucide="plus"></i>
+                                            <i class="bi bi-plus-lg"></i>
                                             Nova entrada
                                         </button>
                                     @endif
@@ -505,7 +505,7 @@
 
 
 
-                            <i data-lucide="package-open"></i>
+                            <i class="bi bi-box-seam"></i>
 
 
 
@@ -546,7 +546,7 @@
 
                             >
 
-                                <i data-lucide="plus"></i>
+                                <i class="bi bi-plus-lg"></i>
 
 
 
@@ -581,7 +581,7 @@
 
 
 
-                <i data-lucide="boxes"></i>
+                <i class="bi bi-boxes"></i>
 
 
 
@@ -612,7 +612,7 @@
 
                 >
 
-                    <i data-lucide="plus"></i>
+                    <i class="bi bi-plus-lg"></i>
 
 
 
@@ -631,12 +631,12 @@
 
         @if($categories->isNotEmpty())
             <div class="stock-filter-empty" x-show="selectedCategoryIds.length === 0" x-cloak>
-                <i data-lucide="boxes"></i>
+                <i class="bi bi-boxes"></i>
                 <strong>Nenhuma categoria selecionada.</strong>
                 <p>Selecione ao menos uma categoria para visualizar seus itens.</p>
             </div>
             <div class="stock-filter-empty" x-show="selectedCategoryIds.length > 0 && !categories.some(category => categoryMatches(category.id, category.name))" x-cloak>
-                <i data-lucide="search-x"></i>
+                <i class="bi bi-search"></i>
                 <strong>Nenhum item ou categoria encontrado.</strong>
                 <p>Revise sua busca ou ajuste as categorias selecionadas.</p>
             </div>
@@ -678,7 +678,7 @@
 
         >
 
-            <i data-lucide="x"></i>
+            <i class="bi bi-x-lg"></i>
 
         </button>
 
@@ -690,7 +690,7 @@
 
             <div class="stock-modal-icon">
 
-                <i data-lucide="folder-plus"></i>
+                <i class="bi bi-folder-plus"></i>
 
             </div>
 
@@ -810,7 +810,7 @@
 
                 >
 
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
 
 
 
@@ -836,9 +836,9 @@
 
 <div class="stock-modal-overlay" id="categoryDeleteModal" style="display:none;">
     <div class="stock-category-modal-card stock-confirm-modal-card">
-        <button type="button" onclick="closeCategoryDeleteModal()" class="stock-modal-close"><i data-lucide="x"></i></button>
+        <button type="button" onclick="closeCategoryDeleteModal()" class="stock-modal-close"><i class="bi bi-x-lg"></i></button>
         <div class="stock-modal-header">
-            <div class="stock-modal-icon"><i data-lucide="triangle-alert"></i></div>
+            <div class="stock-modal-icon"><i class="bi bi-exclamation-triangle"></i></div>
             <div>
                 <span>Estoque</span>
                 <h2>Excluir categoria</h2>
@@ -850,7 +850,7 @@
             @method('DELETE')
             <div class="stock-modal-actions">
                 <button type="button" class="stock-modal-cancel" onclick="closeCategoryDeleteModal()">Cancelar</button>
-                <button class="chm-page-button danger" type="submit"><i data-lucide="trash-2"></i> Excluir categoria</button>
+                <button class="chm-page-button danger" type="submit"><i class="bi bi-trash"></i> Excluir categoria</button>
             </div>
         </form>
     </div>
@@ -884,7 +884,7 @@
 
         >
 
-            <i data-lucide="x"></i>
+            <i class="bi bi-x-lg"></i>
 
         </button>
 
@@ -896,7 +896,7 @@
 
             <div class="stock-modal-icon">
 
-                <i data-lucide="package-plus"></i>
+                <i class="bi bi-box-seam"></i>
 
             </div>
 
@@ -1062,7 +1062,7 @@
 
                 >
 
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
 
 
 
@@ -1103,13 +1103,13 @@
         <div class="stock-edit-modal-layout stock-item-modal-layout">
 
             <button type="button" onclick="closeEditItemModal()" class="stock-modal-close stock-item-modal-close" aria-label="Fechar modal">
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
             </button>
 
             <aside class="stock-edit-sidebar stock-item-modal-sidebar">
                 <div class="stock-edit-header-new stock-item-modal-identity">
                     <div class="stock-modal-icon">
-                        <i data-lucide="package"></i>
+                        <i class="bi bi-box-seam"></i>
                     </div>
                     <div>
                         <span id="editItemCategory"></span>
@@ -1117,7 +1117,7 @@
                     </div>
                 </div>
                 <div class="stock-balance-card-new stock-item-modal-summary">
-                    <div class="stock-balance-icon"><i data-lucide="package-check"></i></div>
+                    <div class="stock-balance-icon"><i class="bi bi-box-seam"></i></div>
                     <span>Estoque atual</span>
                     <h2 id="editStockQuantity">0</h2>
                     <small id="editItemUnitBadge">Unidade</small>
@@ -1127,12 +1127,12 @@
                 <div class="stock-movement-actions-new stock-item-modal-movement-actions">
                     @if($canCreateStockEntry)
                     <button type="button" class="stock-movement-btn in" onclick="openMovementModal('in')">
-                        <i data-lucide="plus"></i> Entrada
+                        <i class="bi bi-plus-lg"></i> Entrada
                     </button>
                     @endif
                     @if($canCreateStockOutput)
                     <button type="button" class="stock-movement-btn out" onclick="openMovementModal('out')">
-                        <i data-lucide="minus"></i> Saída
+                        <i class="bi bi-dash-lg"></i> Saída
                     </button>
                     @endif
                 </div>
@@ -1141,12 +1141,12 @@
                 <div class="stock-edit-actions-top stock-item-modal-secondary-actions">
                     @if($canManageStockItems)
                     <button type="button" class="stock-edit-trigger-btn" onclick="enableItemEdit()" id="editItemBtn">
-                        <i data-lucide="pencil"></i> Editar item
+                        <i class="bi bi-pencil"></i> Editar item
                     </button>
                     @endif
                     @if($canViewStockItemDetails)
                     <a href="#" class="stock-details-link stock-modal-details-link" id="stockItemDetailsLink">
-                        <i data-lucide="external-link"></i> Ver mais detalhes
+                        <i class="bi bi-box-arrow-up-right"></i> Ver mais detalhes
                     </a>
                     @endif
                 </div>
@@ -1290,7 +1290,7 @@
                 <section class="stock-history-card-new stock-item-history-panel">
                     <div class="stock-history-header-new">
                         <div><span>Histórico</span><h3>Últimas movimentações</h3></div>
-                        <i data-lucide="history"></i>
+                        <i class="bi bi-clock-history"></i>
                     </div>
                     <div id="movementHistory" class="stock-movement-history-list stock-item-history-list"></div>
                 </section>
@@ -1298,7 +1298,7 @@
                     <div class="stock-movement-detail-header">
                         <div class="stock-movement-detail-title-row">
                             <div id="movementDetailIcon" class="stock-modal-icon movement">
-                                <i data-lucide="arrow-left-right"></i>
+                                <i class="bi bi-arrow-left-right"></i>
                             </div>
 
                             <div>
@@ -1308,7 +1308,7 @@
                         </div>
 
                         <button type="button" onclick="closeMovementDetailPanel()">
-                            <i data-lucide="x"></i>
+                            <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
 
@@ -1655,7 +1655,7 @@
 
                         >
 
-                            <i data-lucide="save"></i>
+                            <i class="bi bi-floppy"></i>
 
 
 
@@ -1713,7 +1713,7 @@
 
         >
 
-            <i data-lucide="x"></i>
+            <i class="bi bi-x-lg"></i>
 
         </button>
 
@@ -1725,7 +1725,7 @@
 
             <div class="stock-modal-icon movement">
 
-                <i data-lucide="arrow-left-right"></i>
+                <i class="bi bi-arrow-left-right"></i>
 
             </div>
 
@@ -1943,7 +1943,7 @@
                     type="submit"
                     onclick="return validateMovementSubmitMessage();"
                 >
-                    <i data-lucide="check"></i>
+                    <i class="bi bi-check-lg"></i>
                     Confirmar
                 </button>
 
@@ -1968,7 +1968,7 @@
     <section class="stock-dashboard-modal" role="dialog" aria-modal="true" aria-labelledby="stockDashboardTitle">
         <header class="stock-dashboard-header">
             <div><span>Estoque</span><h2 id="stockDashboardTitle">Painel de estoque</h2><p>Indicadores de estoque, entradas, saídas e consumo — período selecionado</p></div>
-            <div class="stock-dashboard-controls"><select id="stockDashboardPeriod" aria-label="Período"><option value="30d">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="90d">Últimos 90 dias</option><option value="current_year">Ano atual</option></select><button type="button" onclick="window.closeStockDashboard()" aria-label="Fechar painel"><i data-lucide="x"></i></button></div>
+            <div class="stock-dashboard-controls"><select id="stockDashboardPeriod" aria-label="Período"><option value="30d">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="90d">Últimos 90 dias</option><option value="current_year">Ano atual</option></select><button type="button" onclick="window.closeStockDashboard()" aria-label="Fechar painel"><i class="bi bi-x-lg"></i></button></div>
         </header>
         <div id="stockDashboardContent" class="stock-dashboard-content"><p class="stock-dashboard-loading">Carregando indicadores…</p></div>
     </section>
@@ -2030,7 +2030,7 @@ function renderStockDashboard(data) {
 async function loadStockDashboard() {
     const content = document.getElementById('stockDashboardContent');
     content.innerHTML = '<p class="stock-dashboard-loading">Atualizando indicadores…</p>';
-    try { const response = await fetch(`${stockDashboardUrl}?period=${encodeURIComponent(document.getElementById('stockDashboardPeriod').value)}`, {headers:{Accept:'application/json'}}); if (!response.ok) throw new Error(); renderStockDashboard(await response.json()); if (window.lucide) lucide.createIcons(); } catch (error) { content.innerHTML = '<p class="stock-dashboard-empty">Não foi possível carregar o painel. Tente novamente.</p>'; }
+    try { const response = await fetch(`${stockDashboardUrl}?period=${encodeURIComponent(document.getElementById('stockDashboardPeriod').value)}`, {headers:{Accept:'application/json'}}); if (!response.ok) throw new Error(); renderStockDashboard(await response.json()); } catch (error) { content.innerHTML = '<p class="stock-dashboard-empty">Não foi possível carregar o painel. Tente novamente.</p>'; }
 }
 window.openStockDashboard = function () { const modal = document.getElementById('stockDashboardModal'); modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false'); loadStockDashboard(); };
 window.closeStockDashboard = function () { const modal = document.getElementById('stockDashboardModal'); modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); };
@@ -2234,8 +2234,7 @@ function openCategoryEditModal(id, name)
     document.getElementById('categorySubmitLabel').innerText = 'Salvar alterações';
     document.getElementById('categoryName').value = name;
     document.getElementById('categoryModal').style.display = 'flex';
-    if (window.lucide) lucide.createIcons();
-}
+    }
 
 function openCategoryDeleteModal(id, name)
 {
@@ -2244,8 +2243,7 @@ function openCategoryDeleteModal(id, name)
     document.getElementById('categoryDeleteForm').action = @json(url('/stock/categories')) + '/' + id;
     document.getElementById('categoryDeleteMessage').innerText = 'Deseja excluir a categoria “' + name + '”? Esta ação não poderá ser desfeita.';
     document.getElementById('categoryDeleteModal').style.display = 'flex';
-    if (window.lucide) lucide.createIcons();
-}
+    }
 
 function closeCategoryDeleteModal()
 {
@@ -2492,7 +2490,7 @@ async function openEditItemModal(id)
 
             <div class="stock-empty-history">
 
-                <i data-lucide="history"></i>
+                <i class="bi bi-clock-history"></i>
 
                 <strong>Nenhuma movimentação</strong>
 
@@ -2578,7 +2576,7 @@ async function openEditItemModal(id)
                     <div class="stock-movement-card-body">
                         <div class="stock-movement-main">
                             <span class="movement-mini-icon stock-movement-icon ${movement.movement_type === 'in' ? 'is-in' : 'is-out'}">
-                                <i data-lucide="${movementIcon}"></i>
+                                <i class="${window.chmIconClass(movementIcon)}"></i>
                             </span>
                             <div class="stock-movement-content">
                                 <div class="stock-movement-title">
@@ -2622,12 +2620,6 @@ async function openEditItemModal(id)
 
 
     disableItemEdit();
-
-    if (window.lucide) {
-
-        lucide.createIcons();
-
-    }
 
 }
 
@@ -2768,7 +2760,7 @@ function openMovementModal(type)
 
             .innerHTML =
 
-                '<i data-lucide="check"></i> Confirmar entrada';
+                '<i class="bi bi-check-lg"></i> Confirmar entrada';
 
     }
 
@@ -2804,15 +2796,7 @@ function openMovementModal(type)
 
             .innerHTML =
 
-                '<i data-lucide="check"></i> Confirmar saída';
-
-    }
-
-
-
-    if (window.lucide) {
-
-        lucide.createIcons();
+                '<i class="bi bi-check-lg"></i> Confirmar saída';
 
     }
 
@@ -2990,8 +2974,8 @@ function showMovementDetails(movement) {
     icon.classList.add(isIn ? 'is-in' : 'is-out');
 
     icon.innerHTML = isIn
-        ? '<i data-lucide="arrow-down-left"></i>'
-        : '<i data-lucide="arrow-up-right"></i>';
+        ? '<i class="bi bi-arrow-down-left"></i>'
+        : '<i class="bi bi-arrow-up-right"></i>';
 
     let status = 'Ativa';
 
@@ -3031,10 +3015,6 @@ function showMovementDetails(movement) {
             );
 
     panel.style.display = 'block';
-
-    if (window.lucide) {
-        lucide.createIcons();
-    }
 }
 
 function closeMovementDetailPanel() {

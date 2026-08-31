@@ -49,7 +49,7 @@
 
 
 
-            <i data-lucide="x"></i>
+            <i class="bi bi-x-lg"></i>
 
 
 
@@ -103,7 +103,7 @@
             class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
         >
             <span class="sidebar-icon">
-                <i data-lucide="layout-dashboard"></i>
+                <i class="bi bi-grid-1x2"></i>
             </span>
 
             <span class="sidebar-link-text">
@@ -145,7 +145,7 @@
 
             <span class="sidebar-icon">
 
-                <i data-lucide="truck"></i>
+                <i class="bi bi-truck"></i>
 
             </span>
 
@@ -188,7 +188,7 @@
 
             <span class="sidebar-icon">
 
-                <i data-lucide="fuel"></i>
+                <i class="bi bi-fuel-pump"></i>
 
             </span>
 
@@ -234,7 +234,7 @@
             title="{{ $workshopItem['label'] }}"
             class="sidebar-link {{ request()->routeIs($workshopItem['active']) ? 'active' : '' }}"
         >
-            <span class="sidebar-icon"><i data-lucide="{{ $workshopItem['icon'] }}"></i></span>
+            <span class="sidebar-icon"><i class="{{ chm_icon($workshopItem['icon']) }}"></i></span>
             <span class="sidebar-link-text">{{ $workshopItem['label'] }}</span>
         </a>
     @endforeach
@@ -252,7 +252,7 @@
             aria-expanded="false"
         >
             <span class="sidebar-icon">
-                <i data-lucide="wrench"></i>
+                <i class="bi bi-wrench-adjustable"></i>
             </span>
 
             <span class="sidebar-link-text">
@@ -260,7 +260,7 @@
             </span>
 
             <span class="sidebar-chevron">
-                <i data-lucide="chevron-down"></i>
+                <i class="bi bi-chevron-down"></i>
             </span>
         </button>
 
@@ -278,7 +278,7 @@
                     href="{{ route($workshopItem['route']) }}"
                     class="sidebar-workshop-menu-link {{ request()->routeIs($workshopItem['active']) ? 'active' : '' }}"
                 >
-                    <i data-lucide="{{ $workshopItem['icon'] }}"></i>
+                    <i class="{{ chm_icon($workshopItem['icon']) }}"></i>
                     <span>{{ $workshopItem['dropdown_label'] }}</span>
                 </a>
             @endforeach
@@ -366,7 +366,7 @@
                 }}"
             >
                 <span class="sidebar-icon">
-                    <i data-lucide="map-pin"></i>
+                    <i class="bi bi-geo-alt"></i>
                 </span>
 
                 <span class="sidebar-link-text">Cidades</span>
@@ -400,7 +400,7 @@
 
             <span class="sidebar-icon">
 
-                <i data-lucide="bar-chart-3"></i>
+                <i class="bi bi-bar-chart"></i>
 
             </span>
 
@@ -438,7 +438,7 @@
 
                 <span class="sidebar-icon">
 
-                    <i data-lucide="receipt-text"></i>
+                    <i class="bi bi-receipt"></i>
 
                 </span>
 
@@ -458,7 +458,7 @@
                 href="{{ route('settings.index') }}"
                 class="sidebar-link {{ request()->routeIs('settings.*') ? 'active' : '' }}"
             >
-                <span class="sidebar-icon"><i data-lucide="settings"></i></span>
+                <span class="sidebar-icon"><i class="bi bi-gear"></i></span>
                 <span class="sidebar-link-text">Configurações</span>
             </a>
 @endif
@@ -486,7 +486,7 @@
 
                 <span class="sidebar-icon">
 
-                    <i data-lucide="fingerprint"></i>
+                    <i class="bi bi-fingerprint"></i>
 
                 </span>
 
@@ -564,10 +564,6 @@
             button.classList.add('menu-open');
 
             button.setAttribute('aria-expanded', 'true');
-
-            if (window.lucide) {
-                window.lucide.createIcons();
-            }
         }
 
         function closeWorkshopMenu() {

@@ -87,7 +87,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-        <button type="button" class="workshop-hero-btn tire-dashboard-trigger" onclick="openTireDashboard()"><i data-lucide="gauge"></i> Painel de pneus</button>
+        <button type="button" class="workshop-hero-btn tire-dashboard-trigger" onclick="openTireDashboard()"><i class="bi bi-speedometer2"></i> Painel de pneus</button>
 
         <a
 
@@ -97,7 +97,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
         >
 
-            <i data-lucide="arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
 
             Voltar ao dashboard
 
@@ -198,12 +198,12 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
                     :class="{ 'is-open': open }"
                 >
                     <i
-                        data-lucide="package-plus"
+                        class="bi bi-box-seam"
                         x-show="! open"
                     ></i>
 
                     <i
-                        data-lucide="x"
+                        class="bi bi-x-lg"
                         x-show="open"
                         x-cloak
                     ></i>
@@ -594,7 +594,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                 >
 
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
 
                     Registrar entrada
 
@@ -640,7 +640,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-                <i data-lucide="history"></i>
+                <i class="bi bi-clock-history"></i>
 
 
 
@@ -710,7 +710,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
                                     x-show="! cancelling"
                                     @click="cancelling = true"
                                 >
-                                    <i data-lucide="ban"></i>
+                                    <i class="bi bi-slash-circle"></i>
                                     Cancelar entrada
                                 </button>
 
@@ -752,7 +752,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
                                             class="workshop-entry-cancel-confirm"
                                             onclick="return confirm('Confirma o cancelamento desta entrada?');"
                                         >
-                                            <i data-lucide="ban"></i>
+                                            <i class="bi bi-slash-circle"></i>
                                             Confirmar cancelamento
                                         </button>
 
@@ -824,7 +824,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-            <i data-lucide="circle-dot"></i>
+            <i class="bi bi-circle"></i>
 
 
 
@@ -846,7 +846,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                 <div class="workshop-tire-search">
 
-                    <i data-lucide="search"></i>
+                    <i class="bi bi-search"></i>
 
 
 
@@ -1162,7 +1162,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                         >
 
-                            <i data-lucide="refresh-cw"></i>
+                            <i class="bi bi-arrow-clockwise"></i>
 
                             Recapar
 
@@ -1175,7 +1175,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
                         href="{{ route('workshop.tires.history', $tire) }}"
                         class="workshop-table-action"
                     >
-                        <i data-lucide="history"></i>
+                        <i class="bi bi-clock-history"></i>
                         Histórico
                     </a>
 
@@ -1190,7 +1190,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                     >
 
-                        <i data-lucide="edit-3"></i>
+                        <i class="bi bi-pencil"></i>
 
                         Editar
 
@@ -1399,7 +1399,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
             >
 
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
 
             </button>
 
@@ -1641,7 +1641,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                 >
 
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
 
                     Salvar alterações
 
@@ -1679,7 +1679,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
             <button type="button" onclick="closeRetreadModal()">
 
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
 
             </button>
 
@@ -1741,7 +1741,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                 <button type="submit" class="workshop-modal-save retread">
 
-                    <i data-lucide="refresh-cw"></i>
+                    <i class="bi bi-arrow-clockwise"></i>
 
                     Registrar recapagem
 
@@ -1775,14 +1775,6 @@ function openRetreadModal(tireId, tireCode) {
     document.getElementById('retreadTireModal').style.display =
 
         'flex';
-
-
-
-    if (window.lucide) {
-
-        lucide.createIcons();
-
-    }
 
 }
 
@@ -1874,14 +1866,6 @@ function openEditTireModal(tire) {
     modal.style.display =
 
         'flex';
-
-
-
-    if (window.lucide) {
-
-        lucide.createIcons();
-
-    }
 
 }
 

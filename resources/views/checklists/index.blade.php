@@ -108,7 +108,7 @@
 
                             <div class="checklist-item-left">
 
-                                <i data-lucide="check"></i>
+                                <i class="bi bi-check-lg"></i>
 
                                 <span>
                                     {{ $item->label }}
@@ -156,7 +156,7 @@
                         "
                     >
                     
-                        <i data-lucide="settings-2"></i>
+                        <i class="bi bi-sliders"></i>
                     
                         Configurar
                     
@@ -214,7 +214,7 @@
                 "
             >
 
-                <i data-lucide="x"></i>
+                <i class="bi bi-x-lg"></i>
 
             </button>
 
@@ -290,7 +290,7 @@
                     "
                 >
             
-                    <i data-lucide="save"></i>
+                    <i class="bi bi-floppy"></i>
             
                     Salvar alterações
             

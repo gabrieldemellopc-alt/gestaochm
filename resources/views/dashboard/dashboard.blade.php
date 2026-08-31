@@ -66,7 +66,7 @@
 
             <div class="kpi-icon">
 
-                <i data-lucide="truck"></i>
+                <i class="bi bi-truck"></i>
 
             </div>
 
@@ -110,7 +110,7 @@
 
             <div class="kpi-icon">
 
-                <i data-lucide="triangle-alert"></i>
+                <i class="bi bi-exclamation-triangle"></i>
 
             </div>
 
@@ -154,7 +154,7 @@
 
             <div class="kpi-icon">
 
-                <i data-lucide="circle-alert"></i>
+                <i class="bi bi-exclamation-circle"></i>
 
             </div>
 
@@ -198,7 +198,7 @@
 
             <div class="kpi-icon">
 
-                <i data-lucide="wrench"></i>
+                <i class="bi bi-wrench-adjustable"></i>
 
             </div>
 
@@ -238,7 +238,7 @@
     </div>
 
     <div class="kpi-icon">
-        <i data-lucide="gauge"></i>
+        <i class="bi bi-speedometer2"></i>
     </div>
 </a>
 
@@ -253,7 +253,7 @@
     </div>
 
     <div class="kpi-icon">
-        <i data-lucide="clipboard-check"></i>
+        <i class="bi bi-clipboard-check"></i>
     </div>
 </button>
 
@@ -283,7 +283,7 @@
 
     
 
-                <i data-lucide="search"></i>
+                <i class="bi bi-search"></i>
 
     
 
@@ -511,19 +511,19 @@
 
                             @if($vehicle->operational_status == 'maintenance')
 
-                                <i data-lucide="wrench"></i>
+                                <i class="bi bi-wrench-adjustable"></i>
 
                                 Manutenção
 
                             @elseif($vehicle->status == 'inactive')
 
-                                <i data-lucide="circle-off"></i>
+                                <i class="bi bi-slash-circle"></i>
 
                                 Inativo
 
                             @else
 
-                                <i data-lucide="check-circle"></i>
+                                <i class="bi bi-check-circle"></i>
 
                                 Operacional
 
@@ -617,7 +617,7 @@
 
                     
 
-                        <i data-lucide="chevron-right"></i>
+                        <i class="bi bi-chevron-right"></i>
 
                     
 
@@ -671,7 +671,7 @@
 
                     <div class="operation-panel-icon">
 
-                        <i data-lucide="clipboard-list"></i>
+                        <i class="bi bi-clipboard"></i>
 
                     </div>
 
@@ -703,7 +703,7 @@
 
                             <div class="task-icon">
 
-                                <i data-lucide="triangle-alert"></i>
+                                <i class="bi bi-exclamation-triangle"></i>
 
                             </div>
 
@@ -733,7 +733,7 @@
 
                                 class="task-arrow"
 
-                                data-lucide="chevron-right"
+                                class="bi bi-chevron-right"
 
                             ></i>
 
@@ -763,7 +763,7 @@
 
                             <div class="task-icon">
 
-                                <i data-lucide="gauge"></i>
+                                <i class="bi bi-speedometer2"></i>
 
                             </div>
 
@@ -793,7 +793,7 @@
 
                                 class="task-arrow"
 
-                                data-lucide="chevron-right"
+                                class="bi bi-chevron-right"
 
                             ></i>
 
@@ -819,7 +819,7 @@
 
                         <div class="task-icon">
 
-                            <i data-lucide="boxes"></i>
+                            <i class="bi bi-boxes"></i>
 
                         </div>
 
@@ -857,7 +857,7 @@
 
                             class="task-arrow"
 
-                            data-lucide="chevron-right"
+                            class="bi bi-chevron-right"
 
                         ></i>
 
@@ -893,7 +893,7 @@
 
                             <div class="task-icon">
 
-                                <i data-lucide="check-circle"></i>
+                                <i class="bi bi-check-circle"></i>
 
                             </div>
 
@@ -965,7 +965,7 @@
 
         
 
-                    <i data-lucide="zap"></i>
+                    <i class="bi bi-lightning-charge"></i>
 
         
 
@@ -985,7 +985,7 @@
 
                     >
 
-                        <i data-lucide="gauge"></i>
+                        <i class="bi bi-speedometer2"></i>
 
         
 
@@ -1007,7 +1007,7 @@
 
                     >
 
-                        <i data-lucide="boxes"></i>
+                        <i class="bi bi-boxes"></i>
 
         
 
@@ -1029,7 +1029,7 @@
 
                     >
 
-                        <i data-lucide="truck"></i>
+                        <i class="bi bi-truck"></i>
 
         
 
@@ -1051,7 +1051,7 @@
 
                     >
 
-                        <i data-lucide="clipboard-check"></i>
+                        <i class="bi bi-clipboard-check"></i>
 
         
 
@@ -1103,7 +1103,7 @@
 
         
 
-                    <i data-lucide="bar-chart-3"></i>
+                    <i class="bi bi-bar-chart"></i>
 
         
 
@@ -1381,7 +1381,7 @@
 
                                 <i
 
-                                    data-lucide="triangle-alert"
+                                    class="bi bi-exclamation-triangle"
 
                                 ></i>
 
@@ -1877,7 +1877,7 @@
 
                         
 
-                            <i data-lucide="history"></i>
+                            <i class="bi bi-clock-history"></i>
 
                         
 
@@ -1897,7 +1897,7 @@
 
                         
 
-                            <i data-lucide="pencil"></i>
+                            <i class="bi bi-pencil"></i>
 
                         
 
@@ -1937,7 +1937,7 @@
 
                     
 
-                                <i data-lucide="triangle-alert"></i>
+                                <i class="bi bi-exclamation-triangle"></i>
 
                     
 
@@ -1979,7 +1979,7 @@
 
                         >
 
-                            <i data-lucide="wrench"></i>
+                            <i class="bi bi-wrench-adjustable"></i>
 
                             Manutenção
 
@@ -1995,7 +1995,7 @@
 
                         >
 
-                            <i data-lucide="history"></i>
+                            <i class="bi bi-clock-history"></i>
 
                             Histórico
 
@@ -2011,7 +2011,7 @@
 
                         >
 
-                            <i data-lucide="triangle-alert"></i>
+                            <i class="bi bi-exclamation-triangle"></i>
 
                             Alertas
 
@@ -2213,7 +2213,7 @@
 
 
 
-                        <i data-lucide="warehouse"></i>
+                        <i class="bi bi-building"></i>
 
 
 
@@ -2251,7 +2251,7 @@
 
 
 
-                        <i data-lucide="building-2"></i>
+                        <i class="bi bi-buildings"></i>
 
 
 
@@ -2355,7 +2355,7 @@
 
 
 
-                <i data-lucide="boxes"></i>
+                <i class="bi bi-boxes"></i>
 
 
 
@@ -2555,7 +2555,7 @@
 
 
 
-            <i data-lucide="clipboard-pen"></i>
+            <i class="bi bi-clipboard"></i>
 
 
 
@@ -2937,7 +2937,7 @@
 
                             
 
-                                    <i data-lucide="activity"></i>
+                                    <i class="bi bi-activity"></i>
 
                             
 
@@ -2965,7 +2965,7 @@
 
                             
 
-                                    <i data-lucide="wrench"></i>
+                                    <i class="bi bi-wrench-adjustable"></i>
 
                             
 
@@ -2999,7 +2999,7 @@
 
                     
 
-                                <i data-lucide="activity"></i>
+                                <i class="bi bi-activity"></i>
 
                     
 
@@ -3035,7 +3035,7 @@
 
                     
 
-                                    <i data-lucide="inbox"></i>
+                                    <i class="bi bi-inbox"></i>
 
                     
 
@@ -3171,7 +3171,7 @@
 
                     
 
-                                                <i data-lucide="arrow-right"></i>
+                                                <i class="bi bi-arrow-right"></i>
 
                     
 
@@ -3269,7 +3269,7 @@
 
                     
 
-                                <i data-lucide="wrench"></i>
+                                <i class="bi bi-wrench-adjustable"></i>
 
                     
 
@@ -3305,7 +3305,7 @@
 
                     
 
-                                    <i data-lucide="clipboard-x"></i>
+                                    <i class="bi bi-clipboard-x"></i>
 
                     
 
@@ -3611,7 +3611,7 @@
 
                 
 
-                            <i data-lucide="triangle-alert"></i>
+                            <i class="bi bi-exclamation-triangle"></i>
 
                 
 

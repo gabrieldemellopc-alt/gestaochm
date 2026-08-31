@@ -21,7 +21,7 @@
                 <h1>Histórico do Veículo</h1>
                 <p>Gestão operacional e técnica da frota</p>
             </div>
-            <a href="{{ route('dashboard') }}" class="vehicle-history-back"><i data-lucide="arrow-left"></i> Voltar</a>
+            <a href="{{ route('dashboard') }}" class="vehicle-history-back"><i class="bi bi-arrow-left"></i> Voltar</a>
         </section>
 
         <section class="vehicle-history-vehicle-card">
@@ -46,9 +46,9 @@
                 ['circle-dot', 'Pneus em uso', $summary['tires'] ?: 'N/D'], ['clock-3', 'Última atualização', $summary['last_update']?->format('d/m/Y H:i') ?? 'N/D'],
                 ['chart-no-axes-column-increasing', 'Média Km/L', 'N/D'],
             ] as [$icon, $label, $value])
-                <article class="vehicle-history-kpi-card"><i data-lucide="{{ $icon }}"></i><span>{{ $label }}</span><strong>{{ $value }}</strong></article>
+                <article class="vehicle-history-kpi-card"><i class="{{ chm_icon($icon) }}"></i><span>{{ $label }}</span><strong>{{ $value }}</strong></article>
             @endforeach
-            @if($summary['total_cost'] !== null)<article class="vehicle-history-kpi-card is-cost"><i data-lucide="badge-dollar-sign"></i><span>Custo operacional</span><strong>R$ {{ number_format($summary['total_cost'], 2, ',', '.') }}</strong></article>@endif
+            @if($summary['total_cost'] !== null)<article class="vehicle-history-kpi-card is-cost"><i class="bi bi-currency-dollar"></i><span>Custo operacional</span><strong>R$ {{ number_format($summary['total_cost'], 2, ',', '.') }}</strong></article>@endif
         </section>
 
         <section class="vehicle-history-filters">
@@ -62,7 +62,7 @@
             @forelse($history['events'] as $event)
                 @php $searchText = strtolower(implode(' ', [$event['label'], $event['title'], $event['description'], ...array_values($event['details'])])); @endphp
                 <article class="vehicle-history-event-card type-{{ $event['type'] }}" x-show="matches('{{ $event['type'] }}', '{{ $event['occurred_at']->format('Y-m-d') }}', @js($searchText))">
-                    <div class="vehicle-history-event-top"><div class="vehicle-history-event-title"><i data-lucide="{{ match($event['type']) { 'fuel' => 'fuel', 'maintenance' => 'wrench', 'tire' => 'circle-dot', 'location' => 'map-pin', 'reading' => 'gauge', default => 'activity' } }}"></i><div><span class="vehicle-history-badge">{{ $event['label'] }}</span><h3>{{ $event['title'] }}</h3></div></div><time>{{ $event['occurred_at']->format('d/m/Y H:i') }}</time></div>
+                    <div class="vehicle-history-event-top"><div class="vehicle-history-event-title"><i class="{{ chm_icon(match($event['type']) { 'fuel' => 'fuel', 'maintenance' => 'wrench', 'tire' => 'circle-dot', 'location' => 'map-pin', 'reading' => 'gauge', default => 'activity' }) }}"></i><div><span class="vehicle-history-badge">{{ $event['label'] }}</span><h3>{{ $event['title'] }}</h3></div></div><time>{{ $event['occurred_at']->format('d/m/Y H:i') }}</time></div>
                     @if($event['cancelled'])<span class="vehicle-history-cancelled">Cancelado</span>@endif
                     @if($event['description'])<p>{{ $event['description'] }}</p>@endif
                     @if(!empty($event['details']))
@@ -86,12 +86,12 @@
                             @endforeach
                         </dl>
                     @endif
-                    @if($event['url'])<a class="vehicle-history-detail" href="{{ $event['url'] }}" target="_blank" rel="noopener">{{ $event['url_label'] ?? 'Abrir detalhe' }} <i data-lucide="arrow-up-right"></i></a>@endif
+                    @if($event['url'])<a class="vehicle-history-detail" href="{{ $event['url'] }}" target="_blank" rel="noopener">{{ $event['url_label'] ?? 'Abrir detalhe' }} <i class="bi bi-arrow-up-right"></i></a>@endif
                 </article>
             @empty
-                <div class="vehicle-history-empty"><i data-lucide="history"></i><strong>Nenhum evento registrado</strong><p>Este veículo ainda não possui registros operacionais ou técnicos disponíveis.</p></div>
+                <div class="vehicle-history-empty"><i class="bi bi-clock-history"></i><strong>Nenhum evento registrado</strong><p>Este veículo ainda não possui registros operacionais ou técnicos disponíveis.</p></div>
             @endforelse
-            <div class="vehicle-history-empty" x-show="visibleCount === 0"><i data-lucide="search-x"></i><strong>Nenhum registro encontrado para os filtros selecionados.</strong></div>
+            <div class="vehicle-history-empty" x-show="visibleCount === 0"><i class="bi bi-search"></i><strong>Nenhum registro encontrado para os filtros selecionados.</strong></div>
         </section>
     </div>
 </main>

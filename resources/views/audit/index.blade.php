@@ -127,7 +127,7 @@
             >
                 <div class="audit-event-main">
                     <div class="audit-event-icon">
-                        <i data-lucide="{{ $event['icon'] }}"></i>
+                        <i class="{{ chm_icon($event['icon']) }}"></i>
                     </div>
 
                     <div>
@@ -187,7 +187,7 @@
                             </div>
 
                             <button type="button" @click="open = false" aria-label="Fechar detalhes">
-                                <i data-lucide="x"></i>
+                                <i class="bi bi-x-lg"></i>
                             </button>
                         </div>
 
@@ -297,7 +297,7 @@
             </article>
         @empty
             <div class="audit-empty">
-                <i data-lucide="search-x"></i>
+                <i class="bi bi-search"></i>
                 <strong>Nenhum registro encontrado</strong>
                 <p>Ajuste os filtros para consultar outros rastros do sistema.</p>
             </div>

@@ -51,19 +51,19 @@
                         href="{{ route('reports.fuel.index') }}"
                         class="fuel-secondary-action"
                     >
-                        <i data-lucide="bar-chart-3"></i>
+                        <i class="bi bi-bar-chart"></i>
                         Relatório
                     </a>
                 @endif
-                <button type="button" class="fuel-secondary-action" onclick="openFuelConsumptionDashboard()"><i data-lucide="chart-column"></i>Painel de consumo</button>                @if($canRegisterFilling)
+                <button type="button" class="fuel-secondary-action" onclick="openFuelConsumptionDashboard()"><i class="bi bi-bar-chart-line"></i>Painel de consumo</button>                @if($canRegisterFilling)
                     <button type="button" class="fuel-secondary-action" onclick="openFuelModal('filling')">
-                        <i data-lucide="truck"></i>
+                        <i class="bi bi-truck"></i>
                         Registrar abastecimento
                     </button>
                 @endif
 
                 <button type="button" class="fuel-primary-action" onclick="openFuelModal('tank')">
-                    <i data-lucide="plus"></i>
+                    <i class="bi bi-plus-lg"></i>
                     Novo tanque
                 </button>
             </div>
@@ -75,7 +75,7 @@
             <div class="fuel-overview-available">
                 <div class="fuel-overview-heading">
                     <span class="fuel-overview-icon">
-                        <i data-lucide="fuel"></i>
+                        <i class="bi bi-fuel-pump"></i>
                     </span>
 
                     <span>
@@ -115,7 +115,7 @@
             <div class="fuel-overview-period">
                 <div class="fuel-overview-heading">
                     <span class="fuel-overview-icon">
-                        <i data-lucide="calendar-days"></i>
+                        <i class="bi bi-calendar-week"></i>
                     </span>
 
                     <span>
@@ -199,20 +199,20 @@
                     <div class="fuel-card-actions">
                         @if($tank->active && $canReceiveFuel)
                             <button type="button" class="fuel-secondary-action" onclick="openFuelModal('receipt-{{ $tank->id }}')">
-                                <i data-lucide="plus-circle"></i>
+                                <i class="bi bi-plus-circle"></i>
                                 Recebimento
                             </button>
                         @endif
 
                         <button type="button" class="fuel-secondary-action" onclick="openFuelModal('edit-{{ $tank->id }}')">
-                            <i data-lucide="pencil"></i>
+                            <i class="bi bi-pencil"></i>
                             Editar
                         </button>
                     </div>
                 </article>
             @empty
                 <article class="fuel-empty-card">
-                    <i data-lucide="fuel"></i>
+                    <i class="bi bi-fuel-pump"></i>
                     <h2>Nenhum tanque cadastrado</h2>
                     <p>Cadastre o primeiro tanque da unidade para iniciar o controle de abastecimentos.</p>
                 </article>
@@ -388,7 +388,7 @@
                         <h2>Novo tanque</h2>
                     </div>
                     <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
-                        <i data-lucide="x"></i>
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
 
@@ -446,7 +446,7 @@
                         <h2>Registrar abastecimento</h2>
                     </div>
                     <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
-                        <i data-lucide="x"></i>
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
 
@@ -643,7 +643,7 @@
                             <h2>Recebimento em {{ $tank->name }}</h2>
                         </div>
                         <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
-                            <i data-lucide="x"></i>
+                            <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
 
@@ -753,7 +753,7 @@
                             <h2>Editar {{ $tank->name }}</h2>
                         </div>
                         <button type="button" class="fuel-modal-close" onclick="closeFuelModals()">
-                            <i data-lucide="x"></i>
+                            <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
 

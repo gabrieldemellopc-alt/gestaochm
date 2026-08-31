@@ -21,7 +21,7 @@
 
         <div class="chm-wf-kpi-grid">
             <article class="chm-wf-kpi">
-                <i data-lucide="wallet-cards"></i>
+                <i class="bi bi-wallet2"></i>
                 <div>
                     <span>Custo operacional do mês</span>
                     <strong>R$ {{ number_format($workshopOperationalCostMonth, 2, ',', '.') }}</strong>
@@ -29,7 +29,7 @@
                 </div>
             </article>
             <article class="chm-wf-kpi">
-                <i data-lucide="receipt-text"></i>
+                <i class="bi bi-receipt"></i>
                 <div>
                     <span>Despesas da oficina</span>
                     <strong>R$ {{ number_format($workshopExpenseMonthTotal, 2, ',', '.') }}</strong>
@@ -37,7 +37,7 @@
                 </div>
             </article>
             <article class="chm-wf-kpi">
-                <i data-lucide="package-minus"></i>
+                <i class="bi bi-box-seam"></i>
                 <div>
                     <span>Consumo de estoque</span>
                     <strong>R$ {{ number_format($workshopConsumptionMonthTotal, 2, ',', '.') }}</strong>
