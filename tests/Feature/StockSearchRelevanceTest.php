@@ -61,13 +61,28 @@ class StockSearchRelevanceTest extends TestCase
         $this->assertLessThan(strpos($content, 'Filtro de ar'), strpos($content, 'Bosch profissional'));
     }
 
-    public function test_category_search_and_empty_search_keep_expected_results(): void
+    public function test_active_search_only_renders_categories_with_results_and_keeps_empty_search_unchanged(): void
     {
         $batteries = $this->category('Baterias');
         $this->item($batteries, 'Bateria 150 Ah');
-        $this->item($this->category('Óleos'), 'Óleo hidráulico 68');
+        $oils = $this->category('Óleos');
+        $this->item($oils, 'Óleo hidráulico 68');
+        $brakes = $this->category('Freios');
+        $this->item($brakes, 'Pastilha de freio');
 
-        $this->get(route('stock.index', ['search' => 'baterias']))->assertOk()->assertSee('Baterias')->assertSee('Bateria 150 Ah');
+        $search68 = $this->get(route('stock.index', ['search' => '68']))->assertOk();
+        $this->assertSame(['Óleos'], $search68->viewData('categories')->pluck('name')->all());
+        $search68->assertSee('1 item(ns) encontrado(s)');
+
+        $batterySearch = $this->get(route('stock.index', ['search' => 'bateria']))->assertOk();
+        $this->assertSame(['Baterias'], $batterySearch->viewData('categories')->pluck('name')->all());
+        $batterySearch->assertSee('Bateria 150 Ah');
+        $brakeSearch = $this->get(route('stock.index', ['search' => 'freios']))->assertOk();
+        $this->assertSame(['Freios'], $brakeSearch->viewData('categories')->pluck('name')->all());
+        $brakeSearch->assertSee('Pastilha de freio');
+        $emptySearch = $this->get(route('stock.index', ['search' => 'xyz123']))
+            ->assertOk()->assertSee('Nenhum item encontrado para "xyz123".', false);
+        $this->assertTrue($emptySearch->viewData('categories')->isEmpty());
         $this->get(route('stock.index'))->assertOk()->assertSeeInOrder(['Baterias', 'Óleos']);
     }
 

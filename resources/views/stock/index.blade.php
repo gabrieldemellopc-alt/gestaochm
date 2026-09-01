@@ -176,7 +176,7 @@
             <div class="stock-category-filter" @click.outside="categoryMenuOpen = false">
                 <button type="button" class="stock-compact-kpi stock-category-kpi" @click="categoryMenuOpen = !categoryMenuOpen" :aria-expanded="categoryMenuOpen.toString()">
                     <i class="bi bi-boxes"></i>
-                    <span>Categorias <strong x-text="selectedCategoryIds.length + '/' + categories.length"></strong></span>
+                    <span>{{ $search !== '' ? 'Categorias encontradas' : 'Categorias' }} <strong x-text="selectedCategoryIds.length + '/' + categories.length"></strong></span>
                     <i class="bi bi-chevron-down" class="stock-category-chevron" :class="{ 'is-open': categoryMenuOpen }"></i>
                 </button>
 
@@ -262,9 +262,9 @@
 
                             <span>
 
-                                {{ $category->items_count }}
-
-                                item(ns) cadastrado(s)
+                                @if($search !== '')
+                                    {{ $category->items->count() }} item(ns) encontrado(s)
+                                @else {{ $category->items_count }} item(ns) cadastrado(s) @endif
 
                             </span>
 
@@ -591,19 +591,24 @@
 
 
 
-                <strong>
+                @if($search !== '')
+                    <strong>Nenhum item encontrado para "{{ $search }}".</strong>
+                    <p>Revise o termo pesquisado ou limpe a busca para ver todo o estoque.</p>
+                    <a class="chm-page-button primary" href="{{ route('stock.index') }}">Limpar busca</a>
+                @else
+                    <strong>
 
-                    Nenhuma categoria cadastrada
+                        Nenhuma categoria cadastrada
 
-                </strong>
+                    </strong>
 
 
 
-                <p>
+                    <p>
 
-                    Comece criando uma categoria para organizar seus itens de estoque.
+                        Comece criando uma categoria para organizar seus itens de estoque.
 
-                </p>
+                    </p>
 
 
 
@@ -624,8 +629,9 @@
 
                     Criar categoria
 
-                </button>
+</button>
 @endif
+                @endif
 
 
 

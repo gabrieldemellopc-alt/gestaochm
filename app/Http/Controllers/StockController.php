@@ -95,6 +95,15 @@ class StockController extends Controller
 
         $categories = $categoriesQuery->get();
 
+        // The relation above is already eagerly loaded and ranked. A category
+        // may still be selected by a broad category match, so only expose it
+        // during a search when it actually has results to render.
+        if ($search !== '') {
+            $categories = $categories
+                ->filter(fn (StockCategory $category) => $category->items->isNotEmpty())
+                ->values();
+        }
+
         foreach ($categories as $category) {
             foreach ($category->items as $item) {
                 $item->stock_status = StockService::getStatus($item);
