@@ -78,6 +78,10 @@ class StockSearchRelevanceTest extends TestCase
 
         $farolAux = $this->get(route('stock.index', ['search' => 'farol aux']))->assertOk()->viewData('categories');
         $this->assertSame('FAROL AUXILIAR REDONDO LED', $farolAux->flatMap->items->first()->name);
+
+        $this->item($suspension, 'Válvula auxiliar');
+        $valv = $this->get(route('stock.index', ['search' => 'VALV']))->assertOk()->viewData('categories');
+        $this->assertContains('Válvula auxiliar', $valv->flatMap->items->pluck('name')->all());
     }
 
     public function test_active_search_only_renders_categories_with_results_and_keeps_empty_search_unchanged(): void

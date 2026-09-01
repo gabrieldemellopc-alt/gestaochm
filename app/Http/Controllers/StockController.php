@@ -76,14 +76,12 @@ class StockController extends Controller
                     });
             });
 
-            $rankedCategoryItems = StockItem::query()
-                ->whereColumn('stock_items.stock_category_id', 'stock_categories.id')
-                ->where('stock_items.tenant_id', $tenantId)
-                ->where('stock_items.location_id', $activeLocation->id);
-            $this->applyStockSearchToItems($rankedCategoryItems, $search, $tokens, 'stock_search_categories');
-            $categoryRelevance = DB::query()
-                ->fromSub($rankedCategoryItems, 'ranked_stock_items')
-                ->selectRaw('MIN(search_relevance)');
+            $categoryRelevance = $this->bestCategorySearchScoreQuery(
+                $tenantId,
+                $activeLocation->id,
+                $search,
+                $tokens
+            );
 
             $categoriesQuery->select('stock_categories.*')
                 ->selectSub($categoryRelevance, 'search_relevance')
@@ -191,6 +189,55 @@ class StockController extends Controller
             ->orderByDesc('search_name_contains_coverage')
             ->orderBy('stock_items.name')
             ->orderBy('stock_items.brand');
+    }
+
+    /**
+     * Scalar correlated subquery: MySQL permits the outer category reference at
+     * this level, unlike the previous correlated derived table (fromSub).
+     */
+    private function bestCategorySearchScoreQuery(int $tenantId, int $locationId, string $search, array $tokens)
+    {
+        $name = $this->stockSearchExpression('stock_items.name');
+        $brand = $this->stockSearchExpression('stock_items.brand');
+        $category = $this->stockSearchExpression('stock_search_categories.name');
+        $phraseLike = '%'.$search.'%';
+        $startsLike = $search.'%';
+        $nameTokenPrefix = "({$name} LIKE ? OR {$name} LIKE ? )";
+        $allNameTokens = implode(' AND ', array_fill(0, count($tokens), $nameTokenPrefix));
+        $allNameTokenBindings = collect($tokens)->flatMap(fn ($token) => [$token.'%', '% '.$token.'%'])->all();
+        $namePrefixCoverage = implode(' + ', array_fill(0, count($tokens), "CASE WHEN {$nameTokenPrefix} THEN 1 ELSE 0 END"));
+        $namePrefixCoverageBindings = collect($tokens)->flatMap(fn ($token) => [$token.'%', '% '.$token.'%'])->all();
+        $nameContainsCoverage = implode(' + ', array_fill(0, count($tokens), "CASE WHEN {$name} LIKE ? THEN 1 ELSE 0 END"));
+        $nameContainsCoverageBindings = array_map(fn ($token) => '%'.$token.'%', $tokens);
+        $relevance = "CASE
+            WHEN {$name} = ? THEN 1
+            WHEN {$allNameTokens} THEN 2
+            WHEN {$name} LIKE ? THEN 3
+            WHEN {$name} LIKE ? THEN 6
+            WHEN {$brand} = ? THEN 7
+            WHEN {$brand} LIKE ? THEN 8
+            WHEN {$category} = ? THEN 9
+            WHEN {$category} LIKE ? THEN 10
+            ELSE 11
+        END";
+        $relevanceBindings = [...[$search], ...$allNameTokenBindings, ...[$startsLike, $phraseLike, $search, $startsLike, $search, $startsLike]];
+        $score = "({$relevance}) * 10000 - ({$namePrefixCoverage}) * 100 - ({$nameContainsCoverage})";
+
+        return StockItem::query()
+            ->leftJoin('stock_categories as stock_search_categories', 'stock_search_categories.id', '=', 'stock_items.stock_category_id')
+            ->whereColumn('stock_items.stock_category_id', 'stock_categories.id')
+            ->where('stock_items.tenant_id', $tenantId)
+            ->where('stock_items.location_id', $locationId)
+            ->where(function ($matches) use ($tokens, $name, $brand, $category, $phraseLike) {
+                $matches->whereRaw("{$name} LIKE ? OR {$brand} LIKE ? OR {$category} LIKE ?", [$phraseLike, $phraseLike, $phraseLike]);
+                foreach ($tokens as $token) {
+                    $like = '%'.$token.'%';
+                    $matches->orWhereRaw("{$name} LIKE ? OR {$brand} LIKE ? OR {$category} LIKE ?", [$like, $like, $like]);
+                }
+            })
+            ->selectRaw($score, [...$relevanceBindings, ...$namePrefixCoverageBindings, ...$nameContainsCoverageBindings])
+            ->orderByRaw($score, [...$relevanceBindings, ...$namePrefixCoverageBindings, ...$nameContainsCoverageBindings])
+            ->limit(1);
     }
 
     public function dashboard(Request $request)
