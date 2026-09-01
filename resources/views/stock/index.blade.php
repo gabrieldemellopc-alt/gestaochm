@@ -42,7 +42,7 @@
 <div
     class="stock-page"
     x-data='{
-        query: "",
+        query: @json($search),
         categories: @json($stockFilterCategories),
         selectedCategoryIds: @json($stockFilterCategories->pluck("id")->all()),
         categoryMenuOpen: false,
@@ -50,8 +50,14 @@
         isSelected(id) { return this.selectedCategoryIds.includes(String(id)); },
         toggleCategory(id) { id = String(id); this.selectedCategoryIds = this.isSelected(id) ? this.selectedCategoryIds.filter(selectedId => selectedId !== id) : [...this.selectedCategoryIds, id]; },
         toggleAll() { this.selectedCategoryIds = this.selectedCategoryIds.length === this.categories.length ? [] : this.categories.map(category => category.id); },
-        itemMatches(categoryId, itemName, brand, categoryName) { const term = this.normalize(this.query); return this.isSelected(categoryId) && (!term || this.normalize(categoryName).includes(term) || this.normalize(itemName).includes(term) || this.normalize(brand).includes(term)); },
-        categoryMatches(categoryId, categoryName) { if (!this.isSelected(categoryId)) return false; const term = this.normalize(this.query); return !term || this.normalize(categoryName).includes(term) || Array.from(this.$root.querySelectorAll(`[data-stock-item][data-category-id="${categoryId}"]`)).some(item => this.normalize(item.dataset.itemName).includes(term) || this.normalize(item.dataset.itemBrand).includes(term)); }
+        itemMatches(categoryId) { return this.isSelected(categoryId); },
+        categoryMatches(categoryId) { return this.isSelected(categoryId); },
+        submitSearch() {
+            const url = new URL(window.location.href);
+            const search = this.query.trim();
+            search ? url.searchParams.set("search", search) : url.searchParams.delete("search");
+            if (url.href !== window.location.href) window.location.assign(url.href);
+        }
     }'
 >
 
@@ -163,7 +169,7 @@
     <div class="stock-filter-bar">
         <label class="stock-search-field">
             <i class="bi bi-search"></i>
-            <input type="search" x-model.debounce.150ms="query" placeholder="Buscar item ou categoria..." aria-label="Buscar item ou categoria">
+            <input type="search" x-model="query" @input.debounce.350ms="submitSearch()" placeholder="Buscar item, marca ou categoria..." aria-label="Buscar item, marca ou categoria">
         </label>
 
         <div class="stock-compact-kpis">

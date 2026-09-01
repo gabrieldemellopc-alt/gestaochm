@@ -22,7 +22,7 @@ use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $activeLocation = $this->activeLocation();
 
@@ -35,29 +35,65 @@ class StockController extends Controller
 
         $tenantId = auth()->user()->tenant_id;
 
-        $categories = StockCategory::query()
+        $search = $this->normalizeStockSearch($request->query('search'));
+        $tokens = $search === '' ? [] : preg_split('/\\s+/', $search);
+
+        $categoriesQuery = StockCategory::query()
             ->where('tenant_id', $tenantId)
             ->withCount([
                 'items as items_count' => function ($query) use ($tenantId, $activeLocation) {
                     $query
-                        ->where('tenant_id', $tenantId)
-                        ->where('location_id', $activeLocation->id);
+                        ->where('stock_items.tenant_id', $tenantId)
+                        ->where('stock_items.location_id', $activeLocation->id);
                 },
                 'items as other_location_items_count' => function ($query) use ($tenantId, $activeLocation) {
                     $query
-                        ->where('tenant_id', $tenantId)
-                        ->where('location_id', '!=', $activeLocation->id);
+                        ->where('stock_items.tenant_id', $tenantId)
+                        ->where('stock_items.location_id', '!=', $activeLocation->id);
                 },
             ])
             ->with([
-                'items' => function ($query) use ($tenantId, $activeLocation) {
+                'items' => function ($query) use ($tenantId, $activeLocation, $search, $tokens) {
                     $query
-                        ->where('tenant_id', $tenantId)
-                        ->where('location_id', $activeLocation->id);
+                        ->where('stock_items.tenant_id', $tenantId)
+                        ->where('stock_items.location_id', $activeLocation->id);
+
+                    if ($search !== '') {
+                        $this->applyStockSearchToItems($query, $search, $tokens);
+                    }
                 },
             ])
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+
+        if ($search !== '') {
+            $categoriesQuery->where(function ($query) use ($tenantId, $activeLocation, $search, $tokens) {
+                $categoryName = $this->stockSearchExpression('stock_categories.name');
+
+                $query->whereRaw("{$categoryName} LIKE ?", ['%'.$search.'%'])
+                    ->orWhereHas('items', function ($items) use ($tenantId, $activeLocation, $search, $tokens) {
+                        $items->where('stock_items.tenant_id', $tenantId)
+                            ->where('stock_items.location_id', $activeLocation->id);
+                        $this->applyStockSearchToItems($items, $search, $tokens);
+                    });
+            });
+
+            $rankedCategoryItems = StockItem::query()
+                ->whereColumn('stock_items.stock_category_id', 'stock_categories.id')
+                ->where('stock_items.tenant_id', $tenantId)
+                ->where('stock_items.location_id', $activeLocation->id);
+            $this->applyStockSearchToItems($rankedCategoryItems, $search, $tokens);
+            $categoryRelevance = DB::query()
+                ->fromSub($rankedCategoryItems, 'ranked_stock_items')
+                ->selectRaw('MIN(search_relevance)');
+
+            $categoriesQuery->select('stock_categories.*')
+                ->selectSub($categoryRelevance, 'search_relevance')
+                ->orderByRaw('search_relevance IS NULL')
+                ->orderBy('search_relevance')
+                ->orderBy('name');
+        }
+
+        $categories = $categoriesQuery->get();
 
         foreach ($categories as $category) {
             foreach ($category->items as $item) {
@@ -66,7 +102,76 @@ class StockController extends Controller
         }
 
         $stockEntryInvoiceRequired = app(TenantFiscalSettingService::class)->requires('stock_entry');
-        return view('stock.index', compact('categories', 'stockPermissions', 'stockEntryInvoiceRequired'));
+        return view('stock.index', compact('categories', 'search', 'stockPermissions', 'stockEntryInvoiceRequired'));
+    }
+
+    /** Normalize text without changing the values persisted in the database. */
+    private function normalizeStockSearch(?string $value): string
+    {
+        $value = preg_replace('/\\s+/', ' ', trim((string) $value));
+
+        return Str::of($value)->ascii()->lower()->value();
+    }
+
+    /**
+     * SQL expression compatible with MySQL and SQLite tests. It makes the
+     * comparison accent-insensitive even when a legacy database collation is not.
+     */
+    private function stockSearchExpression(string $column): string
+    {
+        $expression = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({$column}, 'Á', 'a'), 'É', 'e'), 'Í', 'i'), 'Ó', 'o'), 'Ú', 'u'))";
+        // Portuguese characters cover the data entered in this application.
+        // Keeping this compact also avoids oversized expressions on SQLite.
+        foreach (['á' => 'a', 'ã' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ú' => 'u', 'ç' => 'c'] as $from => $to) {
+            $expression = "REPLACE({$expression}, '{$from}', '{$to}')";
+        }
+
+        return $expression;
+    }
+
+    private function applyStockSearchToItems($query, string $search, array $tokens): void
+    {
+        $name = $this->stockSearchExpression('stock_items.name');
+        $brand = $this->stockSearchExpression('stock_items.brand');
+        $category = $this->stockSearchExpression('stock_categories.name');
+        $phraseLike = '%'.$search.'%';
+        $startsLike = $search.'%';
+        $allNameTokens = implode(' AND ', array_fill(0, count($tokens), "{$name} LIKE ?"));
+        $allNameTokenBindings = array_map(fn ($token) => '%'.$token.'%', $tokens);
+
+        $query->leftJoin('stock_categories', 'stock_categories.id', '=', 'stock_items.stock_category_id')
+            ->where(function ($matches) use ($tokens, $name, $brand, $category, $phraseLike) {
+                $matches->whereRaw("{$name} LIKE ? OR {$brand} LIKE ? OR {$category} LIKE ?", [$phraseLike, $phraseLike, $phraseLike]);
+                foreach ($tokens as $token) {
+                    $like = '%'.$token.'%';
+                    $matches->orWhereRaw("{$name} LIKE ? OR {$brand} LIKE ? OR {$category} LIKE ?", [$like, $like, $like]);
+                }
+            })
+            ->select('stock_items.*')
+            ->selectRaw(
+                "CASE
+                    WHEN {$name} = ? THEN 1
+                    WHEN {$name} LIKE ? THEN 2
+                    WHEN {$name} LIKE ? THEN 3
+                    WHEN {$allNameTokens} THEN 4
+                    WHEN {$brand} = ? THEN 5
+                    WHEN {$brand} LIKE ? THEN 6
+                    WHEN {$brand} LIKE ? THEN 7
+                    WHEN {$category} = ? THEN 8
+                    WHEN {$category} LIKE ? THEN 9
+                    ELSE 10
+                END AS search_relevance",
+                [...[$search, $startsLike, $phraseLike], ...$allNameTokenBindings, ...[$search, $startsLike, $phraseLike, $search, $startsLike]]
+            );
+
+        // A token hit in the item name is always more relevant than an equally
+        // matching brand or category; more name tokens win inside that tier.
+        $tokenScore = implode(' + ', array_fill(0, count($tokens), "CASE WHEN {$name} LIKE ? THEN 1 ELSE 0 END"));
+        $query->selectRaw("({$tokenScore}) AS search_token_matches", array_map(fn ($token) => '%'.$token.'%', $tokens))
+            ->orderBy('search_relevance')
+            ->orderByDesc('search_token_matches')
+            ->orderBy('stock_items.name')
+            ->orderBy('stock_items.brand');
     }
 
     public function dashboard(Request $request)
