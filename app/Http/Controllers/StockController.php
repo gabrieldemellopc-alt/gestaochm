@@ -62,8 +62,7 @@ class StockController extends Controller
                         $this->applyStockSearchToItems($query, $search, $tokens);
                     }
                 },
-            ])
-            ->orderBy('name');
+            ]);
 
         if ($search !== '') {
             $categoriesQuery->where(function ($query) use ($tenantId, $activeLocation, $search, $tokens) {
@@ -81,7 +80,7 @@ class StockController extends Controller
                 ->whereColumn('stock_items.stock_category_id', 'stock_categories.id')
                 ->where('stock_items.tenant_id', $tenantId)
                 ->where('stock_items.location_id', $activeLocation->id);
-            $this->applyStockSearchToItems($rankedCategoryItems, $search, $tokens);
+            $this->applyStockSearchToItems($rankedCategoryItems, $search, $tokens, 'stock_search_categories');
             $categoryRelevance = DB::query()
                 ->fromSub($rankedCategoryItems, 'ranked_stock_items')
                 ->selectRaw('MIN(search_relevance)');
@@ -91,6 +90,8 @@ class StockController extends Controller
                 ->orderByRaw('search_relevance IS NULL')
                 ->orderBy('search_relevance')
                 ->orderBy('name');
+        } else {
+            $categoriesQuery->orderBy('name');
         }
 
         $categories = $categoriesQuery->get();
@@ -138,17 +139,26 @@ class StockController extends Controller
         return $expression;
     }
 
-    private function applyStockSearchToItems($query, string $search, array $tokens): void
+    private function applyStockSearchToItems($query, string $search, array $tokens, string $categoryTable = 'stock_categories'): void
     {
         $name = $this->stockSearchExpression('stock_items.name');
         $brand = $this->stockSearchExpression('stock_items.brand');
-        $category = $this->stockSearchExpression('stock_categories.name');
+        $category = $this->stockSearchExpression($categoryTable.'.name');
         $phraseLike = '%'.$search.'%';
         $startsLike = $search.'%';
-        $allNameTokens = implode(' AND ', array_fill(0, count($tokens), "{$name} LIKE ?"));
-        $allNameTokenBindings = array_map(fn ($token) => '%'.$token.'%', $tokens);
+        $nameTokenPrefix = "({$name} LIKE ? OR {$name} LIKE ? )";
+        $allNameTokens = implode(' AND ', array_fill(0, count($tokens), $nameTokenPrefix));
+        $allNameTokenBindings = collect($tokens)->flatMap(fn ($token) => [$token.'%', '% '.$token.'%'])->all();
+        $namePrefixCoverage = implode(' + ', array_fill(0, count($tokens), "CASE WHEN {$nameTokenPrefix} THEN 1 ELSE 0 END"));
+        $namePrefixCoverageBindings = collect($tokens)->flatMap(fn ($token) => [$token.'%', '% '.$token.'%'])->all();
+        $nameContainsCoverage = implode(' + ', array_fill(0, count($tokens), "CASE WHEN {$name} LIKE ? THEN 1 ELSE 0 END"));
+        $nameContainsCoverageBindings = array_map(fn ($token) => '%'.$token.'%', $tokens);
 
-        $query->leftJoin('stock_categories', 'stock_categories.id', '=', 'stock_items.stock_category_id')
+        $categoryJoin = $categoryTable === 'stock_categories'
+            ? 'stock_categories'
+            : 'stock_categories as '.$categoryTable;
+
+        $query->leftJoin($categoryJoin, $categoryTable.'.id', '=', 'stock_items.stock_category_id')
             ->where(function ($matches) use ($tokens, $name, $brand, $category, $phraseLike) {
                 $matches->whereRaw("{$name} LIKE ? OR {$brand} LIKE ? OR {$category} LIKE ?", [$phraseLike, $phraseLike, $phraseLike]);
                 foreach ($tokens as $token) {
@@ -160,25 +170,25 @@ class StockController extends Controller
             ->selectRaw(
                 "CASE
                     WHEN {$name} = ? THEN 1
-                    WHEN {$name} LIKE ? THEN 2
+                    WHEN {$allNameTokens} THEN 2
                     WHEN {$name} LIKE ? THEN 3
-                    WHEN {$allNameTokens} THEN 4
-                    WHEN {$brand} = ? THEN 5
-                    WHEN {$brand} LIKE ? THEN 6
-                    WHEN {$brand} LIKE ? THEN 7
-                    WHEN {$category} = ? THEN 8
-                    WHEN {$category} LIKE ? THEN 9
-                    ELSE 10
+                    WHEN {$name} LIKE ? THEN 6
+                    WHEN {$brand} = ? THEN 7
+                    WHEN {$brand} LIKE ? THEN 8
+                    WHEN {$category} = ? THEN 9
+                    WHEN {$category} LIKE ? THEN 10
+                    ELSE 11
                 END AS search_relevance",
-                [...[$search, $startsLike, $phraseLike], ...$allNameTokenBindings, ...[$search, $startsLike, $phraseLike, $search, $startsLike]]
+                [...[$search], ...$allNameTokenBindings, ...[$startsLike, $phraseLike, $search, $startsLike, $search, $startsLike]]
             );
 
-        // A token hit in the item name is always more relevant than an equally
-        // matching brand or category; more name tokens win inside that tier.
-        $tokenScore = implode(' + ', array_fill(0, count($tokens), "CASE WHEN {$name} LIKE ? THEN 1 ELSE 0 END"));
-        $query->selectRaw("({$tokenScore}) AS search_token_matches", array_map(fn ($token) => '%'.$token.'%', $tokens))
+        // Coverage is evaluated before broad text matches: an item matching all
+        // query tokens at word starts must outrank one matching only part of it.
+        $query->selectRaw("({$namePrefixCoverage}) AS search_name_prefix_coverage", $namePrefixCoverageBindings)
+            ->selectRaw("({$nameContainsCoverage}) AS search_name_contains_coverage", $nameContainsCoverageBindings)
             ->orderBy('search_relevance')
-            ->orderByDesc('search_token_matches')
+            ->orderByDesc('search_name_prefix_coverage')
+            ->orderByDesc('search_name_contains_coverage')
             ->orderBy('stock_items.name')
             ->orderBy('stock_items.brand');
     }

@@ -61,6 +61,25 @@ class StockSearchRelevanceTest extends TestCase
         $this->assertLessThan(strpos($content, 'Filtro de ar'), strpos($content, 'Bosch profissional'));
     }
 
+    public function test_multi_token_coverage_in_the_name_outranks_a_single_token_match(): void
+    {
+        $suspension = $this->category('Suspensão');
+        $electrical = $this->category('Elétrica e iluminação');
+        $this->item($suspension, 'Mola auxiliar');
+        $this->item($suspension, 'MOLA FEIXE AUX');
+        $this->item($electrical, 'FAROL AUXILIAR REDONDO LED');
+
+        $molaAux = $this->get(route('stock.index', ['search' => 'mola aux']))->assertOk()->viewData('categories');
+        $orderedItems = $molaAux->flatMap->items->pluck('name')->all();
+        $this->assertContains('Mola auxiliar', array_slice($orderedItems, 0, 2));
+        $this->assertContains('MOLA FEIXE AUX', array_slice($orderedItems, 0, 2));
+        $this->assertSame('FAROL AUXILIAR REDONDO LED', $orderedItems[2]);
+        $this->assertSame(['Suspensão', 'Elétrica e iluminação'], $molaAux->pluck('name')->all());
+
+        $farolAux = $this->get(route('stock.index', ['search' => 'farol aux']))->assertOk()->viewData('categories');
+        $this->assertSame('FAROL AUXILIAR REDONDO LED', $farolAux->flatMap->items->first()->name);
+    }
+
     public function test_active_search_only_renders_categories_with_results_and_keeps_empty_search_unchanged(): void
     {
         $batteries = $this->category('Baterias');
