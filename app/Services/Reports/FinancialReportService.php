@@ -28,7 +28,8 @@ class FinancialReportService
         $fuel = $valid ? (float) FuelFilling::query()->where('tenant_id',$context['tenant_id'])->where('division_id',$context['division']->id)->where('location_id',$context['location']->id)->whereNull('cancelled_at')->whereBetween('filled_at',[$start,$end])->sum('total_cost') : 0.0;
         $expenses = $valid && Schema::hasTable('workshop_expenses') ? (float) WorkshopExpense::query()->where('tenant_id',$context['tenant_id'])->where('division_id',$context['division']->id)->where('location_id',$context['location']->id)->whereBetween('expense_date',[$start,$end])->sum('amount') : 0.0;
         $consumption = $valid ? (float) $this->reportContext->stockMovementQuery($context)->where('movement_type','out')->where('description','like',StockMovement::WORKSHOP_CONSUMPTION_PREFIX.'%')->whereNull('cancelled_at')->whereBetween('moved_at',[$start,$end])->sum('total_cost') : 0.0;
-        return ['context'=>$context,'filters'=>['start_date'=>$start,'end_date'=>$end,'period_is_valid'=>$valid],'maintenance_total'=>round($maintenance,2),'fuel_total'=>round($fuel,2),'workshop_expenses_total'=>round($expenses,2),'workshop_consumption_total'=>round($consumption,2),'total'=>round($maintenance+$fuel+$expenses+$consumption,2)];
+        $stockPurchases = $valid ? $this->stockPurchases($context, $start, $end) : ['total' => 0.0, 'count' => 0];
+        return ['context'=>$context,'filters'=>['start_date'=>$start,'end_date'=>$end,'period_is_valid'=>$valid],'maintenance_total'=>round($maintenance,2),'fuel_total'=>round($fuel,2),'workshop_expenses_total'=>round($expenses,2),'workshop_consumption_total'=>round($consumption,2),'stock_purchases_total'=>round($stockPurchases['total'],2),'stock_purchase_entries_count'=>$stockPurchases['count'],'total'=>round($maintenance+$fuel+$expenses+$consumption,2)];
     }
 
     /**
@@ -91,6 +92,35 @@ class FinancialReportService
             ->sum('amount');
 
         return $services + $materials + $extraCosts;
+    }
+
+    /**
+     * Stock acquisitions are a cash-flow indicator, not an operational cost:
+     * the same material becomes an operational cost only when it is consumed.
+     */
+    private function stockPurchases(array $context, Carbon $start, Carbon $end): array
+    {
+        $query = $this->reportContext->stockMovementQuery($context)
+            ->where('movement_type', 'in')
+            ->where('total_cost', '>', 0)
+            ->whereNull('cancelled_at')
+            ->whereNull('reversal_movement_id')
+            ->whereNull('reversed_from_movement_id')
+            ->whereBetween('moved_at', [$start, $end]);
+
+        // Initial balance is not a financial acquisition. Older installations
+        // may not have this column, so retain compatibility with their schema.
+        if (Schema::hasColumn('stock_movements', 'description')) {
+            $query->where(function (Builder $query) {
+                $query->whereNull('description')
+                    ->orWhere('description', '!=', 'Estoque inicial');
+            });
+        }
+
+        return [
+            'total' => (float) (clone $query)->sum('total_cost'),
+            'count' => (int) $query->count(),
+        ];
     }
 
     private function maintenanceIds(array $context)
