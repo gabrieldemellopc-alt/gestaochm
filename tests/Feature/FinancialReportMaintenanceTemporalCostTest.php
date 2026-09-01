@@ -62,23 +62,25 @@ class FinancialReportMaintenanceTemporalCostTest extends TestCase
             $this->createSchema();
             DB::table('maintenance_records')->insert(['id' => 1, 'tenant_id' => 1, 'vehicle_id' => 1, 'created_at' => '2026-06-01 08:00:00']);
             $movements = [
-                ['id' => 1, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 200, 'description' => 'Compra de estoque', 'moved_at' => '2026-06-10 10:00:00'],
-                ['id' => 2, 'tenant_id' => 1, 'location_id' => 1, 'maintenance_record_id' => 1, 'movement_type' => 'out', 'total_cost' => 200, 'description' => 'Uso em manutenção', 'moved_at' => '2026-06-15 10:00:00'],
-                ['id' => 3, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 200, 'description' => 'Compra de estoque', 'moved_at' => '2026-05-10 10:00:00'],
-                ['id' => 4, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 120, 'description' => 'Compra de estoque', 'moved_at' => '2026-06-20 10:00:00'],
+                ['id' => 1, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 300, 'description' => 'Compra de estoque', 'moved_at' => '2026-06-10 10:00:00'],
+                ['id' => 2, 'tenant_id' => 1, 'location_id' => 1, 'maintenance_record_id' => 1, 'movement_type' => 'in', 'total_cost' => 200, 'description' => 'Compra direta para manutenção', 'moved_at' => '2026-06-15 10:00:00'],
+                ['id' => 3, 'tenant_id' => 1, 'location_id' => 1, 'maintenance_record_id' => 1, 'movement_type' => 'out', 'total_cost' => 200, 'description' => 'Uso em manutenção', 'moved_at' => '2026-06-15 10:00:00'],
+                ['id' => 4, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 200, 'description' => 'Compra de estoque', 'moved_at' => '2026-05-10 10:00:00'],
                 ['id' => 5, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 50, 'description' => 'Compra cancelada', 'moved_at' => '2026-06-21 10:00:00', 'reversal_movement_id' => 6],
                 ['id' => 6, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 40, 'description' => 'Estorno', 'moved_at' => '2026-06-22 10:00:00', 'reversed_from_movement_id' => 5],
                 ['id' => 7, 'tenant_id' => 1, 'location_id' => 1, 'movement_type' => 'in', 'total_cost' => 99, 'description' => 'Estoque inicial', 'moved_at' => '2026-06-23 10:00:00'],
+                ['id' => 8, 'tenant_id' => 1, 'location_id' => 2, 'movement_type' => 'in', 'total_cost' => 500, 'description' => 'Outra unidade', 'moved_at' => '2026-06-24 10:00:00'],
             ];
             foreach ($movements as $movement) {
                 DB::table('stock_movements')->insert($movement);
             }
+            DB::table('maintenance_material_usages')->insert(['id' => 1, 'stock_movement_id' => 3, 'purchase_entry_movement_id' => 2]);
 
             $june = $this->reportService()->build(['start_date' => '2026-06-01', 'end_date' => '2026-06-30'], $this->context());
             $may = $this->reportService()->build(['start_date' => '2026-05-01', 'end_date' => '2026-05-31'], $this->context());
 
-            $this->assertSame(320.0, $june['stock_purchases_total']);
-            $this->assertSame(2, $june['stock_purchase_entries_count']);
+            $this->assertSame(300.0, $june['stock_purchases_total']);
+            $this->assertSame(1, $june['stock_purchase_entries_count']);
             $this->assertSame(200.0, $june['maintenance_total']);
             $this->assertSame(200.0, $june['total']);
             $this->assertSame(200.0, $may['stock_purchases_total']);
@@ -125,7 +127,7 @@ class FinancialReportMaintenanceTemporalCostTest extends TestCase
             $table->timestamp('cancelled_at')->nullable(); $table->unsignedBigInteger('reversal_movement_id')->nullable(); $table->unsignedBigInteger('reversed_from_movement_id')->nullable();
         });
         Schema::create('maintenance_material_usages', function ($table) {
-            $table->id(); $table->unsignedBigInteger('stock_movement_id'); $table->timestamp('cancelled_at')->nullable();
+            $table->id(); $table->unsignedBigInteger('stock_movement_id'); $table->unsignedBigInteger('purchase_entry_movement_id')->nullable(); $table->timestamp('cancelled_at')->nullable();
         });
         Schema::create('maintenance_record_extra_costs', function ($table) {
             $table->id(); $table->unsignedBigInteger('maintenance_record_id'); $table->decimal('amount', 12, 2);

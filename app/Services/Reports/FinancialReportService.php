@@ -106,6 +106,11 @@ class FinancialReportService
             ->whereNull('cancelled_at')
             ->whereNull('reversal_movement_id')
             ->whereNull('reversed_from_movement_id')
+            ->whereNotExists(function ($usage) {
+                $usage->selectRaw('1')
+                    ->from('maintenance_material_usages')
+                    ->whereColumn('maintenance_material_usages.purchase_entry_movement_id', 'stock_movements.id');
+            })
             ->whereBetween('moved_at', [$start, $end]);
 
         // Initial balance is not a financial acquisition. Older installations
