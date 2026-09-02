@@ -11,6 +11,7 @@ use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
 use App\Services\Permissions\ProfilePermissionService;
 use App\Services\ReadingCorrectionVerificationMode;
+use App\Services\ReadingCorrectionTemporaryEvidenceCleanupService;
 use App\Services\VehicleReadingReconciliationService;
 use App\Services\VideoEvidenceProcessor;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class VehicleReadingCorrectionController extends Controller
     {
         $this->authorizeCorrection($vehicle);
         if (app(ReadingCorrectionVerificationMode::class)->current() === ReadingCorrectionVerificationMode::PHOTO) {
-            VehicleReadingCorrectionEvidence::query()->where('vehicle_id',$vehicle->id)->where('initiated_by',$request->user()->id)->where('evidence_type','mobile_photo_session')->where('status','pending')->get()->each(function($session) use($vehicle){ $photos=VehicleReadingCorrectionEvidence::query()->where('vehicle_id',$vehicle->id)->where('checksum',$session->token_hash)->whereNull('correction_id')->get(); foreach($photos as $photo){if($photo->path)Storage::disk($photo->disk ?: 'local')->delete($photo->path);$photo->delete();}$session->update(['status'=>'expired']); });
+            VehicleReadingCorrectionEvidence::query()->where('vehicle_id',$vehicle->id)->where('initiated_by',$request->user()->id)->where('evidence_type','mobile_photo_session')->where('status','pending')->get()->each(fn($session) => app(ReadingCorrectionTemporaryEvidenceCleanupService::class)->purgeSession($session));
             $token=Str::random(64); $url=route('reading-corrections.evidence.show',$token);
             $qr=(new Builder(writer:new PngWriter(),data:$url,size:180))->build();
             $evidence=VehicleReadingCorrectionEvidence::create(['tenant_id'=>$vehicle->tenant_id,'vehicle_id'=>$vehicle->id,'initiated_by'=>$request->user()->id,'token_hash'=>hash('sha256',$token),'expires_at'=>now()->addMinutes(30),'status'=>'pending','evidence_type'=>'mobile_photo_session']);
@@ -90,9 +91,7 @@ class VehicleReadingCorrectionController extends Controller
     public function cancelEvidence(Request $request, Vehicle $vehicle, VehicleReadingCorrectionEvidence $evidence)
     {
         $this->authorizeCorrection($vehicle); abort_unless((int)$evidence->vehicle_id === (int)$vehicle->id && $evidence->evidence_type === 'mobile_photo_session',404);
-        $photos=VehicleReadingCorrectionEvidence::query()->where('vehicle_id',$vehicle->id)->where('checksum',$evidence->token_hash)->whereNull('correction_id')->get();
-        foreach($photos as $photo){ if($photo->path) Storage::disk($photo->disk ?: 'local')->delete($photo->path); $photo->delete(); }
-        $evidence->update(['status'=>'expired']);
+        app(ReadingCorrectionTemporaryEvidenceCleanupService::class)->purgeSession($evidence);
         return response()->noContent();
     }
 
