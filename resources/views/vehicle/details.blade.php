@@ -779,7 +779,7 @@
                 <select name="target_log_id" required>
                     <option value="">Selecione o evento original</option>
                     @foreach($vehicle->updateLogs->whereIn('type', ['km', 'hours'])->filter->is_reading_usable as $log)
-                        <option value="{{ $log->id }}">{{ strtoupper($log->type) }}: {{ $log->new_value }} — {{ optional($log->read_at ?? $log->created_at)->format('d/m/Y H:i') }}</option>
+                        <option value="{{ $log->id }}">{{ $log->type === 'hours' ? 'HORÍMETRO' : 'KM' }}: {{ $log->new_value }}{{ $log->type === 'hours' ? ' h' : '' }} — {{ optional($log->read_at ?? $log->created_at)->format('d/m/Y H:i') }} — {{ $log->source_label }}</option>
                     @endforeach
                 </select>
             </div>
