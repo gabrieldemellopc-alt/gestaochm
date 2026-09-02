@@ -14658,10 +14658,7 @@ html.sidebar-collapsed .sidebar-section-title {
 }
 
 
-/*
- * Os links possuem texto direto no Blade.
- * font-size: 0 oculta esse texto.
- */
+/* Os textos são ocultados pelo elemento .sidebar-link-text. */
 
 html.sidebar-collapsed .sidebar-link {
     width: calc(100% - 16px);
@@ -14676,7 +14673,7 @@ html.sidebar-collapsed .sidebar-link {
     justify-content: center;
     gap: 0;
 
-    font-size: 0;
+    font-size: inherit;
 
     overflow: hidden;
 }
@@ -14850,6 +14847,17 @@ html.sidebar-collapsed .sidebar-link .sidebar-icon svg {
     display: block !important;
     width: 24px !important;
     height: 24px !important;
+}
+
+/* Bootstrap Icons são glifos renderizados por .bi::before, não SVGs. */
+html.sidebar-collapsed .sidebar-link .sidebar-icon .bi,
+html.sidebar-collapsed .sidebar-link .sidebar-icon .bi::before {
+    display: inline-block !important;
+    font-family: bootstrap-icons !important;
+    font-size: 23px !important;
+    line-height: 1 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 /* Oculta texto e seta */
