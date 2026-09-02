@@ -48,7 +48,7 @@ class VehicleReadingCorrectionController extends Controller
         $evidence=$evidence->fresh();
         if ($evidence->evidence_type === 'mobile_photo_session') {
             $photos=VehicleReadingCorrectionEvidence::query()->where('vehicle_id',$vehicle->id)->where('checksum',$evidence->token_hash)->whereIn('evidence_type',['identification','reading'])->where('status','ready')->get()->keyBy('evidence_type');
-            return response()->json(['status'=>$evidence->status,'available'=>$evidence->status==='pending','plate'=>$photos->has('identification'),'reading'=>$photos->has('reading'),'photos'=>$photos->map(fn($photo)=>['id'=>$photo->id,'name'=>$photo->original_name])->all()]);
+            return response()->json(['status'=>$evidence->status,'available'=>$evidence->status==='pending','plate'=>$photos->has('identification'),'reading'=>$photos->has('reading'),'photos'=>$photos->map(fn($photo)=>['id'=>$photo->id,'name'=>$photo->original_name,'url'=>route('vehicles.reading-correction.evidence.download',[$vehicle,$photo])])->all()]);
         }
         return response()->json(['status'=>$evidence->status,'available'=>$evidence->isAvailable(),'uploaded_at'=>optional($evidence->used_at)->format('d/m/Y H:i'),'duration'=>$evidence->duration_seconds,'view_url'=>$evidence->isAvailable()?route('vehicles.reading-correction.evidence.download',[$vehicle,$evidence]):null]);
     }
@@ -75,7 +75,9 @@ class VehicleReadingCorrectionController extends Controller
             if (!($data['plate_photo']??null) && !($data['reading_photo']??null)) throw ValidationException::withMessages(['photos'=>'Envie ao menos uma foto.']);
             foreach (['plate_photo'=>'identification','reading_photo'=>'reading'] as $field=>$type) if(isset($data[$field])) $this->storeTemporaryMobilePhoto($data[$field],$e,$type);
             $e->update(['used_at'=>now()]);
-            return back()->with('success','Fotos enviadas. Volte ao computador para concluir a correção.');
+            $photos=VehicleReadingCorrectionEvidence::query()->where('vehicle_id',$e->vehicle_id)->where('checksum',$e->token_hash)->whereIn('evidence_type',['identification','reading'])->where('status','ready')->pluck('evidence_type');
+            $result=['success'=>true,'received'=>$photos->values(),'complete'=>$photos->count()===2,'message'=>$photos->count()===2?'Fotos enviadas com sucesso. Você pode voltar ao computador para concluir a correção.':'Foto enviada com sucesso. Ainda falta a outra evidência.'];
+            return $request->expectsJson() ? response()->json($result) : redirect()->route('reading-corrections.evidence.show',$token)->with('photo_upload_result',$result);
         }
         $request->validate(['video'=>['required','file','mimetypes:video/mp4,video/quicktime,video/webm,video/3gpp','max:15360']]); // 15 MB bruto
         $f=$request->file('video'); $tempOut=tempnam(sys_get_temp_dir(),'reading-evidence-').'.mp4'; $e->update(['status'=>'processing']);
