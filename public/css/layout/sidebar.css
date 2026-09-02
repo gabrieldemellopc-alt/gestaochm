@@ -553,10 +553,6 @@ html.sidebar-collapsed .sidebar-section-title {
 }
 
 
-/*
- * Como os links possuem texto direto, font-size: 0 esconde
- * somente o texto. Os SVG continuam com suas dimensões.
- */
 html.sidebar-collapsed .sidebar-link {
     min-height: 52px;
     padding-left: 0;
@@ -565,7 +561,7 @@ html.sidebar-collapsed .sidebar-link {
     justify-content: center;
     gap: 0;
 
-    font-size: 0;
+    font-size: inherit;
 }
 
 html.sidebar-collapsed .sidebar-link .sidebar-icon {
@@ -679,19 +675,23 @@ html.sidebar-collapsed .sidebar-link {
 /* Ícone perfeitamente centralizado */
 
 html.sidebar-collapsed .sidebar-link .sidebar-icon {
-    width: 24px;
-    min-width: 24px;
-    height: 24px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
     margin: 0;
 
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 40px;
 }
 
+html.sidebar-collapsed .sidebar-link .sidebar-icon i,
 html.sidebar-collapsed .sidebar-link .sidebar-icon svg {
     width: 23px;
     height: 23px;
+    font-size: 23px;
+    line-height: 1;
 }
 
 /* Estado ativo semelhante ao TDA */
