@@ -43,7 +43,7 @@ class VehicleHistoryService
                 $log->read_at ?? $log->created_at, $before . ' → ' . $after, array_filter(['Origem' => $log->source, 'Responsável' => $log->user?->name, 'Status da leitura' => $log->reading_status]), null, null, false));
         }
 
-        VehicleReadingCorrection::query()->where('vehicle_id', $vehicle->id)->with(['evidence', 'user'])->get()
+        VehicleReadingCorrection::query()->where('vehicle_id', $vehicle->id)->with(['evidences', 'user'])->get()
             ->each(function (VehicleReadingCorrection $correction) use ($events, $vehicle) {
                 $before = $correction->originalLog?->new_value;
                 $description = $correction->new_km !== null
@@ -51,10 +51,13 @@ class VehicleHistoryService
                     : 'Correção administrativa de leitura.';
                 $details = array_filter(['Data efetiva' => optional($correction->effective_at)->format('d/m/Y'), 'Responsável' => $correction->user?->name, 'Motivo' => $correction->reason]);
                 $event = $this->event('reading', 'Correção administrativa', 'Correção administrativa de hodômetro', $correction->effective_at ?: $correction->created_at, $description, $details);
-                if ($correction->evidence?->status === 'ready' && $correction->evidence->path) {
-                    $event['url'] = route('vehicles.reading-correction.evidence.download', [$vehicle, $correction->evidence]);
-                    $event['url_label'] = 'Visualizar evidência';
-                } elseif ($correction->evidence) {
+                $evidences=$correction->evidences->where('status', 'ready')->filter(fn ($evidence) => $evidence->path);
+                if ($evidences->isNotEmpty()) {
+                    $first=$evidences->first();
+                    $event['url'] = route('vehicles.reading-correction.evidence.download', [$vehicle, $first]);
+                    $event['url_label'] = $correction->verification_mode === 'photo' ? 'Visualizar foto' : 'Visualizar evidência';
+                    if ($correction->verification_mode === 'photo') $event['details']['Comprovação'] = 'Fotográfica ('.$evidences->count().' imagens)';
+                } elseif ($correction->evidences->isNotEmpty()) {
                     $event['details']['Evidência'] = 'Evidência indisponível';
                 }
                 $events->push($event);

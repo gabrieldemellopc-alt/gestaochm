@@ -48,4 +48,16 @@ body.reading-correction-open { overflow: hidden; }
 .reading-correction-evidence { padding: 14px; border: 1px solid rgba(92,153,220,.35); border-radius: 10px; text-align: center; background: rgba(37,99,235,.08); }
 .reading-correction-evidence p { margin: 7px 0; color: #cbd5e1; font-size: 12px; line-height: 1.45; }
 .reading-correction-evidence img { display:block; width:180px; height:180px; margin:12px auto; padding:8px; background:#fff; border-radius:8px; }
+.reading-correction-photo-evidence { text-align:left; }
+.reading-correction-photo-note { display:flex; align-items:flex-start; gap:7px; padding:8px 10px; border-radius:7px; color:#b9cbe3 !important; background:rgba(57,112,179,.12); }
+.reading-correction-photo-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:12px; }
+.reading-correction-upload { display:grid; gap:6px; min-width:0; padding:11px; border:1px solid rgba(203,213,225,.13); border-radius:8px; background:rgba(8,15,29,.25); }
+.reading-correction-upload label { color:#dbe3ee; font-size:12px; font-weight:800; }
+.reading-correction-upload small { min-height:32px; color:#a8b1c1; font-size:11px; line-height:1.4; }
+.reading-correction-upload input[type=file] { max-width:100%; color:#cbd5e1; font-size:11px; }
+.reading-correction-photo-preview { display:grid; grid-template-columns:46px minmax(0,1fr) auto; align-items:center; gap:8px; min-height:0; }
+.reading-correction-photo-preview img { width:46px; height:46px; margin:0; padding:0; object-fit:cover; border-radius:6px; }
+.reading-correction-photo-preview span { overflow:hidden; color:#cbd5e1; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+.reading-correction-photo-preview button { border:0; color:#f2a3a8; background:transparent; font-size:11px; cursor:pointer; }
+@media (max-width:680px) { .reading-correction-photo-grid { grid-template-columns:1fr; } .reading-correction-upload small { min-height:0; } }
 @media (max-width:680px) { .reading-correction-overlay { padding: 10px; } .reading-correction-modal { max-height: calc(100vh - 20px); } .reading-correction-body { padding: 16px 16px 154px; } .reading-correction-grid,.reading-correction-actions { grid-template-columns: 1fr; } .reading-correction-current,.reading-correction-impact-item { grid-template-columns: 1fr; } .reading-correction-impact-header { grid-template-columns: auto minmax(0,1fr); gap: 10px; padding: 13px; } .reading-correction-impact-badge { grid-column: 2; justify-self: start; } .reading-correction-impact-list { gap: 8px; padding: 10px 13px 13px; } }

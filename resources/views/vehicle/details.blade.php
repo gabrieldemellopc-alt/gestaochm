@@ -754,7 +754,7 @@
             <button type="button" onclick="closeReadingCorrectionModal()"><i class="bi bi-x-lg"></i></button>
         </div>
 
-        <form method="POST" action="{{ route('vehicles.reading-correction.store', $vehicle) }}" class="reading-correction-form" id="readingCorrectionForm">
+        <form method="POST" enctype="multipart/form-data" action="{{ route('vehicles.reading-correction.store', $vehicle) }}" class="reading-correction-form" id="readingCorrectionForm">
             @csrf
             <div class="reading-correction-body">
             <div class="reading-correction-current">
@@ -789,8 +789,25 @@
                 <textarea name="reason" required rows="3" placeholder="Descreva o motivo da correção com pelo menos 8 palavras.">{{ old('reason') }}</textarea>
             </div>
 
-            <input type="hidden" name="evidence_id" id="readingCorrectionEvidenceId">
-            <section class="reading-correction-evidence"><strong>Comprovação em vídeo</strong><p>Escaneie o QR Code com o celular e grave um vídeo de até 10 segundos mostrando a placa e o hodômetro/horímetro do veículo.</p><div id="readingCorrectionQr">Preparando QR Code…</div><p id="readingCorrectionEvidenceStatus">Aguardando envio do vídeo...</p></section>
+            <section class="reading-correction-evidence reading-correction-photo-evidence">
+                <strong>Comprovação fotográfica</strong>
+                <p>Envie duas fotos para comprovar a leitura informada.</p>
+                <p class="reading-correction-photo-note"><i class="bi bi-info-circle"></i> As imagens devem apresentar data/hora e coordenadas de localização (latitude/longitude).</p>
+                <div class="reading-correction-photo-grid">
+                    <div class="reading-correction-upload">
+                        <label for="readingCorrectionPlatePhoto">{{ filled($vehicle->plate) ? 'Foto da placa' : 'Foto de identificação do veículo/equipamento' }}</label>
+                        <small>{{ filled($vehicle->plate) ? 'Fotografe a placa do veículo de forma legível.' : 'Fotografe o código, identificação ou característica que permita identificar o equipamento.' }}</small>
+                        <input id="readingCorrectionPlatePhoto" type="file" name="plate_photo" accept="image/*" capture="environment" required>
+                        <div class="reading-correction-photo-preview" data-preview="readingCorrectionPlatePhoto"></div>
+                    </div>
+                    <div class="reading-correction-upload">
+                        <label for="readingCorrectionPhoto" id="readingCorrectionPhotoLabel">Foto do hodômetro/horímetro</label>
+                        <small>Fotografe o painel mostrando claramente a leitura informada.</small>
+                        <input id="readingCorrectionPhoto" type="file" name="reading_photo" accept="image/*" capture="environment" required>
+                        <div class="reading-correction-photo-preview" data-preview="readingCorrectionPhoto"></div>
+                    </div>
+                </div>
+            </section>
             <section class="reading-correction-impact-area" aria-live="polite">
                 <div id="readingCorrectionImpacts" class="reading-correction-impact">
                     <div class="reading-correction-impact-state"><i class="bi bi-info-circle"></i><div><strong>Impactos ainda não analisados</strong><p>Revise os impactos da correção antes de confirmar.</p></div></div>
@@ -919,8 +936,6 @@
 </div>
 <script>
 @if($canCorrectReadings)
-    let readingEvidenceTimer;
-    let readingEvidenceReady = false;
     let readingImpactState = 'not_reviewed';
     let readingImpactHighlightTimer;
     function openReadingCorrectionModal() {
@@ -929,33 +944,12 @@
         readingImpactState = 'not_reviewed';
         renderReadingImpactNotice();
         updateReadingSubmit();
-        createReadingEvidence();
     }
 
     function closeReadingCorrectionModal() {
         document.getElementById('readingCorrectionModal').style.display = 'none';
         document.body.classList.remove('reading-correction-open');
-        clearInterval(readingEvidenceTimer);
     }
-
-    async function createReadingEvidence() {
-        const form=document.getElementById('readingCorrectionForm');
-        const qr=document.getElementById('readingCorrectionQr');
-        const status=document.getElementById('readingCorrectionEvidenceStatus');
-        try {
-            const response=await fetch(@json(route('vehicles.reading-correction.evidence.create',$vehicle)),{method:'POST',headers:{Accept:'application/json','X-CSRF-TOKEN':form.querySelector('[name=_token]').value}});
-            const data=await response.json().catch(()=>({}));
-            if(!response.ok || !data.id || !data.qr) throw new Error(data.message || `HTTP ${response.status}`);
-            form.querySelector('[name=evidence_id]').value=data.id;
-            qr.innerHTML=`<img alt="QR Code para envio do vídeo" src="${data.qr}">`;
-            clearInterval(readingEvidenceTimer); readingEvidenceTimer=setInterval(()=>pollReadingEvidence(data.id),5000); pollReadingEvidence(data.id);
-        } catch (error) {
-            qr.textContent='Não foi possível gerar a sessão de comprovação.';
-            status.textContent='Tente novamente. Se o problema persistir, contate o administrador.';
-            if (@json(config('app.debug'))) console.error('Falha ao criar evidência de correção:', error);
-        }
-    }
-    async function pollReadingEvidence(id) { const r=await fetch(`/vehicles/{{ $vehicle->id }}/reading-correction/evidence/${id}/status`,{headers:{Accept:'application/json'}}); if(!r.ok)return; const d=await r.json(); readingEvidenceReady=!!d.available; const text=d.status==='processing'?'Vídeo recebido. Processando...':d.status==='expired'?'Sessão de vídeo expirada. Abra o modal novamente.':d.status==='failed'?'O processamento do vídeo falhou. Gere uma nova sessão.':'Aguardando envio do vídeo...'; document.getElementById('readingCorrectionEvidenceStatus').innerHTML=readingEvidenceReady?`<strong>Vídeo recebido</strong> — ${d.uploaded_at} (${d.duration}s) ${d.view_url?`<a href="${d.view_url}" target="_blank" rel="noopener">Visualizar vídeo</a>`:''}`:text; updateReadingSubmit(); if(readingEvidenceReady||['expired','failed'].includes(d.status))clearInterval(readingEvidenceTimer); }
 
     async function previewReadingCorrection() {
         const form = document.getElementById('readingCorrectionForm');
@@ -987,7 +981,7 @@
         scrollToReadingImpacts();
     }
 
-    document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"], #readingCorrectionForm [name="target_log_id"]')
+    document.querySelectorAll('#readingCorrectionForm [name="new_km"], #readingCorrectionForm [name="new_hours"], #readingCorrectionForm [name="reason"], #readingCorrectionForm [name="target_log_id"], #readingCorrectionForm [name="plate_photo"], #readingCorrectionForm [name="reading_photo"]')
         .forEach(input => input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
             readingImpactState = readingImpactState === 'reviewed' ? 'stale' : 'not_reviewed';
             updateReadingSubmit();
@@ -997,7 +991,14 @@
     function reasonWordCount(){return document.querySelector('#readingCorrectionForm [name="reason"]').value.trim().split(/\s+/).filter(Boolean).length;}
     function scrollToReadingImpacts() { requestAnimationFrame(() => { const container=document.querySelector('.reading-correction-body'); const impacts=document.getElementById('readingCorrectionImpacts'); if (!container || !impacts) return; const containerRect=container.getBoundingClientRect(); const impactsRect=impacts.getBoundingClientRect(); container.scrollTo({top:Math.max(0,container.scrollTop+impactsRect.top-containerRect.top-12),behavior:'smooth'}); clearTimeout(readingImpactHighlightTimer); impacts.classList.add('is-highlighted'); readingImpactHighlightTimer=setTimeout(()=>impacts.classList.remove('is-highlighted'),1800); }); }
     function renderReadingImpactNotice() { const target=document.getElementById('readingCorrectionImpacts'); const stale=readingImpactState==='stale'; target.innerHTML=`<div class="reading-correction-impact-state"><i class="bi bi-info-circle"></i><div><strong>${stale?'Dados alterados após a análise':'Impactos ainda não analisados'}</strong><p>${stale?'Os dados foram alterados. Revise os impactos antes de confirmar.':'Revise os impactos da correção antes de confirmar.'}</p></div></div>`; }
-    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const change=f.new_km.value||f.new_hours.value; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const readyForReview=readingEvidenceReady&&change&&words>=8&&f.target_log_id.value; const reviewed=readingImpactState==='reviewed'; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=reviewed?'Confirmar correção':'Revisar impactos'; button.type=reviewed?'submit':'button'; if(reviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!reviewed||confirmation?.checked)); }
+    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const hasKm=!!f.new_km.value, hasHours=!!f.new_hours.value, change=hasKm||hasHours; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const readyForReview=f.plate_photo.files.length&&f.reading_photo.files.length&&change&&words>=8&&f.target_log_id.value; const reviewed=readingImpactState==='reviewed'; document.getElementById('readingCorrectionPhotoLabel').textContent=hasKm&&hasHours?'Foto do hodômetro/horímetro':hasKm?'Foto do hodômetro':hasHours?'Foto do horímetro':'Foto do hodômetro/horímetro'; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=reviewed?'Confirmar correção':'Revisar impactos'; button.type=reviewed?'submit':'button'; if(reviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!reviewed||confirmation?.checked)); }
+
+    document.querySelectorAll('#readingCorrectionForm input[type="file"]').forEach(input => input.addEventListener('change', () => {
+        const preview=document.querySelector(`[data-preview="${input.id}"]`); const file=input.files[0];
+        if (!file) { preview.innerHTML=''; updateReadingSubmit(); return; }
+        const url=URL.createObjectURL(file); preview.innerHTML=`<img src="${url}" alt="Prévia da imagem selecionada"><span>${escapeReadingCorrectionHtml(file.name)}</span><button type="button">Remover</button>`;
+        preview.querySelector('button').addEventListener('click', () => { input.value=''; preview.innerHTML=''; updateReadingSubmit(); }); updateReadingSubmit();
+    }));
 
     function escapeReadingCorrectionHtml(value) {
         const element = document.createElement('div');
