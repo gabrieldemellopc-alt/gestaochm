@@ -40,7 +40,7 @@ class VehicleHistoryService
             $after = $isLocation ? $locationNames->get($log->new_value, 'Não informado') : ($log->new_value ?? 'Não informado') . $unit;
             $events->push($this->event($isLocation ? 'location' : ($isStatus ? 'operational' : 'reading'), $label,
                 $isLocation ? 'Localização atualizada' : ($isStatus ? 'Status do veículo alterado' : ($isHours ? 'Horímetro atualizado' : 'Hodômetro atualizado')),
-                $log->read_at ?? $log->created_at, $before . ' → ' . $after, array_filter(['Origem' => $log->source, 'Responsável' => $log->user?->name, 'Status da leitura' => $log->reading_status]), null, null, false));
+                $log->read_at ?? $log->created_at, $before . ' → ' . $after, array_filter(['Origem' => $log->source_label, 'Responsável' => $log->user?->name, 'Status da leitura' => $log->reading_status]), null, null, false));
         }
 
         VehicleReadingCorrection::query()->where('vehicle_id', $vehicle->id)->with(['evidences', 'user'])->get()

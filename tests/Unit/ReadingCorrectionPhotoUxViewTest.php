@@ -15,6 +15,7 @@ class ReadingCorrectionPhotoUxViewTest extends TestCase
 
         $this->assertStringContainsString('xhr.upload.onprogress', $html);
         $this->assertStringContainsString('Fotos enviadas com sucesso', $html);
-        $this->assertStringContainsString('capture="environment"', $html);
+        $this->assertStringContainsString('Tirar foto ou escolher da galeria', $html);
+        $this->assertStringNotContainsString('capture="environment"', $html);
     }
 }
