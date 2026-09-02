@@ -1882,12 +1882,7 @@
 
             <div class="form-group stock-entry-only stock-span-6">
                 <label>Fornecedor</label>
-                <input
-                    type="text"
-                    name="supplier_name"
-                    class="form-input"
-                    placeholder="Nome do fornecedor"
-                >
+                <x-supplier-autocomplete />
             </div>
 
             <div class="form-group stock-entry-only stock-span-6">

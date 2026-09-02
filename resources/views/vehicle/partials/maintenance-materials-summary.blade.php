@@ -129,7 +129,7 @@
                                 <label>Quantidade<input name="quantity" type="number" min="1" x-model="quantity" required></label>
                                 <label>Custo total<input name="total_cost" type="number" min="0" step="0.01" x-model="totalCost" required></label>
                                 <label>Data e hora do uso<input name="used_at" type="datetime-local" value="{{ old('used_at', now()->format('Y-m-d\TH:i')) }}" required></label>
-                                <label>Fornecedor<input name="supplier_name" maxlength="255"></label>
+                                <label>Fornecedor<x-supplier-autocomplete /></label>
                                 <label>Custo unitário calculado<input type="text" :value="quantity > 0 ? 'R$ ' + (Number(totalCost || 0) / Number(quantity)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'" readonly><small>Calculado automaticamente com base no custo total e na quantidade.</small></label>
                                 <label>Nota fiscal @if(app(\App\Services\TenantFiscalSettingService::class)->requires('stock_entry'))<small>Obrigatória</small>@else<small>Opcional</small>@endif<div class="maintenance-direct-material__invoice"><span>NF</span><input name="invoice_number" @required(app(\App\Services\TenantFiscalSettingService::class)->requires('stock_entry')) maxlength="255"></div></label>
                                 <label>Observação<input name="notes" maxlength="2000"></label>
