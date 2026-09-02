@@ -4266,8 +4266,8 @@
     color: var(--dashboard-text, #f1f5f9);
 }
 
-.dashboard-page svg.lucide,
-.dashboard-page .lucide {
+.dashboard-page i.bi,
+.dashboard-page i.bi {
     stroke: currentColor;
     fill: none;
 }
@@ -4536,7 +4536,7 @@ html[data-chm-theme="corporate-light"] .dashboard-page .operation-modal-backdrop
 
 .dashboard-page svg,
 .dashboard-page i,
-.dashboard-page .lucide {
+.dashboard-page i.bi {
     color: currentColor;
     stroke: currentColor;
     fill: none;
@@ -6725,3 +6725,4 @@ button.fleet-summary-item.warning:hover {
     height: 2px;
     background-color: #ef4444; /* Vermelho/alaranjado do sistema */
 }
+.dashboard-page .vehicle-card-action.is-disabled { cursor:not-allowed; opacity:.55; }

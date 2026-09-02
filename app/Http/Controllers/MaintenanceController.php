@@ -180,7 +180,19 @@ class MaintenanceController extends Controller
         }
 
         $this->authorizeMaintenancePermission('maintenance.open');
-        app(AggregatedVehiclePolicy::class)->ensureMaintenanceAllowed($vehicle, $vehicle->location);
+        $maintenancePolicy = app(AggregatedVehiclePolicy::class);
+        if (! $maintenancePolicy->allowsMaintenance($vehicle, $vehicle->location)) {
+            $message = $maintenancePolicy->maintenanceRestrictionReason($vehicle, $vehicle->location);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 403);
+            }
+
+            return redirect()
+                ->route('vehicle.maintenance.index', $vehicle)
+                ->with('error', $message);
+        }
+        $maintenancePolicy->ensureMaintenanceAllowed($vehicle, $vehicle->location);
 
         $data = $request->validate([
             'started_at' => ['required', 'date'],

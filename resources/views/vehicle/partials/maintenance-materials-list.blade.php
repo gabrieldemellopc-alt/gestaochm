@@ -3,7 +3,7 @@
         <div class="maintenance-materials-list-copy">
             <strong>{{ $usage->stockItem?->name ?? 'Item de estoque' }}</strong>
             <span>{{ $usage->stockItem?->category?->name ?? 'Sem categoria' }} · {{ number_format($usage->quantity, 2, ',', '.') }} {{ $usage->stockItem?->unit }}</span>
-            <small>{{ optional($usage->created_at)->format('d/m/Y H:i') }} · {{ $usage->creator?->name ?? 'Responsável não informado' }}</small>
+            <small>Uso: {{ optional($usage->used_at ?? $usage->created_at)->format('d/m/Y H:i') }} · {{ $usage->creator?->name ?? 'Responsável não informado' }}</small>
             @if($usage->notes)<p>{{ $usage->notes }}</p>@endif
         </div>
         <div class="maintenance-materials-list-value">

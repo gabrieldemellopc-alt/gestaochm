@@ -5326,3 +5326,9 @@ html.maintenance-modal-open { overflow:hidden; }
     color: #fbbf24;
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
+
+.maintenance-open-restricted { display:flex; flex-direction:column; align-items:flex-end; gap:7px; }
+.maintenance-open-restricted button[disabled] { cursor:not-allowed; opacity:.62; }
+.maintenance-open-restricted small { color:var(--text-muted, #718096); font-size:.78rem; max-width:330px; text-align:right; }
+.maintenance-open-restricted small i { margin-right:4px; }
+.maintenance-form-errors { display:flex; align-items:center; gap:8px; margin:0 0 16px; padding:11px 13px; border:1px solid rgba(224,184,91,.28); border-radius:10px; color:#f2d98f; background:rgba(224,184,91,.06); font-size:.86rem; }

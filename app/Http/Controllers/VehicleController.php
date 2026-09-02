@@ -31,6 +31,7 @@ use App\Models\VehicleDowntimePeriod;
 use App\Models\SystemAuditLog;
 use Illuminate\Support\Collection;
 use App\Services\VehicleTransferService;
+use App\Services\AggregatedVehiclePolicy;
 
 class VehicleController extends Controller
 
@@ -2850,6 +2851,19 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
 
     $this->authorizeMaintenancePermission('maintenance.open');
 
+    $maintenancePolicy = app(AggregatedVehiclePolicy::class);
+    if (! $maintenancePolicy->allowsMaintenance($vehicle, $vehicle->location)) {
+        $message = $maintenancePolicy->maintenanceRestrictionReason($vehicle, $vehicle->location);
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message], 403);
+        }
+
+        return redirect()
+            ->route('vehicle.maintenance.index', $vehicle)
+            ->with('error', $message);
+    }
+
     $vehicle->load([
         'division',
         'location',
@@ -2990,6 +3004,8 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
         ->orderBy('name')
         ->get(['id', 'name']);
     $maintenancePermissions = $this->maintenancePermissions($vehicle);
+    $maintenanceRestrictionReason = app(AggregatedVehiclePolicy::class)
+        ->maintenanceRestrictionReason($vehicle, $vehicle->location);
     $canEditItems = $maintenancePermissions['edit_items'];
     $canEditExtraCosts = $maintenancePermissions['edit_extra_costs'];
     $canViewCosts = $maintenancePermissions['view_costs'];
@@ -3008,7 +3024,8 @@ public function maintenanceCreate(Request $request, Vehicle $vehicle)
         'canEditExtraCosts',
         'canViewCosts',
         'maintenanceTimeline',
-        'stockCategories'
+        'stockCategories',
+        'maintenanceRestrictionReason'
     ));
 
 }

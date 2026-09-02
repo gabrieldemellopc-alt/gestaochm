@@ -82,6 +82,13 @@
 
     </div>
 
+    @if($errors->any())
+        <div class="maintenance-form-errors" role="alert">
+            <i class="bi bi-info-circle"></i>
+            {{ $errors->first() }}
+        </div>
+    @endif
+
 
 
     {{-- CONTEXTO DO VEÍCULO --}}

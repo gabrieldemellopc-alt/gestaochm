@@ -22,6 +22,7 @@
 @php($canViewCosts = $canViewCosts ?? false)
 @php($isMaintenanceDetail = $isMaintenanceDetail ?? false)
 @php($isMaintenanceOpen = $isMaintenanceOpen ?? (bool) $openMaintenance)
+@php($maintenanceRestrictionReason = $maintenanceRestrictionReason ?? app(\App\Services\AggregatedVehiclePolicy::class)->maintenanceRestrictionReason($vehicle, $vehicle->location))
 
 
 
@@ -1202,6 +1203,15 @@
             </div>
 
             @if($maintenancePermissions['open'] ?? false)
+                @if($maintenanceRestrictionReason)
+                    <div class="maintenance-open-restricted">
+                        <button type="button" class="chm-page-button primary" disabled aria-disabled="true" title="Manutenção não permitida para veículos agregados nesta unidade.">
+                            <i class="bi bi-lock"></i>
+                            Abrir manutenção
+                        </button>
+                        <small><i class="bi bi-info-circle"></i> {{ $maintenanceRestrictionReason }}</small>
+                    </div>
+                @else
 <a
                 href="{{ route('vehicle.maintenance.create', $vehicle->id) }}"
                 class="chm-page-button primary"
@@ -1209,6 +1219,7 @@
                 <i class="bi bi-wrench-adjustable"></i>
                 Abrir manutenção
             </a>
+                @endif
 @endif
         </section>
 

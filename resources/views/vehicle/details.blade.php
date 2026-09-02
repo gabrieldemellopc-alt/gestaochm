@@ -11,6 +11,8 @@
     $operationsEnabled = (bool) config('chm.features.operations_enabled', false);
 
     $fuelEnabled = (bool) config('chm.features.fuel_enabled', true);
+    $maintenanceRestrictionReason = app(\App\Services\AggregatedVehiclePolicy::class)
+        ->maintenanceRestrictionReason($vehicle, $vehicle->location);
 
 @endphp
 
@@ -326,10 +328,17 @@
             </div>
 
             <div class="vehicle-dash-actions-grid">
-                <a href="{{ route('vehicle.maintenance.index', $vehicle) }}" class="vehicle-dash-action">
-                    <i class="bi bi-wrench-adjustable"></i>
-                    <span>Manutenções</span>
-                </a>
+                @if($maintenanceRestrictionReason)
+                    <button type="button" class="vehicle-dash-action is-disabled" disabled aria-disabled="true" title="Manutenção não permitida para veículos agregados nesta unidade.">
+                        <i class="bi bi-lock"></i>
+                        <span>Manutenção indisponível</span>
+                    </button>
+                @else
+                    <a href="{{ route('vehicle.maintenance.index', $vehicle) }}" class="vehicle-dash-action">
+                        <i class="bi bi-wrench-adjustable"></i>
+                        <span>Manutenções</span>
+                    </a>
+                @endif
 
                 <a href="{{ route('vehicles.tires.index', $vehicle) }}" class="vehicle-dash-action">
                     <i class="bi bi-circle"></i>
@@ -655,6 +664,13 @@
                 </div>
                 <i class="bi bi-wrench-adjustable"></i>
             </div>
+
+            @if($maintenanceRestrictionReason)
+                <div class="vehicle-dash-maintenance-unavailable">
+                    <strong><i class="bi bi-lock"></i> Indisponível</strong>
+                    <p>{{ $maintenanceRestrictionReason }}</p>
+                </div>
+            @endif
 
             @if($vehicle->maintenances->isEmpty())
                 <div class="vehicle-center-empty">

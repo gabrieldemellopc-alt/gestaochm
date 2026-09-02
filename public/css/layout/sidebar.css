@@ -447,7 +447,7 @@
 [x-cloak] {
     display: none !important;
 }
-i[data-lucide] {
+i.bi {
     opacity: 0;
 }
 
@@ -455,7 +455,7 @@ i[data-lucide] {
     opacity: 0;
 }
 
-body.lucide-ready .sidebar {
+body .sidebar {
     opacity: 1;
 }
 /* =========================================================

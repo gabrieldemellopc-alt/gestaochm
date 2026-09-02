@@ -35,6 +35,7 @@
 
 
     $fuelEnabled = (bool) config('chm.features.fuel_enabled', true);
+    $aggregatedVehiclePolicy = app(\App\Services\AggregatedVehiclePolicy::class);
 
 
 
@@ -1362,6 +1363,16 @@
                         @if($canAccessVehicleMaintenance || $canFillVehicle || $canAccessVehicleTires)
                             <div class="vehicle-card-actions">
                                 @if($canAccessVehicleMaintenance)
+                                    @php
+                                        $maintenanceRestrictionReason = $aggregatedVehiclePolicy
+                                            ->maintenanceRestrictionReason($vehicle, $vehicle->location);
+                                    @endphp
+                                    @if($maintenanceRestrictionReason)
+                                    <button type="button" class="vehicle-card-action vehicle-card-action--maintenance is-disabled" disabled aria-disabled="true" title="Manutenção não permitida para veículos agregados nesta unidade." onclick="event.stopPropagation();">
+                                        <span class="vehicle-action-icon"><i class="bi bi-lock"></i></span>
+                                        <span class="sr-only">{{ $maintenanceRestrictionReason }}</span>
+                                    </button>
+                                    @else
                                     <a href="{{ route('vehicle.maintenance.index', $vehicle) }}" class="vehicle-card-action vehicle-card-action--maintenance" title="Abrir manutenção do veículo" aria-label="Abrir manutenção do veículo" onclick="event.stopPropagation();">
 
                                         <span class="vehicle-action-hover-arrow" aria-hidden="true">&uarr;</span>
@@ -1369,6 +1380,7 @@
                                         <span class="vehicle-action-icon"><i class="bi bi-wrench-adjustable"></i></span>
 
                                     </a>
+                                    @endif
                                 @endif
 
                                 @if($canFillVehicle)
