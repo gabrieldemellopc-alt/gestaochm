@@ -59,5 +59,11 @@ body.reading-correction-open { overflow: hidden; }
 .reading-correction-photo-preview img { width:46px; height:46px; margin:0; padding:0; object-fit:cover; border-radius:6px; }
 .reading-correction-photo-preview span { overflow:hidden; color:#cbd5e1; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
 .reading-correction-photo-preview button { border:0; color:#f2a3a8; background:transparent; font-size:11px; cursor:pointer; }
+.reading-correction-upload input[type=file] { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.reading-correction-upload::before { content:'Selecionar imagem'; display:flex; min-height:40px; align-items:center; justify-content:center; border:1px dashed #637b9e; border-radius:8px; color:#e5edf8; background:#293952; font-size:12px; font-weight:800; cursor:pointer; }
+.reading-correction-upload { cursor:pointer; }
+.reading-correction-mobile-button { display:inline-flex; align-items:center; gap:7px; margin-top:4px; border:1px solid #4d6f9a; border-radius:8px; padding:9px 12px; color:#dcecff; background:#293d5a; font-size:12px; font-weight:800; cursor:pointer; }
+.reading-correction-photo-qr { display:grid; grid-template-columns:100px 1fr; align-items:center; gap:12px; margin-top:12px; padding:10px; border:1px solid rgba(92,153,220,.4); border-radius:8px; color:#c8d8ec; font-size:12px; line-height:1.55; }
+.reading-correction-photo-qr img { width:100px; height:100px; margin:0; padding:5px; }
 @media (max-width:680px) { .reading-correction-photo-grid { grid-template-columns:1fr; } .reading-correction-upload small { min-height:0; } }
 @media (max-width:680px) { .reading-correction-overlay { padding: 10px; } .reading-correction-modal { max-height: calc(100vh - 20px); } .reading-correction-body { padding: 16px 16px 154px; } .reading-correction-grid,.reading-correction-actions { grid-template-columns: 1fr; } .reading-correction-current,.reading-correction-impact-item { grid-template-columns: 1fr; } .reading-correction-impact-header { grid-template-columns: auto minmax(0,1fr); gap: 10px; padding: 13px; } .reading-correction-impact-badge { grid-column: 2; justify-self: start; } .reading-correction-impact-list { gap: 8px; padding: 10px 13px 13px; } }

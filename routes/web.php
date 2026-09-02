@@ -465,8 +465,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/vehicles/{vehicle}/reading-correction/preview', [VehicleReadingCorrectionController::class, 'preview'])
         ->name('vehicles.reading-correction.preview');
-    Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCorrectionController::class, 'createEvidence'])->name('vehicles.reading-correction.evidence.create');
+Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCorrectionController::class, 'createEvidence'])->name('vehicles.reading-correction.evidence.create');
     Route::get('/vehicles/{vehicle}/reading-correction/evidence/{evidence}/status', [VehicleReadingCorrectionController::class, 'evidenceStatus'])->name('vehicles.reading-correction.evidence.status');
+    Route::post('/vehicles/{vehicle}/reading-correction/evidence/{evidence}/cancel', [VehicleReadingCorrectionController::class, 'cancelEvidence'])->name('vehicles.reading-correction.evidence.cancel');
     Route::get('/vehicles/{vehicle}/reading-correction/evidence/{evidence}/download', [VehicleReadingCorrectionController::class, 'downloadEvidence'])->name('vehicles.reading-correction.evidence.download');
 
     Route::post('/vehicles/{vehicle}/reading-correction', [VehicleReadingCorrectionController::class, 'store'])

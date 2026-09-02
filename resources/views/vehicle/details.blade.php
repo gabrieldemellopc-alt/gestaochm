@@ -793,6 +793,9 @@
                 <strong>Comprovação fotográfica</strong>
                 <p>Envie duas fotos para comprovar a leitura informada.</p>
                 <p class="reading-correction-photo-note"><i class="bi bi-info-circle"></i> As imagens devem apresentar data/hora e coordenadas de localização (latitude/longitude).</p>
+                <input type="hidden" name="mobile_evidence_id" id="readingCorrectionMobileEvidenceId">
+                <button type="button" class="reading-correction-mobile-button" onclick="createReadingPhotoQr()"><i class="bi bi-qr-code"></i> Enviar fotos pelo celular</button>
+                <div id="readingCorrectionPhotoQr" class="reading-correction-photo-qr" hidden></div>
                 <div class="reading-correction-photo-grid">
                     <div class="reading-correction-upload">
                         <label for="readingCorrectionPlatePhoto">{{ filled($vehicle->plate) ? 'Foto da placa' : 'Foto de identificação do veículo/equipamento' }}</label>
@@ -937,6 +940,7 @@
 <script>
 @if($canCorrectReadings)
     let readingImpactState = 'not_reviewed';
+    let readingPhotoEvidenceTimer;
     let readingImpactHighlightTimer;
     function openReadingCorrectionModal() {
         document.getElementById('readingCorrectionModal').style.display = 'flex';
@@ -949,7 +953,12 @@
     function closeReadingCorrectionModal() {
         document.getElementById('readingCorrectionModal').style.display = 'none';
         document.body.classList.remove('reading-correction-open');
+        clearInterval(readingPhotoEvidenceTimer); const id=document.getElementById('readingCorrectionMobileEvidenceId').value;
+        if(id) fetch(`/vehicles/{{ $vehicle->id }}/reading-correction/evidence/${id}/cancel`,{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('#readingCorrectionForm [name=_token]').value}});
     }
+
+    async function createReadingPhotoQr() { const form=document.getElementById('readingCorrectionForm'), box=document.getElementById('readingCorrectionPhotoQr'); const response=await fetch(@json(route('vehicles.reading-correction.evidence.create',$vehicle)),{method:'POST',headers:{Accept:'application/json','X-CSRF-TOKEN':form.querySelector('[name=_token]').value}}); const data=await response.json(); if(!response.ok) return; form.mobile_evidence_id.value=data.id; box.hidden=false; box.innerHTML=`<img src="${data.qr}" alt="QR Code para envio de fotos"><span>Aguardando fotos enviadas pelo celular...</span>`; clearInterval(readingPhotoEvidenceTimer); readingPhotoEvidenceTimer=setInterval(()=>pollReadingPhotoEvidence(data.id),3500); }
+    async function pollReadingPhotoEvidence(id) { const response=await fetch(`/vehicles/{{ $vehicle->id }}/reading-correction/evidence/${id}/status`,{headers:{Accept:'application/json'}}); if(!response.ok)return; const data=await response.json(), box=document.getElementById('readingCorrectionPhotoQr'); box.innerHTML=`<img src="${box.querySelector('img')?.src||''}" alt="QR Code para envio de fotos"><span>${data.plate?'✓ Foto de identificação recebida':'Aguardando foto de identificação'}<br>${data.reading?'✓ Foto da leitura recebida':'Aguardando foto da leitura'}</span>`; updateReadingSubmit(); }
 
     async function previewReadingCorrection() {
         const form = document.getElementById('readingCorrectionForm');
@@ -991,7 +1000,7 @@
     function reasonWordCount(){return document.querySelector('#readingCorrectionForm [name="reason"]').value.trim().split(/\s+/).filter(Boolean).length;}
     function scrollToReadingImpacts() { requestAnimationFrame(() => { const container=document.querySelector('.reading-correction-body'); const impacts=document.getElementById('readingCorrectionImpacts'); if (!container || !impacts) return; const containerRect=container.getBoundingClientRect(); const impactsRect=impacts.getBoundingClientRect(); container.scrollTo({top:Math.max(0,container.scrollTop+impactsRect.top-containerRect.top-12),behavior:'smooth'}); clearTimeout(readingImpactHighlightTimer); impacts.classList.add('is-highlighted'); readingImpactHighlightTimer=setTimeout(()=>impacts.classList.remove('is-highlighted'),1800); }); }
     function renderReadingImpactNotice() { const target=document.getElementById('readingCorrectionImpacts'); const stale=readingImpactState==='stale'; target.innerHTML=`<div class="reading-correction-impact-state"><i class="bi bi-info-circle"></i><div><strong>${stale?'Dados alterados após a análise':'Impactos ainda não analisados'}</strong><p>${stale?'Os dados foram alterados. Revise os impactos antes de confirmar.':'Revise os impactos da correção antes de confirmar.'}</p></div></div>`; }
-    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const hasKm=!!f.new_km.value, hasHours=!!f.new_hours.value, change=hasKm||hasHours; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const readyForReview=f.plate_photo.files.length&&f.reading_photo.files.length&&change&&words>=8&&f.target_log_id.value; const reviewed=readingImpactState==='reviewed'; document.getElementById('readingCorrectionPhotoLabel').textContent=hasKm&&hasHours?'Foto do hodômetro/horímetro':hasKm?'Foto do hodômetro':hasHours?'Foto do horímetro':'Foto do hodômetro/horímetro'; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=reviewed?'Confirmar correção':'Revisar impactos'; button.type=reviewed?'submit':'button'; if(reviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!reviewed||confirmation?.checked)); }
+    function updateReadingSubmit() { const f=document.getElementById('readingCorrectionForm'); const hasKm=!!f.new_km.value, hasHours=!!f.new_hours.value, change=hasKm||hasHours; const words=reasonWordCount(); const confirmation=f.querySelector('[name="impact_confirmed"]'); const button=document.getElementById('readingCorrectionSubmit'); const qr=document.getElementById('readingCorrectionPhotoQr').textContent; const readyForReview=(f.plate_photo.files.length||qr.includes('identificação recebida'))&&(f.reading_photo.files.length||qr.includes('leitura recebida'))&&change&&words>=8&&f.target_log_id.value; const reviewed=readingImpactState==='reviewed'; document.getElementById('readingCorrectionPhotoLabel').textContent=hasKm&&hasHours?'Foto do hodômetro/horímetro':hasKm?'Foto do hodômetro':hasHours?'Foto do horímetro':'Foto do hodômetro/horímetro'; document.getElementById('readingCorrectionWordCount').textContent=`${words} / 8 palavras`; document.getElementById('readingCorrectionWordCount').classList.toggle('is-invalid',words<8); button.textContent=reviewed?'Confirmar correção':'Revisar impactos'; button.type=reviewed?'submit':'button'; if(reviewed) button.removeAttribute('onclick'); else button.setAttribute('onclick','previewReadingCorrection()'); button.disabled=!(readyForReview&&(!reviewed||confirmation?.checked)); }
 
     document.querySelectorAll('#readingCorrectionForm input[type="file"]').forEach(input => input.addEventListener('change', () => {
         const preview=document.querySelector(`[data-preview="${input.id}"]`); const file=input.files[0];
