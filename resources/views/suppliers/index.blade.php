@@ -11,7 +11,6 @@
         <button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button>
     </header>
 
-    @if(session('success'))<div class="suppliers-alert success"><i class="bi bi-check-circle"></i>{{ session('success') }}</div>@endif
     @if($errors->any())<div class="suppliers-alert warning"><i class="bi bi-exclamation-triangle"></i>{{ $errors->first() }}</div>@endif
 
     <form method="get" class="suppliers-search"><i class="bi bi-search"></i><input name="q" value="{{ request('q') }}" placeholder="Buscar por nome, alias ou CPF/CNPJ...">@if(request('q'))<a href="{{ route('suppliers.index') }}" aria-label="Limpar busca"><i class="bi bi-x-lg"></i> Limpar</a>@endif</form>
