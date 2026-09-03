@@ -5,7 +5,7 @@
 @endpush
 
 @section('content')
-<div class="suppliers-page" x-data="supplierAdmin()">
+<div class="suppliers-page" x-data="supplierAdmin()" x-effect="document.body.classList.toggle('suppliers-modal-open', modal.open)">
     <header class="suppliers-header">
         <div><span>Gestão administrativa</span><h1>Fornecedores (CNPJ)</h1><p>Cadastro central de fornecedores e prestadores utilizados no CHM.</p></div>
         <button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button>
@@ -38,7 +38,7 @@
         <div class="suppliers-pagination">{{ $items->links() }}</div>
     </section>
 
-    <div class="suppliers-modal-backdrop" x-show="modal.open" x-cloak @click.self="close()"><section class="suppliers-modal" role="dialog" aria-modal="true"><header><div><span x-text="modal.editing ? 'Editar cadastro' : 'Novo cadastro'"></span><h2 x-text="modal.editing ? 'Editar fornecedor' : 'Novo fornecedor'"></h2></div><button type="button" @click="close()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button></header>
+    <template x-teleport="body"><div class="suppliers-modal-backdrop" x-show="modal.open" x-cloak @click.self="close()"><section class="suppliers-modal" role="dialog" aria-modal="true"><header><div><span x-text="modal.editing ? 'Editar cadastro' : 'Novo cadastro'"></span><h2 x-text="modal.editing ? 'Editar fornecedor' : 'Novo fornecedor'"></h2></div><button type="button" @click="close()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button></header>
         <form method="post" :action="modal.action"><template x-if="modal.editing"><input type="hidden" name="_method" value="PUT"></template>@csrf
             <label>Nome fantasia / principal *<input name="trade_name" x-model="modal.trade_name" placeholder="Casa da Borracharia" required></label>
             <label>Razão social<input name="legal_name" x-model="modal.legal_name" placeholder="Casa da Borracharia Ltda"></label>
@@ -47,7 +47,7 @@
             <label class="suppliers-checkbox"><input type="hidden" name="active" value="0"><input type="checkbox" name="active" value="1" x-model="modal.active"> Fornecedor ativo</label>
             <footer><button type="button" class="suppliers-secondary-button" @click="close()">Cancelar</button><button class="suppliers-primary-button" x-text="modal.editing ? 'Salvar alterações' : 'Cadastrar fornecedor'"></button></footer>
         </form>
-    </section></div>
+    </section></div></template>
 
     <form x-ref="toggleForm" method="post" :action="modal.action">@csrf @method('PUT')<input type="hidden" name="trade_name" x-model="modal.trade_name"><input type="hidden" name="legal_name" x-model="modal.legal_name"><input type="hidden" name="document" x-model="modal.document"><input type="hidden" name="active" x-model="modal.active"></form>
 </div>
