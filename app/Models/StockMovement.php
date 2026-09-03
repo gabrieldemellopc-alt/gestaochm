@@ -33,6 +33,7 @@ class StockMovement extends Model
         'total_cost',
         'invoice_number',
         'supplier_name',
+        'supplier_id',
         'moved_at',
         'maintenance_record_item_id',
     ];
@@ -78,5 +79,6 @@ class StockMovement extends Model
     {
         return $this->belongsTo(MaintenanceRecordItem::class);
     }
+    public function supplier(){return $this->belongsTo(Supplier::class);}
     
 }

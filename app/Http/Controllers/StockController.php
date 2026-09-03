@@ -668,6 +668,7 @@ class StockController extends Controller
                 'string',
                 'max:255',
             ],
+            'supplier_id' => ['nullable','integer'],
     
             // SAÍDA
             'description' => [
@@ -680,6 +681,7 @@ class StockController extends Controller
         ]);
 
         $this->authorizeStockMovementPermission($validated['movement_type']);
+        if ($validated['movement_type'] === 'in') $validated=array_merge($validated, app(\App\Services\SupplierSnapshotService::class)->resolve($tenantId,$validated['supplier_id']??null,$validated['supplier_name']??null));
     
         $requestedItem = StockItem::findOrFail($validated['stock_item_id']);
     
@@ -739,6 +741,7 @@ class StockController extends Controller
                 'total_cost' => $movementTotalCost,
                 'invoice_number' => $validated['invoice_number'] ?? null,
                 'supplier_name' => $validated['supplier_name'] ?? null,
+                'supplier_id' => $validated['supplier_id'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'moved_at' => $validated['moved_at'],
             ]);

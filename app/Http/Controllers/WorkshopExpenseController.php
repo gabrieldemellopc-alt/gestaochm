@@ -7,6 +7,7 @@ use App\Models\WorkshopExpense;
 use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
 use App\Services\WorkshopConsumptionService;
+use App\Services\SupplierSnapshotService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,8 @@ class WorkshopExpenseController extends Controller
     public function store(Request $request)
     {
         [$user, $location] = $this->context($request);
-        $data = $request->validate(['expense_date'=>['required','date'],'category'=>['required',Rule::in(WorkshopExpense::CATEGORIES)],'description'=>['required','string','max:255'],'supplier_name'=>['nullable','string','max:255'],'invoice_number'=>['nullable','string','max:255'],'amount'=>['required','numeric','gt:0'],'notes'=>['nullable','string','max:2000']]);
+        $data = $request->validate(['expense_date'=>['required','date'],'category'=>['required',Rule::in(WorkshopExpense::CATEGORIES)],'description'=>['required','string','max:255'],'supplier_name'=>['nullable','string','max:255'],'supplier_id'=>['nullable','integer'],'invoice_number'=>['nullable','string','max:255'],'amount'=>['required','numeric','gt:0'],'notes'=>['nullable','string','max:2000']]);
+        $data=array_merge($data,app(SupplierSnapshotService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['supplier_name']??null));
         $expense = WorkshopExpense::create($data + ['tenant_id'=>$user->tenant_id,'division_id'=>$location->division_id,'location_id'=>$location->id,'created_by'=>$user->id]);
         app(AuditLogService::class)->created($expense, ['tenant_id'=>$user->tenant_id,'location_id'=>$location->id,'module'=>'workshop','summary'=>'Despesa da oficina registrada.','after_data'=>$expense->toArray()]);
         return back()->with('success', 'Despesa da oficina registrada.');
@@ -29,7 +31,8 @@ class WorkshopExpenseController extends Controller
     public function update(Request $request, WorkshopExpense $expense)
     {
         [$user, $location] = $this->context($request); abort_unless($expense->tenant_id === $user->tenant_id && $expense->location_id === $location->id, 404);
-        $data = $request->validate(['expense_date'=>['required','date'],'category'=>['required',Rule::in(WorkshopExpense::CATEGORIES)],'description'=>['required','string','max:255'],'supplier_name'=>['nullable','string','max:255'],'invoice_number'=>['nullable','string','max:255'],'amount'=>['required','numeric','gt:0'],'notes'=>['nullable','string','max:2000']]);
+        $data = $request->validate(['expense_date'=>['required','date'],'category'=>['required',Rule::in(WorkshopExpense::CATEGORIES)],'description'=>['required','string','max:255'],'supplier_name'=>['nullable','string','max:255'],'supplier_id'=>['nullable','integer'],'invoice_number'=>['nullable','string','max:255'],'amount'=>['required','numeric','gt:0'],'notes'=>['nullable','string','max:2000']]);
+        $data=array_merge($data,app(SupplierSnapshotService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['supplier_name']??null));
         $expense->update($data); app(AuditLogService::class)->updated($expense, ['tenant_id'=>$user->tenant_id,'location_id'=>$location->id,'module'=>'workshop','summary'=>'Despesa da oficina atualizada.']);
         return back()->with('success', 'Despesa atualizada.');
     }

@@ -78,12 +78,14 @@ class MaintenanceController extends Controller
             'total_cost' => ['required', 'numeric', 'min:0'],
             'used_at' => ['required', 'date', Rule::date()->afterOrEqual($maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at)->beforeOrEqual(now())],
             'supplier_name' => ['nullable', 'string', 'max:255'],
+            'supplier_id' => ['nullable', 'integer'],
             'invoice_number' => [Rule::requiredIf($requiredInvoice), 'nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ], [
             'used_at.after_or_equal' => 'A data e hora do uso não pode ser anterior à abertura da manutenção.',
             'used_at.before_or_equal' => 'A data e hora do uso não pode ser futura.',
         ]);
+        $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->resolve($vehicle->tenant_id,$data['supplier_id']??null,$data['supplier_name']??null));
         if (empty($data['stock_item_id'])) {
             if (! in_array($data['unit'], ['UNID', 'L', 'KG', 'G', 'Outro'], true)) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['unit' => 'Selecione uma unidade válida.']);

@@ -14,7 +14,7 @@ class StockEntryService
         $movement = StockMovement::create([
             'tenant_id' => $item->tenant_id, 'location_id' => $item->location_id, 'stock_item_id' => $item->id,
             'movement_type' => 'in', 'quantity' => $quantity, 'unit_cost' => $unit, 'total_cost' => $total,
-            'invoice_number' => $data['invoice_number'] ?? null, 'supplier_name' => $data['supplier_name'] ?? null,
+            'invoice_number' => $data['invoice_number'] ?? null, 'supplier_name' => $data['supplier_name'] ?? null, 'supplier_id'=>$data['supplier_id']??null,
             'description' => $data['description'] ?? null, 'moved_at' => $data['moved_at'], 'fiscal_document_id' => $data['fiscal_document_id'] ?? null,
         ]);
         $item->update(['quantity' => $afterQty, 'unit_cost' => $average]);

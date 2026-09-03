@@ -1,6 +1,6 @@
 <div x-data="supplierAutocomplete()" class="chm-supplier-picker" @keydown.escape="open=false">
-    <input x-ref="name" name="supplier_name" value="{{ $value ?? '' }}" maxlength="255" placeholder="Nome do fornecedor" autocomplete="off" @input.debounce.300ms="changed()" @focus="changed()" aria-label="Fornecedor">
-    <input x-ref="id" type="hidden" name="supplier_id" value="">
+    <input x-ref="name" name="{{ $textName ?? 'supplier_name' }}" value="{{ $value ?? '' }}" maxlength="255" placeholder="{{ $placeholder ?? 'Nome do fornecedor' }}" autocomplete="off" @input.debounce.300ms="changed()" @focus="changed()" aria-label="Fornecedor">
+    <input x-ref="id" type="hidden" name="{{ $idName ?? 'supplier_id' }}" value="">
     <span x-show="loading" class="chm-supplier-picker__loading">Buscando fornecedores…</span>
     <div x-show="selected" class="chm-supplier-picker__selected"><strong x-text="selected?.name"></strong><button type="button" @click="clear()" aria-label="Limpar fornecedor">×</button><small x-text="selected?.formatted_document || 'Fornecedor cadastrado'"></small></div>
     <div x-show="open && results.length" class="chm-supplier-picker__results" role="listbox">

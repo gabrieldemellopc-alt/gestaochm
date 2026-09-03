@@ -45,7 +45,7 @@ class MaintenanceMaterialService
             $total = round((float) $data['total_cost'], 2);
             $purchaseUnitCost = round($total / (int) $data['quantity'], 2);
             $previousUnitCost = (float) $item->unit_cost;
-            $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>$data['used_at']]);
+            $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'supplier_id'=>$data['supplier_id']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>$data['used_at']]);
             $entry->update([
                 'maintenance_record_id' => $maintenance->id,
                 'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,
