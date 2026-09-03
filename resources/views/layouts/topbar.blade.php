@@ -64,6 +64,7 @@
         ->count('division_id');
 
     $canSwitchDivision = $userDivisionCount > 1;
+    $canManageSuppliers = app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'admin.access.manage', ['module' => 'fleet', 'division_id' => session('active_division_id'), 'location_id' => session('active_location_id')]);
     $activeAccessProfileLabel = 'Operador';
 
     if ($activeDivision) {
@@ -591,6 +592,13 @@
                 </a>
 
 
+
+                @if($canManageSuppliers)
+                    <a href="{{ route('suppliers.index') }}" role="menuitem">
+                        <i class="bi bi-buildings"></i>
+                        Fornecedores (CNPJ)
+                    </a>
+                @endif
 
                 <div class="dropdown-divider"></div>
 
