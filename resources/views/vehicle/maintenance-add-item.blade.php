@@ -498,12 +498,7 @@
                     <div class="maintenance-grid grid-3-cols mb-3">
                         <div class="form-group maintenance-external-provider col-span-2" style="grid-column: span 2;">
                             <label>Prestador / razão social</label>
-                            <input type="text" name="provider_name" class="form-input" x-model="providerName" placeholder="Nome ou razão social" maxlength="255">
-                        </div>
-
-                        <div class="form-group maintenance-external-document">
-                            <label>CPF/CNPJ do prestador</label>
-                            <input type="text" name="provider_document" class="form-input" x-model="providerDocument" placeholder="CPF ou CNPJ" maxlength="20">
+                            <x-supplier-autocomplete text-name="provider_name" id-name="supplier_id" document-name="provider_document" value="{{ old('provider_name') }}" supplier-id-value="{{ old('supplier_id') }}" document-value="{{ old('provider_document') }}" text-model="providerName" document-model="providerDocument" placeholder="Nome ou razão social" />
                         </div>
                     </div>
 

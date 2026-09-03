@@ -47,7 +47,7 @@
 
             <div class="form-group" x-show="itemForm.maintenance_type === 'external'">
                 <label>Prestador</label>
-                <input type="text" name="provider_name" class="form-input" maxlength="255" x-model="itemForm.provider_name">
+                <x-supplier-autocomplete text-name="provider_name" id-name="supplier_id" document-name="provider_document" text-model="itemForm.provider_name" id-model="itemForm.supplier_id" document-model="itemForm.provider_document" placeholder="Nome ou razão social" />
             </div>
 
             <template x-if="itemForm.stock_consumptions && itemForm.stock_consumptions.length">

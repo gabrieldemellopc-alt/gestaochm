@@ -978,6 +978,8 @@
                                                             'can_be_internal' => (bool) $item->procedure?->can_be_internal,
                                                             'performed_at' => optional($item->performed_at)->format('Y-m-d'),
                                                             'provider_name' => $item->provider_name,
+                                                            'supplier_id' => $item->supplier_id,
+                                                            'provider_document' => $item->provider_document,
                                                             'notes' => $item->notes,
                                                             'extra_cost' => (float) ($item->extra_cost ?? 0),
                                                             'has_stock_consumption' => $item->stockMovements

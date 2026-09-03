@@ -250,6 +250,8 @@
                                         "can_be_internal" => (bool) $item->procedure?->can_be_internal,
                                         "performed_at" => optional($item->performed_at)->format("Y-m-d"),
                                         "provider_name" => $item->provider_name,
+                                        "supplier_id" => $item->supplier_id,
+                                        "provider_document" => $item->provider_document,
                                         "notes" => $item->notes,
                                         "extra_cost" => (float) ($item->extra_cost ?? 0),
                                     ]), @js(route("vehicles.maintenance.items.update", [$vehicle->id, $maintenance->id, $item->id])))"
@@ -449,7 +451,7 @@
 
                 <div class="form-group">
                     <label>Prestador</label>
-                    <input type="text" name="provider_name" class="form-input" maxlength="255" x-model="itemForm.provider_name">
+                    <x-supplier-autocomplete text-name="provider_name" id-name="supplier_id" document-name="provider_document" text-model="itemForm.provider_name" id-model="itemForm.supplier_id" document-model="itemForm.provider_document" placeholder="Nome ou razão social" />
                 </div>
 
                 @if($canViewCosts)

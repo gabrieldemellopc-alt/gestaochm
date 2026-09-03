@@ -27,6 +27,7 @@ class MaintenanceRecord extends Model
         'next_due_hours',
         'next_due_date',
         'provider_name',
+        'supplier_id',
         'total_cost',
         'extra_cost',
         'reason',
@@ -66,6 +67,11 @@ class MaintenanceRecord extends Model
     public function procedure()
     {
         return $this->belongsTo(Procedure::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function values()

@@ -22,6 +22,7 @@ class MaintenanceRecordItem extends Model
         'total_cost',
         'extra_cost',
         'provider_name',
+        'supplier_id',
         'provider_document',
         'fiscal_document_number',
         'fiscal_document_issued_at',
@@ -54,6 +55,11 @@ class MaintenanceRecordItem extends Model
     public function procedure()
     {
         return $this->belongsTo(Procedure::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function values()

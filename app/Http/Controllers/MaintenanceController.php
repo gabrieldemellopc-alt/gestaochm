@@ -17,6 +17,7 @@ use Illuminate\Validation\Rule;
 use App\Services\MaintenanceService;
 use App\Services\MaintenanceMaterialService;
 use App\Services\StockEntryService;
+use App\Services\SupplierSnapshotService;
 use App\Services\TenantFiscalSettingService;
 use App\Services\AggregatedVehiclePolicy;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -205,6 +206,8 @@ class MaintenanceController extends Controller
 
             'reason' => ['nullable', 'in:preventive,corrective,inspection,other'],
             'extra_cost' => ['nullable', 'numeric', 'min:0'],
+            'supplier_id' => ['nullable', 'integer'],
+            'provider_name' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
 
             'service_status' => [
@@ -222,6 +225,12 @@ class MaintenanceController extends Controller
                 ),
             ],
         ]);
+
+        $data = array_merge($data, app(SupplierSnapshotService::class)->resolve(
+            $vehicle->tenant_id,
+            $data['supplier_id'] ?? null,
+            $data['provider_name'] ?? null,
+        ));
 
         $result = MaintenanceService::create($data, $vehicle);
 
@@ -466,6 +475,7 @@ class MaintenanceController extends Controller
             'performed_hours' => ['nullable', 'integer', 'min:0'],
 
             'extra_cost' => ['nullable', 'numeric', 'min:0'],
+            'supplier_id' => ['nullable', 'integer'],
             'provider_name' => ['nullable', 'string', 'max:255'],
             'provider_document' => ['nullable', 'string', 'max:20'],
             'fiscal_document_number' => [Rule::requiredIf($request->input('maintenance_type') === 'external' && app(TenantFiscalSettingService::class)->requires('maintenance_external_service')), 'nullable', 'string', 'max:255'],
@@ -484,11 +494,19 @@ class MaintenanceController extends Controller
 
         if ($data['maintenance_type'] === 'internal') {
             $data['provider_name'] = null;
+            $data['supplier_id'] = null;
             $data['provider_document'] = null;
             $data['fiscal_document_number'] = null;
             $data['fiscal_document_issued_at'] = null;
         } else {
             $data['provider_document'] = preg_replace('/\D+/', '', (string) ($data['provider_document'] ?? '')) ?: null;
+            $snapshot = app(SupplierSnapshotService::class)->resolveMaintenanceProvider(
+                $vehicle->tenant_id, $data['supplier_id'] ?? null,
+                $data['provider_name'] ?? null, $data['provider_document']
+            );
+            $data['supplier_id'] = $snapshot['supplier_id'];
+            $data['provider_name'] = $snapshot['supplier_name'];
+            $data['provider_document'] = $snapshot['provider_document'];
         }
 
         if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {
@@ -526,7 +544,9 @@ class MaintenanceController extends Controller
         $rules = [
             'maintenance_type' => ['required', 'in:internal,external'],
             'performed_at' => ['required', 'date'],
+            'supplier_id' => ['nullable', 'integer'],
             'provider_name' => ['nullable', 'string', 'max:255'],
+            'provider_document' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
             'procedure_id' => ['prohibited'],
@@ -548,6 +568,21 @@ class MaintenanceController extends Controller
             'extra_cost.min' => 'O custo do serviço não pode ser negativo.',
             '*.prohibited' => 'Este dado não pode ser alterado pela edição simples do serviço.',
         ]);
+
+        if ($data['maintenance_type'] === 'internal') {
+            $data['supplier_id'] = null;
+            $data['provider_name'] = null;
+            $data['provider_document'] = null;
+        } else {
+            $data['provider_document'] = preg_replace('/\D+/', '', (string) ($data['provider_document'] ?? '')) ?: null;
+            $snapshot = app(SupplierSnapshotService::class)->resolveMaintenanceProvider(
+                $vehicle->tenant_id, $data['supplier_id'] ?? null,
+                $data['provider_name'] ?? null, $data['provider_document']
+            );
+            $data['supplier_id'] = $snapshot['supplier_id'];
+            $data['provider_name'] = $snapshot['supplier_name'];
+            $data['provider_document'] = $snapshot['provider_document'];
+        }
 
         MaintenanceService::updateItem($maintenance, $item, $data, auth()->user());
 
@@ -588,7 +623,9 @@ class MaintenanceController extends Controller
             'performed_km' => ['nullable', 'integer', 'min:0'],
             'performed_hours' => ['nullable', 'integer', 'min:0'],
             'extra_cost' => ['nullable', 'numeric', 'min:0'],
+            'supplier_id' => ['nullable', 'integer'],
             'provider_name' => ['nullable', 'string', 'max:255'],
+            'provider_document' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'fields' => ['nullable', 'array'],
             'change_reason' => ['required', 'string', 'min:10', 'max:2000'],
@@ -600,6 +637,21 @@ class MaintenanceController extends Controller
             'reason.required' => 'Selecione o motivo da manutenção.',
             'reason.in' => 'Selecione um motivo de manutenção válido.',
         ]);
+
+        if ($data['maintenance_type'] === 'internal') {
+            $data['supplier_id'] = null;
+            $data['provider_name'] = null;
+            $data['provider_document'] = null;
+        } else {
+            $data['provider_document'] = preg_replace('/\D+/', '', (string) ($data['provider_document'] ?? '')) ?: null;
+            $snapshot = app(SupplierSnapshotService::class)->resolveMaintenanceProvider(
+                $vehicle->tenant_id, $data['supplier_id'] ?? null,
+                $data['provider_name'] ?? null, $data['provider_document']
+            );
+            $data['supplier_id'] = $snapshot['supplier_id'];
+            $data['provider_name'] = $snapshot['supplier_name'];
+            $data['provider_document'] = $snapshot['provider_document'];
+        }
 
         if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {
             $this->authorizeMaintenancePermission('maintenance.consume_stock');

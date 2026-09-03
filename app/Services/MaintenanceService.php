@@ -307,7 +307,8 @@ class MaintenanceService
                 'total_cost' => $totalCost,
                 'extra_cost' => $totalCost,
                 'reason' => $data['reason'] ?? null,
-                'provider_name' => null,
+                'provider_name' => $data['provider_name'] ?? null,
+                'supplier_id' => $data['supplier_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
             if ((float) ($data['extra_cost'] ?? 0) > 0) {
@@ -460,6 +461,7 @@ class MaintenanceService
                     $executionType === 'external'
                         ? ($data['provider_name'] ?? null)
                         : null,
+                'supplier_id' => $executionType === 'external' ? ($data['supplier_id'] ?? null) : null,
                 'provider_document' => $executionType === 'external' ? ($data['provider_document'] ?? null) : null,
                 'fiscal_document_number' => $executionType === 'external' ? ($data['fiscal_document_number'] ?? null) : null,
                 'fiscal_document_issued_at' => $executionType === 'external' ? ($data['fiscal_document_issued_at'] ?? null) : null,
@@ -658,6 +660,8 @@ class MaintenanceService
                 'maintenance_type',
                 'performed_at',
                 'provider_name',
+                'supplier_id',
+                'provider_document',
                 'extra_cost',
                 'total_cost',
                 'notes',
@@ -685,6 +689,8 @@ class MaintenanceService
                 'provider_name' => $data['maintenance_type'] === 'external'
                     ? ($data['provider_name'] ?? null)
                     : null,
+                'supplier_id' => $data['maintenance_type'] === 'external' ? ($data['supplier_id'] ?? null) : null,
+                'provider_document' => $data['maintenance_type'] === 'external' ? ($data['provider_document'] ?? null) : null,
                 'notes' => $data['notes'] ?? null,
             ];
 
