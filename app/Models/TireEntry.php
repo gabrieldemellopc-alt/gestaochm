@@ -11,6 +11,7 @@ class TireEntry extends Model
         'location_id',
         'entry_date',
         'supplier_name',
+        'supplier_id',
         'invoice_number',
         'quantity',
         'unit_cost',
@@ -64,6 +65,7 @@ class TireEntry extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+    public function supplier(){return $this->belongsTo(Supplier::class);}
 
     public function canceller()
     {

@@ -17,6 +17,7 @@ class FuelReceipt extends Model
         'unit_cost',
         'total_cost',
         'supplier_name',
+        'supplier_id',
         'invoice_number',
         'responsible_user_id',
         'notes',
@@ -72,4 +73,5 @@ class FuelReceipt extends Model
     {
         return $this->belongsTo(User::class, 'cancelled_by');
     }
+    public function supplier(){return $this->belongsTo(Supplier::class);}
 }

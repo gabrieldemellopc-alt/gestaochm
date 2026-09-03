@@ -37,11 +37,13 @@ class FuelService
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
             'total_cost' => ['nullable', 'numeric', 'min:0'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
+            'supplier_id' => ['nullable', 'integer'],
             'invoice_number' => ['nullable', 'string', 'max:255'],
             'responsible_user_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string'],
         ])->validate();
 
+        $validated=array_merge($validated,app(SupplierSnapshotService::class)->resolve($context['tenant_id'],$validated['supplier_id']??null,$validated['supplier_name']??null));
         return DB::transaction(function () use ($context, $validated) {
             $tank = $this->lockTankForContext((int) $validated['fuel_tank_id'], $context);
             $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
@@ -83,6 +85,7 @@ class FuelService
                 'unit_cost' => $unitCost,
                 'total_cost' => $totalCost,
                 'supplier_name' => $validated['supplier_name'] ?? null,
+                'supplier_id' => $validated['supplier_id'] ?? null,
                 'invoice_number' => $validated['invoice_number'] ?? null,
                 'responsible_user_id' => $responsibleUserId,
                 'notes' => $validated['notes'] ?? null,
@@ -142,6 +145,7 @@ class FuelService
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
             'total_cost' => ['nullable', 'numeric', 'min:0'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
+            'supplier_id' => ['nullable', 'integer'],
             'document_number' => ['nullable', 'string', 'max:255'],
             'responsible_user_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string'],
@@ -165,6 +169,7 @@ class FuelService
             ]);
         }
 
+        if ($source === FuelFilling::SOURCE_EXTERNAL_STATION) $validated=array_merge($validated,app(SupplierSnapshotService::class)->resolve($context['tenant_id'],$validated['supplier_id']??null,$validated['supplier_name']??null));
         return DB::transaction(function () use ($context, $validated, $source) {
             $vehicle = $this->vehicleForContext((int) $validated['vehicle_id'], $context);
             $this->validateVehicleCounters($vehicle, $validated);
@@ -225,6 +230,7 @@ class FuelService
                 'unit_cost' => $unitCost,
                 'total_cost' => $totalCost,
                 'supplier_name' => $source === FuelFilling::SOURCE_EXTERNAL_STATION ? ($validated['supplier_name'] ?? null) : null,
+                'supplier_id' => $source === FuelFilling::SOURCE_EXTERNAL_STATION ? ($validated['supplier_id'] ?? null) : null,
                 'document_number' => $source === FuelFilling::SOURCE_EXTERNAL_STATION ? ($validated['document_number'] ?? null) : null,
                 'responsible_user_id' => $responsibleUserId,
                 'notes' => $validated['notes'] ?? null,

@@ -13,6 +13,7 @@ class TireRetread extends Model
         'new_tread_depth',
         'previous_tread_reference',
         'provider_name',
+        'supplier_id',
         'notes',
         'cancelled_at',
         'cancelled_by',
@@ -41,6 +42,7 @@ class TireRetread extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+    public function supplier(){return $this->belongsTo(Supplier::class);}
 
     public function canceller()
     {

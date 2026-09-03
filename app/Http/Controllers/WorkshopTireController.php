@@ -509,6 +509,7 @@ class WorkshopTireController extends Controller
                     'max:150',
 
                 ],
+                'supplier_id' => ['nullable','integer'],
 
 
 
@@ -578,7 +579,7 @@ class WorkshopTireController extends Controller
 
 
 
-        DB::transaction(function () use ($data, $user, $activeLocation) {
+            $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['supplier_name']??null)); DB::transaction(function () use ($data, $user, $activeLocation) {
 
 
             $quantity =
@@ -621,6 +622,7 @@ class WorkshopTireController extends Controller
                     'supplier_name' =>
 
                         $data['supplier_name'] ?? null,
+                    'supplier_id'=>$data['supplier_id']??null,
 
 
 
@@ -1188,10 +1190,11 @@ class WorkshopTireController extends Controller
             'new_tread_depth' => ['required', 'numeric', 'min:0.01', 'max:50'],
             'retreaded_at' => ['required', 'date', 'before_or_equal:today'],
             'provider_name' => ['required', 'string', 'max:150'],
+            'supplier_id' => ['nullable','integer'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(function () use ($data, $tire, $user, $activeLocation) {
+        $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['provider_name']??null)); DB::transaction(function () use ($data, $tire, $user, $activeLocation) {
             $lockedTire = Tire::query()
                 ->where('id', $tire->id)
                 ->where('tenant_id', $user->tenant_id)
@@ -1229,6 +1232,7 @@ class WorkshopTireController extends Controller
                 'new_tread_depth' => $data['new_tread_depth'],
                 'previous_tread_reference' => $previousTreadReference,
                 'provider_name' => $data['provider_name'],
+                'supplier_id'=>$data['supplier_id']??null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $user->id,
             ]);

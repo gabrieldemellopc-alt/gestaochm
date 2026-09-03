@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration{public function up():void{foreach(['fuel_receipts','fuel_fillings','tire_entries','tire_retreads'] as $table)Schema::table($table,function(Blueprint $t)use($table){$t->foreignId('supplier_id')->nullable()->after($table==='tire_retreads'?'provider_name':'supplier_name')->constrained('suppliers')->nullOnDelete();});}public function down():void{foreach(['fuel_receipts','fuel_fillings','tire_entries','tire_retreads'] as $table)Schema::table($table,function(Blueprint $t){$t->dropConstrainedForeignId('supplier_id');});}};

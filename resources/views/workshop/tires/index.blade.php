@@ -1717,7 +1717,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                     <label>Fornecedor / quem recapou</label>
 
-                    <input type="text" name="provider_name" maxlength="150" required>
+                    <x-supplier-autocomplete text-name="provider_name" />
 
                 </div>
 

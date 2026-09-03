@@ -31,6 +31,7 @@ class FuelFilling extends Model
         'unit_cost',
         'total_cost',
         'supplier_name',
+        'supplier_id',
         'document_number',
         'responsible_user_id',
         'notes',
@@ -104,6 +105,7 @@ class FuelFilling extends Model
     {
         return $this->hasMany(VehicleUpdateLog::class);
     }
+    public function supplier(){return $this->belongsTo(Supplier::class);}
 
     public function kmReviewer()
     {

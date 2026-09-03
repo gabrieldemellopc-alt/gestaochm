@@ -269,6 +269,7 @@ class FuelTankController extends Controller
                 'unit_cost',
                 'total_cost',
                 'supplier_name',
+                'supplier_id',
                 'invoice_number',
                 'notes',
             ]));
@@ -321,6 +322,7 @@ class FuelTankController extends Controller
                 'unit_cost',
                 'total_cost',
                 'supplier_name',
+                'supplier_id',
                 'document_number',
                 'notes',
                 'km_reading_confirmed',
