@@ -21,7 +21,14 @@
         @forelse($items as $supplier)<tr>
             <td><strong>{{ $supplier->displayName() }}</strong>@if($supplier->legal_name && $supplier->legal_name !== $supplier->displayName())<small>{{ $supplier->legal_name }}</small>@endif</td>
             <td>{{ $supplier->formattedDocument() ?: '—' }}</td>
-            <td><div class="suppliers-aliases">@forelse($supplier->aliases->take(3) as $alias)<span>{{ $alias->alias }}</span>@empty<small>—</small>@endforelse@if($supplier->aliases->count()>3)<small>+{{ $supplier->aliases->count()-3 }}</small>@endif</div></td>
+            <td><div class="suppliers-aliases">
+                @if($supplier->aliases->isNotEmpty())
+                    @foreach($supplier->aliases->take(3) as $alias)<span>{{ $alias->alias }}</span>@endforeach
+                    @if($supplier->aliases->count() > 3)<small>+{{ $supplier->aliases->count() - 3 }}</small>@endif
+                @else
+                    <small>—</small>
+                @endif
+            </div></td>
             <td><span class="suppliers-status {{ $supplier->active ? 'active' : 'inactive' }}">{{ $supplier->active ? 'Ativo' : 'Inativo' }}</span></td>
             <td><div class="suppliers-actions"><button type="button" @click='openEdit(@js(["id"=>$supplier->id,"trade_name"=>$supplier->trade_name,"legal_name"=>$supplier->legal_name,"document"=>$supplier->formattedDocument(),"active"=>(bool)$supplier->active]))'><i class="bi bi-pencil"></i> Editar</button><button type="button" @click='toggle(@js(["id"=>$supplier->id,"trade_name"=>$supplier->trade_name,"legal_name"=>$supplier->legal_name,"document"=>$supplier->formattedDocument(),"active"=>(bool)$supplier->active,"name"=>$supplier->displayName()]))'><i class="bi {{ $supplier->active ? 'bi-toggle-on' : 'bi-toggle-off' }}"></i> {{ $supplier->active ? 'Desativar' : 'Ativar' }}</button></div></td>
         </tr>@empty
