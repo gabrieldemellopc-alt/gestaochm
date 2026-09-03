@@ -1,45 +1,48 @@
 @extends('layouts.app')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/pages/suppliers.css') }}?v=1">
+@endpush
+
 @section('content')
-<main class="container py-4">
-    <header class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
-        <div>
-            <h1 class="mb-1">Fornecedores (CNPJ)</h1>
-            <p class="text-muted mb-0">Cadastro central de fornecedores e prestadores utilizados no CHM.</p>
-        </div>
-        <a class="btn btn-primary" href="#novo-fornecedor"><i class="bi bi-plus-lg"></i> Novo fornecedor</a>
+<div class="suppliers-page" x-data="supplierAdmin()">
+    <header class="suppliers-header">
+        <div><span>Gestão administrativa</span><h1>Fornecedores (CNPJ)</h1><p>Cadastro central de fornecedores e prestadores utilizados no CHM.</p></div>
+        <button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button>
     </header>
 
-    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+    @if(session('success'))<div class="suppliers-alert success"><i class="bi bi-check-circle"></i>{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="suppliers-alert warning"><i class="bi bi-exclamation-triangle"></i>{{ $errors->first() }}</div>@endif
 
-    <form method="get" class="card card-body mb-3">
-        <div class="input-group"><input class="form-control" name="q" value="{{ request('q') }}" placeholder="Buscar por nome, alias ou CPF/CNPJ"><button class="btn btn-outline-secondary">Buscar</button></div>
-    </form>
+    <form method="get" class="suppliers-search"><i class="bi bi-search"></i><input name="q" value="{{ request('q') }}" placeholder="Buscar por nome, alias ou CPF/CNPJ...">@if(request('q'))<a href="{{ route('suppliers.index') }}" aria-label="Limpar busca"><i class="bi bi-x-lg"></i> Limpar</a>@endif</form>
 
-    <section id="novo-fornecedor" class="card mb-4">
-        <div class="card-body"><h2 class="h5">Novo fornecedor</h2>
-            <form method="post" action="{{ route('suppliers.store') }}" class="row g-3">@csrf
-                <div class="col-md-4"><label class="form-label">Nome fantasia / principal</label><input class="form-control" name="trade_name" required></div>
-                <div class="col-md-3"><label class="form-label">Razão social</label><input class="form-control" name="legal_name"></div>
-                <div class="col-md-3"><label class="form-label">CPF/CNPJ</label><input class="form-control" name="document"></div>
-                <div class="col-md-2"><label class="form-label">Alias</label><input class="form-control" name="aliases[]"></div>
-                <div class="col-12 d-flex justify-content-between align-items-center"><label class="form-check"><input class="form-check-input" type="checkbox" name="active" value="1" checked> <span class="form-check-label">Ativo</span></label><button class="btn btn-primary">Cadastrar</button></div>
-            </form>
-        </div>
+    <section class="suppliers-surface">
+        <div class="suppliers-table-wrap"><table class="suppliers-table"><thead><tr><th>Fornecedor</th><th>CPF/CNPJ</th><th>Aliases</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+        @forelse($items as $supplier)<tr>
+            <td><strong>{{ $supplier->displayName() }}</strong>@if($supplier->legal_name && $supplier->legal_name !== $supplier->displayName())<small>{{ $supplier->legal_name }}</small>@endif</td>
+            <td>{{ $supplier->formattedDocument() ?: '—' }}</td>
+            <td><div class="suppliers-aliases">@forelse($supplier->aliases->take(3) as $alias)<span>{{ $alias->alias }}</span>@empty<small>—</small>@endforelse@if($supplier->aliases->count()>3)<small>+{{ $supplier->aliases->count()-3 }}</small>@endif</div></td>
+            <td><span class="suppliers-status {{ $supplier->active ? 'active' : 'inactive' }}">{{ $supplier->active ? 'Ativo' : 'Inativo' }}</span></td>
+            <td><div class="suppliers-actions"><button type="button" @click='openEdit(@js(["id"=>$supplier->id,"trade_name"=>$supplier->trade_name,"legal_name"=>$supplier->legal_name,"document"=>$supplier->formattedDocument(),"active"=>(bool)$supplier->active]))'><i class="bi bi-pencil"></i> Editar</button><button type="button" @click='toggle(@js(["id"=>$supplier->id,"trade_name"=>$supplier->trade_name,"legal_name"=>$supplier->legal_name,"document"=>$supplier->formattedDocument(),"active"=>(bool)$supplier->active,"name"=>$supplier->displayName()]))'><i class="bi {{ $supplier->active ? 'bi-toggle-on' : 'bi-toggle-off' }}"></i> {{ $supplier->active ? 'Desativar' : 'Ativar' }}</button></div></td>
+        </tr>@empty
+            <tr><td colspan="5"><div class="suppliers-empty"><i class="bi bi-buildings"></i><strong>Nenhum fornecedor cadastrado</strong><p>Cadastre o primeiro fornecedor para começar a reutilizar CNPJ e nomes nos lançamentos.</p><button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button></div></td></tr>
+        @endforelse
+        </tbody></table></div>
+        <div class="suppliers-pagination">{{ $items->links() }}</div>
     </section>
 
-    <section class="card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
-        <thead><tr><th>Fornecedor</th><th>CPF/CNPJ</th><th>Aliases</th><th>Status</th><th class="text-end">Ações</th></tr></thead>
-        <tbody>@forelse($items as $supplier)<tr>
-            <td><strong>{{ $supplier->displayName() }}</strong>@if($supplier->legal_name && $supplier->legal_name !== $supplier->displayName())<small class="d-block text-muted">{{ $supplier->legal_name }}</small>@endif</td>
-            <td>{{ $supplier->formattedDocument() ?: '—' }}</td>
-            <td><small class="text-muted">{{ $supplier->aliases->pluck('alias')->join(' · ') ?: '—' }}</small></td>
-            <td><span class="badge {{ $supplier->active ? 'text-bg-success' : 'text-bg-secondary' }}">{{ $supplier->active ? 'Ativo' : 'Inativo' }}</span></td>
-            <td class="text-end"><details class="d-inline-block text-start"><summary class="btn btn-sm btn-outline-secondary">Editar</summary><form method="post" action="{{ route('suppliers.update', $supplier) }}" class="card card-body mt-2" style="min-width:290px">@csrf @method('PUT')
-                <input class="form-control form-control-sm mb-2" name="trade_name" value="{{ $supplier->trade_name }}" placeholder="Nome fantasia"><input class="form-control form-control-sm mb-2" name="legal_name" value="{{ $supplier->legal_name }}" placeholder="Razão social"><input class="form-control form-control-sm mb-2" name="document" value="{{ $supplier->formattedDocument() }}" placeholder="CPF/CNPJ"><input class="form-control form-control-sm mb-2" name="aliases[]" placeholder="Adicionar alias"><input type="hidden" name="active" value="0"><label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="active" value="1" @checked($supplier->active)> Ativo</label><button class="btn btn-sm btn-primary">Salvar</button></form></details></td>
-        </tr>@empty<tr><td colspan="5" class="text-center text-muted py-4">Nenhum fornecedor encontrado.</td></tr>@endforelse</tbody>
-    </table></div></section>
-    <div class="mt-3">{{ $items->links() }}</div>
-</main>
+    <div class="suppliers-modal-backdrop" x-show="modal.open" x-cloak @click.self="close()"><section class="suppliers-modal" role="dialog" aria-modal="true"><header><div><span x-text="modal.editing ? 'Editar cadastro' : 'Novo cadastro'"></span><h2 x-text="modal.editing ? 'Editar fornecedor' : 'Novo fornecedor'"></h2></div><button type="button" @click="close()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button></header>
+        <form method="post" :action="modal.action"><template x-if="modal.editing"><input type="hidden" name="_method" value="PUT"></template>@csrf
+            <label>Nome fantasia / principal *<input name="trade_name" x-model="modal.trade_name" placeholder="Casa da Borracharia" required></label>
+            <label>Razão social<input name="legal_name" x-model="modal.legal_name" placeholder="Casa da Borracharia Ltda"></label>
+            <label>CPF/CNPJ<input name="document" x-model="modal.document" @input="formatDocument()" placeholder="00.000.000/0000-00" inputmode="numeric"></label>
+            <label>Aliases<input name="aliases[]" placeholder="Casa Borracharia, Casa da Borracha"><small>Nomes alternativos usados para localizar este fornecedor.</small></label>
+            <label class="suppliers-checkbox"><input type="hidden" name="active" value="0"><input type="checkbox" name="active" value="1" x-model="modal.active"> Fornecedor ativo</label>
+            <footer><button type="button" class="suppliers-secondary-button" @click="close()">Cancelar</button><button class="suppliers-primary-button" x-text="modal.editing ? 'Salvar alterações' : 'Cadastrar fornecedor'"></button></footer>
+        </form>
+    </section></div>
+
+    <form x-ref="toggleForm" method="post" :action="modal.action">@csrf @method('PUT')<input type="hidden" name="trade_name" x-model="modal.trade_name"><input type="hidden" name="legal_name" x-model="modal.legal_name"><input type="hidden" name="document" x-model="modal.document"><input type="hidden" name="active" x-model="modal.active"></form>
+</div>
+<script>function supplierAdmin(){return{modal:{open:false,editing:false,action:'',trade_name:'',legal_name:'',document:'',active:true},openCreate(){this.modal={open:true,editing:false,action:@js(route('suppliers.store')),trade_name:'',legal_name:'',document:'',active:true}},openEdit(s){this.modal={open:true,editing:true,action:`{{ url('/suppliers') }}/${s.id}`,trade_name:s.trade_name||'',legal_name:s.legal_name||'',document:s.document||'',active:s.active}},close(){this.modal.open=false},formatDocument(){let d=this.modal.document.replace(/\D/g,'').slice(0,14);this.modal.document=d.length<=11?d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2'):d.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2')},toggle(s){let active=!s.active;if(!confirm(`${active?'Ativar':'Desativar'} fornecedor ${s.name}?`))return;this.modal={open:false,editing:true,action:`{{ url('/suppliers') }}/${s.id}`,trade_name:s.trade_name||'',legal_name:s.legal_name||'',document:s.document||'',active:active};this.$refs.toggleForm.submit()}}}</script>
 @endsection
