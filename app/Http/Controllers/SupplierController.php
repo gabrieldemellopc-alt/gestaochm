@@ -7,6 +7,7 @@ use App\Services\Permissions\ProfilePermissionService;
 use App\Services\SupplierNormalizer;
 use App\Services\SupplierSearchService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class SupplierController extends Controller
 {
@@ -57,8 +58,12 @@ class SupplierController extends Controller
     {
         $data = $request->validate(['trade_name'=>['nullable','string','max:255','required_without:legal_name'], 'legal_name'=>['nullable','string','max:255'], 'document'=>['nullable','string','max:20'], 'active'=>['nullable','boolean'], 'aliases'=>['nullable','array'], 'aliases.*'=>['string','max:255']]);
         $document = $normalizer->normalizeDocument($data['document'] ?? null);
-        if ($document && ! $normalizer->validDocument($document)) abort(422, 'CPF/CNPJ inválido.');
-        if ($document && Supplier::forTenant($request->user()->tenant_id)->where('document', $document)->when($supplier, fn ($query) => $query->whereKeyNot($supplier->id))->exists()) abort(422, 'Este CPF/CNPJ já está cadastrado neste tenant.');
+        if ($document && ! $normalizer->validDocument($document)) {
+            throw ValidationException::withMessages(['document' => 'Informe um CPF ou CNPJ válido.']);
+        }
+        if ($document && Supplier::forTenant($request->user()->tenant_id)->where('document', $document)->when($supplier, fn ($query) => $query->whereKeyNot($supplier->id))->exists()) {
+            throw ValidationException::withMessages(['document' => 'Este CPF/CNPJ já está cadastrado neste tenant.']);
+        }
         $data['document'] = $document; $data['document_type'] = $normalizer->detectDocumentType($document); $data['normalized_name'] = $normalizer->normalizeName($data['trade_name'] ?: $data['legal_name']); $data['active'] = $request->boolean('active', true); unset($data['aliases']);
         return $data;
     }
