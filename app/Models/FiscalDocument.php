@@ -9,4 +9,5 @@ class FiscalDocument extends Model
     public function movements() { return $this->hasMany(StockMovement::class); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
     public function location() { return $this->belongsTo(Location::class); }
+    public function supplier() { return $this->belongsTo(Supplier::class); }
 }

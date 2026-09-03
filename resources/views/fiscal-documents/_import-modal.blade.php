@@ -22,6 +22,24 @@
                             <label>Valor produtos<input type="number" min="0" step="0.01" x-model.number="note.products_total"></label><label>Valor da nota<input type="number" min="0" step="0.01" x-model.number="note.total_amount"></label>
                             <label>Destinatário<input x-model="note.recipient_name"></label><label>CNPJ destinatário<input x-model="note.recipient_cnpj"></label><label>Desconto<input type="number" min="0" step="0.01" x-model.number="note.discount_total"></label><label>Frete<input type="number" min="0" step="0.01" x-model.number="note.freight_total"></label>
                         </div>
+                        <section class="fiscal-supplier-recognition" x-show="note.supplier_recognition" x-effect="if(note.supplier_recognition?.supplier_id && !note.supplier_id) note.supplier_id=note.supplier_recognition.supplier_id">
+                            <template x-if="note.supplier_recognition?.supplier_id">
+                                <div class="recognized">
+                                    <strong>✓ Fornecedor cadastrado</strong>
+                                    <span x-text="note.supplier_recognition.supplier_name"></span>
+                                    <small x-text="'CNPJ ' + (note.supplier_recognition.supplier_document || note.supplier_cnpj || '')"></small>
+                                    <p x-show="note.supplier_recognition.supplier_name !== note.supplier_name">Fornecedor reconhecido pelo CNPJ; o nome do documento será preservado como snapshot.</p>
+                                    <label x-show="note.supplier_recognition.supplier_name !== note.supplier_name"><input type="checkbox" x-model="note.add_supplier_alias"> Adicionar o nome do documento como nome alternativo</label>
+                                </div>
+                            </template>
+                            <template x-if="!note.supplier_recognition?.supplier_id && note.supplier_recognition?.valid_cnpj">
+                                <div class="unregistered"><strong>Fornecedor ainda não cadastrado</strong><span x-text="note.supplier_name"></span><small x-text="'CNPJ ' + (note.supplier_cnpj || '')"></small><button type="button" class="fiscal-button secondary" @click="note.create_supplier=true;note.supplier_id=null">Cadastrar fornecedor</button><button type="button" class="fiscal-button secondary" @click="note.create_supplier=false;note.supplier_id=null">Continuar sem cadastrar</button></div>
+                            </template>
+                            <template x-if="!note.supplier_recognition?.valid_cnpj && (note.supplier_recognition?.suggestions || []).length">
+                                <div class="suggested"><strong>Talvez este fornecedor já esteja cadastrado</strong><template x-for="supplier in note.supplier_recognition.suggestions" :key="supplier.id"><button type="button" @click="note.supplier_id=supplier.id;note.create_supplier=false"><span x-text="supplier.name"></span><small x-text="supplier.formatted_document || 'Sem CPF/CNPJ'"></small></button></template><button type="button" class="fiscal-button secondary" @click="note.supplier_id=null">Ignorar</button><button type="button" class="fiscal-button secondary" @click="note.create_supplier=true;note.supplier_id=null">Cadastrar novo</button></div>
+                            </template>
+                            <p class="fiscal-alert" x-show="!note.supplier_recognition?.valid_cnpj && note.supplier_cnpj">CNPJ importado não pôde ser validado. Revise-o antes de confirmar.</p>
+                        </section>
                         <div class="fiscal-import-summary"><strong x-text="note.items.filter(i=>i.action!=='ignore').length+' importáveis'"></strong><span x-text="money(validatedTotal())"></span><span :class="Math.abs((note.total_amount||0)-validatedTotal())>.02?'has-difference':''" x-text="'Divergência: '+money((note.total_amount||0)-validatedTotal())"></span></div>
                         <div class="fiscal-import-items">
                             <div class="fiscal-import-empty" x-show="note.items.length===0">Nenhum item foi extraído. Use “Adicionar item manualmente” ou volte e envie o XML da NF-e.</div>
