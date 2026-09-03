@@ -1,0 +1,4 @@
+<?php
+namespace App\Models;
+use App\Services\SupplierNormalizer; use Illuminate\Database\Eloquent\Model;
+class Supplier extends Model { protected $fillable=['tenant_id','legal_name','trade_name','document','document_type','normalized_name','active']; protected $casts=['active'=>'boolean']; public function tenant(){return $this->belongsTo(Tenant::class);} public function aliases(){return $this->hasMany(SupplierAlias::class);} public function scopeForTenant($q,int $tenantId){return $q->where('tenant_id',$tenantId);} public function scopeActive($q){return $q->where('active',true);} public function displayName():string{return $this->trade_name ?: ($this->legal_name ?: 'Fornecedor sem nome');} public function formattedDocument():?string{return app(SupplierNormalizer::class)->formatDocument($this->document);} public function documentLabel():?string{return $this->document_type === 'cnpj'?'CNPJ':($this->document_type === 'cpf'?'CPF':null);} }

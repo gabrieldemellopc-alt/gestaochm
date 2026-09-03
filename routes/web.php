@@ -42,6 +42,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockController;
 
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SupplierController;
 
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\VehicleReadingCorrectionController;
@@ -101,6 +102,10 @@ Route::post('/reading-corrections/evidence/{token}', [VehicleReadingCorrectionCo
 
 
 Route::middleware('auth')->group(function () {
+    Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+    Route::get('/suppliers/search', [SupplierController::class, 'search'])->name('suppliers.search');
 
     Route::patch('/locations/{location}/toggle-active', [LocationController::class, 'toggleActive'])
         ->name('locations.toggle-active');
