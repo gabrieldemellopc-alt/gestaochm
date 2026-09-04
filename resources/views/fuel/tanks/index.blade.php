@@ -589,7 +589,7 @@
 
                         <label class="fuel-span-6 is-hidden" data-source-field="external">
                             Fornecedor/posto
-                            <x-supplier-autocomplete value="{{ old('supplier_name') }}" placeholder="Ex.: Posto Central" />
+                            <x-supplier-autocomplete value="{{ old('supplier_name') }}" document-name="supplier_document" document-value="{{ old('supplier_document') }}" placeholder="Ex.: Posto Central" />
                         </label>
 
                         <label class="fuel-span-6 is-hidden" data-source-field="external">

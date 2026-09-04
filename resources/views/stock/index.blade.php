@@ -1882,7 +1882,7 @@
 
             <div class="form-group stock-entry-only stock-span-6">
                 <label>Fornecedor</label>
-                <x-supplier-autocomplete />
+                <x-supplier-autocomplete document-name="supplier_document" />
             </div>
 
             <div class="form-group stock-entry-only stock-span-6">

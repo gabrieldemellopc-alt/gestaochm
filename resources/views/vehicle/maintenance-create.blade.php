@@ -496,7 +496,7 @@
 
                         <div class="form-group">
                             <label>Oficina / prestador principal</label>
-                            <x-supplier-autocomplete text-name="provider_name" id-name="supplier_id" value="{{ old('provider_name') }}" supplier-id-value="{{ old('supplier_id') }}" placeholder="Opcional — nome da oficina ou prestador" />
+                            <x-supplier-autocomplete text-name="provider_name" id-name="supplier_id" document-name="supplier_document" value="{{ old('provider_name') }}" supplier-id-value="{{ old('supplier_id') }}" document-value="{{ old('supplier_document') }}" placeholder="Opcional — nome da oficina ou prestador" />
                         </div>
 
                         <div class="form-group">

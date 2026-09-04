@@ -528,17 +528,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                         <label>Fornecedor</label>
 
-                        <input
-
-                            type="text"
-
-                            name="supplier_name"
-
-                            value="{{ old('supplier_name') }}"
-
-                            placeholder="Ex: Pneus Bahia"
-
-                        >
+                        <x-supplier-autocomplete value="{{ old('supplier_name') }}" document-name="supplier_document" document-value="{{ old('supplier_document') }}" placeholder="Ex.: Pneus Bahia" />
 
                     </div>
 
@@ -1717,7 +1707,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                     <label>Fornecedor / quem recapou</label>
 
-                    <x-supplier-autocomplete text-name="provider_name" />
+                    <x-supplier-autocomplete text-name="provider_name" document-name="supplier_document" />
 
                 </div>
 

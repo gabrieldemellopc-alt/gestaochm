@@ -103,7 +103,7 @@
                         </select>
                     </label>
                     <label class="chm-wf-field chm-wf-wide">Descrição<input class="chm-wf-input" name="description" required></label>
-                    <label class="chm-wf-field">Fornecedor<x-supplier-autocomplete /></label>
+                    <label class="chm-wf-field">Fornecedor<x-supplier-autocomplete document-name="supplier_document" /></label>
                     <label class="chm-wf-field">NF/documento<input class="chm-wf-input" name="invoice_number"></label>
                     <label class="chm-wf-field">Valor<input class="chm-wf-input" type="number" name="amount" step="0.01" min="0.01" required></label>
                     <label class="chm-wf-field chm-wf-wide">Observação<textarea class="chm-wf-textarea" name="notes" rows="3"></textarea></label>
