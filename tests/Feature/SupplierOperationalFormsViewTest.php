@@ -65,6 +65,11 @@ class SupplierOperationalFormsViewTest extends TestCase
         $this->assertStringContainsString('aliasesText:(s.aliases||[]).join', $view);
         $this->assertStringContainsString('suppliers-status-toggle', $view);
         $this->assertStringContainsString('Desativar este fornecedor?', $view);
+        $this->assertStringContainsString('window.supplierRecords', $view);
+        $this->assertStringContainsString('openEdit(suppliers[', $view);
+        $this->assertStringContainsString('toggle(suppliers[', $view);
+        $this->assertStringContainsString('form.requestSubmit()', $view);
+        $this->assertStringContainsString('type="button" @click="openEdit', $view);
         $this->assertStringContainsString("whereNotIn('normalized_alias'", $controller);
     }
 }
