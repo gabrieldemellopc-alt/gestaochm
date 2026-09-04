@@ -12,6 +12,7 @@ class TireEntry extends Model
         'entry_date',
         'supplier_name',
         'supplier_id',
+        'supplier_document',
         'invoice_number',
         'quantity',
         'unit_cost',

@@ -17,7 +17,6 @@ use Illuminate\Validation\Rule;
 use App\Services\MaintenanceService;
 use App\Services\MaintenanceMaterialService;
 use App\Services\StockEntryService;
-use App\Services\SupplierSnapshotService;
 use App\Services\TenantFiscalSettingService;
 use App\Services\AggregatedVehiclePolicy;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -80,13 +79,13 @@ class MaintenanceController extends Controller
             'used_at' => ['required', 'date', Rule::date()->afterOrEqual($maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at)->beforeOrEqual(now())],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'supplier_id' => ['nullable', 'integer'],
+            'supplier_document' => ['nullable', 'string', 'max:20'],
             'invoice_number' => [Rule::requiredIf($requiredInvoice), 'nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ], [
             'used_at.after_or_equal' => 'A data e hora do uso não pode ser anterior à abertura da manutenção.',
             'used_at.before_or_equal' => 'A data e hora do uso não pode ser futura.',
         ]);
-        $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->resolve($vehicle->tenant_id,$data['supplier_id']??null,$data['supplier_name']??null));
         if (empty($data['stock_item_id'])) {
             if (! in_array($data['unit'], ['UNID', 'L', 'KG', 'G', 'Outro'], true)) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['unit' => 'Selecione uma unidade válida.']);
@@ -208,6 +207,7 @@ class MaintenanceController extends Controller
             'extra_cost' => ['nullable', 'numeric', 'min:0'],
             'supplier_id' => ['nullable', 'integer'],
             'provider_name' => ['nullable', 'string', 'max:255'],
+            'supplier_document' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string'],
 
             'service_status' => [
@@ -225,12 +225,6 @@ class MaintenanceController extends Controller
                 ),
             ],
         ]);
-
-        $data = array_merge($data, app(SupplierSnapshotService::class)->resolve(
-            $vehicle->tenant_id,
-            $data['supplier_id'] ?? null,
-            $data['provider_name'] ?? null,
-        ));
 
         $result = MaintenanceService::create($data, $vehicle);
 
@@ -498,15 +492,6 @@ class MaintenanceController extends Controller
             $data['provider_document'] = null;
             $data['fiscal_document_number'] = null;
             $data['fiscal_document_issued_at'] = null;
-        } else {
-            $data['provider_document'] = preg_replace('/\D+/', '', (string) ($data['provider_document'] ?? '')) ?: null;
-            $snapshot = app(SupplierSnapshotService::class)->resolveMaintenanceProvider(
-                $vehicle->tenant_id, $data['supplier_id'] ?? null,
-                $data['provider_name'] ?? null, $data['provider_document']
-            );
-            $data['supplier_id'] = $snapshot['supplier_id'];
-            $data['provider_name'] = $snapshot['supplier_name'];
-            $data['provider_document'] = $snapshot['provider_document'];
         }
 
         if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {
@@ -573,15 +558,6 @@ class MaintenanceController extends Controller
             $data['supplier_id'] = null;
             $data['provider_name'] = null;
             $data['provider_document'] = null;
-        } else {
-            $data['provider_document'] = preg_replace('/\D+/', '', (string) ($data['provider_document'] ?? '')) ?: null;
-            $snapshot = app(SupplierSnapshotService::class)->resolveMaintenanceProvider(
-                $vehicle->tenant_id, $data['supplier_id'] ?? null,
-                $data['provider_name'] ?? null, $data['provider_document']
-            );
-            $data['supplier_id'] = $snapshot['supplier_id'];
-            $data['provider_name'] = $snapshot['supplier_name'];
-            $data['provider_document'] = $snapshot['provider_document'];
         }
 
         MaintenanceService::updateItem($maintenance, $item, $data, auth()->user());
@@ -642,15 +618,6 @@ class MaintenanceController extends Controller
             $data['supplier_id'] = null;
             $data['provider_name'] = null;
             $data['provider_document'] = null;
-        } else {
-            $data['provider_document'] = preg_replace('/\D+/', '', (string) ($data['provider_document'] ?? '')) ?: null;
-            $snapshot = app(SupplierSnapshotService::class)->resolveMaintenanceProvider(
-                $vehicle->tenant_id, $data['supplier_id'] ?? null,
-                $data['provider_name'] ?? null, $data['provider_document']
-            );
-            $data['supplier_id'] = $snapshot['supplier_id'];
-            $data['provider_name'] = $snapshot['supplier_name'];
-            $data['provider_document'] = $snapshot['provider_document'];
         }
 
         if ($this->procedureUsesStock($data['procedure_id'], $data['fields'] ?? [])) {

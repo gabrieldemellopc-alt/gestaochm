@@ -28,6 +28,7 @@ class MaintenanceRecord extends Model
         'next_due_date',
         'provider_name',
         'supplier_id',
+        'supplier_document',
         'total_cost',
         'extra_cost',
         'reason',

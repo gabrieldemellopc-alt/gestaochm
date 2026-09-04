@@ -18,6 +18,7 @@ class FuelReceipt extends Model
         'total_cost',
         'supplier_name',
         'supplier_id',
+        'supplier_document',
         'invoice_number',
         'responsible_user_id',
         'notes',

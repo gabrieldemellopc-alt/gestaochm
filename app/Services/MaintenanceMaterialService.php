@@ -20,6 +20,9 @@ class MaintenanceMaterialService
     {
         return DB::transaction(function () use ($maintenance, $data, $user, $entries) {
             $maintenance = $this->editable($maintenance);
+            $supplier = app(SupplierResolverService::class)->resolve($maintenance->tenant_id, $data['supplier_id'] ?? null, $data['supplier_name'] ?? null, $data['supplier_document'] ?? null);
+            $supplierSnapshot = app(SupplierSnapshotService::class)->fromResolvedSupplier($supplier, $data['supplier_name'] ?? null);
+            $data = array_merge($data, $supplierSnapshot);
             $locationId = $maintenance->vehicle->location_id;
             $item = null;
             $isExistingItem = ! empty($data['stock_item_id']);
@@ -45,7 +48,7 @@ class MaintenanceMaterialService
             $total = round((float) $data['total_cost'], 2);
             $purchaseUnitCost = round($total / (int) $data['quantity'], 2);
             $previousUnitCost = (float) $item->unit_cost;
-            $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'supplier_id'=>$data['supplier_id']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>$data['used_at']]);
+            $entry = $entries->record($item, ['quantity'=>$data['quantity'],'unit_cost'=>$data['unit_cost'],'total_cost'=>$total,'supplier_name'=>$data['supplier_name']??null,'supplier_id'=>$data['supplier_id']??null,'supplier_document'=>$data['supplier_document']??null,'invoice_number'=>$data['invoice_number']??null,'description'=>'Compra direta para manutenção #'.$maintenance->id,'moved_at'=>$data['used_at']]);
             $entry->update([
                 'maintenance_record_id' => $maintenance->id,
                 'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,

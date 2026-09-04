@@ -510,6 +510,7 @@ class WorkshopTireController extends Controller
 
                 ],
                 'supplier_id' => ['nullable','integer'],
+                'supplier_document' => ['nullable','string','max:20'],
 
 
 
@@ -579,7 +580,7 @@ class WorkshopTireController extends Controller
 
 
 
-            $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['supplier_name']??null)); DB::transaction(function () use ($data, $user, $activeLocation) {
+            DB::transaction(function () use ($data, $user, $activeLocation) { $supplier=app(\App\Services\SupplierResolverService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['supplier_name']??null,$data['supplier_document']??null); $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->fromResolvedSupplier($supplier,$data['supplier_name']??null));
 
 
             $quantity =
@@ -623,6 +624,7 @@ class WorkshopTireController extends Controller
 
                         $data['supplier_name'] ?? null,
                     'supplier_id'=>$data['supplier_id']??null,
+                    'supplier_document'=>$data['supplier_document']??null,
 
 
 
@@ -1191,10 +1193,11 @@ class WorkshopTireController extends Controller
             'retreaded_at' => ['required', 'date', 'before_or_equal:today'],
             'provider_name' => ['required', 'string', 'max:150'],
             'supplier_id' => ['nullable','integer'],
+            'supplier_document' => ['nullable','string','max:20'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['provider_name']??null)); DB::transaction(function () use ($data, $tire, $user, $activeLocation) {
+        DB::transaction(function () use ($data, $tire, $user, $activeLocation) { $supplier=app(\App\Services\SupplierResolverService::class)->resolve($user->tenant_id,$data['supplier_id']??null,$data['provider_name']??null,$data['supplier_document']??null); $data=array_merge($data,app(\App\Services\SupplierSnapshotService::class)->fromResolvedSupplier($supplier,$data['provider_name']??null)); $data['provider_name']=$data['supplier_name'];
             $lockedTire = Tire::query()
                 ->where('id', $tire->id)
                 ->where('tenant_id', $user->tenant_id)
@@ -1233,6 +1236,7 @@ class WorkshopTireController extends Controller
                 'previous_tread_reference' => $previousTreadReference,
                 'provider_name' => $data['provider_name'],
                 'supplier_id'=>$data['supplier_id']??null,
+                'supplier_document'=>$data['supplier_document']??null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $user->id,
             ]);

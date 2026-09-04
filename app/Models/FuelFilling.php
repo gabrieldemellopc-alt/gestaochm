@@ -32,6 +32,7 @@ class FuelFilling extends Model
         'total_cost',
         'supplier_name',
         'supplier_id',
+        'supplier_document',
         'document_number',
         'responsible_user_id',
         'notes',

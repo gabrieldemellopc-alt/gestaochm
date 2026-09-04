@@ -34,6 +34,7 @@ class StockMovement extends Model
         'invoice_number',
         'supplier_name',
         'supplier_id',
+        'supplier_document',
         'moved_at',
         'maintenance_record_item_id',
     ];

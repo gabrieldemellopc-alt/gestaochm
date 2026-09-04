@@ -14,6 +14,7 @@ class TireRetread extends Model
         'previous_tread_reference',
         'provider_name',
         'supplier_id',
+        'supplier_document',
         'notes',
         'cancelled_at',
         'cancelled_by',

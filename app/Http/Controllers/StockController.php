@@ -669,6 +669,7 @@ class StockController extends Controller
                 'max:255',
             ],
             'supplier_id' => ['nullable','integer'],
+            'supplier_document' => ['nullable','string','max:20'],
     
             // SAÍDA
             'description' => [
@@ -681,7 +682,6 @@ class StockController extends Controller
         ]);
 
         $this->authorizeStockMovementPermission($validated['movement_type']);
-        if ($validated['movement_type'] === 'in') $validated=array_merge($validated, app(\App\Services\SupplierSnapshotService::class)->resolve($tenantId,$validated['supplier_id']??null,$validated['supplier_name']??null));
     
         $requestedItem = StockItem::findOrFail($validated['stock_item_id']);
     
@@ -690,6 +690,7 @@ class StockController extends Controller
         }
     
         $stored = DB::transaction(function () use ($validated, $tenantId, $activeLocation) {
+            if ($validated['movement_type'] === 'in') { $supplier=app(\App\Services\SupplierResolverService::class)->resolve($tenantId,$validated['supplier_id']??null,$validated['supplier_name']??null,$validated['supplier_document']??null); $validated=array_merge($validated,app(\App\Services\SupplierSnapshotService::class)->fromResolvedSupplier($supplier,$validated['supplier_name']??null)); }
             $item = StockItem::query()
                 ->where('tenant_id', $tenantId)
                 ->where('location_id', $activeLocation->id)
@@ -742,6 +743,7 @@ class StockController extends Controller
                 'invoice_number' => $validated['invoice_number'] ?? null,
                 'supplier_name' => $validated['supplier_name'] ?? null,
                 'supplier_id' => $validated['supplier_id'] ?? null,
+                'supplier_document' => $validated['supplier_document'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'moved_at' => $validated['moved_at'],
             ]);

@@ -281,6 +281,8 @@ class MaintenanceService
                 ?? $data['performed_at']
                 ?? now();
             $totalCost = (float) ($data['extra_cost'] ?? 0);
+            $supplier = app(SupplierResolverService::class)->resolve($vehicle->tenant_id, $data['supplier_id'] ?? null, $data['provider_name'] ?? null, $data['supplier_document'] ?? null);
+            $supplierSnapshot = app(SupplierSnapshotService::class)->fromResolvedSupplier($supplier, $data['provider_name'] ?? null);
             $maintenance = MaintenanceRecord::create([
                 'tenant_id' => $vehicle->tenant_id,
                 'vehicle_id' => $vehicle->id,
@@ -307,8 +309,9 @@ class MaintenanceService
                 'total_cost' => $totalCost,
                 'extra_cost' => $totalCost,
                 'reason' => $data['reason'] ?? null,
-                'provider_name' => $data['provider_name'] ?? null,
-                'supplier_id' => $data['supplier_id'] ?? null,
+                'provider_name' => $supplierSnapshot['supplier_name'],
+                'supplier_id' => $supplierSnapshot['supplier_id'],
+                'supplier_document' => $supplierSnapshot['supplier_document'],
                 'notes' => $data['notes'] ?? null,
             ]);
             if ((float) ($data['extra_cost'] ?? 0) > 0) {
@@ -417,6 +420,8 @@ class MaintenanceService
     
             $executionType = $data['maintenance_type'] ?? 'external';
             self::assertExecutionTypeAllowed($procedure, $executionType);
+            $supplier = $executionType === 'external' ? app(SupplierResolverService::class)->resolve($vehicle->tenant_id, $data['supplier_id'] ?? null, $data['provider_name'] ?? null, $data['provider_document'] ?? null) : null;
+            $supplierSnapshot = app(SupplierSnapshotService::class)->maintenanceProvider($supplier, $data['provider_name'] ?? null);
     
             $stockUsage = collect();
             $stockItems = collect();
@@ -459,10 +464,10 @@ class MaintenanceService
                 'extra_cost' => $data['extra_cost'] ?? 0,
                 'provider_name' =>
                     $executionType === 'external'
-                        ? ($data['provider_name'] ?? null)
+                        ? $supplierSnapshot['supplier_name']
                         : null,
-                'supplier_id' => $executionType === 'external' ? ($data['supplier_id'] ?? null) : null,
-                'provider_document' => $executionType === 'external' ? ($data['provider_document'] ?? null) : null,
+                'supplier_id' => $executionType === 'external' ? $supplierSnapshot['supplier_id'] : null,
+                'provider_document' => $executionType === 'external' ? $supplierSnapshot['provider_document'] : null,
                 'fiscal_document_number' => $executionType === 'external' ? ($data['fiscal_document_number'] ?? null) : null,
                 'fiscal_document_issued_at' => $executionType === 'external' ? ($data['fiscal_document_issued_at'] ?? null) : null,
                 'notes' => $data['notes'] ?? null,
@@ -683,14 +688,36 @@ class MaintenanceService
                 ]);
             }
 
+            $supplierSnapshot = null;
+            if ($data['maintenance_type'] === 'external') {
+                if (self::itemSupplierInputIsUnchanged($item, $data)) {
+                    $supplierSnapshot = [
+                        'supplier_id' => $item->supplier_id,
+                        'supplier_name' => $item->provider_name,
+                        'provider_document' => $item->provider_document,
+                    ];
+                } else {
+                    $supplier = app(SupplierResolverService::class)->resolve(
+                        $maintenance->tenant_id,
+                        $data['supplier_id'] ?? null,
+                        $data['provider_name'] ?? null,
+                        $data['provider_document'] ?? null,
+                    );
+                    $supplierSnapshot = app(SupplierSnapshotService::class)->maintenanceProvider(
+                        $supplier,
+                        $data['provider_name'] ?? null,
+                    );
+                }
+            }
+
             $updates = [
                 'maintenance_type' => $data['maintenance_type'],
                 'performed_at' => $data['performed_at'],
                 'provider_name' => $data['maintenance_type'] === 'external'
-                    ? ($data['provider_name'] ?? null)
+                    ? $supplierSnapshot['supplier_name']
                     : null,
-                'supplier_id' => $data['maintenance_type'] === 'external' ? ($data['supplier_id'] ?? null) : null,
-                'provider_document' => $data['maintenance_type'] === 'external' ? ($data['provider_document'] ?? null) : null,
+                'supplier_id' => $data['maintenance_type'] === 'external' ? $supplierSnapshot['supplier_id'] : null,
+                'provider_document' => $data['maintenance_type'] === 'external' ? $supplierSnapshot['provider_document'] : null,
                 'notes' => $data['notes'] ?? null,
             ];
 
@@ -1411,6 +1438,20 @@ class MaintenanceService
         }
 
         return $maintenance;
+    }
+
+    private static function itemSupplierInputIsUnchanged(MaintenanceRecordItem $item, array $data): bool
+    {
+        $submittedSupplierId = $data['supplier_id'] ?? null;
+
+        if ($submittedSupplierId !== null && $submittedSupplierId !== '') {
+            return (int) $submittedSupplierId === (int) $item->supplier_id;
+        }
+
+        $normalizer = app(SupplierNormalizer::class);
+
+        return trim((string) ($data['provider_name'] ?? '')) === trim((string) $item->provider_name)
+            && $normalizer->normalizeDocument($data['provider_document'] ?? null) === $normalizer->normalizeDocument($item->provider_document);
     }
 
     public static function reopen(
