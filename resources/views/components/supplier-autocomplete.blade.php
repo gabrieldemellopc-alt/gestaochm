@@ -60,13 +60,13 @@
         @endif
     </div>
 
-    <div x-show="selected || (open && results.length) || ambiguity || documentOwner || sameNameWithDocument || manual || documentError" x-cloak class="chm-supplier-picker__status">
-        <p x-show="selected" class="chm-supplier-picker__selected">
-            Fornecedor selecionado: <strong x-text="selected?.name"></strong>
-            <button type="button" @click="clearSelection()">Trocar</button>
+    <div x-show="state !== 'idle' || documentError" x-cloak class="chm-supplier-picker__status">
+        <p x-show="selected && state === 'selected'" class="chm-supplier-picker__selected">
+            Fornecedor cadastrado: <strong x-text="selected?.name"></strong><span x-show="!selected?.document"> — Sem CPF/CNPJ</span>
+            <button type="button" @click="clearSelection()">Trocar fornecedor</button>
         </p>
 
-        <div x-show="open && results.length" class="chm-supplier-picker__results">
+        <div x-show="state === 'suggestion' && open && results.length" class="chm-supplier-picker__results">
             <template x-for="item in results" :key="item.id">
                 <button type="button" @click="select(item)">
                     <strong x-text="item.name"></strong>
@@ -75,17 +75,20 @@
             </template>
         </div>
 
-        <div x-show="ambiguity" class="chm-supplier-picker__ambiguity">
-            <strong>Já existe um fornecedor com este nome, mas sem CPF/CNPJ.</strong>
+        <div x-show="state === 'ambiguous' || state === 'resolution_chosen'" class="chm-supplier-picker__ambiguity">
+            <strong>Este fornecedor está cadastrado sem CPF/CNPJ.</strong>
             <span x-text="ambiguity?.name"></span>
-            <small>Escolha se deseja completar o cadastro existente ou criar outro fornecedor.</small>
-            <div>
-                <button type="button" @click="enrichExisting()">Atualizar fornecedor existente</button>
-                <button type="button" @click="createNew()">Cadastrar como novo</button>
+            <small>CPF/CNPJ informado: <span x-text="displayDocument(digits())"></span></small>
+            <small>Escolha o que deseja fazer.</small>
+            <div class="chm-supplier-picker__resolution" role="group" aria-label="Decisão do fornecedor">
+                <button type="button" @click="enrichExisting()" :class="{ 'is-selected': resolutionAction === 'enrich_existing' }"><span x-show="resolutionAction === 'enrich_existing'">✓ </span>Atualizar cadastro existente</button>
+                <button type="button" @click="createNew()" :class="{ 'is-selected': resolutionAction === 'create_new' }"><span x-show="resolutionAction === 'create_new'">✓ </span>Cadastrar como novo</button>
             </div>
+            <small x-show="state === 'resolution_chosen'" x-text="resolutionAction === 'enrich_existing' ? 'Este CPF/CNPJ será incluído no fornecedor existente ao salvar o lançamento.' : 'Um novo fornecedor será criado ao salvar o lançamento.'"></small>
+            <button type="button" class="chm-supplier-picker__change" @click="clearSelection()">Trocar fornecedor</button>
         </div>
 
-        <div x-show="documentOwner || sameNameWithDocument" class="chm-supplier-picker__ambiguity">
+        <div x-show="state === 'document_owner' || state === 'same_name_document'" class="chm-supplier-picker__ambiguity">
             <strong x-text="documentOwner ? 'Este CPF/CNPJ já está cadastrado para:' : 'Já existe fornecedor com este nome e outro CPF/CNPJ.'"></strong>
             <span x-text="(documentOwner || sameNameWithDocument)?.name"></span>
             <small x-text="documentOwner ? 'O documento identifica o fornecedor já cadastrado.' : 'Use o cadastro existente ou confirme a criação de outro fornecedor com o documento informado.'"></small>
@@ -96,7 +99,7 @@
         </div>
 
         <small x-show="documentError" x-text="documentError" class="chm-supplier-picker__error"></small>
-        <p x-show="manual" class="chm-supplier-picker__manual">Nenhum fornecedor selecionado. O nome informado será usado como fornecedor manual.</p>
+        <p x-show="state === 'new'" class="chm-supplier-picker__manual">Nenhum fornecedor selecionado. O nome informado será usado como fornecedor manual.</p>
     </div>
 </div>
 
@@ -105,13 +108,13 @@
         function supplierAutocomplete() {
             return {
                 open: false, loading: false, results: [], selected: null, ambiguity: null, documentOwner: null, sameNameWithDocument: null,
-                controller: null, requestId: 0, searchTimer: null, documentError: '',
+                state: 'idle', resolutionAction: '', controller: null, requestId: 0, searchTimer: null, documentError: '',
                 init() {
                     const id = this.$refs.id?.value;
                     const name = this.$refs.name?.value?.trim();
-                    if (id && name) this.selected = { id, name };
+                    if (id && name) { this.selected = { id, name, document: this.digits() || null }; this.state = 'selected'; }
                     this.$el.closest('form')?.addEventListener('submit', event => {
-                        if (this.ambiguity && !this.$refs.resolutionAction.value) {
+                        if (this.state === 'ambiguous' && !this.$refs.resolutionAction.value) {
                             event.preventDefault();
                             return;
                         }
@@ -148,16 +151,24 @@
                     this.documentError = (!valid && strict) ? 'Informe um CPF ou CNPJ válido.' : '';
                     return valid;
                 },
-                clearResolution() { this.ambiguity = null; this.documentOwner = null; this.sameNameWithDocument = null; this.$refs.resolutionAction.value = ''; this.$refs.candidateId.value = ''; },
+                clearResolution() { this.ambiguity = null; this.documentOwner = null; this.sameNameWithDocument = null; this.resolutionAction = ''; this.$refs.resolutionAction.value = ''; this.$refs.candidateId.value = ''; },
                 cancelScheduledSearch() { clearTimeout(this.searchTimer); this.searchTimer = null; },
                 scheduleSearch(query, delay = 300) { this.cancelScheduledSearch(); this.searchTimer = setTimeout(() => this.search(query), delay); },
-                changed() { this.$refs.id.value = ''; this.selected = null; this.clearResolution(); const query = this.$refs.name.value.trim(); if (query.length >= 2) this.scheduleSearch(query); else { this.cancelScheduledSearch(); this.results = []; this.open = false; } },
+                changed() { this.$refs.id.value = ''; this.selected = null; this.clearResolution(); const query = this.$refs.name.value.trim(); if (query.length >= 2) { this.state = 'searching'; this.scheduleSearch(query); } else { this.cancelScheduledSearch(); this.results = []; this.open = false; this.state = 'idle'; } },
                 documentChanged() {
                     this.formatDocument(); this.validateDocument(false); this.cancelScheduledSearch();
                     const value = this.digits(); const name = this.$refs.name.value.trim();
-                    if (this.selected && value !== this.digitsFrom(this.selected.document || this.selected.formatted_document)) this.clearSelection();
+                    if (this.selected) {
+                        const selectedDocument = this.digitsFrom(this.selected.document || this.selected.formatted_document);
+                        if (!value) { this.clearResolution(); this.$refs.id.value = this.selected.id; this.state = 'selected'; return; }
+                        if (value === selectedDocument) { this.clearResolution(); this.$refs.id.value = this.selected.id; this.state = 'selected'; return; }
+                        this.$refs.id.value = '';
+                        this.clearResolution();
+                        if (!this.isCompleteValidDocument(value)) { this.state = 'selected'; return; }
+                        this.state = 'searching'; this.scheduleSearch(value, 300); return;
+                    }
                     if (!this.isCompleteValidDocument(value)) return;
-                    this.clearResolution(); this.scheduleSearch(name || value, 300);
+                    this.clearResolution(); this.state = 'searching'; this.scheduleSearch(name || value, 300);
                 },
                 digitsFrom(value) { return String(value || '').replace(/\D/g, ''); },
                 async search(query) {
@@ -168,24 +179,25 @@
                         const response = await fetch(`/suppliers/search?q=${encodeURIComponent(query)}&document=${encodeURIComponent(document)}`, { headers: { Accept: 'application/json' }, signal: this.controller.signal });
                         if (!response.ok) throw new Error('search');
                         const items = await response.json(); if (id !== this.requestId) return;
-                        this.results = items; this.open = true;
+                        this.results = items; this.open = !this.selected;
                         const owner = document && items.find(item => item.document === document);
                         this.documentOwner = owner || null;
-                        this.ambiguity = !owner && document && items.find(item => item.exact_name && !item.document) || null;
-                        this.sameNameWithDocument = !owner && !this.ambiguity && document && items.find(item => item.exact_name && item.document) || null;
-                    } catch (error) { if (error.name !== 'AbortError') { this.results = []; this.open = false; } } finally { if (id === this.requestId) this.loading = false; }
+                        this.ambiguity = !owner && document && (this.selected?.document ? null : (this.selected || items.find(item => item.exact_name && !item.document))) || null;
+                        this.sameNameWithDocument = !owner && !this.ambiguity && document && (this.selected?.document ? this.selected : items.find(item => item.exact_name && item.document)) || null;
+                        this.state = owner ? 'document_owner' : this.ambiguity ? 'ambiguous' : this.sameNameWithDocument ? 'same_name_document' : this.selected ? 'selected' : items.length ? 'suggestion' : this.nameOrNew(query);
+                    } catch (error) { if (error.name !== 'AbortError') { this.results = []; this.open = false; this.state = this.selected ? 'selected' : 'idle'; } } finally { if (id === this.requestId) this.loading = false; }
                 },
                 select(item) {
                     this.selected = item; this.$refs.id.value = item.id; this.$refs.name.value = item.name;
                     if (this.$refs.document && item.document) this.$refs.document.value = this.displayDocument(item.document);
-                    this.clearResolution(); this.open = false; this.results = [];
+                    this.clearResolution(); this.open = false; this.results = []; this.state = 'selected';
                 },
-                enrichExisting() { this.$refs.resolutionAction.value = 'enrich_existing'; this.$refs.candidateId.value = this.ambiguity.id; },
-                createNew(candidate = this.ambiguity) { this.$refs.resolutionAction.value = 'create_new'; this.$refs.candidateId.value = candidate?.id || ''; },
-                useExisting(item) { this.select(item); this.$refs.resolutionAction.value = 'use_existing'; },
-                clearSelection() { this.selected = null; this.$refs.id.value = ''; this.clearResolution(); },
+                enrichExisting() { this.$refs.id.value = ''; this.resolutionAction = 'enrich_existing'; this.$refs.resolutionAction.value = this.resolutionAction; this.$refs.candidateId.value = this.ambiguity.id; this.state = 'resolution_chosen'; },
+                createNew(candidate = this.ambiguity) { this.$refs.id.value = ''; this.resolutionAction = 'create_new'; this.$refs.resolutionAction.value = this.resolutionAction; this.$refs.candidateId.value = candidate?.id || ''; this.state = 'resolution_chosen'; },
+                useExisting(item) { this.select(item); this.resolutionAction = 'use_existing'; this.$refs.resolutionAction.value = this.resolutionAction; },
+                clearSelection() { this.cancelScheduledSearch(); this.selected = null; this.$refs.id.value = ''; this.clearResolution(); this.results = []; this.open = false; this.state = 'idle'; this.$refs.name?.focus(); },
                 displayDocument(value) { const digits = String(value).replace(/\D/g, ''); return digits.length === 11 ? `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9)}` : `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8,12)}-${digits.slice(12)}`; },
-                get manual() { return !this.selected && this.$refs?.name?.value?.trim() && !this.ambiguity; },
+                nameOrNew(query) { return String(query || '').trim().length >= 2 ? 'new' : 'idle'; },
             };
         }
     </script>

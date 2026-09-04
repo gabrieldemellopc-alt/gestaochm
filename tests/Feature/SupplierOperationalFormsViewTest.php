@@ -33,13 +33,19 @@ class SupplierOperationalFormsViewTest extends TestCase
         $this->assertStringContainsString('Informe um CPF ou CNPJ válido.', $component);
         $this->assertStringContainsString('supplier_resolution_action', $component);
         $this->assertStringContainsString('supplier_candidate_id', $component);
-        $this->assertStringContainsString('Atualizar fornecedor existente', $component);
+        $this->assertStringContainsString('Atualizar cadastro existente', $component);
         $this->assertStringContainsString('Cadastrar como novo', $component);
         $this->assertStringContainsString('Usar fornecedor cadastrado', $component);
         $this->assertStringContainsString('documentOwner', $component);
         $this->assertStringContainsString('isCompleteValidDocument', $component);
         $this->assertStringContainsString('scheduleSearch(name || value, 300)', $component);
         $this->assertStringContainsString('if (!this.isCompleteValidDocument(value)) return;', $component);
+        $this->assertStringContainsString("state: 'idle'", $component);
+        $this->assertStringContainsString("state === 'suggestion'", $component);
+        $this->assertStringContainsString("state === 'resolution_chosen'", $component);
+        $this->assertStringContainsString('this.$refs.id.value = \'\'; this.resolutionAction = \'enrich_existing\'', $component);
+        $this->assertStringContainsString('this.$refs.id.value = \'\'; this.resolutionAction = \'create_new\'', $component);
+        $this->assertStringContainsString('Trocar fornecedor', $component);
         $this->assertStringContainsString("enrich_existing", $component);
         $this->assertStringContainsString("create_new", $component);
     }
@@ -65,6 +71,8 @@ class SupplierOperationalFormsViewTest extends TestCase
         $this->assertStringContainsString('chm-supplier-picker__fields--split', $component);
         $this->assertStringContainsString('.chm-supplier-picker__fields--split{grid-template-columns', $css);
         $this->assertStringContainsString('.chm-supplier-picker__status{grid-column:1/-1', $css);
+        $this->assertStringContainsString('.chm-supplier-picker__resolution', $css);
+        $this->assertStringContainsString('.chm-supplier-picker__resolution button.is-selected', $css);
         $this->assertStringContainsString('supplier-autocomplete.css', file_get_contents(resource_path('views/layouts/app.blade.php')));
     }
 
