@@ -70,6 +70,20 @@ class SupplierController extends Controller
 
     private function aliases(Supplier $supplier, Request $request, SupplierNormalizer $normalizer): void
     {
-        foreach ($request->input('aliases', []) as $alias) { $alias = trim($alias); if ($alias !== '') $supplier->aliases()->firstOrCreate(['normalized_alias'=>$normalizer->normalizeName($alias)], ['alias'=>$alias]); }
+        $aliases = collect($request->input('aliases', []))
+            ->flatMap(fn ($alias) => preg_split('/\s*,\s*/', (string) $alias))
+            ->map(fn ($alias) => trim($alias))
+            ->filter()
+            ->unique(fn ($alias) => $normalizer->normalizeName($alias));
+
+        $normalizedAliases = $aliases->map(fn ($alias) => $normalizer->normalizeName($alias));
+        $supplier->aliases()->whereNotIn('normalized_alias', $normalizedAliases)->delete();
+
+        foreach ($aliases as $alias) {
+            $supplier->aliases()->firstOrCreate(
+                ['normalized_alias' => $normalizer->normalizeName($alias)],
+                ['alias' => $alias],
+            );
+        }
     }
 }

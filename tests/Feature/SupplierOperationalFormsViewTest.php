@@ -44,4 +44,27 @@ class SupplierOperationalFormsViewTest extends TestCase
             $this->assertStringContainsString($token, $css);
         }
     }
+
+    public function test_workshop_expense_uses_the_split_supplier_grid(): void
+    {
+        $view = file_get_contents(resource_path('views/workshop/partials/financial.blade.php'));
+        $component = file_get_contents(resource_path('views/components/supplier-autocomplete.blade.php'));
+
+        $this->assertStringContainsString('chm-supplier-picker--split', $view);
+        $this->assertStringContainsString('document-name="supplier_document"', $view);
+        $this->assertLessThan(strpos($view, 'name="invoice_number"'), strpos($view, 'name="amount"'));
+        $this->assertStringContainsString('.chm-supplier-picker--split{grid-template-columns', $component);
+    }
+
+    public function test_supplier_edit_modal_reuses_the_form_and_status_toggle(): void
+    {
+        $view = file_get_contents(resource_path('views/suppliers/index.blade.php'));
+        $controller = file_get_contents(app_path('Http/Controllers/SupplierController.php'));
+
+        $this->assertStringContainsString('openEdit(', $view);
+        $this->assertStringContainsString('aliasesText:(s.aliases||[]).join', $view);
+        $this->assertStringContainsString('suppliers-status-toggle', $view);
+        $this->assertStringContainsString('Desativar este fornecedor?', $view);
+        $this->assertStringContainsString("whereNotIn('normalized_alias'", $controller);
+    }
 }
