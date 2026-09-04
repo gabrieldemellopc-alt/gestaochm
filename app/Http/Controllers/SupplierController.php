@@ -54,6 +54,22 @@ class SupplierController extends Controller
         return back()->with('success', 'Fornecedor atualizado.');
     }
 
+    public function updateStatus(Request $request, Supplier $supplier)
+    {
+        $this->authorizeSupplierManagement($request);
+        abort_unless($supplier->tenant_id === $request->user()->tenant_id, 404);
+
+        $data = $request->validate([
+            'active' => ['required', 'boolean'],
+        ]);
+
+        $supplier->update(['active' => (bool) $data['active']]);
+
+        return back()->with('success', $supplier->active
+            ? 'Fornecedor reativado.'
+            : 'Fornecedor desativado.');
+    }
+
     private function data(Request $request, SupplierNormalizer $normalizer, ?Supplier $supplier = null): array
     {
         $data = $request->validate(['trade_name'=>['nullable','string','max:255','required_without:legal_name'], 'legal_name'=>['nullable','string','max:255'], 'document'=>['nullable','string','max:20'], 'active'=>['nullable','boolean'], 'aliases'=>['nullable','array'], 'aliases.*'=>['string','max:255']]);

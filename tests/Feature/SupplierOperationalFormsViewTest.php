@@ -68,8 +68,13 @@ class SupplierOperationalFormsViewTest extends TestCase
         $this->assertStringContainsString('window.supplierRecords', $view);
         $this->assertStringContainsString('openEdit(suppliers[', $view);
         $this->assertStringContainsString('toggle(suppliers[', $view);
-        $this->assertStringContainsString('form.requestSubmit()', $view);
+        $this->assertStringContainsString('x-ref="statusForm"', $view);
+        $this->assertStringContainsString("@method('PATCH')", $view);
+        $this->assertStringContainsString('submitStatus(s)', $view);
+        $this->assertStringNotContainsString('name="aliases[]" x-model="modal.aliasesText"', substr($view, strpos($view, 'x-ref="statusForm"')));
         $this->assertStringContainsString('type="button" @click="openEdit', $view);
+        $this->assertStringContainsString('public function updateStatus', $controller);
+        $this->assertStringContainsString("'active' => ['required', 'boolean']", $controller);
         $this->assertStringContainsString("whereNotIn('normalized_alias'", $controller);
     }
 }
