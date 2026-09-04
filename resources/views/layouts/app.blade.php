@@ -60,6 +60,7 @@
 
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/chm-themes.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/components/supplier-autocomplete.css') }}?v=1">
     <!--<link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ time() }}">-->
 
     <meta name="csrf-token" content="{{ csrf_token() }}">

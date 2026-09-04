@@ -37,6 +37,9 @@ class SupplierOperationalFormsViewTest extends TestCase
         $this->assertStringContainsString('Cadastrar como novo', $component);
         $this->assertStringContainsString('Usar fornecedor cadastrado', $component);
         $this->assertStringContainsString('documentOwner', $component);
+        $this->assertStringContainsString('isCompleteValidDocument', $component);
+        $this->assertStringContainsString('scheduleSearch(name || value, 300)', $component);
+        $this->assertStringContainsString('if (!this.isCompleteValidDocument(value)) return;', $component);
         $this->assertStringContainsString("enrich_existing", $component);
         $this->assertStringContainsString("create_new", $component);
     }
@@ -58,7 +61,11 @@ class SupplierOperationalFormsViewTest extends TestCase
         $this->assertStringContainsString('chm-supplier-picker--split', $view);
         $this->assertStringContainsString('document-name="supplier_document"', $view);
         $this->assertLessThan(strpos($view, 'name="invoice_number"'), strpos($view, 'name="amount"'));
-        $this->assertStringContainsString('.chm-supplier-picker--split{grid-template-columns', $component);
+        $css = file_get_contents(public_path('css/components/supplier-autocomplete.css'));
+        $this->assertStringContainsString('chm-supplier-picker__fields--split', $component);
+        $this->assertStringContainsString('.chm-supplier-picker__fields--split{grid-template-columns', $css);
+        $this->assertStringContainsString('.chm-supplier-picker__status{grid-column:1/-1', $css);
+        $this->assertStringContainsString('supplier-autocomplete.css', file_get_contents(resource_path('views/layouts/app.blade.php')));
     }
 
     public function test_supplier_edit_modal_reuses_the_form_and_status_toggle(): void

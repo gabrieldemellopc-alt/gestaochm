@@ -1,0 +1,23 @@
+.chm-supplier-picker{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+.chm-supplier-picker__label{font-weight:700;color:var(--chm-theme-text,#e7eef8);font-size:.84rem}
+.chm-supplier-picker__label span{color:#d95763}
+.chm-supplier-picker__fields{display:grid;gap:8px;min-width:0}
+.chm-supplier-picker__fields--split{grid-template-columns:minmax(0,1fr) minmax(150px,.42fr)}
+.chm-supplier-picker__field{min-width:0}
+.chm-supplier-picker input:not([type=hidden]){box-sizing:border-box;width:100%;min-height:40px;padding:9px 11px;border:1px solid var(--chm-theme-border,rgba(148,153,184,.28));border-radius:7px;background:var(--chm-theme-input,#172235);color:var(--chm-theme-text,#e7eef8)}
+.chm-supplier-picker input:focus{outline:0;border-color:var(--chm-theme-primary,#4f9cff);box-shadow:0 0 0 3px color-mix(in srgb,var(--chm-theme-primary,#4f9cff) 15%,transparent)}
+.chm-supplier-picker input.is-invalid{border-color:#d95763}
+.chm-supplier-picker__status{grid-column:1/-1;display:grid;gap:7px;min-width:0}
+.chm-supplier-picker__error{display:block;color:#d95763;font-size:.78rem}
+.chm-supplier-picker__selected,.chm-supplier-picker__manual{margin:0;font-size:.8rem;color:var(--chm-theme-muted,#aebed3)}
+.chm-supplier-picker__selected button{margin-left:6px;border:0;background:transparent;color:var(--chm-theme-primary,#4f9cff);font:inherit;font-weight:700;cursor:pointer}
+.chm-supplier-picker__results{z-index:1100;max-height:210px;overflow:auto;border:1px solid var(--chm-theme-border,#50647f);border-radius:7px;background:var(--chm-theme-card-elevated,#202d42);box-shadow:0 8px 20px rgba(15,23,42,.3)}
+.chm-supplier-picker__results button{display:flex;width:100%;padding:9px 11px;border:0;border-bottom:1px solid var(--chm-theme-border,#3a4b63);background:transparent;color:var(--chm-theme-text,#e7eef8);text-align:left;justify-content:space-between;gap:12px;cursor:pointer}
+.chm-supplier-picker__results button:hover{background:var(--chm-theme-input,#2c405e)}
+.chm-supplier-picker__results span{color:var(--chm-theme-muted,#aebed3);font-size:.78rem}
+.chm-supplier-picker__ambiguity{display:grid;gap:5px;padding:10px 11px;border:1px solid color-mix(in srgb,var(--chm-theme-primary,#4f9cff) 38%,transparent);border-radius:7px;background:color-mix(in srgb,var(--chm-theme-primary,#4f9cff) 8%,transparent);font-size:.82rem;color:var(--chm-theme-text,#e7eef8)}
+.chm-supplier-picker__ambiguity span,.chm-supplier-picker__ambiguity small{color:var(--chm-theme-muted,#aebed3)}
+.chm-supplier-picker__ambiguity div{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.chm-supplier-picker__ambiguity button{border:1px solid var(--chm-theme-border,#50647f);border-radius:6px;padding:6px 8px;background:var(--chm-theme-card,#172235);color:var(--chm-theme-text,#e7eef8);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.chm-supplier-picker__ambiguity button:first-child{border-color:var(--chm-theme-primary,#4f9cff);color:var(--chm-theme-primary,#4f9cff)}
+@media(max-width:640px){.chm-supplier-picker__fields--split{grid-template-columns:1fr}}
