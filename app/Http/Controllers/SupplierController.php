@@ -72,7 +72,7 @@ class SupplierController extends Controller
 
     private function data(Request $request, SupplierNormalizer $normalizer, ?Supplier $supplier = null): array
     {
-        $data = $request->validate(['trade_name'=>['nullable','string','max:255','required_without:legal_name'], 'legal_name'=>['nullable','string','max:255'], 'document'=>['nullable','string','max:20'], 'active'=>['nullable','boolean'], 'aliases'=>['nullable','array'], 'aliases.*'=>['string','max:255']]);
+        $data = $request->validate(['trade_name'=>['nullable','string','max:255','required_without:legal_name'], 'legal_name'=>['nullable','string','max:255'], 'document'=>['nullable','string','max:20'], 'active'=>['nullable','boolean'], 'aliases_text'=>['nullable','string','max:2000'], 'aliases'=>['nullable','array'], 'aliases.*'=>['string','max:255']]);
         $document = $normalizer->normalizeDocument($data['document'] ?? null);
         if ($document && ! $normalizer->validDocument($document)) {
             throw ValidationException::withMessages(['document' => 'Informe um CPF ou CNPJ válido.']);
@@ -80,13 +80,21 @@ class SupplierController extends Controller
         if ($document && Supplier::forTenant($request->user()->tenant_id)->where('document', $document)->when($supplier, fn ($query) => $query->whereKeyNot($supplier->id))->exists()) {
             throw ValidationException::withMessages(['document' => 'Este CPF/CNPJ já está cadastrado neste tenant.']);
         }
-        $data['document'] = $document; $data['document_type'] = $normalizer->detectDocumentType($document); $data['normalized_name'] = $normalizer->normalizeName($data['trade_name'] ?: $data['legal_name']); $data['active'] = $request->boolean('active', true); unset($data['aliases']);
+        $data['document'] = $document; $data['document_type'] = $normalizer->detectDocumentType($document); $data['normalized_name'] = $normalizer->normalizeName($data['trade_name'] ?: $data['legal_name']); $data['active'] = $request->boolean('active', true); unset($data['aliases'], $data['aliases_text']);
         return $data;
     }
 
     private function aliases(Supplier $supplier, Request $request, SupplierNormalizer $normalizer): void
     {
-        $aliases = collect($request->input('aliases', []))
+        if (! $request->has('aliases_text') && ! $request->has('aliases')) {
+            return;
+        }
+
+        $rawAliases = $request->has('aliases_text')
+            ? [$request->input('aliases_text')]
+            : $request->input('aliases', []);
+
+        $aliases = collect($rawAliases)
             ->flatMap(fn ($alias) => preg_split('/\s*,\s*/', (string) $alias))
             ->map(fn ($alias) => trim($alias))
             ->filter()

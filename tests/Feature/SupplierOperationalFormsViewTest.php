@@ -62,7 +62,8 @@ class SupplierOperationalFormsViewTest extends TestCase
         $controller = file_get_contents(app_path('Http/Controllers/SupplierController.php'));
 
         $this->assertStringContainsString('openEdit(', $view);
-        $this->assertStringContainsString('aliasesText:(s.aliases||[]).join', $view);
+        $this->assertStringContainsString('name="aliases_text"', $view);
+        $this->assertStringContainsString("typeof a==='string'?a:a?.alias", $view);
         $this->assertStringContainsString('suppliers-status-toggle', $view);
         $this->assertStringContainsString('Desativar este fornecedor?', $view);
         $this->assertStringContainsString('window.supplierRecords', $view);
