@@ -36,7 +36,7 @@ class SupplierController extends Controller
     public function search(Request $request, SupplierSearchService $search)
     {
         $this->authorizeSupplierManagement($request);
-        return response()->json($search->search($request->user()->tenant_id, (string) $request->q));
+        return response()->json($search->search($request->user()->tenant_id, (string) $request->q, 8, $request->query('document')));
     }
 
     public function store(Request $request, SupplierNormalizer $normalizer)

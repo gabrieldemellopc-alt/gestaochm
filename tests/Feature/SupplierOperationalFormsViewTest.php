@@ -24,16 +24,21 @@ class SupplierOperationalFormsViewTest extends TestCase
         }
     }
 
-    public function test_picker_has_document_mask_validation_and_clear_manual_state(): void
+    public function test_picker_has_document_mask_validation_and_explicit_ambiguity_actions(): void
     {
         $component = file_get_contents(resource_path('views/components/supplier-autocomplete.blade.php'));
 
         $this->assertStringContainsString('CPF/CNPJ', $component);
         $this->assertStringContainsString('validateDocument(true)', $component);
         $this->assertStringContainsString('Informe um CPF ou CNPJ válido.', $component);
-        $this->assertStringContainsString('this.clearSelection()', $component);
-        $this->assertStringContainsString('Será cadastrado automaticamente ao confirmar este lançamento.', $component);
-        $this->assertStringContainsString('this.search(d)', $component);
+        $this->assertStringContainsString('supplier_resolution_action', $component);
+        $this->assertStringContainsString('supplier_candidate_id', $component);
+        $this->assertStringContainsString('Atualizar fornecedor existente', $component);
+        $this->assertStringContainsString('Cadastrar como novo', $component);
+        $this->assertStringContainsString('Usar fornecedor cadastrado', $component);
+        $this->assertStringContainsString('documentOwner', $component);
+        $this->assertStringContainsString("enrich_existing", $component);
+        $this->assertStringContainsString("create_new", $component);
     }
 
     public function test_workshop_modals_use_theme_tokens_for_surfaces_and_inputs(): void
