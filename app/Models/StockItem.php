@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\StockItemNormalizer;
 use Illuminate\Database\Eloquent\Model;
 
 class StockItem extends Model
@@ -25,6 +26,14 @@ class StockItem extends Model
         'observation',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $item): void {
+            $item->normalized_name = app(StockItemNormalizer::class)
+                ->normalizeName((string) $item->name);
+        });
+    }
+
     public function category()
     {
         return $this->belongsTo(StockCategory::class, 'stock_category_id');
@@ -38,6 +47,11 @@ class StockItem extends Model
     public function movements()
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function aliases()
+    {
+        return $this->hasMany(StockItemAlias::class);
     }
 
     public function procedures()
