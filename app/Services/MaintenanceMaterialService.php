@@ -25,8 +25,10 @@ class MaintenanceMaterialService
             $data = array_merge($data, $supplierSnapshot);
             $locationId = $maintenance->vehicle->location_id;
             $item = null;
-            $isExistingItem = ! empty($data['stock_item_id']);
-            if (! empty($data['stock_item_id'])) {
+            $resolutionAction = $data['stock_item_resolution_action'] ?? null;
+            $isExistingItem = $resolutionAction === 'use_existing'
+                || ($resolutionAction === null && ! empty($data['stock_item_id']));
+            if ($isExistingItem) {
                 $item = StockItem::query()->whereKey($data['stock_item_id'])
                     ->where('tenant_id', $maintenance->tenant_id)->where('location_id', $locationId)
                     ->where('active', true)->lockForUpdate()->first();
@@ -40,9 +42,12 @@ class MaintenanceMaterialService
                 if (! StockCategory::query()->whereKey($data['stock_category_id'])->where('tenant_id', $maintenance->tenant_id)->exists()) {
                     throw ValidationException::withMessages(['stock_category_id' => 'A categoria selecionada não pertence a este contexto.']);
                 }
-                $item = StockItem::query()->where('tenant_id', $maintenance->tenant_id)->where('location_id', $locationId)
-                    ->where('name', $data['name'])->where('unit', $data['unit'])->where('brand', $data['brand'] ?? null)
-                    ->where('stock_category_id', $data['stock_category_id'] ?? null)->lockForUpdate()->first();
+                if ($resolutionAction !== 'create_new') {
+                    // Legacy requests retain the former literal-reuse behavior.
+                    $item = StockItem::query()->where('tenant_id', $maintenance->tenant_id)->where('location_id', $locationId)
+                        ->where('name', $data['name'])->where('unit', $data['unit'])->where('brand', $data['brand'] ?? null)
+                        ->where('stock_category_id', $data['stock_category_id'] ?? null)->lockForUpdate()->first();
+                }
             }
             if (! $item) $item = StockItem::create(['tenant_id'=>$maintenance->tenant_id,'location_id'=>$locationId,'name'=>$data['name'],'brand'=>$data['brand']??null,'stock_category_id'=>$data['stock_category_id']??null,'unit'=>$data['unit'],'quantity'=>0,'unit_cost'=>0,'minimum_quantity'=>0,'active'=>true,'observation'=>'Criado por compra direta da manutenção #'.$maintenance->id]);
             $total = round((float) $data['total_cost'], 2);

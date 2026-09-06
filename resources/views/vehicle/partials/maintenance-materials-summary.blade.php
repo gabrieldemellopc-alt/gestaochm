@@ -67,6 +67,7 @@
                 <div class="maintenance-direct-material__separator"><span>ou compre para esta OM</span></div>
                 <details class="maintenance-direct-material" x-data="{
                     query: '', name: '', brand: '', unit: 'UNID', unitOther: '', categoryId: '', quantity: '', totalCost: '', selectedItem: null, suggestions: [], loading: false,
+                    smartSuggestions: [], smartState: 'idle', resolutionAction: null, smartController: null, smartRequestId: 0,
                     async search() {
                         if (this.query.trim().length < 2 || this.selectedItem) { this.suggestions = []; return; }
                         this.loading = true;
@@ -75,8 +76,25 @@
                             this.suggestions = response.ok ? await response.json() : [];
                         } catch (_) { this.suggestions = []; } finally { this.loading = false; }
                     },
-                    select(item) { this.selectedItem = item; this.name = item.name; this.brand = item.brand || ''; this.unit = item.unit || 'UNID'; this.categoryId = item.stock_category_id || ''; this.query = item.name; this.suggestions = []; },
-                    clearSelection() { this.selectedItem = null; this.query = ''; this.name = ''; this.brand = ''; this.unit = 'UNID'; this.unitOther = ''; this.categoryId = ''; this.suggestions = []; }
+                    select(item) { this.selectedItem = item; this.resolutionAction = 'use_existing'; this.name = item.name; this.brand = item.brand || ''; this.unit = item.unit || 'UNID'; this.categoryId = item.stock_category_id || ''; this.query = item.name; this.suggestions = []; this.smartSuggestions = []; this.smartState = 'selected_existing'; },
+                    clearSelection() { this.selectedItem = null; this.resolutionAction = null; this.query = ''; this.name = ''; this.brand = ''; this.unit = 'UNID'; this.unitOther = ''; this.categoryId = ''; this.suggestions = []; this.smartSuggestions = []; this.smartState = 'idle'; },
+                    createNew() { this.selectedItem = null; this.resolutionAction = 'create_new'; this.smartSuggestions = []; this.smartState = 'create_new'; },
+                    async searchSimilar() {
+                        if (this.selectedItem || this.resolutionAction === 'create_new') return;
+                        const text = this.name.trim();
+                        if (text.length < 3) { this.smartSuggestions = []; this.smartState = 'idle'; return; }
+                        if (this.smartController) this.smartController.abort();
+                        this.smartController = new AbortController(); const requestId = ++this.smartRequestId; this.smartState = 'searching';
+                        try {
+                            const params = new URLSearchParams({q:text}); if (this.unit) params.set('unit', this.unit); if (this.categoryId) params.set('stock_category_id', this.categoryId); if (this.brand) params.set('brand', this.brand);
+                            const response = await fetch(@js(route('vehicles.maintenance.materials.direct.suggestions', [$vehicle->id, $maintenance->id])) + '?' + params, {headers:{Accept:'application/json'}, signal:this.smartController.signal});
+                            if (requestId !== this.smartRequestId) return;
+                            this.smartSuggestions = response.ok ? await response.json() : []; this.smartState = this.smartSuggestions.length ? 'suggestions' : 'idle';
+                        } catch (error) { if (error.name !== 'AbortError') { this.smartSuggestions = []; this.smartState = 'error'; } }
+                    },
+                    useSuggested(item) { this.select({...item, available_quantity:item.quantity, stock_category_id:''}); },
+                    nameChanged() { if (this.resolutionAction === 'create_new') this.resolutionAction = null; this.searchSimilar(); },
+                    contextChanged() { if (this.resolutionAction === 'create_new') this.resolutionAction = null; this.searchSimilar(); }
                 }">
                     <summary>Comprar / lançar material direto</summary>
                     <p class="maintenance-direct-material__intro">Registre uma nova compra vinculada a esta manutenção.</p>
@@ -108,13 +126,21 @@
                     <form method="POST" action="{{ route('vehicles.maintenance.materials.direct.store', [$vehicle, $maintenance]) }}" class="maintenance-materials-form">
                         @csrf
                         <input type="hidden" name="stock_item_id" :value="selectedItem?.id || ''">
+                        <input type="hidden" name="stock_item_resolution_action" :value="resolutionAction || ''">
                         <div class="maintenance-direct-material__item-fields" x-show="!selectedItem">
                             <span class="maintenance-direct-material__form-title">Dados do novo item</span>
                             <div class="maintenance-direct-material__grid">
-                                <label>Nome do item<input name="name" x-model="name" :disabled="selectedItem" required maxlength="255"></label>
-                                <label>Marca<input name="brand" x-model="brand" :disabled="selectedItem" maxlength="255"></label>
-                                <label>Unidade<select name="unit" x-model="unit" :disabled="selectedItem" required><option value="UNID">UNID</option><option value="L">L</option><option value="KG">KG</option><option value="G">G</option><option value="Outro">Outro</option></select></label>
-                                <label>Categoria<select name="stock_category_id" x-model="categoryId" :disabled="selectedItem" required><option value="">Selecione a categoria</option>@foreach($stockCategories as $category)<option value="{{ $category->id }}">{{ $category->name }}</option>@endforeach</select></label>
+                                <label>Nome do item<input name="name" x-model="name" @input.debounce.300ms="nameChanged()" :disabled="selectedItem" required maxlength="255" autocomplete="off">
+                                    <div class="maintenance-direct-material__smart-suggestions" x-show="smartState === 'suggestions'" x-cloak>
+                                        <strong x-text="smartSuggestions[0]?.level === 'exact' ? 'Item já cadastrado' : (smartSuggestions[0]?.level === 'probable' ? 'Provável item já cadastrado' : 'Item semelhante encontrado')"></strong>
+                                        <template x-for="item in smartSuggestions" :key="item.id"><article class="maintenance-direct-material__smart-card"><div><strong x-text="item.name"></strong><small x-text="[item.category || 'Sem categoria', 'Unidade: ' + item.unit, 'Saldo: ' + item.quantity + ' ' + item.unit].join(' · ')"></small><small x-show="(item.matched_technical_tokens || item.matched_tokens || []).length" x-text="'Coincidências: ' + [...(item.matched_technical_tokens || []), ...(item.matched_tokens || [])].join(', ')"></small></div><button type="button" x-on:click="useSuggested(item)">Usar este item</button></article></template>
+                                        <button type="button" class="maintenance-direct-material__create-new" x-on:click="createNew()">Cadastrar como novo mesmo assim</button>
+                                    </div>
+                                    <small x-show="smartState === 'error'" x-cloak>Não foi possível buscar itens semelhantes. Você ainda pode continuar o lançamento.</small>
+                                </label>
+                                <label>Marca<input name="brand" x-model="brand" @input.debounce.300ms="contextChanged()" :disabled="selectedItem" maxlength="255"></label>
+                                <label>Unidade<select name="unit" x-model="unit" @change="contextChanged()" :disabled="selectedItem" required><option value="UNID">UNID</option><option value="L">L</option><option value="KG">KG</option><option value="G">G</option><option value="Outro">Outro</option></select></label>
+                                <label>Categoria<select name="stock_category_id" x-model="categoryId" @change="contextChanged()" :disabled="selectedItem" required><option value="">Selecione a categoria</option>@foreach($stockCategories as $category)<option value="{{ $category->id }}">{{ $category->name }}</option>@endforeach</select></label>
                                 <label x-show="unit === 'Outro'" x-cloak>Informe a unidade<input name="unit_other" x-model="unitOther" :required="unit === 'Outro'" maxlength="50" placeholder="Ex.: CX, M, PAR"></label>
                             </div>
                         </div>

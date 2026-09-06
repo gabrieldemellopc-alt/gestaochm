@@ -5223,7 +5223,14 @@ html.maintenance-modal-open { overflow:hidden; }
 .maintenance-direct-material__grid input:focus,.maintenance-direct-material__grid select:focus,.maintenance-direct-material__grid textarea:focus { outline:0; border-color:#7098c6; box-shadow:0 0 0 3px rgba(92, 137, 189, .16); }
 .maintenance-direct-material__grid input[readonly] { border-color:rgba(112, 138, 173, .38); background:#26364b; color:#c6d5e6; }
 .maintenance-direct-material__grid label small { color:#9cadc2; font-weight:600; }.maintenance-direct-material__item-summary > div { display:grid; gap:3px; color:#b5c6da; font-size:.84rem; }.maintenance-direct-material__item-summary strong { color:#fff; }.maintenance-direct-material__invoice { display:flex; }.maintenance-direct-material__invoice span { display:inline-flex; align-items:center; padding:0 11px; border:1px solid #586b84; border-right:0; border-radius:7px 0 0 7px; background:#253348; color:#b9c8dc; }.maintenance-direct-material__invoice input { border-radius:0 7px 7px 0; }
+.maintenance-direct-material__smart-suggestions { display:grid; gap:7px; margin-top:8px; padding:10px; border:1px solid rgba(112,138,173,.35); border-radius:9px; background:rgba(31,45,64,.72); }
+.maintenance-direct-material__smart-suggestions > strong { color:#e5edf7; font-size:.8rem; }
+.maintenance-direct-material__smart-card { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px; border:1px solid rgba(112,138,173,.22); border-radius:7px; background:rgba(17,28,43,.38); }
+.maintenance-direct-material__smart-card > div { display:grid; min-width:0; gap:2px; }.maintenance-direct-material__smart-card strong { color:#fff; }.maintenance-direct-material__smart-card small { color:#aebed2; overflow-wrap:anywhere; }
+.maintenance-direct-material__smart-card button,.maintenance-direct-material__create-new { border:1px solid rgba(132,153,179,.55); border-radius:7px; background:transparent; color:#dbe7f4; padding:7px 9px; font:inherit; font-size:.78rem; font-weight:700; cursor:pointer; }
+.maintenance-direct-material__smart-card button:hover,.maintenance-direct-material__create-new:hover { background:rgba(93,119,151,.25); }
 @media (max-width:700px) { .maintenance-direct-material__grid { grid-template-columns:1fr; }.maintenance-direct-material__selected { align-items:flex-start; flex-direction:column; } }
+@media (max-width:700px) { .maintenance-direct-material__smart-card { align-items:stretch; flex-direction:column; }.maintenance-direct-material__smart-card button,.maintenance-direct-material__create-new { width:100%; } }
 .maintenance-create-page .maintenance-add-grid { gap:14px 18px; }
 .maintenance-create-page .maintenance-add-grid .form-input { min-height:42px; border-radius:8px; padding:0 12px; border-color:rgba(112,138,173,.48); }
 .maintenance-create-page .maintenance-add-grid textarea.form-input { min-height:92px; padding-top:10px; resize:vertical; }

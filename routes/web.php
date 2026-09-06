@@ -593,6 +593,8 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
 
     Route::get('/vehicles/{vehicle}/maintenance/{maintenance}/materials/search', [MaintenanceController::class, 'searchMaterials'])
         ->name('vehicles.maintenance.materials.search');
+    Route::get('/vehicles/{vehicle}/maintenance/{maintenance}/materials/direct/suggestions', [MaintenanceController::class, 'suggestDirectMaterials'])
+        ->name('vehicles.maintenance.materials.direct.suggestions');
     Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials', [MaintenanceController::class, 'storeMaterial'])
         ->name('vehicles.maintenance.materials.store');
     Route::post('/vehicles/{vehicle}/maintenance/{maintenance}/materials/direct', [MaintenanceController::class, 'storeDirectMaterial'])

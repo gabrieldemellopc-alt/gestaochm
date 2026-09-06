@@ -17,6 +17,7 @@ use Illuminate\Validation\Rule;
 use App\Services\MaintenanceService;
 use App\Services\MaintenanceMaterialService;
 use App\Services\StockEntryService;
+use App\Services\StockItemSearchService;
 use App\Services\TenantFiscalSettingService;
 use App\Services\AggregatedVehiclePolicy;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -59,6 +60,41 @@ class MaintenanceController extends Controller
         return back()->with('success', 'Material adicionado com sucesso.');
     }
 
+    public function suggestDirectMaterials(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, StockItemSearchService $search)
+    {
+        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) { return $redirect; }
+        $this->assertMaintenanceRelation($vehicle, $maintenance);
+        $this->authorizeMaintenancePermission('maintenance.use_materials');
+        abort_unless($this->canMaintenance('stock.entry'), 403);
+
+        $data = $request->validate([
+            'q' => ['required', 'string', 'min:3', 'max:255'],
+            'unit' => ['nullable', 'string', 'max:50'],
+            'stock_category_id' => ['nullable', 'integer'],
+            'brand' => ['nullable', 'string', 'max:255'],
+        ]);
+        $locationId = $maintenance->loadMissing('vehicle')->vehicle->location_id;
+        $results = $search->search($maintenance->tenant_id, $locationId, $data['q'], [
+            'unit' => $data['unit'] ?? null,
+            'stock_category_id' => $data['stock_category_id'] ?? null,
+            'brand' => $data['brand'] ?? null,
+        ]);
+
+        return response()->json(collect($results)->map(fn (array $result) => [
+            'id' => $result['item']->id,
+            'name' => $result['item']->name,
+            'brand' => $result['item']->brand,
+            'unit' => $result['item']->unit,
+            'category' => $result['item']->category?->name,
+            'quantity' => (float) $result['item']->quantity,
+            'score' => $result['score'],
+            'level' => $result['level'],
+            'reason' => $result['reason'],
+            'matched_tokens' => $result['matched_tokens'],
+            'matched_technical_tokens' => $result['matched_technical_tokens'],
+        ])->values());
+    }
+
     public function storeDirectMaterial(Request $request, Vehicle $vehicle, MaintenanceRecord $maintenance, MaintenanceMaterialService $service, StockEntryService $entries)
     {
         if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) return $redirect;
@@ -68,6 +104,7 @@ class MaintenanceController extends Controller
         $requiredInvoice = app(TenantFiscalSettingService::class)->requires('stock_entry');
         $data = $request->validate([
             'stock_item_id' => ['nullable', 'integer'],
+            'stock_item_resolution_action' => ['nullable', Rule::in(['use_existing', 'create_new'])],
             'maintenance_record_item_id' => ['nullable', 'integer'],
             'name' => ['required', 'string', 'max:255'],
             'brand' => ['nullable', 'string', 'max:255'],
@@ -86,6 +123,12 @@ class MaintenanceController extends Controller
             'used_at.after_or_equal' => 'A data e hora do uso não pode ser anterior à abertura da manutenção.',
             'used_at.before_or_equal' => 'A data e hora do uso não pode ser futura.',
         ]);
+        if (($data['stock_item_resolution_action'] ?? null) === 'use_existing' && empty($data['stock_item_id'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['stock_item_id' => 'Selecione o item de estoque que será utilizado.']);
+        }
+        if (($data['stock_item_resolution_action'] ?? null) === 'create_new' && ! empty($data['stock_item_id'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['stock_item_id' => 'A criação de novo item não pode reutilizar um item existente.']);
+        }
         if (empty($data['stock_item_id'])) {
             if (! in_array($data['unit'], ['UNID', 'L', 'KG', 'G', 'Outro'], true)) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['unit' => 'Selecione uma unidade válida.']);

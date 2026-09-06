@@ -27,7 +27,8 @@ class MaintenanceMaterialUsageTest extends TestCase
         $this->assertStringContainsString("->whereKey(\$data['stock_item_id'])", $service);
         $this->assertStringContainsString("->where('tenant_id', \$maintenance->tenant_id)->where('location_id', \$locationId)", $service);
         $this->assertStringContainsString("->where('active', true)->lockForUpdate()->first()", $service);
-        $this->assertStringContainsString("if (! empty(\$data['stock_item_id']))", $service);
+        $this->assertStringContainsString("\$resolutionAction === 'use_existing'", $service);
+        $this->assertStringContainsString("\$resolutionAction !== 'create_new'", $service);
     }
 
     public function test_direct_purchase_requires_a_context_category_and_normalizes_units_for_new_items(): void
@@ -71,6 +72,23 @@ class MaintenanceMaterialUsageTest extends TestCase
         $this->assertStringContainsString("route('vehicles.maintenance.materials.search'", $panel);
         $this->assertStringContainsString('name="stock_item_id"', $panel);
         $this->assertStringContainsString('x-on:input.debounce.300ms="search()"', $panel);
+        $this->assertStringContainsString('stock_item_resolution_action', $panel);
+        $this->assertStringContainsString('smartState', $panel);
+        $this->assertStringContainsString('AbortController', $panel);
+        $this->assertStringContainsString("route('vehicles.maintenance.materials.direct.suggestions'", $panel);
+    }
+
+    public function test_direct_purchase_suggestions_and_resolution_contract_are_registered(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+        $service = file_get_contents(app_path('Services/MaintenanceMaterialService.php'));
+
+        $this->assertNotNull(app('router')->getRoutes()->getByName('vehicles.maintenance.materials.direct.suggestions'));
+        $this->assertStringContainsString('public function suggestDirectMaterials', $controller);
+        $this->assertStringContainsString('StockItemSearchService $search', $controller);
+        $this->assertStringContainsString("'stock_item_resolution_action' => ['nullable', Rule::in(['use_existing', 'create_new'])]", $controller);
+        $this->assertStringContainsString("if (\$resolutionAction !== 'create_new')", $service);
+        $this->assertStringContainsString('Legacy requests retain the former literal-reuse behavior.', $service);
     }
 
     public function test_permissions_separate_use_and_cancellation(): void
