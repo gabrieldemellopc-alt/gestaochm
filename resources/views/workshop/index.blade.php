@@ -44,89 +44,15 @@
                 Acompanhe veículos em manutenção, alertas técnicos, estoque crítico, pneus e procedimentos operacionais em um único painel.
 
             </p>
-            
-            <button type="button" class="workshop-maintenance-dashboard-button" onclick="openWorkshopMaintenanceDashboard()"><i class="bi bi-bar-chart-line"></i><span>Painel de manutenção</span></button>
-            <div class="workshop-shortcut-list workshop-shortcut-list-horizontal">
-            
-                <a href="{{ route('workshop.tires.index') }}" class="workshop-shortcut-card">
-            
-                    <div>
-                        <i class="bi bi-circle"></i>
-                    </div>
-            
-                    <section>
-                        <strong>Pneus</strong>
-                        <span>Estoque, instalações, sulco e alertas.</span>
-                    </section>
-            
-                    <i class="bi bi-arrow-up-right"></i>
-            
-                </a>
-            
-                <a href="{{ route('stock.index') }}" class="workshop-shortcut-card">
-            
-                    <div>
-                        <i class="bi bi-boxes"></i>
-                    </div>
-            
-                    <section>
-                        <strong>Estoque</strong>
-                        <span>Itens, categorias e movimentações.</span>
-                    </section>
-            
-                    <i class="bi bi-arrow-up-right"></i>
-            
-                </a>
-            
-                <a href="{{ route('procedures.index') }}" class="workshop-shortcut-card">
-            
-                    <div>
-                        <i class="bi bi-clipboard"></i>
-                    </div>
-            
-                    <section>
-                        <strong>Procedimentos</strong>
-                        <span>Regras de manutenção e execução.</span>
-                    </section>
-            
-                    <i class="bi bi-arrow-up-right"></i>
-            
-                </a>
-            
-            </div>
 
         </div>
 
 
 
-        <div class="workshop-hero-panel">
-
-            <div class="workshop-hero-panel-icon">
-
-                <i class="bi bi-wrench-adjustable"></i>
-
-            </div>
-
-
-
-            <div>
-
-                <span>Status operacional</span>
-
-                <strong>
-
-                    {{ $maintenanceVehiclesCount > 0 ? $maintenanceVehiclesCount . ' veículo(s) em atenção' : 'Operação estável' }}
-
-                </strong>
-
-                <p>
-
-                    Dados consolidados da oficina, estoque, pneus e procedimentos.
-
-                </p>
-
-            </div>
-
+        <div class="workshop-hero-actions" aria-label="Ações rápidas da oficina">
+            <button type="button" class="workshop-hero-action workshop-hero-action-primary" onclick="openWorkshopMaintenanceDashboard()"><i class="bi bi-tools"></i><span><strong>Painel de manutenção</strong><small>Veículos, ordens e acompanhamento</small></span><i class="bi bi-arrow-right"></i></button>
+            <button type="button" class="workshop-hero-action" onclick="openWorkshopExpenseModal()"><i class="bi bi-receipt"></i><span><strong>Registrar despesa</strong><small>Custos e gastos da oficina</small></span><i class="bi bi-arrow-right"></i></button>
+            <button type="button" class="workshop-hero-action" onclick="openWorkshopConsumptionModal()"><i class="bi bi-box-seam"></i><span><strong>Registrar consumo</strong><small>Item de estoque</small></span><i class="bi bi-arrow-right"></i></button>
         </div>
 
 
@@ -211,7 +137,7 @@
         <div class="workshop-summary-card">
             <div class="workshop-summary-icon">
 
-                <i class="bi bi-clipboard"></i>
+                <i class="bi bi-wallet2"></i>
 
             </div>
 
@@ -219,11 +145,11 @@
 
             <div>
 
-                <span>Procedimentos</span>
+                <span>Custo do mês</span>
 
-                <strong>{{ $proceduresCount }}</strong>
+                <strong>R$ {{ number_format($workshopOperationalCostMonth, 2, ',', '.') }}</strong>
 
-                <p>Regras operacionais cadastradas</p>
+                <p>{{ now()->locale('pt_BR')->translatedFormat('F/Y') }}</p>
 
             </div>
 
@@ -460,6 +386,10 @@
 
 
     </div>
+
+
+
+    @include('workshop.partials.financial')
 
 
 
@@ -706,8 +636,6 @@
 </div>
 
 
-
-@include('workshop.partials.financial')
 
 <div id="workshopMaintenanceDashboard" class="workshop-dashboard-modal" hidden aria-labelledby="workshopDashboardTitle" role="dialog" aria-modal="true">
     <div class="workshop-dashboard-card">

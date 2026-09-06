@@ -8,6 +8,7 @@
             <div>
                 <span>CUSTOS DA OFICINA</span>
                 <h2>Controle operacional do mês</h2>
+                <small>{{ now()->locale('pt_BR')->translatedFormat('F/Y') }}</small>
             </div>
             <div class="chm-wf-actions">
                 <button type="button" class="chm-wf-button-primary" onclick="openWorkshopExpenseModal()">
