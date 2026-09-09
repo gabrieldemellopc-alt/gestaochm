@@ -5,12 +5,17 @@
 @endpush
 
 @section('content')
+@php($supplierPermissions = app(\App\Services\Permissions\ProfilePermissionService::class))
+@php($supplierScope = ['module' => 'fleet', 'division_id' => session('active_division_id'), 'location_id' => session('active_location_id')])
+@php($canCreateSuppliers = $supplierPermissions->allows(auth()->user(), 'suppliers.create', $supplierScope))
+@php($canUpdateSuppliers = $supplierPermissions->allows(auth()->user(), 'suppliers.update', $supplierScope))
+@php($canChangeSupplierStatus = $supplierPermissions->allows(auth()->user(), 'suppliers.change_status', $supplierScope))
 @php($supplierRecords = $items->mapWithKeys(fn ($supplier) => [$supplier->id => ['id'=>$supplier->id, 'trade_name'=>$supplier->trade_name, 'legal_name'=>$supplier->legal_name, 'document'=>$supplier->formattedDocument(), 'active'=>(bool) $supplier->active, 'name'=>$supplier->displayName(), 'aliases'=>$supplier->aliases->pluck('alias')->values()]]))
 <script>window.supplierRecords = @json($supplierRecords);</script>
 <div class="suppliers-page" x-data="supplierAdmin(window.supplierRecords)" x-effect="document.body.classList.toggle('suppliers-modal-open', modal.open || confirmation.open)">
     <header class="suppliers-header">
         <div><span>Gestão administrativa</span><h1>Fornecedores (CNPJ)</h1><p>Cadastro central de fornecedores e prestadores utilizados no CHM.</p></div>
-        <button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button>
+        @if($canCreateSuppliers)<button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button>@endif
     </header>
 
     @if($errors->any())<div class="suppliers-alert warning"><i class="bi bi-exclamation-triangle"></i>{{ $errors->first() }}</div>@endif
@@ -31,9 +36,9 @@
                 @endif
             </div></td>
             <td><span class="suppliers-status {{ $supplier->active ? 'active' : 'inactive' }}">{{ $supplier->active ? 'Ativo' : 'Inativo' }}</span></td>
-            <td><div class="suppliers-actions"><button type="button" @click="openEdit(suppliers[{{ $supplier->id }}])"><i class="bi bi-pencil"></i> Editar</button><button type="button" class="suppliers-status-toggle" aria-pressed="{{ $supplier->active ? 'true' : 'false' }}" @click="toggle(suppliers[{{ $supplier->id }}])"><span class="suppliers-status-toggle__track {{ $supplier->active ? 'is-active' : '' }}"><span></span></span><span>{{ $supplier->active ? 'Ativo' : 'Inativo' }}</span></button></div></td>
+            <td><div class="suppliers-actions">@if($canUpdateSuppliers)<button type="button" @click="openEdit(suppliers[{{ $supplier->id }}])"><i class="bi bi-pencil"></i> Editar</button>@endif @if($canChangeSupplierStatus)<button type="button" class="suppliers-status-toggle" aria-pressed="{{ $supplier->active ? 'true' : 'false' }}" @click="toggle(suppliers[{{ $supplier->id }}])"><span class="suppliers-status-toggle__track {{ $supplier->active ? 'is-active' : '' }}"><span></span></span><span>{{ $supplier->active ? 'Ativo' : 'Inativo' }}</span></button>@endif</div></td>
         </tr>@empty
-            <tr><td colspan="5"><div class="suppliers-empty"><i class="bi bi-buildings"></i><strong>Nenhum fornecedor cadastrado</strong><p>Cadastre o primeiro fornecedor para começar a reutilizar CNPJ e nomes nos lançamentos.</p><button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button></div></td></tr>
+            <tr><td colspan="5"><div class="suppliers-empty"><i class="bi bi-buildings"></i><strong>Nenhum fornecedor cadastrado</strong><p>Cadastre o primeiro fornecedor para começar a reutilizar CNPJ e nomes nos lançamentos.</p>@if($canCreateSuppliers)<button type="button" class="suppliers-primary-button" @click="openCreate()"><i class="bi bi-plus-lg"></i> Novo fornecedor</button>@endif</div></td></tr>
         @endforelse
         </tbody></table></div>
         <div class="suppliers-pagination">{{ $items->links() }}</div>

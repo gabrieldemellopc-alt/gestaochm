@@ -31,6 +31,18 @@ return [
             ],
         ],
 
+        'suppliers' => [
+            'label' => 'Fornecedores',
+            'description' => 'Permissões para o cadastro central e para a seleção de fornecedores nos fluxos operacionais.',
+            'permissions' => [
+                'suppliers.view' => ['label' => 'Visualizar fornecedores', 'default' => ['supervisor' => true]],
+                'suppliers.create' => ['label' => 'Cadastrar fornecedores', 'default' => ['supervisor' => false]],
+                'suppliers.update' => ['label' => 'Editar fornecedores', 'default' => ['supervisor' => false]],
+                'suppliers.change_status' => ['label' => 'Alterar situação dos fornecedores', 'default' => ['supervisor' => false]],
+                'suppliers.select' => ['label' => 'Pesquisar e selecionar fornecedores nos lançamentos', 'default' => ['supervisor' => true]],
+            ],
+        ],
+
         'vehicles' => [
             'label' => 'Veículos',
             'description' => 'Permissões operacionais relacionadas ao cadastro e acompanhamento da frota.',

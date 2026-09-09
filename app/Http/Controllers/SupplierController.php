@@ -11,14 +11,19 @@ use Illuminate\Validation\ValidationException;
 
 class SupplierController extends Controller
 {
-    private function authorizeSupplierManagement(Request $request): void
+    private function authorize(Request $request, string $permission): void
     {
-        abort_unless(app(ProfilePermissionService::class)->allows($request->user(), 'admin.access.manage', ['module'=>'fleet', 'division_id'=>session('active_division_id'), 'location_id'=>session('active_location_id')]), 403);
+        abort_unless(app(ProfilePermissionService::class)->allows($request->user(), $permission, $this->scope()), 403);
+    }
+
+    private function scope(): array
+    {
+        return ['module' => 'fleet', 'division_id' => session('active_division_id'), 'location_id' => session('active_location_id')];
     }
 
     public function index(Request $request)
     {
-        $this->authorizeSupplierManagement($request);
+        $this->authorize($request, 'suppliers.view');
         $normalizer = app(SupplierNormalizer::class);
         $term = $normalizer->normalizeName((string) $request->q);
         $document = $normalizer->normalizeDocument((string) $request->q);
@@ -35,13 +40,13 @@ class SupplierController extends Controller
 
     public function search(Request $request, SupplierSearchService $search)
     {
-        $this->authorizeSupplierManagement($request);
+        $this->authorize($request, 'suppliers.select');
         return response()->json($search->search($request->user()->tenant_id, (string) $request->q, 8, $request->query('document')));
     }
 
     public function store(Request $request, SupplierNormalizer $normalizer)
     {
-        $this->authorizeSupplierManagement($request);
+        $this->authorize($request, 'suppliers.create');
         $data = $this->data($request, $normalizer); $data['tenant_id'] = $request->user()->tenant_id;
         $supplier = Supplier::create($data); $this->aliases($supplier, $request, $normalizer);
         return redirect()->route('suppliers.index')->with('success', 'Fornecedor cadastrado.');
@@ -49,14 +54,14 @@ class SupplierController extends Controller
 
     public function update(Request $request, Supplier $supplier, SupplierNormalizer $normalizer)
     {
-        $this->authorizeSupplierManagement($request); abort_unless($supplier->tenant_id === $request->user()->tenant_id, 404);
+        $this->authorize($request, 'suppliers.update'); abort_unless($supplier->tenant_id === $request->user()->tenant_id, 404);
         $supplier->update($this->data($request, $normalizer, $supplier)); $this->aliases($supplier, $request, $normalizer);
         return back()->with('success', 'Fornecedor atualizado.');
     }
 
     public function updateStatus(Request $request, Supplier $supplier)
     {
-        $this->authorizeSupplierManagement($request);
+        $this->authorize($request, 'suppliers.change_status');
         abort_unless($supplier->tenant_id === $request->user()->tenant_id, 404);
 
         $data = $request->validate([
