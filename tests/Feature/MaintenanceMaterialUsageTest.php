@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Services\MaintenanceMaterialService;
+use App\Http\Controllers\MaintenanceController;
+use App\Models\MaintenanceRecord;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Config;
@@ -11,6 +14,20 @@ use Tests\TestCase;
 
 class MaintenanceMaterialUsageTest extends TestCase
 {
+    public function test_local_datetime_contract_uses_application_timezone_and_keeps_future_guard(): void
+    {
+        config(['app.timezone' => 'America/Sao_Paulo']);
+        $now = Carbon::now('America/Sao_Paulo');
+        $method = new \ReflectionMethod(MaintenanceController::class, 'parseLocalMaterialUsedAt');
+        $parsed = $method->invoke(app(MaintenanceController::class), $now->format('Y-m-d\\TH:i'));
+
+        $this->assertSame('America/Sao_Paulo', $parsed->getTimezone()->getName());
+        $this->assertSame($now->format('Y-m-d H:i'), $parsed->format('Y-m-d H:i'));
+        $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
+        $this->assertStringContainsString("Carbon::now(config('app.timezone'))", $controller);
+        $this->assertStringContainsString('A data e hora do uso não pode ser futura.', $controller);
+    }
+
     public function test_material_routes_are_registered(): void
     {
         foreach (['search', 'store', 'direct.store', 'cancel', 'replace'] as $action) {
@@ -179,9 +196,10 @@ class MaintenanceMaterialUsageTest extends TestCase
         $controller = file_get_contents(app_path('Http/Controllers/MaintenanceController.php'));
         $view = file_get_contents(resource_path('views/vehicle/partials/maintenance-materials-summary.blade.php'));
 
-        $this->assertSame(2, substr_count($controller, "'used_at' => ['required', 'date'"));
-        $this->assertStringContainsString('used_at.after_or_equal', $controller);
-        $this->assertStringContainsString('used_at.before_or_equal', $controller);
+        $this->assertSame(2, substr_count($controller, "'used_at' => \$this->materialUsedAtRules(\$maintenance)"));
+        $this->assertStringContainsString("'date_format:Y-m-d\\\\TH:i'", $controller);
+        $this->assertStringContainsString("Carbon::now(config('app.timezone'))", $controller);
+        $this->assertStringContainsString("Carbon::createFromFormat('Y-m-d\\\\TH:i'", $controller);
         $this->assertSame(2, substr_count($view, 'name="used_at"'));
         $this->assertSame(2, substr_count($view, "now()->format('Y-m-d\\TH:i')"));
     }

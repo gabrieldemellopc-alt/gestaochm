@@ -21,6 +21,7 @@ use App\Services\StockItemSearchService;
 use App\Services\TenantFiscalSettingService;
 use App\Services\AggregatedVehiclePolicy;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class MaintenanceController extends Controller
 {
@@ -47,12 +48,13 @@ class MaintenanceController extends Controller
         $this->authorizeMaintenancePermission('stock.consume_maintenance');
         $data = $request->validate([
             'stock_item_id' => ['required', 'integer'], 'quantity' => ['required', 'integer', 'min:1'],
-            'used_at' => ['required', 'date', Rule::date()->afterOrEqual($maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at)->beforeOrEqual(now())],
+            'used_at' => $this->materialUsedAtRules($maintenance),
             'notes' => ['nullable', 'string', 'max:2000'],
         ], [
             'used_at.after_or_equal' => 'A data e hora do uso não pode ser anterior à abertura da manutenção.',
             'used_at.before_or_equal' => 'A data e hora do uso não pode ser futura.',
         ]);
+        $data['used_at'] = $this->parseLocalMaterialUsedAt($data['used_at'])->format('Y-m-d H:i:s');
         $material = $service->add($maintenance, $data, auth()->user());
         if ($request->expectsJson()) {
             return response()->json($this->materialPayload($vehicle, $maintenance, 'Material lançado com sucesso.', $material));
@@ -113,7 +115,7 @@ class MaintenanceController extends Controller
             'unit_other' => [Rule::requiredIf($request->input('unit') === 'Outro'), 'nullable', 'string', 'max:50'],
             'quantity' => ['required', 'integer', 'min:1'],
             'total_cost' => ['required', 'numeric', 'min:0'],
-            'used_at' => ['required', 'date', Rule::date()->afterOrEqual($maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at)->beforeOrEqual(now())],
+            'used_at' => $this->materialUsedAtRules($maintenance),
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'supplier_id' => ['nullable', 'integer'],
             'supplier_document' => ['nullable', 'string', 'max:20'],
@@ -123,6 +125,7 @@ class MaintenanceController extends Controller
             'used_at.after_or_equal' => 'A data e hora do uso não pode ser anterior à abertura da manutenção.',
             'used_at.before_or_equal' => 'A data e hora do uso não pode ser futura.',
         ]);
+        $data['used_at'] = $this->parseLocalMaterialUsedAt($data['used_at'])->format('Y-m-d H:i:s');
         if (($data['stock_item_resolution_action'] ?? null) === 'use_existing' && empty($data['stock_item_id'])) {
             throw \Illuminate\Validation\ValidationException::withMessages(['stock_item_id' => 'Selecione o item de estoque que será utilizado.']);
         }
@@ -176,6 +179,39 @@ class MaintenanceController extends Controller
             return response()->json($this->materialPayload($vehicle, $maintenance, 'Material corrigido com devolução e nova baixa.', $material));
         }
         return back()->with('success', 'Material corrigido com devolução e nova baixa.');
+    }
+
+    /**
+     * datetime-local contains no UTC offset. Treat it as wall-clock time in the
+     * configured application timezone before comparing it with the local clock.
+     */
+    private function materialUsedAtRules(MaintenanceRecord $maintenance): array
+    {
+        return [
+            'required',
+            'date_format:Y-m-d\\TH:i',
+            function (string $attribute, mixed $value, \Closure $fail) use ($maintenance): void {
+                try {
+                    $usedAt = $this->parseLocalMaterialUsedAt((string) $value);
+                } catch (\Throwable) {
+                    $fail('A data e hora do uso é inválida.');
+                    return;
+                }
+
+                $openedAt = $maintenance->started_at ?? $maintenance->performed_at ?? $maintenance->created_at;
+                if ($openedAt && $usedAt->lt(Carbon::parse($openedAt)->setTimezone(config('app.timezone')))) {
+                    $fail('A data e hora do uso não pode ser anterior à abertura da manutenção.');
+                }
+                if ($usedAt->gt(Carbon::now(config('app.timezone')))) {
+                    $fail('A data e hora do uso não pode ser futura.');
+                }
+            },
+        ];
+    }
+
+    private function parseLocalMaterialUsedAt(string $value): Carbon
+    {
+        return Carbon::createFromFormat('Y-m-d\\TH:i', $value, config('app.timezone'));
     }
 
     private function materialPayload(Vehicle $vehicle, MaintenanceRecord $maintenance, string $message, ?MaintenanceMaterialUsage $material = null): array
