@@ -255,6 +255,67 @@ class VehicleReadingService
         );
     }
 
+    /**
+     * Records that the current operational counter was physically checked without
+     * changing its value. This is intentionally separate from a generic touch().
+     */
+    public function confirmCurrentKm(Vehicle $vehicle, User $user, ?CarbonInterface $readAt = null): bool
+    {
+        return $this->confirmCurrentReading(
+            $vehicle,
+            'current_km',
+            'last_km_update_at',
+            'km',
+            $user,
+            $readAt,
+        );
+    }
+
+    public function confirmCurrentHours(Vehicle $vehicle, User $user, ?CarbonInterface $readAt = null): bool
+    {
+        return $this->confirmCurrentReading(
+            $vehicle,
+            'current_hours',
+            'last_hours_update_at',
+            'hours',
+            $user,
+            $readAt,
+        );
+    }
+
+    private function confirmCurrentReading(
+        Vehicle $vehicle,
+        string $field,
+        string $updatedAtField,
+        string $type,
+        User $user,
+        ?CarbonInterface $readAt,
+    ): bool {
+        if ($vehicle->{$field} === null) {
+            return false;
+        }
+
+        $effectiveAt = $this->effectiveDate($readAt);
+        $value = $vehicle->{$field};
+
+        $vehicle->update([$updatedAtField => $effectiveAt]);
+
+        VehicleUpdateLog::create([
+            'vehicle_id' => $vehicle->id,
+            'user_id' => $user->id,
+            'division_id' => $vehicle->division_id,
+            'location_id' => $vehicle->location_id,
+            'type' => $type,
+            'source' => 'quick_update_confirmation',
+            'read_at' => $effectiveAt,
+            'old_value' => $value,
+            'new_value' => $value,
+            'observation' => 'Leitura operacional atual confirmada na atualização rápida.',
+        ]);
+
+        return true;
+    }
+
     private function updateReading(
         Vehicle $vehicle,
         string $field,

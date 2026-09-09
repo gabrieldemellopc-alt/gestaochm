@@ -14,6 +14,7 @@ class VehicleUpdateLog extends Model
         'fuel' => 'Abastecimento',
         'fuel_filling' => 'Abastecimento',
         'dashboard_quick_update' => 'Atualização manual',
+        'quick_update_confirmation' => 'Leitura confirmada',
         'maintenance_open' => 'Abertura de OM',
         'maintenance_close' => 'Encerramento de OM',
         'manual_update' => 'Atualização manual',

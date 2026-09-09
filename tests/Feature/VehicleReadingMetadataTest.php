@@ -148,6 +148,47 @@ class VehicleReadingMetadataTest extends TestCase
         ]);
     }
 
+    public function test_confirming_current_km_creates_an_auditable_log_without_changing_the_counter(): void
+    {
+        [$vehicle, $user] = $this->vehicleAndUser(596201, '2026-08-01 08:00:00');
+        $before = $this->vehicleSnapshot($vehicle);
+        $at = Carbon::parse('2026-09-09 10:00:00');
+
+        $this->assertTrue(app(VehicleReadingService::class)->confirmCurrentKm($vehicle, $user, $at));
+
+        $after = $this->vehicleSnapshot($vehicle);
+        $this->assertSame($before['current_km'], $after['current_km']);
+        $this->assertSame($before['current_hours'], $after['current_hours']);
+        $this->assertSame('2026-09-09 10:00:00', $after['last_km_update_at']);
+        $this->assertDatabaseHas('vehicle_update_logs', [
+            'vehicle_id' => $vehicle->id,
+            'type' => 'km',
+            'source' => 'quick_update_confirmation',
+            'old_value' => '596201',
+            'new_value' => '596201',
+        ]);
+    }
+
+    public function test_confirming_current_hours_creates_an_auditable_log_without_changing_the_counter(): void
+    {
+        [$vehicle, $user] = $this->vehicleAndUser(0, null);
+        $vehicle->update(['current_hours' => 15, 'last_hours_update_at' => '2026-08-01 08:00:00']);
+        $before = $this->vehicleSnapshot($vehicle);
+
+        $this->assertTrue(app(VehicleReadingService::class)->confirmCurrentHours($vehicle, $user, Carbon::parse('2026-09-09 10:00:00')));
+
+        $after = $this->vehicleSnapshot($vehicle);
+        $this->assertSame($before['current_hours'], $after['current_hours']);
+        $this->assertSame('2026-09-09 10:00:00', $after['last_hours_update_at']);
+        $this->assertDatabaseHas('vehicle_update_logs', [
+            'vehicle_id' => $vehicle->id,
+            'type' => 'hours',
+            'source' => 'quick_update_confirmation',
+            'old_value' => '15',
+            'new_value' => '15',
+        ]);
+    }
+
     public function test_synchronization_orders_readings_and_reports_regression_without_mutating_current_km(): void
     {
         [$vehicle, $user] = $this->vehicleAndUser(14900, '2026-08-10 08:00:00');

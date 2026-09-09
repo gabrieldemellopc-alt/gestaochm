@@ -31,7 +31,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/pages/dashboard.css') }}">
-<link rel="stylesheet" href="{{ asset('css/pages/quick-update.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('css/pages/quick-update.css') }}?v=5">
 @endpush
 
 @section('content')
@@ -94,12 +94,41 @@
         </div>
     </div>
 
+    <nav class="quick-update-filter" aria-label="Filtrar veículos por relação de frota">
+        <span class="quick-update-filter-label">Relação da frota</span>
+        <div class="quick-update-filter-toggles" role="group" aria-label="Relação da frota">
+            <a
+                href="{{ route('vehicle.quick-update') }}"
+                class="quick-update-filter-toggle {{ $fleetRelation === null ? 'is-active' : '' }}"
+                @if($fleetRelation === null) aria-current="page" @endif
+            >Todos</a>
+            <a
+                href="{{ route('vehicle.quick-update', ['fleet_relation' => 'internal']) }}"
+                class="quick-update-filter-toggle {{ $fleetRelation === 'internal' ? 'is-active' : '' }}"
+                @if($fleetRelation === 'internal') aria-current="page" @endif
+            >Próprios</a>
+            <a
+                href="{{ route('vehicle.quick-update', ['fleet_relation' => 'aggregated']) }}"
+                class="quick-update-filter-toggle {{ $fleetRelation === 'aggregated' ? 'is-active' : '' }}"
+                @if($fleetRelation === 'aggregated') aria-current="page" @endif
+            >Agregados</a>
+            <a
+                href="{{ route('vehicle.quick-update', ['fleet_relation' => 'rented']) }}"
+                class="quick-update-filter-toggle {{ $fleetRelation === 'rented' ? 'is-active' : '' }}"
+                @if($fleetRelation === 'rented') aria-current="page" @endif
+            >Alugados</a>
+        </div>
+    </nav>
+
     <form
         method="POST"
         action="{{ route('vehicle.quick-update.store') }}"
         onsubmit="return confirmBulkOperationalUpdate(this);"
     >
         @csrf
+        @if($fleetRelation)
+            <input type="hidden" name="fleet_relation" value="{{ $fleetRelation }}">
+        @endif
         <input type="hidden" name="km_reading_confirmed" value="0">
         <input type="hidden" name="hours_reading_confirmed" value="0">
 
@@ -125,6 +154,7 @@
                             <th>Placa</th>
                             <th>KM atual</th>
                             <th>Horímetro atual</th>
+                            <th class="quick-confirm-heading">Conferido</th>
                         </tr>
                     </thead>
 
@@ -200,6 +230,7 @@
                                                 data-original="{{ $vehicle->current_km ?? 0 }}"
                                                 data-type="km"
                                                 data-vehicle="{{ $vehicle->plate ?? $vehicle->name }}"
+                                                @disabled(! $vehicle->km_control_enabled)
                                             >
 
                                             <span>km</span>
@@ -222,16 +253,32 @@
                                                 data-original="{{ $vehicle->current_hours ?? 0 }}"
                                                 data-type="hours"
                                                 data-vehicle="{{ $vehicle->plate ?? $vehicle->name }}"
+                                                @disabled(! $vehicle->hours_control_enabled)
                                             >
 
                                             <span>h</span>
                                         </div>
                                     </label>
                                 </td>
+
+                                <td class="quick-confirm-cell">
+                                    @if($vehicle->km_control_enabled || $vehicle->hours_control_enabled)
+                                        <label class="quick-confirm-control">
+                                            <input
+                                                type="checkbox"
+                                                name="vehicles[{{ $index }}][confirmed]"
+                                                value="1"
+                                            >
+                                            <span>Está atualizado</span>
+                                        </label>
+                                    @else
+                                        <span class="quick-control-disabled">Controles desativados</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4">
+                                <td colspan="5">
                                     <div class="quick-empty">
                                         <i class="bi bi-inbox"></i>
 

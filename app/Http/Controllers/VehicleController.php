@@ -2326,7 +2326,7 @@ class VehicleController extends Controller
 
 
 
-    public function quickUpdate()
+    public function quickUpdate(Request $request)
 
     {
 
@@ -2342,7 +2342,13 @@ class VehicleController extends Controller
                 );
         }
 
-        $vehicles = Vehicle::query()
+        $fleetRelation = $request->query('fleet_relation');
+
+        if (! in_array($fleetRelation, ['internal', 'aggregated', 'rented'], true)) {
+            $fleetRelation = null;
+        }
+
+        $vehiclesQuery = Vehicle::query()
             ->where(
 
                 'division_id',
@@ -2352,9 +2358,13 @@ class VehicleController extends Controller
             )
 
             ->where('tenant_id', auth()->user()->tenant_id)
-            ->where('location_id', $activeLocation->id)
-            ->orderBy('name')
-            ->get();
+            ->where('location_id', $activeLocation->id);
+
+        if ($fleetRelation !== null) {
+            $vehiclesQuery->where('fleet_relation', $fleetRelation);
+        }
+
+        $vehicles = $vehiclesQuery->orderBy('name')->get();
 
 
 
@@ -2422,7 +2432,7 @@ class VehicleController extends Controller
 
             'vehicle.quick-update',
 
-            compact('vehicles')
+            compact('vehicles', 'fleetRelation')
 
         );
 
@@ -2431,6 +2441,102 @@ class VehicleController extends Controller
 
 
     public function quickUpdateStore(Request $request)
+    {
+        $activeDivisionId = session('active_division_id');
+        $activeLocation = app(ActiveContextService::class)->activeLocation(auth()->user());
+
+        if (! $activeLocation) {
+            return redirect()->route('portal')->with('warning', 'Selecione uma unidade para continuar.');
+        }
+
+        $data = $request->validate([
+            'fleet_relation' => ['nullable', 'in:internal,aggregated,rented'],
+            'vehicles' => ['required', 'array'],
+            'vehicles.*.id' => ['required', 'exists:vehicles,id'],
+            'vehicles.*.current_km' => ['nullable', 'numeric', 'min:0'],
+            'vehicles.*.current_hours' => ['nullable', 'numeric', 'min:0'],
+            'vehicles.*.confirmed' => ['nullable', 'boolean'],
+            'km_reading_confirmed' => ['nullable', 'boolean'],
+            'hours_reading_confirmed' => ['nullable', 'boolean'],
+        ]);
+
+        $service = app(VehicleReadingService::class);
+        $updated = 0;
+
+        foreach ($data['vehicles'] as $vehicleData) {
+            $vehicle = Vehicle::query()
+                ->where('tenant_id', auth()->user()->tenant_id)
+                ->where('division_id', $activeDivisionId)
+                ->where('location_id', $activeLocation->id)
+                ->find($vehicleData['id']);
+
+            if (! $vehicle) {
+                continue;
+            }
+
+            $confirmed = (bool) ($vehicleData['confirmed'] ?? false);
+            $changedKm = $this->quickUpdateValueChanged($vehicleData, 'current_km', $vehicle->current_km);
+            $changedHours = $this->quickUpdateValueChanged($vehicleData, 'current_hours', $vehicle->current_hours);
+            $didUpdate = false;
+
+            if ($vehicle->km_control_enabled && $changedKm) {
+                $didUpdate = $service->updateKm(
+                    $vehicle,
+                    $vehicleData['current_km'],
+                    auth()->user(),
+                    'dashboard_quick_update',
+                    'Hodômetro atualizado manualmente pelo painel rápido.',
+                    'vehicles.'.$vehicle->id.'.current_km',
+                    $request->boolean('km_reading_confirmed'),
+                ) || $didUpdate;
+                $vehicle->refresh();
+            }
+
+            if ($vehicle->hours_control_enabled && $changedHours) {
+                $didUpdate = $service->updateHours(
+                    $vehicle,
+                    $vehicleData['current_hours'],
+                    auth()->user(),
+                    'dashboard_quick_update',
+                    'Horímetro atualizado manualmente pelo painel rápido.',
+                    'vehicles.'.$vehicle->id.'.current_hours',
+                    $request->boolean('hours_reading_confirmed'),
+                ) || $didUpdate;
+                $vehicle->refresh();
+            }
+
+            if ($confirmed) {
+                if ($vehicle->km_control_enabled && ! $changedKm) {
+                    $didUpdate = $service->confirmCurrentKm($vehicle, auth()->user()) || $didUpdate;
+                    $vehicle->refresh();
+                }
+
+                if ($vehicle->hours_control_enabled && ! $changedHours) {
+                    $didUpdate = $service->confirmCurrentHours($vehicle, auth()->user()) || $didUpdate;
+                }
+            }
+
+            if ($didUpdate) {
+                $updated++;
+            }
+        }
+
+        return redirect()
+            ->route('vehicle.quick-update', array_filter(['fleet_relation' => $data['fleet_relation'] ?? null]))
+            ->with('success', "{$updated} veículo(s) atualizado(s) com sucesso.");
+    }
+
+    private function quickUpdateValueChanged(array $vehicleData, string $field, mixed $current): bool
+    {
+        if (! array_key_exists($field, $vehicleData) || $vehicleData[$field] === null || $vehicleData[$field] === '') {
+            return false;
+        }
+
+        return $current === null || (float) $vehicleData[$field] !== (float) $current;
+    }
+
+    /** @deprecated Replaced by the flag-aware VehicleReadingService flow above. */
+    private function quickUpdateStoreLegacy(Request $request)
 
     {
 
