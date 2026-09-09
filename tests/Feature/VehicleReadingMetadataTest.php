@@ -28,7 +28,7 @@ class VehicleReadingMetadataTest extends TestCase
 
         Schema::create('users', function (Blueprint $table) { $table->id(); $table->string('name'); $table->timestamps(); });
         Schema::create('fuel_fillings', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->unsignedBigInteger('vehicle_id')->nullable(); $table->dateTime('filled_at')->nullable(); $table->decimal('vehicle_km', 12, 2)->nullable(); $table->string('vehicle_km_status')->nullable(); $table->timestamp('cancelled_at')->nullable(); $table->timestamps(); });
-        Schema::create('vehicles', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->string('operational_status')->default('operational'); $table->decimal('current_km', 12, 2)->nullable(); $table->decimal('current_hours', 12, 2)->nullable(); $table->timestamp('last_km_update_at')->nullable(); $table->timestamp('last_hours_update_at')->nullable(); $table->timestamps(); });
+        Schema::create('vehicles', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->string('operational_status')->default('operational'); $table->decimal('current_km', 12, 2)->nullable(); $table->decimal('current_hours', 12, 2)->nullable(); $table->timestamp('last_km_update_at')->nullable(); $table->timestamp('last_hours_update_at')->nullable(); $table->boolean('km_control_enabled')->default(true); $table->boolean('hours_control_enabled')->default(false); $table->boolean('tire_control_enabled')->default(true); $table->timestamps(); });
         Schema::create('vehicle_update_logs', function (Blueprint $table) {
             $table->id(); $table->unsignedBigInteger('vehicle_id'); $table->unsignedBigInteger('user_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->string('type'); $table->string('source')->nullable(); $table->dateTime('read_at')->nullable(); $table->unsignedBigInteger('fuel_filling_id')->nullable(); $table->string('old_value')->nullable(); $table->string('new_value')->nullable(); $table->text('observation')->nullable(); $table->string('reading_status')->nullable(); $table->text('reading_issue')->nullable(); $table->unsignedBigInteger('reviewed_by')->nullable(); $table->timestamp('reviewed_at')->nullable(); $table->timestamps(); $table->unique(['fuel_filling_id', 'type']);
         });
@@ -115,6 +115,37 @@ class VehicleReadingMetadataTest extends TestCase
             $this->assertSame($before, $this->vehicleSnapshot($vehicle));
             $this->assertDatabaseHas('vehicle_update_logs', ['fuel_filling_id' => $filling->id, 'type' => 'hours', 'new_value' => (string) $historicalHours]);
         }
+    }
+
+    public function test_vva002_historical_hours_reading_preserves_the_complete_vehicle_snapshot(): void
+    {
+        [$vehicle, $user] = $this->vehicleAndUser(0, null);
+        $vehicle->update([
+            'current_hours' => 15,
+            'last_hours_update_at' => '2026-08-23 23:58:48',
+            'km_control_enabled' => false,
+            'hours_control_enabled' => true,
+        ]);
+        $before = $this->vehicleSnapshot($vehicle);
+        $filling = FuelFilling::create(['vehicle_id' => $vehicle->id]);
+
+        $this->assertTrue(app(VehicleReadingService::class)->registerHistoricalHoursReading(
+            $vehicle,
+            15,
+            $user,
+            '2026-08-14 00:00:00',
+            'fuel_filling_import',
+            'VVA002 — BOB-CAT-02 — horímetro histórico 15.',
+            $filling,
+        ));
+
+        $this->assertSame($before, $this->vehicleSnapshot($vehicle));
+        $this->assertDatabaseHas('vehicle_update_logs', [
+            'vehicle_id' => $vehicle->id,
+            'fuel_filling_id' => $filling->id,
+            'type' => 'hours',
+            'new_value' => '15',
+        ]);
     }
 
     public function test_synchronization_orders_readings_and_reports_regression_without_mutating_current_km(): void

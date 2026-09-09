@@ -37,7 +37,7 @@ class VehicleProcedurePersistenceTest extends TestCase
 
     private function payload(Vehicle $vehicle, array $procedures): array
     {
-        return ['name' => $vehicle->name, 'plate' => $vehicle->plate, 'brand' => $vehicle->brand, 'model' => $vehicle->model, 'year' => $vehicle->year, 'current_km' => $vehicle->current_km, 'current_hours' => $vehicle->current_hours, 'status' => 'active', 'operational_status' => 'operational', 'type' => 'automovel', 'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id, 'tire_layout' => 'truck_6_mixed', 'procedures' => $procedures];
+        return ['name' => $vehicle->name, 'plate' => $vehicle->plate, 'brand' => $vehicle->brand, 'model' => $vehicle->model, 'year' => $vehicle->year, 'current_km' => $vehicle->current_km, 'current_hours' => $vehicle->current_hours, 'status' => 'active', 'operational_status' => 'operational', 'type' => 'automovel', 'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id, 'tire_layout' => 'truck_6_mixed', 'km_control_enabled' => true, 'hours_control_enabled' => false, 'tire_control_enabled' => true, 'procedures' => $procedures];
     }
 
     private function context(): array
