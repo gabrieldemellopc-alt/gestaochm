@@ -176,18 +176,51 @@ class VehicleReadingService
             'observation' => $observation,
         ]);
 
-        // A historical entry may become current only when it is newer than the current reading's effective date.
-        $canBecomeCurrent = $vehicle->current_km === null
-            || ($vehicle->last_km_update_at !== null
-                && $effectiveAt->gte(Carbon::parse($vehicle->last_km_update_at))
-                && $numericValue >= (float) $vehicle->current_km);
+        return true;
+    }
 
-        if ($canBecomeCurrent) {
-            $vehicle->update([
-                'current_km' => $numericValue,
-                'last_km_update_at' => $effectiveAt,
-            ]);
+    /**
+     * Records a past hours reading without changing the operational counter.
+     */
+    public function registerHistoricalHoursReading(
+        Vehicle $vehicle,
+        float|int $value,
+        User $user,
+        CarbonInterface|string $readAt,
+        string $source,
+        ?string $observation = null,
+        FuelFilling|int|null $fuelFilling = null,
+    ): bool {
+        $effectiveAt = $this->effectiveDate($readAt);
+        $fillingId = $this->fuelFillingId($fuelFilling);
+
+        if ($fillingId && VehicleUpdateLog::query()
+            ->where('fuel_filling_id', $fillingId)
+            ->where('type', 'hours')
+            ->exists()) {
+            return false;
         }
+
+        $previousValue = VehicleUpdateLog::query()
+            ->where('vehicle_id', $vehicle->id)
+            ->where('type', 'hours')
+            ->whereRaw('COALESCE(read_at, created_at) < ?', [$effectiveAt])
+            ->orderByRaw('COALESCE(read_at, created_at) desc')
+            ->value('new_value');
+
+        VehicleUpdateLog::create([
+            'vehicle_id' => $vehicle->id,
+            'user_id' => $user->id,
+            'division_id' => $vehicle->division_id,
+            'location_id' => $vehicle->location_id,
+            'type' => 'hours',
+            'source' => $source,
+            'read_at' => $effectiveAt,
+            'fuel_filling_id' => $fillingId,
+            'old_value' => $previousValue,
+            'new_value' => (float) $value,
+            'observation' => $observation,
+        ]);
 
         return true;
     }

@@ -1,112 +1,24 @@
 <?php
-
 namespace Tests\Feature;
-
-use App\Console\Commands\ImportImperatrizFuelSheet;
-use App\Models\Division;
-use App\Models\FuelFilling;
-use App\Models\FuelProduct;
-use App\Models\Location;
-use App\Models\Tenant;
-use App\Models\Vehicle;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-use Tests\TestCase;
-
-class ImportImperatrizFuelSheetTest extends TestCase
-{
-    protected function setUp(): void
-    {
-        parent::setUp();
-        Schema::create('tenants', function (Blueprint $table) { $table->id(); $table->string('name'); $table->timestamps(); });
-        Schema::create('divisions', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id'); $table->string('name')->nullable(); $table->timestamps(); });
-        Schema::create('locations', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id'); $table->unsignedBigInteger('division_id'); $table->string('name')->nullable(); $table->boolean('active')->default(true); $table->timestamps(); });
-        Schema::create('vehicles', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id'); $table->unsignedBigInteger('division_id'); $table->unsignedBigInteger('location_id'); $table->string('name'); $table->string('plate')->nullable(); $table->string('type')->default('lixo'); $table->string('operational_status')->default('operational'); $table->string('asset_code')->nullable(); $table->timestamps(); });
-        Schema::create('fuel_products', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id'); $table->string('name'); $table->string('slug'); $table->string('unit')->default('litros'); $table->boolean('active')->default(true); $table->timestamps(); });
-        Schema::create('fuel_fillings', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id'); $table->unsignedBigInteger('division_id'); $table->unsignedBigInteger('location_id'); $table->unsignedBigInteger('fuel_product_id'); $table->unsignedBigInteger('vehicle_id'); $table->string('source')->nullable(); $table->dateTime('filled_at')->nullable(); $table->decimal('vehicle_km', 12, 2)->nullable(); $table->decimal('quantity_liters', 14, 3); $table->decimal('unit_cost', 12, 4)->nullable(); $table->decimal('total_cost', 14, 2)->nullable(); $table->string('supplier_name')->nullable(); $table->string('document_number')->nullable(); $table->text('notes')->nullable(); $table->timestamps(); });
-    }
-public function test_normalizes_plates_and_fleet_codes(): void
-    {
-        $this->assertSame('TMW6B79', ImportImperatrizFuelSheet::normalizePlate(' TMW-6B79 '));
-        $this->assertSame('JAC2E37', ImportImperatrizFuelSheet::normalizePlate('JAC.2E37'));
-        $this->assertSame('VCA001', ImportImperatrizFuelSheet::normalizeFleet('VCA 01'));
-        $this->assertSame('VCL013', ImportImperatrizFuelSheet::normalizeFleet('VCL13'));
-    }
-
-    public function test_dry_run_matches_normalized_plates_fleet_and_inverted_columns_without_writing(): void
-    {
-        [$tenant, $division, $location] = $this->context();
-        $tmw = $this->vehicle($tenant, $division, $location, 'VCA014', 'TMW-6B79');
-        $jac = $this->vehicle($tenant, $division, $location, 'VCA006', 'JAC-2E37');
-        $tms = $this->vehicle($tenant, $division, $location, 'VCA007', 'TMS-1J41');
-        $this->vehicle($tenant, $division, $location, 'VCA001', 'TMO-8H32');
-        $this->product($tenant);
-
-        $file = $this->sheet([
-            ['18/05/2026', 'TMW6B79', 'VCA14', 'TMW6B79'],
-            ['18/05/2026', 'JAC2E37', 'VCA06', 'JAC2E37'],
-            ['18/05/2026', 'VCA 01', 'VCA 01', 'MOTORISTA'],
-            ['06/07/2026', 'VCA07', 'TMS1J41', 'JOSUÉ SENA'],
-            ['18/05/2026', 'HPB4781', 'AGREGADO', 'HPB4781'],
-        ]);
-
-        $this->artisan('chm:import-imperatriz-fuel', $this->arguments($file, $tenant, $division, $location, ['--dry-run' => true]))
-            ->expectsOutputToContain('importáveis')
-            ->assertExitCode(0);
-
-        $this->assertDatabaseCount('fuel_fillings', 0);
-        $this->assertSame('TMW-6B79', $tmw->plate);
-        $this->assertSame('JAC-2E37', $jac->plate);
-        $this->assertSame('TMS-1J41', $tms->plate);
-    }
-
-    public function test_commit_writes_only_importable_rows_and_is_idempotent(): void
-    {
-        [$tenant, $division, $location] = $this->context();
-        $vehicle = $this->vehicle($tenant, $division, $location, 'VCA014', 'TMW-6B79');
-        $this->product($tenant);
-        $file = $this->sheet([
-            ['18/05/2026', 'TMW6B79', 'VCA14', 'TMW6B79'],
-            ['18/05/2026', 'HPB4781', 'AGREGADO', 'HPB4781'],
-        ]);
-        $arguments = $this->arguments($file, $tenant, $division, $location, ['--commit' => true]);
-
-        $this->artisan('chm:import-imperatriz-fuel', $arguments)->assertExitCode(0);
-        $this->assertDatabaseCount('fuel_fillings', 1);
-        $this->assertDatabaseHas('fuel_fillings', ['vehicle_id' => $vehicle->id]);
-        $this->artisan('chm:import-imperatriz-fuel', $arguments)->assertExitCode(0);
-        $this->assertDatabaseCount('fuel_fillings', 1);
-    }
-
-    private function context(): array
-    {
-        $tenant = Tenant::create(['name' => 'Teste']);
-        $division = Division::create(['tenant_id' => $tenant->id, 'name' => 'Divisão']);
-        $location = Location::create(['tenant_id' => $tenant->id, 'division_id' => $division->id, 'name' => 'Imperatriz', 'active' => true]);
-        return [$tenant, $division, $location];
-    }
-
-    private function vehicle(Tenant $tenant, Division $division, Location $location, string $name, string $plate): Vehicle
-    {
-        return Vehicle::create(['tenant_id' => $tenant->id, 'division_id' => $division->id, 'location_id' => $location->id, 'name' => $name, 'plate' => $plate, 'type' => 'lixo']);
-    }
-
-    private function product(Tenant $tenant): void
-    {
-        FuelProduct::create(['tenant_id' => $tenant->id, 'name' => 'Diesel S10', 'slug' => 'diesel-s10', 'unit' => 'litros', 'active' => true]);
-    }
-
-    private function sheet(array $rows): string
-    {
-        $file = tempnam(sys_get_temp_dir(), 'imperatriz-fuel-');
-        $header = "Data\tVeiculo\tFrota\tVeiculo2\tkm anterior\tKm atual\tPercorrido Km\tVolume (L)\tValor por Litro\tValor Total\tMedia Km";
-        $lines = array_map(fn (array $row) => implode("\t", [...$row, '100', '110', '10', '10,5', 'R$ 6,50', 'R$ 68,25', '1,0']), $rows);
-        file_put_contents($file, implode(PHP_EOL, [$header, ...$lines]));
-        return $file;
-    }
-
-    private function arguments(string $file, Tenant $tenant, Division $division, Location $location, array $options = []): array
-    {
-        return ['file' => $file, '--tenant-id' => $tenant->id, '--division-id' => $division->id, '--location-id' => $location->id, ...$options];
-    }
+use Tests\TestCase;use Illuminate\Support\Facades\Schema;use Illuminate\Database\Schema\Blueprint;use App\Models\{Tenant,Division,Location,User,FuelProduct,FuelTank,Vehicle,FuelFilling,FuelReceipt,FuelMovement};
+class ImportImperatrizFuelSheetTest extends TestCase {
+ protected function setUp():void{parent::setUp();foreach(['fuel_import_rows','fuel_import_batches','vehicle_update_logs','system_audit_logs','fuel_movements','fuel_fillings','fuel_receipts','fuel_tanks','fuel_products','vehicles','suppliers','users','locations','divisions','tenants']as$n)Schema::dropIfExists($n);foreach(['tenants','divisions','locations','users','fuel_products','vehicles']as$n)Schema::create($n,function(Blueprint$t)use($n){$t->id();foreach(['tenant_id','division_id','location_id']as$c)if($n!=='tenants')$t->unsignedBigInteger($c)->nullable();$t->string('name')->nullable();if($n==='vehicles')$t->string('operational_status')->default('operational');if($n==='users'){$t->string('email')->nullable();$t->string('password')->nullable();}$t->decimal('current_km',12,2)->nullable();$t->decimal('current_hours',12,2)->nullable();$t->dateTime('last_km_update_at')->nullable();$t->dateTime('last_hours_update_at')->nullable();$t->string('slug')->nullable();$t->boolean('active')->default(true);$t->timestamps();});Schema::create('fuel_tanks',function(Blueprint$t){$t->id();foreach(['tenant_id','division_id','location_id','fuel_product_id']as$c)$t->unsignedBigInteger($c);$t->string('name');$t->decimal('capacity_liters',14,3);$t->decimal('current_balance_liters',14,3)->default(0);$t->decimal('average_unit_cost',12,4)->default(0);$t->decimal('estimated_stock_value',14,2)->default(0);$t->boolean('active')->default(true);$t->timestamps();});foreach(['fuel_receipts','fuel_fillings','fuel_movements']as$n)Schema::create($n,function(Blueprint$t)use($n){$t->id();foreach(['tenant_id','division_id','location_id','fuel_tank_id','fuel_product_id','vehicle_id','responsible_user_id','driver_id','supplier_id']as$c)$t->unsignedBigInteger($c)->nullable();$t->string('source')->nullable();if($n!=='fuel_movements')$t->dateTime($n==='fuel_receipts'?'received_at':'filled_at')->nullable();foreach(['quantity_liters','balance_before','balance_after']as$c)$t->decimal($c,14,3)->nullable();foreach(['unit_cost']as$c)$t->decimal($c,12,4)->nullable();$t->decimal('total_cost',14,2)->nullable();$t->decimal('vehicle_km',12,2)->nullable();$t->decimal('vehicle_hours',12,2)->nullable();$t->string('movement_type')->nullable();$t->string('source_type')->nullable();$t->unsignedBigInteger('source_id')->nullable();$t->string('supplier_name')->nullable();$t->string('supplier_document')->nullable();$t->string('invoice_number')->nullable();$t->string('document_number')->nullable();$t->text('notes')->nullable();$t->timestamps();});Schema::create('system_audit_logs',fn(Blueprint$t)=>[$t->id(),$t->unsignedBigInteger('tenant_id')->nullable(),$t->unsignedBigInteger('division_id')->nullable(),$t->unsignedBigInteger('location_id')->nullable(),$t->unsignedBigInteger('user_id')->nullable(),$t->string('user_profile')->nullable(),$t->string('auditable_type')->nullable(),$t->unsignedBigInteger('auditable_id')->nullable(),$t->string('module')->nullable(),$t->string('action'),$t->string('summary')->nullable(),$t->json('before_data')->nullable(),$t->json('after_data')->nullable(),$t->json('metadata')->nullable(),$t->text('reason')->nullable(),$t->string('ip_address')->nullable(),$t->text('user_agent')->nullable(),$t->timestamps()]);Schema::create('vehicle_update_logs',fn(Blueprint$t)=>[$t->id(),$t->unsignedBigInteger('vehicle_id'),$t->unsignedBigInteger('user_id')->nullable(),$t->unsignedBigInteger('division_id')->nullable(),$t->unsignedBigInteger('location_id')->nullable(),$t->string('type'),$t->string('source')->nullable(),$t->dateTime('read_at')->nullable(),$t->unsignedBigInteger('fuel_filling_id')->nullable(),$t->string('old_value')->nullable(),$t->string('new_value')->nullable(),$t->text('observation')->nullable(),$t->timestamps()]);Schema::create('fuel_import_batches',fn(Blueprint$t)=>[$t->id(),$t->unsignedBigInteger('tenant_id'),$t->unsignedBigInteger('division_id'),$t->unsignedBigInteger('location_id'),$t->unsignedBigInteger('fuel_tank_id'),$t->unsignedBigInteger('responsible_user_id'),$t->string('source_file'),$t->string('source_hash'),$t->string('status'),$t->boolean('is_historical_import'),$t->boolean('allow_legacy_balance_anomalies'),$t->json('summary')->nullable(),$t->timestamps()]);Schema::create('fuel_import_rows',fn(Blueprint$t)=>[$t->id(),$t->unsignedBigInteger('fuel_import_batch_id'),$t->unsignedInteger('row_number'),$t->unsignedBigInteger('sequence'),$t->string('external_reference'),$t->json('payload'),$t->string('status'),$t->string('entity_type')->nullable(),$t->unsignedBigInteger('entity_id')->nullable(),$t->text('error')->nullable(),$t->timestamps()]);}
+ private function boot(){Tenant::forceCreate(['id'=>1]);Division::forceCreate(['id'=>1,'tenant_id'=>1]);Location::forceCreate(['id'=>3,'tenant_id'=>1,'division_id'=>1]);User::forceCreate(['id'=>1,'tenant_id'=>1]);FuelProduct::forceCreate(['id'=>1,'tenant_id'=>1,'name'=>'Diesel','slug'=>'d']);FuelTank::forceCreate(['id'=>3,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_product_id'=>1,'name'=>'D','capacity_liters'=>13000]);Vehicle::forceCreate(['id'=>1,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'name'=>'V']);}
+ private function file(array $r){$f=tempnam(sys_get_temp_dir(),'f');$h=['sequence','event_type','occurred_at','tank_id','vehicle_id','fuel_product_id','source','quantity_liters','unit_cost','total_cost','invoice_number','supplier_name','document_number','vehicle_km','vehicle_hours','notes','legacy_classification','external_reference'];$o=fopen($f,'w');fputcsv($o,$h);foreach($r as$x)fputcsv($o,array_map(fn($c)=>$x[$c]??'',$h));fclose($o);return$f;}
+ private function executeImport($f,$commit=false){return $this->artisan('chm:import-imperatriz-fuel',['file'=>$f,'--tank-id'=>3,'--user'=>1,$commit?'--commit':'--dry-run'=>true,'--confirm-location'=>3]);}
+ public function test_dry_run_persists_nothing(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'initial_balance','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>60,'external_reference'=>'a']]))->assertExitCode(0);foreach(['fuel_import_batches','fuel_import_rows','fuel_receipts','fuel_fillings','fuel_movements']as$t)$this->assertDatabaseCount($t,0);$this->assertSame('0.000',FuelTank::find(3)->current_balance_liters);}
+ public function test_initial_balance(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'initial_balance','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>60,'external_reference'=>'a']]),true)->assertExitCode(0);$this->assertDatabaseCount('fuel_receipts',0);$this->assertDatabaseHas('fuel_movements',['movement_type'=>'initial_balance']);$this->assertSame('10.000',FuelTank::find(3)->current_balance_liters);$this->assertDatabaseCount('fuel_import_rows',1);}
+ public function test_receipt(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'receipt','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>100,'total_cost'=>700,'external_reference'=>'a']]),true)->assertExitCode(0);$this->assertDatabaseCount('fuel_receipts',1);$this->assertDatabaseHas('fuel_movements',['movement_type'=>'receipt']);$this->assertSame('100.000',FuelTank::find(3)->current_balance_liters);$this->assertSame('7.0000',FuelTank::find(3)->average_unit_cost);}
+ public function test_internal_filling(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'initial_balance','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>100,'total_cost'=>600,'external_reference'=>'a'],['sequence'=>2,'event_type'=>'filling','occurred_at'=>'2025-01-02','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'internal_tank','quantity_liters'=>20,'external_reference'=>'b']]),true)->assertExitCode(0);$this->assertDatabaseHas('fuel_fillings',['source'=>'internal_tank']);$this->assertSame('80.000',FuelTank::find(3)->current_balance_liters);$this->assertDatabaseHas('fuel_movements',['movement_type'=>'filling']);}
+ public function test_external_filling(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'filling','occurred_at'=>'2025-01-01','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'external_station','quantity_liters'=>20,'total_cost'=>140,'external_reference'=>'a']]),true)->assertExitCode(0);$f=FuelFilling::first();$this->assertNull($f->fuel_tank_id);$this->assertSame('0.000',FuelTank::find(3)->current_balance_liters);$this->assertDatabaseCount('fuel_movements',0);}
+ public function test_orders_rows_by_occurred_at_and_sequence(){ $this->boot();$f=$this->file([['sequence'=>2,'event_type'=>'filling','occurred_at'=>'2025-01-01 10:00','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'internal_tank','quantity_liters'=>10,'external_reference'=>'out'],['sequence'=>1,'event_type'=>'receipt','occurred_at'=>'2025-01-01 10:00','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>60,'external_reference'=>'in']]);$this->executeImport($f,true)->assertExitCode(0);$this->assertSame('0.000',FuelTank::find(3)->current_balance_liters);$this->assertSame('receipt',FuelMovement::orderBy('id')->first()->movement_type);$this->assertSame('filling',FuelMovement::orderBy('id')->skip(1)->first()->movement_type);}
+ public function test_capacity_and_insufficient_balance_block_normally(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'receipt','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>13001,'total_cost'=>1,'external_reference'=>'cap']]),true)->assertExitCode(1);$this->assertDatabaseCount('fuel_receipts',0);$this->executeImport($this->file([['sequence'=>1,'event_type'=>'filling','occurred_at'=>'2025-01-01','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'internal_tank','quantity_liters'=>1,'external_reference'=>'short']]),true)->assertExitCode(1);$this->assertDatabaseCount('fuel_fillings',0);}
+ public function test_legacy_anomalies_are_allowed_only_by_option(){ $this->boot();$f=$this->file([['sequence'=>1,'event_type'=>'receipt','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>13001,'total_cost'=>1,'external_reference'=>'cap']]);$this->artisan('chm:import-imperatriz-fuel',['file'=>$f,'--tank-id'=>3,'--user'=>1,'--commit'=>true,'--confirm-location'=>3,'--allow-legacy-balance-anomalies'=>true])->assertExitCode(0);$this->assertSame('13001.000',FuelTank::find(3)->current_balance_liters);$this->assertDatabaseHas('fuel_import_batches',['allow_legacy_balance_anomalies'=>1]);}
+ public function test_weighted_cost_remains_after_internal_filling(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'initial_balance','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>1000,'total_cost'=>6000,'external_reference'=>'a'],['sequence'=>2,'event_type'=>'receipt','occurred_at'=>'2025-01-02','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>1000,'total_cost'=>7000,'external_reference'=>'b'],['sequence'=>3,'event_type'=>'filling','occurred_at'=>'2025-01-03','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'internal_tank','quantity_liters'=>500,'external_reference'=>'c']]),true)->assertExitCode(0);$t=FuelTank::find(3);$this->assertSame('1500.000',$t->current_balance_liters);$this->assertSame('9750.00',$t->estimated_stock_value);$this->assertSame('6.5000',$t->average_unit_cost);}
+ public function test_completed_batch_is_idempotent_and_rows_link_entities(){ $this->boot();$f=$this->file([['sequence'=>1,'event_type'=>'initial_balance','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>60,'legacy_classification'=>'opening','external_reference'=>'open'],['sequence'=>2,'event_type'=>'receipt','occurred_at'=>'2025-01-02','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>70,'legacy_classification'=>'nf','external_reference'=>'nf-1']]);$this->executeImport($f,true)->assertExitCode(0);$this->executeImport($f,true)->assertExitCode(1);$this->assertDatabaseCount('fuel_import_batches',1);$this->assertDatabaseCount('fuel_import_rows',2);$this->assertDatabaseCount('fuel_receipts',1);$this->assertDatabaseCount('fuel_movements',2);$rows=\App\Models\FuelImportRow::orderBy('sequence')->get();$this->assertSame('open',$rows[0]->external_reference);$this->assertSame(FuelMovement::class,$rows[0]->entity_type);$this->assertNotNull($rows[0]->entity_id);$this->assertSame(FuelReceipt::class,$rows[1]->entity_type);}
+ public function test_duplicate_reference_and_mid_file_failure_leave_no_residue(){ $this->boot();$dup=$this->file([['sequence'=>1,'event_type'=>'receipt','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>1,'total_cost'=>6,'external_reference'=>'same'],['sequence'=>2,'event_type'=>'receipt','occurred_at'=>'2025-01-02','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>1,'total_cost'=>6,'external_reference'=>'same']]);$this->executeImport($dup,true)->assertExitCode(1);$this->assertDatabaseCount('fuel_import_batches',0);$this->assertDatabaseCount('fuel_receipts',0);$bad=$this->file([['sequence'=>1,'event_type'=>'receipt','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>60,'external_reference'=>'ok'],['sequence'=>2,'event_type'=>'filling','occurred_at'=>'2025-01-02','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'internal_tank','quantity_liters'=>99,'external_reference'=>'bad']]);$this->executeImport($bad,true)->assertExitCode(1);foreach(['fuel_import_batches','fuel_import_rows','fuel_receipts','fuel_fillings','fuel_movements']as$t)$this->assertDatabaseCount($t,0);$this->assertSame('0.000',FuelTank::find(3)->current_balance_liters);}
+ public function test_line_audit_contains_import_identity_and_legacy_anomaly(){ $this->boot();$f=$this->file([['sequence'=>1,'event_type'=>'receipt','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>13001,'total_cost'=>1,'legacy_classification'=>'legacy-over-capacity','external_reference'=>'legacy-1']]);$this->artisan('chm:import-imperatriz-fuel',['file'=>$f,'--tank-id'=>3,'--user'=>1,'--commit'=>true,'--confirm-location'=>3,'--allow-legacy-balance-anomalies'=>true])->assertExitCode(0);$a=\App\Models\SystemAuditLog::where('action','imported')->first();$this->assertSame(1,$a->user_id);$this->assertSame(1,$a->tenant_id);$this->assertSame(1,$a->division_id);$this->assertSame(3,$a->location_id);$this->assertSame('legacy-1',$a->metadata['external_reference']);$this->assertSame('legacy-over-capacity',$a->metadata['legacy_classification']);$this->assertTrue($a->metadata['historical_import']);$this->assertNotNull($a->metadata['import_batch_id']);}
+ public function test_historical_km_and_hours_do_not_regress_vehicle(){ $this->boot();Vehicle::find(1)->update(['current_km'=>9000,'current_hours'=>900]);$this->executeImport($this->file([['sequence'=>1,'event_type'=>'filling','occurred_at'=>'2020-01-01','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'external_station','quantity_liters'=>1,'total_cost'=>6,'vehicle_km'=>1000,'vehicle_hours'=>10,'external_reference'=>'old']]),true)->assertExitCode(0);$f=FuelFilling::first();$this->assertSame('1000.00',$f->vehicle_km);$this->assertSame('10.00',$f->vehicle_hours);$this->assertEquals(9000,Vehicle::find(1)->current_km);$this->assertEquals(900,Vehicle::find(1)->current_hours);$this->assertDatabaseCount('vehicle_update_logs',2);}
+ public function test_reconciled_scenario_dry_run_and_commit_end_at_zero(){ $this->boot();$rows=[['sequence'=>1,'event_type'=>'initial_balance','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>60,'external_reference'=>'a'],['sequence'=>2,'event_type'=>'receipt','occurred_at'=>'2025-01-02','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>70,'external_reference'=>'b'],['sequence'=>3,'event_type'=>'receipt','occurred_at'=>'2025-01-03','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>80,'external_reference'=>'c'],['sequence'=>4,'event_type'=>'filling','occurred_at'=>'2025-01-04','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'internal_tank','quantity_liters'=>15,'external_reference'=>'d'],['sequence'=>5,'event_type'=>'filling','occurred_at'=>'2025-01-05','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'internal_tank','quantity_liters'=>15,'external_reference'=>'e'],['sequence'=>6,'event_type'=>'filling','occurred_at'=>'2025-01-06','tank_id'=>3,'vehicle_id'=>1,'fuel_product_id'=>1,'source'=>'external_station','quantity_liters'=>5,'total_cost'=>40,'external_reference'=>'x']];$f=$this->file($rows);$this->executeImport($f)->assertExitCode(0);$this->assertDatabaseCount('fuel_import_batches',0);$this->executeImport($f,true)->assertExitCode(0);$t=FuelTank::find(3);$this->assertSame('0.000',$t->current_balance_liters);$this->assertSame('0.00',$t->estimated_stock_value);$this->assertSame('0.0000',$t->average_unit_cost);$this->assertDatabaseCount('fuel_fillings',3);}
+ public function test_legacy_outflow_reduces_stock_without_filling(){ $this->boot();$this->executeImport($this->file([['sequence'=>1,'event_type'=>'initial_balance','occurred_at'=>'2025-01-01','tank_id'=>3,'fuel_product_id'=>1,'quantity_liters'=>10,'total_cost'=>60,'external_reference'=>'a'],['sequence'=>2,'event_type'=>'legacy_outflow','occurred_at'=>'2025-01-02','tank_id'=>3,'quantity_liters'=>4,'notes'=>'Sem veículo','legacy_classification'=>'unlinked','external_reference'=>'b']]),true)->assertExitCode(0);$t=FuelTank::find(3);$this->assertSame('6.000',$t->current_balance_liters);$this->assertSame('36.00',$t->estimated_stock_value);$this->assertDatabaseCount('fuel_fillings',0);$this->assertDatabaseHas('fuel_movements',['movement_type'=>'legacy_outflow']);}
 }

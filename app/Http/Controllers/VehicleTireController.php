@@ -45,6 +45,13 @@ class VehicleTireController extends Controller
         $this->authorizeTirePermission('tires.view');
         $tirePermissions = $this->tirePermissions();
 
+        if (! $vehicle->tire_control_enabled) {
+            $positions = collect();
+            $availableTires = collect();
+            return view('vehicle.tires.index', compact('vehicle', 'tirePermissions', 'positions', 'availableTires'))
+                ->with('tireControlDisabled', true);
+        }
+
         $authUser = auth()->user();
 
 
@@ -323,6 +330,9 @@ class VehicleTireController extends Controller
 
         if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
             return $redirect;
+        }
+        if (! $vehicle->tire_control_enabled) {
+            throw ValidationException::withMessages(['tire_control' => 'Controle de pneus desativado para este veículo.']);
         }
 
         $this->authorizeTirePermission('tires.install');
@@ -742,6 +752,9 @@ class VehicleTireController extends Controller
 
         if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
             return $redirect;
+        }
+        if (! $vehicle->tire_control_enabled) {
+            throw ValidationException::withMessages(['tire_control' => 'Controle de pneus desativado para este veículo.']);
         }
 
         $this->authorizeTirePermission('tires.measure');

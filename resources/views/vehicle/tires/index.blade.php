@@ -27,6 +27,10 @@
 
 @section('content')
 
+@if($tireControlDisabled ?? false)
+    <div class="alert alert-info" role="status">Controle de pneus desativado para este veículo. O histórico foi preservado, mas não são permitidas novas posições, instalações ou medições operacionais.</div>
+@endif
+
 @php
     $hasFullTireAccess = (int) auth()->id() === 1
         || userHasProfile('admin')

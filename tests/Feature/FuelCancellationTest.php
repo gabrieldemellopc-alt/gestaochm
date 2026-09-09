@@ -43,6 +43,7 @@ class FuelCancellationTest extends TestCase
         $tank = $this->tank(1000, 5000); $vehicle = $this->vehicle(900);
         VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'user_id' => $this->context['user']->id, 'division_id' => $this->context['division']->id, 'location_id' => $this->context['location']->id, 'type' => 'km', 'source' => 'manual', 'new_value' => 900, 'read_at' => now()->subMinute(), 'reading_status' => VehicleUpdateLog::READING_STATUS_VALID]);
         $filling = app(FuelService::class)->registerFilling($this->fillingData($tank, $vehicle, 100, 1000));
+        $this->assertSame(1000.0, (float) $vehicle->fresh()->current_km, 'O abastecimento operacional continua atualizando o contador atual.');
         $log = VehicleUpdateLog::where('fuel_filling_id', $filling->id)->firstOrFail();
 
         app(FuelService::class)->cancelFilling($filling, 'Lançamento incorreto');

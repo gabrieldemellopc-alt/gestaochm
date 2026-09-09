@@ -368,6 +368,9 @@ class VehicleController extends Controller
                 'in:car_4_single,truck_6_mixed,truck_8_mixed,truck_10_mixed,truck_12_mixed',
 
             ],
+            'km_control_enabled' => ['required', 'boolean'],
+            'hours_control_enabled' => ['required', 'boolean'],
+            'tire_control_enabled' => ['required', 'boolean'],
 
 
 
@@ -656,8 +659,10 @@ class VehicleController extends Controller
             'fleet_relation' => $validated['fleet_relation'] ?? Vehicle::FLEET_RELATION_INTERNAL,
 
             'tire_layout' =>
-
-                $request->tire_layout ?? 'truck_6_mixed',
+                $request->tire_layout,
+            'km_control_enabled' => $request->boolean('km_control_enabled'),
+            'hours_control_enabled' => $request->boolean('hours_control_enabled'),
+            'tire_control_enabled' => $request->boolean('tire_control_enabled'),
 
             'current_km' =>
 
@@ -1215,6 +1220,9 @@ class VehicleController extends Controller
                 'in:car_4_single,truck_6_mixed,truck_8_mixed,truck_10_mixed,truck_12_mixed',
 
             ],
+            'km_control_enabled' => ['required', 'boolean'],
+            'hours_control_enabled' => ['required', 'boolean'],
+            'tire_control_enabled' => ['required', 'boolean'],
 
             'location_id' => [
                 'required',
@@ -1467,8 +1475,10 @@ class VehicleController extends Controller
             'fleet_relation' => $validated['fleet_relation'] ?? $vehicle->fleet_relation ?? Vehicle::FLEET_RELATION_INTERNAL,
 
             'tire_layout' =>
-
-                $request->tire_layout ?? 'truck_6_mixed',
+                $request->tire_layout,
+            'km_control_enabled' => $request->boolean('km_control_enabled'),
+            'hours_control_enabled' => $request->boolean('hours_control_enabled'),
+            'tire_control_enabled' => $request->boolean('tire_control_enabled'),
 
             'division_id' =>
 

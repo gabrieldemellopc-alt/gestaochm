@@ -47,16 +47,23 @@ class Vehicle extends Model
         'asset_code',
         'last_km_update_at',
         'last_hours_update_at',
+        'km_control_enabled',
+        'hours_control_enabled',
+        'tire_control_enabled',
     ];
     protected $casts = [
         'status_changed_at' => 'datetime',  
         'operation_started_at' => 'date',    
+        'km_control_enabled' => 'boolean',
+        'hours_control_enabled' => 'boolean',
+        'tire_control_enabled' => 'boolean',
     ];
     
     protected $attributes = [
-    
         'operational_status' => 'operational',
-    
+        'km_control_enabled' => true,
+        'hours_control_enabled' => false,
+        'tire_control_enabled' => true,
     ];
     public function tenant()
     {

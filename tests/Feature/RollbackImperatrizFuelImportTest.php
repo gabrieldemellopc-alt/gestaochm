@@ -1,0 +1,46 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Tests\TestCase;
+
+class RollbackImperatrizFuelImportTest extends TestCase
+{
+    protected function setUp(): void { parent::setUp(); $this->schema(); $this->seedBatch(); }
+
+    private function schema(): void
+    {
+        foreach (['vehicle_reading_corrections','vehicle_update_logs','system_audit_logs','fuel_import_rows','fuel_import_batches','fuel_movements','fuel_fillings','fuel_receipts','fuel_tanks','vehicles','tires','tire_measurements','tire_installations'] as $t) Schema::dropIfExists($t);
+        Schema::create('fuel_import_batches', fn(Blueprint $t) => [$t->id(),$t->integer('tenant_id'),$t->integer('division_id'),$t->integer('location_id'),$t->integer('fuel_tank_id'),$t->integer('responsible_user_id'),$t->string('source_file'),$t->string('source_hash'),$t->string('status'),$t->boolean('is_historical_import'),$t->boolean('allow_legacy_balance_anomalies'),$t->json('summary')->nullable(),$t->timestamps()]);
+        Schema::create('fuel_import_rows', fn(Blueprint $t) => [$t->id(),$t->integer('fuel_import_batch_id'),$t->integer('row_number'),$t->integer('sequence'),$t->string('external_reference'),$t->json('payload')->nullable(),$t->string('status'),$t->string('entity_type'),$t->integer('entity_id'),$t->timestamps()]);
+        Schema::create('fuel_tanks', fn(Blueprint $t) => [$t->id(),$t->integer('tenant_id'),$t->integer('division_id'),$t->integer('location_id'),$t->decimal('current_balance_liters',14,3),$t->decimal('estimated_stock_value',14,2),$t->decimal('average_unit_cost',12,4),$t->timestamps()]);
+        foreach (['fuel_receipts','fuel_fillings','fuel_movements'] as $table) Schema::create($table, function(Blueprint $t) use($table) {$t->id();$t->integer('tenant_id');$t->integer('division_id');$t->integer('location_id');$t->integer('fuel_tank_id')->nullable();$t->integer('vehicle_id')->nullable();$t->string('source')->nullable();$t->string('movement_type')->nullable();$t->string('source_type')->nullable();$t->integer('source_id')->nullable();$t->decimal('quantity_liters',14,3)->default(1);$t->timestamps();});
+        Schema::create('vehicles',fn(Blueprint $t)=>[$t->id(),$t->decimal('current_km',12,2)->nullable(),$t->decimal('current_hours',12,2)->nullable(),$t->timestamps()]);
+        Schema::create('vehicle_update_logs',fn(Blueprint $t)=>[$t->id(),$t->integer('vehicle_id'),$t->integer('fuel_filling_id')->nullable(),$t->string('type'),$t->timestamps()]);
+        Schema::create('vehicle_reading_corrections',fn(Blueprint $t)=>[$t->id(),$t->integer('original_log_id')->nullable(),$t->integer('original_fuel_filling_id')->nullable(),$t->timestamps()]);
+        Schema::create('system_audit_logs',fn(Blueprint $t)=>[$t->id(),$t->string('auditable_type')->nullable(),$t->integer('auditable_id')->nullable(),$t->json('metadata')->nullable(),$t->timestamps()]);
+        foreach (['tires','tire_measurements','tire_installations'] as $t) Schema::create($t,fn(Blueprint $x)=>[$x->id(),$x->timestamps()]);
+    }
+
+    private function seedBatch(): void
+    {
+        $now=now(); DB::table('fuel_tanks')->insert(['id'=>3,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'current_balance_liters'=>8,'estimated_stock_value'=>48,'average_unit_cost'=>6,'created_at'=>$now,'updated_at'=>$now]); DB::table('vehicles')->insert(['id'=>1,'current_km'=>9000,'current_hours'=>900,'created_at'=>$now,'updated_at'=>$now]);
+        DB::table('fuel_import_batches')->insert(['id'=>1,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'responsible_user_id'=>1,'source_file'=>'old.csv','source_hash'=>'x','status'=>'completed','is_historical_import'=>1,'allow_legacy_balance_anomalies'=>1,'created_at'=>$now,'updated_at'=>$now]);
+        DB::table('fuel_receipts')->insert(['id'=>10,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'created_at'=>$now,'updated_at'=>$now]); DB::table('fuel_fillings')->insert([['id'=>20,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'vehicle_id'=>1,'source'=>'internal_tank','created_at'=>$now,'updated_at'=>$now],['id'=>21,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>null,'vehicle_id'=>1,'source'=>'external_station','created_at'=>$now,'updated_at'=>$now]]);
+        DB::table('fuel_movements')->insert([['id'=>30,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'movement_type'=>'initial_balance','source_type'=>'App\\Models\\FuelImportBatch','source_id'=>1,'created_at'=>$now,'updated_at'=>$now],['id'=>31,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'movement_type'=>'receipt','source_type'=>'App\\Models\\FuelReceipt','source_id'=>10,'created_at'=>$now,'updated_at'=>$now],['id'=>32,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'movement_type'=>'filling','source_type'=>'App\\Models\\FuelFilling','source_id'=>20,'created_at'=>$now,'updated_at'=>$now],['id'=>33,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'movement_type'=>'legacy_outflow','source_type'=>'App\\Models\\FuelImportBatch','source_id'=>1,'created_at'=>$now,'updated_at'=>$now]]);
+        foreach ([[30,'App\\Models\\FuelMovement'],[10,'App\\Models\\FuelReceipt'],[20,'App\\Models\\FuelFilling'],[21,'App\\Models\\FuelFilling'],[33,'App\\Models\\FuelMovement']] as $i=>$e) DB::table('fuel_import_rows')->insert(['fuel_import_batch_id'=>1,'row_number'=>$i+1,'sequence'=>$i+1,'external_reference'=>'r'.$i,'status'=>'imported','entity_type'=>$e[1],'entity_id'=>$e[0],'created_at'=>$now,'updated_at'=>$now]);
+        DB::table('vehicle_update_logs')->insert(['vehicle_id'=>1,'fuel_filling_id'=>20,'type'=>'km','created_at'=>$now,'updated_at'=>$now]);
+        foreach ([[30,'App\\Models\\FuelMovement'],[10,'App\\Models\\FuelReceipt'],[20,'App\\Models\\FuelFilling'],[21,'App\\Models\\FuelFilling'],[33,'App\\Models\\FuelMovement']] as $e) DB::table('system_audit_logs')->insert(['auditable_type'=>$e[1],'auditable_id'=>$e[0],'metadata'=>json_encode(['import_batch_id'=>1]),'created_at'=>$now,'updated_at'=>$now]);
+        foreach (['tires','tire_measurements','tire_installations'] as $t) DB::table($t)->insert(['created_at'=>$now,'updated_at'=>$now]);
+    }
+    private function rollbackCommand(array $extra=[]){return $this->artisan('chm:rollback-imperatriz-fuel-import',array_merge(['--batch'=>1,'--confirm-batch'=>1,'--confirm-location'=>3,'--dry-run'=>true],$extra));}
+    public function test_dry_run_is_read_only(): void {$this->rollbackCommand()->assertExitCode(0)->expectsOutputToContain('APTO PARA ROLLBACK');$this->assertDatabaseCount('fuel_import_batches',1);$this->assertSame(8.0,(float) DB::table('fuel_tanks')->find(3)->current_balance_liters);}
+    public function test_confirmation_guards(): void {$this->rollbackCommand(['--confirm-batch'=>2])->assertExitCode(1);$this->rollbackCommand(['--confirm-location'=>2])->assertExitCode(1);$this->assertDatabaseCount('fuel_import_batches',1);}
+    public function test_commit_removes_only_batch_and_preserves_vehicle_tires_and_tank_state(): void {$this->rollbackCommand(['--dry-run'=>false,'--commit'=>true])->assertExitCode(0);foreach(['fuel_import_batches','fuel_import_rows','fuel_receipts','fuel_fillings','fuel_movements','vehicle_update_logs','system_audit_logs'] as $t)$this->assertDatabaseCount($t,0);$tank=DB::table('fuel_tanks')->find(3);$this->assertSame(0.0,(float)$tank->current_balance_liters);$this->assertSame(0.0,(float)$tank->estimated_stock_value);$this->assertSame(0.0,(float)$tank->average_unit_cost);$v=DB::table('vehicles')->find(1);$this->assertSame(9000.0,(float)$v->current_km);$this->assertSame(900.0,(float)$v->current_hours);foreach(['tires','tire_measurements','tire_installations'] as $t)$this->assertDatabaseCount($t,1);}
+    public function test_dependency_or_later_record_blocks_and_leaves_everything_intact(): void {DB::table('vehicle_reading_corrections')->insert(['original_fuel_filling_id'=>20,'created_at'=>now(),'updated_at'=>now()]);$this->rollbackCommand()->assertExitCode(1);$this->assertDatabaseCount('fuel_import_batches',1);DB::table('vehicle_reading_corrections')->delete();DB::table('fuel_fillings')->insert(['id'=>99,'tenant_id'=>1,'division_id'=>1,'location_id'=>3,'fuel_tank_id'=>3,'source'=>'internal_tank','created_at'=>now(),'updated_at'=>now()]);$this->rollbackCommand()->assertExitCode(1);$this->assertDatabaseCount('fuel_import_batches',1);}
+    public function test_commit_is_fully_rolled_back_when_final_integrity_check_fails(): void {DB::unprepared('CREATE TRIGGER mutate_tire_after_movement_delete AFTER DELETE ON fuel_movements BEGIN DELETE FROM tires; END');$this->rollbackCommand(['--dry-run'=>false,'--commit'=>true])->assertExitCode(1);$this->assertDatabaseCount('fuel_import_batches',1);$this->assertDatabaseCount('fuel_import_rows',5);$this->assertDatabaseCount('fuel_movements',4);$this->assertDatabaseCount('tires',1);$this->assertSame(8.0,(float)DB::table('fuel_tanks')->find(3)->current_balance_liters);}
+    public function test_missing_or_already_removed_batch_is_safe(): void {DB::table('fuel_import_batches')->where('id',1)->delete();$this->rollbackCommand()->assertExitCode(1);}
+}

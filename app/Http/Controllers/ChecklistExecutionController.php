@@ -139,7 +139,8 @@ class ChecklistExecutionController extends Controller
             */
 
             if(
-                str_contains(
+                $vehicle->km_control_enabled
+                && str_contains(
                     strtolower($item->label),
                     'km'
                 )
@@ -151,15 +152,16 @@ class ChecklistExecutionController extends Controller
             }
 
             if(
-                str_contains(
+                $vehicle->hours_control_enabled
+                && (str_contains(
                     strtolower($item->label),
                     'horimetro'
                 )
                 ||
                 str_contains(
                     strtolower($item->label),
-                    'hr'
-                )
+                    'hr'
+                ))
             ) {
 
                 $vehicle->update([

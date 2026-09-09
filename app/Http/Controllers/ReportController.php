@@ -337,8 +337,12 @@ class ReportController extends Controller
             return $this->missingActiveContextRedirect();
         }
 
+        $fillingsPerPage = in_array((int) $request->query('per_page', 25), [25, 50, 100], true)
+            ? (int) $request->query('per_page', 25)
+            : 25;
+
         return view('reports.fuel-full', [
-            ...$fuelReport->build($request->query(), $context),
+            ...$fuelReport->build($request->query(), $context, $fillingsPerPage),
             'reportPermissions' => $this->reportPermissions(),
         ]);
     }

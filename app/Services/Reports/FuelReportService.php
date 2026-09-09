@@ -20,7 +20,7 @@ class FuelReportService
     ) {
     }
 
-    public function build(array $filters = [], ?array $context = null): array
+    public function build(array $filters = [], ?array $context = null, ?int $fillingsPerPage = null): array
     {
         $context ??= $this->reportContext->resolve();
 
@@ -36,6 +36,7 @@ class FuelReportService
         $tankSummary = $this->tankSummary($context, $filters);
         $receipts = $this->receiptsPeriod($context, $filters);
         $fillings = $this->fillingsPeriod($context, $filters);
+        $fillingsPage = $fillingsPerPage ? $this->fillingsPage($context, $filters, $fillingsPerPage) : null;
         $movements = $this->movementsPeriod($context, $filters);
         $consumptionByVehicle = $this->consumptionByVehicle($fillings);
 
@@ -58,6 +59,9 @@ class FuelReportService
                 ->values(),
             'receipts_period' => $receipts,
             'fillings_period' => $fillings,
+            // The paginator is only for the HTML table. The full collection above
+            // deliberately remains the source for summaries and exports.
+            'fillings_page' => $fillingsPage,
             'movements_period' => $movements,
             'total_received_liters' => $this->sumDecimal($receipts, 'quantity_liters'),
             'total_filled_liters' => $this->sumDecimal($fillings, 'quantity_liters'),
@@ -228,13 +232,41 @@ class FuelReportService
             return collect();
         }
 
+        $query = $this->fillingsQuery($context, $filters);
+
+        if (! $filters['include_missing_counters']) {
+            // Do not remove the filling from totals; this flag is for future views.
+        }
+
+        return $query->latest('filled_at')->get();
+    }
+
+    private function fillingsPage(array $context, array $filters, int $perPage)
+    {
+        if (! $filters['period_is_valid']) {
+            return $this->fillingsQuery($context, $filters)->paginate($perPage)->withQueryString();
+        }
+
+        return $this->fillingsQuery($context, $filters)
+            ->latest('filled_at')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    private function fillingsQuery(array $context, array $filters): Builder
+    {
         $query = FuelFilling::query()
             ->with(['tank.product', 'product', 'vehicle', 'driver', 'responsible'])
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
-            ->whereNull('cancelled_at')
-            ->whereBetween('filled_at', [$filters['start_date'], $filters['end_date']]);
+            ->whereNull('cancelled_at');
+
+        if ($filters['period_is_valid']) {
+            $query->whereBetween('filled_at', [$filters['start_date'], $filters['end_date']]);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
 
         $this->applyFuelFilters($query, $filters);
 
@@ -242,11 +274,7 @@ class FuelReportService
             $query->where('vehicle_id', $filters['vehicle_id']);
         }
 
-        if (! $filters['include_missing_counters']) {
-            // Do not remove the filling from totals; this flag is for future views.
-        }
-
-        return $query->latest('filled_at')->get();
+        return $query;
     }
 
     private function movementsPeriod(array $context, array $filters): Collection

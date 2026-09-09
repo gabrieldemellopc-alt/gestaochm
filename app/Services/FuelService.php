@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\FuelFilling;
+use App\Models\FuelImportBatch;
 use App\Models\FuelMovement;
 use App\Models\FuelProduct;
 use App\Models\FuelReceipt;
@@ -18,11 +19,47 @@ use Illuminate\Validation\ValidationException;
 
 class FuelService
 {
+    private ?FuelOperationContext $operationContext = null;
+
     public function __construct(
         private readonly ActiveContextService $activeContext,
         private readonly AuditLogService $auditLog,
         private readonly VehicleReadingService $vehicleReadingService,
-    ) {
+    ) {}
+
+    /** The web application never calls this method; it is for audited CLI imports. */
+    public function forOperationContext(FuelOperationContext $context): self
+    {
+        $service = clone $this;
+        $service->operationContext = $context;
+
+        return $service;
+    }
+
+    public function registerInitialBalance(array $data): FuelMovement
+    {
+        $context = $this->resolveContext();
+        if (! $this->operationContext?->isHistoricalImport) {
+            throw ValidationException::withMessages(['initial_balance' => 'Saldo inicial é exclusivo da importação histórica.']);
+        }
+        $validated = Validator::make($data, ['fuel_tank_id' => ['required', 'integer'], 'quantity_liters' => ['required', 'numeric', 'gte:0'], 'total_cost' => ['nullable', 'numeric', 'min:0'], 'occurred_at' => ['required', 'date'], 'notes' => ['nullable', 'string']])->validate();
+
+        return DB::transaction(function () use ($context, $validated) {
+            $tank = $this->lockTankForContext((int) $validated['fuel_tank_id'], $context);
+            $before = $this->decimal($tank->current_balance_liters, 3);
+            $quantity = $this->decimal($validated['quantity_liters'], 3);
+            $after = $this->decimal($before + $quantity, 3);
+            if (! $this->operationContext?->allowLegacyBalanceAnomalies && $after > (float) $tank->capacity_liters) {
+                throw ValidationException::withMessages(['quantity_liters' => 'O saldo inicial ultrapassa a capacidade do tanque.']);
+            }
+            $value = $this->decimal((float) $tank->estimated_stock_value + (float) ($validated['total_cost'] ?? 0), 2);
+            $tank->forceFill(['current_balance_liters' => $after, 'estimated_stock_value' => $value, 'average_unit_cost' => $after > 0 ? $this->decimal($value / $after, 4) : 0])->save();
+            $movement = $this->createMovement($context, $tank, FuelMovement::TYPE_INITIAL_BALANCE, $quantity, $before, $after, null, $context['user']->id, 'Saldo inicial histórico');
+            $movement->update(['notes' => trim(($validated['notes'] ?? '').' | Importação histórica de combustível – Imperatriz – lote '.$this->operationContext->importBatchId)]);
+            $this->auditLog->created($movement, ['tenant_id' => $context['tenant_id'], 'division_id' => $context['division_id'], 'location_id' => $context['location_id'], 'user_id' => $context['user']->id, 'module' => 'fuel', 'summary' => 'Saldo inicial histórico do tanque '.$tank->name.'.', 'metadata' => ['historical_import' => true, 'import_batch_id' => $this->operationContext->importBatchId, 'legacy_balance_anomaly_allowed' => $this->operationContext->allowLegacyBalanceAnomalies]]);
+
+            return $movement;
+        });
     }
 
     public function receiveFuel(array $data): FuelReceipt
@@ -45,31 +82,32 @@ class FuelService
         ])->validate();
 
         return DB::transaction(function () use ($context, $validated) {
-            $supplier=app(SupplierResolverService::class)->resolve($context['tenant_id'],$validated['supplier_id']??null,$validated['supplier_name']??null,$validated['supplier_document']??null); $validated=array_merge($validated,app(SupplierSnapshotService::class)->fromResolvedSupplier($supplier,$validated['supplier_name']??null));
+            $supplier = app(SupplierResolverService::class)->resolve($context['tenant_id'], $validated['supplier_id'] ?? null, $validated['supplier_name'] ?? null, $validated['supplier_document'] ?? null);
+            $validated = array_merge($validated, app(SupplierSnapshotService::class)->fromResolvedSupplier($supplier, $validated['supplier_name'] ?? null));
             $tank = $this->lockTankForContext((int) $validated['fuel_tank_id'], $context);
             $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
 
             $quantity = $this->decimal($validated['quantity_liters'], 3);
             $totalCost = $this->nullableDecimal($validated['total_cost'] ?? null, 2);
-            
+
             $unitCost = $this->resolveUnitCostFromTotal(
                 $quantity,
                 $totalCost,
                 $validated['unit_cost'] ?? null
             );
-            
+
             $balanceBefore = $this->decimal($tank->current_balance_liters, 3);
             $stockValueBefore = $this->decimal($tank->estimated_stock_value ?? 0, 2);
-            
+
             $balanceAfter = $this->decimal($balanceBefore + $quantity, 3);
             $stockValueAfter = $this->decimal($stockValueBefore + ($totalCost ?? 0), 2);
-            
+
             $averageUnitCostAfter = $balanceAfter > 0
                 ? $this->decimal($stockValueAfter / $balanceAfter, 4)
                 : 0;
             $responsibleUserId = $validated['responsible_user_id'] ?? $context['user']->id;
 
-            if ($balanceAfter > (float) $tank->capacity_liters) {
+            if ($balanceAfter > (float) $tank->capacity_liters && ! $this->operationContext?->allowLegacyBalanceAnomalies) {
                 throw ValidationException::withMessages([
                     'quantity_liters' => 'O recebimento ultrapassa a capacidade do tanque.',
                 ]);
@@ -123,10 +161,40 @@ class FuelService
                     'fuel_tank_id' => $tank->id,
                     'balance_before' => $balanceBefore,
                     'balance_after' => $balanceAfter,
+                    'historical_import' => $this->operationContext?->isHistoricalImport,
+                    'import_batch_id' => $this->operationContext?->importBatchId,
+                    'legacy_balance_anomaly_allowed' => $this->operationContext?->allowLegacyBalanceAnomalies,
                 ],
             ]);
 
             return $receipt;
+        });
+    }
+
+    public function registerLegacyOutflow(array $data): FuelMovement
+    {
+        $context = $this->resolveContext();
+        if (! $this->operationContext?->isHistoricalImport) {
+            throw ValidationException::withMessages(['legacy_outflow' => 'Saída legada é exclusiva da importação histórica.']);
+        }
+        $v = Validator::make($data, ['fuel_tank_id' => ['required', 'integer'], 'occurred_at' => ['required', 'date'], 'quantity_liters' => ['required', 'numeric', 'gt:0'], 'external_reference' => ['required', 'string'], 'notes' => ['required', 'string'], 'legacy_classification' => ['nullable', 'string']])->validate();
+
+        return DB::transaction(function () use ($context, $v) {
+            $tank = $this->lockTankForContext((int) $v['fuel_tank_id'], $context);
+            $before = $this->decimal($tank->current_balance_liters, 3);
+            $q = $this->decimal($v['quantity_liters'], 3);
+            if ($q > $before && ! $this->operationContext->allowLegacyBalanceAnomalies) {
+                throw ValidationException::withMessages(['quantity_liters' => 'A saída histórica não pode ser maior que o saldo atual do tanque.']);
+            }
+            $after = $this->decimal($before - $q, 3);
+            $unit = $this->decimal($tank->average_unit_cost ?? 0, 4);
+            $value = $this->decimal(max(0, (float) $tank->estimated_stock_value - $q * $unit), 2);
+            $avg = $after > 0 ? $this->decimal($value / $after, 4) : 0;
+            $tank->forceFill(['current_balance_liters' => $after, 'estimated_stock_value' => $value, 'average_unit_cost' => $avg])->save();
+            $movement = $this->createMovement($context, $tank, FuelMovement::TYPE_LEGACY_OUTFLOW, $q, $before, $after, null, $context['user']->id, $v['notes'].' | ref='.$v['external_reference']);
+            $this->auditLog->created($movement, ['tenant_id' => $context['tenant_id'], 'division_id' => $context['division_id'], 'location_id' => $context['location_id'], 'user_id' => $context['user']->id, 'module' => 'fuel', 'summary' => 'Saída histórica sem vínculo de veículo.', 'metadata' => ['historical_import' => true, 'import_batch_id' => $this->operationContext->importBatchId, 'external_reference' => $v['external_reference'], 'legacy_classification' => $v['legacy_classification'] ?? null, 'legacy_balance_anomaly_allowed' => $this->operationContext->allowLegacyBalanceAnomalies]]);
+
+            return $movement;
         });
     }
 
@@ -173,9 +241,14 @@ class FuelService
         }
 
         return DB::transaction(function () use ($context, $validated, $source) {
-            if ($source === FuelFilling::SOURCE_EXTERNAL_STATION) { $supplier=app(SupplierResolverService::class)->resolve($context['tenant_id'],$validated['supplier_id']??null,$validated['supplier_name']??null,$validated['supplier_document']??null); $validated=array_merge($validated,app(SupplierSnapshotService::class)->fromResolvedSupplier($supplier,$validated['supplier_name']??null)); }
+            if ($source === FuelFilling::SOURCE_EXTERNAL_STATION) {
+                $supplier = app(SupplierResolverService::class)->resolve($context['tenant_id'], $validated['supplier_id'] ?? null, $validated['supplier_name'] ?? null, $validated['supplier_document'] ?? null);
+                $validated = array_merge($validated, app(SupplierSnapshotService::class)->fromResolvedSupplier($supplier, $validated['supplier_name'] ?? null));
+            }
             $vehicle = $this->vehicleForContext((int) $validated['vehicle_id'], $context);
-            $this->validateVehicleCounters($vehicle, $validated);
+            if (! $this->operationContext?->isHistoricalImport) {
+                $this->validateVehicleCounters($vehicle, $validated);
+            }
             $this->validateDriverForContext($validated['driver_id'] ?? null, $context);
 
             $quantity = $this->decimal($validated['quantity_liters'], 3);
@@ -194,7 +267,7 @@ class FuelService
                 $fuelProductId = $tank->fuel_product_id;
                 $balanceBefore = $this->decimal($tank->current_balance_liters, 3);
 
-                if ($quantity > $balanceBefore) {
+                if ($quantity > $balanceBefore && ! $this->operationContext?->allowLegacyBalanceAnomalies) {
                     throw ValidationException::withMessages([
                         'quantity_liters' => 'A quantidade abastecida não pode ser maior que o saldo atual do tanque.',
                     ]);
@@ -240,12 +313,16 @@ class FuelService
                 'notes' => $validated['notes'] ?? null,
             ]);
 
-            $this->updateVehicleCountersFromFilling(
-                $vehicle,
-                $validated,
-                $context,
-                $filling
-            );
+            if ($this->operationContext?->isHistoricalImport) {
+                if (($validated['vehicle_km'] ?? null) !== null) {
+                    $this->vehicleReadingService->registerHistoricalKmReading($vehicle, $validated['vehicle_km'], $context['user'], $filling->filled_at, 'fuel_filling_import', "Importação histórica de combustível – Imperatriz – lote {$this->operationContext->importBatchId}", $filling);
+                }
+                if (($validated['vehicle_hours'] ?? null) !== null) {
+                    $this->vehicleReadingService->registerHistoricalHoursReading($vehicle, $validated['vehicle_hours'], $context['user'], $filling->filled_at, 'fuel_filling_import', "Importação histórica de combustível – Imperatriz – lote {$this->operationContext->importBatchId}", $filling);
+                }
+            } else {
+                $this->updateVehicleCountersFromFilling($vehicle, $validated, $context, $filling);
+            }
 
             if ($source === FuelFilling::SOURCE_INTERNAL_TANK && $tank) {
                 $tank->forceFill([
@@ -288,12 +365,16 @@ class FuelService
                     'document_number' => $filling->document_number,
                     'balance_before' => $balanceBefore,
                     'balance_after' => $balanceAfter,
+                    'historical_import' => $this->operationContext?->isHistoricalImport,
+                    'import_batch_id' => $this->operationContext?->importBatchId,
+                    'legacy_balance_anomaly_allowed' => $this->operationContext?->allowLegacyBalanceAnomalies,
                 ],
             ]);
 
             return $filling;
         });
     }
+
     private function updateVehicleCountersFromFilling(
         Vehicle $vehicle,
         array $validated,
@@ -316,7 +397,7 @@ class FuelService
                 $filling,
             );
         }
-    
+
         if (array_key_exists('vehicle_hours', $validated) && $validated['vehicle_hours'] !== null) {
             $newHours = $this->decimal($validated['vehicle_hours'], 1);
 
@@ -364,7 +445,9 @@ class FuelService
             $vehicle = Vehicle::query()->find($filling->vehicle_id);
             if ($vehicle) {
                 $latest = app(VehicleReadingReconciliationService::class)->latestValid($vehicle);
-                if ($latest) $vehicle->forceFill(['current_km' => $latest['km']])->save();
+                if ($latest) {
+                    $vehicle->forceFill(['current_km' => $latest['km']])->save();
+                }
             }
             $this->auditLog->updated($filling, ['tenant_id' => $context['tenant_id'], 'division_id' => $context['division_id'], 'location_id' => $context['location_id'], 'module' => 'fuel', 'summary' => 'Abastecimento #'.$filling->id.' cancelado.', 'after_data' => $filling->fresh()->toArray()]);
         });
@@ -376,10 +459,14 @@ class FuelService
         $this->ensureRecordInContext($receipt, $context);
         DB::transaction(function () use ($receipt, $reason, $context) {
             $receipt = FuelReceipt::query()->lockForUpdate()->findOrFail($receipt->id);
-            if ($receipt->cancelled_at) throw ValidationException::withMessages(['receipt' => 'Este recebimento já foi cancelado.']);
+            if ($receipt->cancelled_at) {
+                throw ValidationException::withMessages(['receipt' => 'Este recebimento já foi cancelado.']);
+            }
             $tank = $this->lockTankForContext((int) $receipt->fuel_tank_id, $context);
             $before = $this->decimal($tank->current_balance_liters, 3);
-            if ($before < (float) $receipt->quantity_liters) throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: parte deste combustível já foi consumida e o saldo ficaria negativo.']);
+            if ($before < (float) $receipt->quantity_liters) {
+                throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: parte deste combustível já foi consumida e o saldo ficaria negativo.']);
+            }
             $receiptMovement = FuelMovement::query()->where('source_type', FuelReceipt::class)->where('source_id', $receipt->id)->orderBy('id')->first();
             if ($receiptMovement && FuelMovement::query()->where('fuel_tank_id', $tank->id)->where('movement_type', FuelMovement::TYPE_FILLING)->where('id', '>', $receiptMovement->id)->exists()) {
                 throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: existem abastecimentos posteriores que podem ter consumido este recebimento.']);
@@ -387,7 +474,9 @@ class FuelService
             $after = $this->decimal($before - (float) $receipt->quantity_liters, 3);
             $stockValueBefore = $this->decimal($tank->estimated_stock_value ?? 0, 2);
             $stockValue = $this->decimal($stockValueBefore - (float) ($receipt->total_cost ?? 0), 2);
-            if ($stockValue < 0) throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: o valor estimado do estoque ficaria negativo.']);
+            if ($stockValue < 0) {
+                throw ValidationException::withMessages(['receipt' => 'Não é possível cancelar: o valor estimado do estoque ficaria negativo.']);
+            }
             $tank->forceFill(['current_balance_liters' => $after, 'estimated_stock_value' => $stockValue, 'average_unit_cost' => $after > 0 ? $this->decimal($stockValue / $after, 4) : 0])->save();
             $this->createMovement($context, $tank, FuelMovement::TYPE_REVERSAL, (float) $receipt->quantity_liters, $before, $after, $receipt, $context['user']->id, 'Estorno do recebimento #'.$receipt->id);
             $receipt->forceFill(['cancelled_at' => now(), 'cancelled_by' => $context['user']->id, 'cancel_reason' => $reason])->save();
@@ -397,6 +486,9 @@ class FuelService
 
     private function resolveContext(): array
     {
+        if ($this->operationContext) {
+            return ['user' => $this->operationContext->user, 'tenant_id' => $this->operationContext->tenantId, 'division_id' => $this->operationContext->divisionId, 'location_id' => $this->operationContext->locationId];
+        }
         /** @var User|null $user */
         $user = auth()->user();
 
@@ -481,6 +573,7 @@ class FuelService
 
         return $product;
     }
+
     private function validateVehicleCounters(Vehicle $vehicle, array $validated): void
     {
         if (
@@ -549,7 +642,7 @@ class FuelService
         float $quantity,
         float $balanceBefore,
         float $balanceAfter,
-        FuelReceipt|FuelFilling $source,
+        FuelReceipt|FuelFilling|null $source,
         int $responsibleUserId,
         string $notes,
     ): FuelMovement {
@@ -563,8 +656,8 @@ class FuelService
             'quantity_liters' => $quantity,
             'balance_before' => $balanceBefore,
             'balance_after' => $balanceAfter,
-            'source_type' => $source::class,
-            'source_id' => $source->id,
+            'source_type' => $source ? $source::class : FuelImportBatch::class,
+            'source_id' => $source?->id ?? $this->operationContext?->importBatchId,
             'responsible_user_id' => $responsibleUserId,
             'notes' => $notes,
         ]);
@@ -578,10 +671,10 @@ class FuelService
         if ($totalCost !== null && $totalCost > 0 && $quantity > 0) {
             return $this->decimal($totalCost / $quantity, 4);
         }
-    
+
         return $this->nullableDecimal($fallbackUnitCost, 4);
     }
-    
+
     private function resolveTotalCost(float $quantity, ?float $unitCost, mixed $totalCost): ?float
     {
         if ($totalCost !== null && $totalCost !== '') {
@@ -608,7 +701,4 @@ class FuelService
     {
         return round((float) $value, $precision);
     }
-
-
-    
 }

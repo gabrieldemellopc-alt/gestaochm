@@ -229,6 +229,14 @@
                 <h2>Abastecimentos</h2>
                 <p>Saidas operacionais por veiculo no periodo.</p>
             </div>
+            <div class="fuel-fillings-table-controls">
+                <strong>{{ number_format($fillings_page?->total() ?? 0, 0, ',', '.') }} abastecimentos encontrados</strong>
+                <span>Exibir:</span>
+                @foreach([25, 50, 100] as $perPage)
+                    <a href="{{ route('reports.fuel.full', array_merge(request()->query(), ['per_page' => $perPage, 'page' => 1])) }}"
+                       @class(['is-active' => ($fillings_page?->perPage() ?? 25) === $perPage])>{{ $perPage }}</a>
+                @endforeach
+            </div>
         </div>
 
         <div class="tire-report-table-wrap">
@@ -249,7 +257,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($fillings_period as $filling)
+                    @forelse($fillings_page ?? collect() as $filling)
                         <tr @class(['fuel-warning-row' => $filling->vehicle_km === null && $filling->vehicle_hours === null])>
                             <td>{{ $formatDateTime($filling->filled_at) }}</td>
                             <td>{{ $filling->vehicle?->name ?? '-' }}</td>
@@ -271,6 +279,13 @@
                 </tbody>
             </table>
         </div>
+
+        @if($fillings_page && $fillings_page->total() > 0)
+            <div class="fuel-fillings-pagination">
+                <p>Mostrando {{ number_format($fillings_page->firstItem(), 0, ',', '.') }}–{{ number_format($fillings_page->lastItem(), 0, ',', '.') }} de {{ number_format($fillings_page->total(), 0, ',', '.') }} registros</p>
+                {{ $fillings_page->onEachSide(1)->links() }}
+            </div>
+        @endif
     </section>
 
     @if($adjustmentMovements->isNotEmpty())

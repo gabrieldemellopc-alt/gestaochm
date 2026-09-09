@@ -8,7 +8,7 @@
 
     rel="stylesheet"
 
-    href="{{ asset('css/pages/vehicles.css') }}?v=2"
+    href="{{ asset('css/pages/vehicles.css') }}?v=3"
 >
 
 @endpush
@@ -108,7 +108,20 @@
 
 
     @csrf
+    @if ($errors->any())
+        <div class="vehicle-form-errors">
+            <div class="vehicle-form-errors__title">
+                <i class="bi bi-exclamation-triangle"></i>
+                Não foi possível salvar o veículo
+            </div>
 
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
 
     {{-- HERO --}}
@@ -716,6 +729,8 @@
     </div>
 
 
+
+    @include('vehicle.partials.operational-controls')
 
     {{-- CONTROLE PREVENTIVO --}}
 
@@ -1592,6 +1607,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tireControl =
+        document.querySelector(
+            'input[type="checkbox"][name="tire_control_enabled"]'
+        );
+
+    const tireLayout =
+        document.querySelector('.tire-layout-group');
+
+    if (!tireControl || !tireLayout) {
+        return;
+    }
+
+    function syncTireLayoutState() {
+        tireLayout.classList.toggle(
+            'is-control-disabled',
+            !tireControl.checked
+        );
+    }
+
+    tireControl.addEventListener(
+        'change',
+        syncTireLayoutState
+    );
+
+    syncTireLayoutState();
+});
 </script>
 
 @endsection

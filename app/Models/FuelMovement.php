@@ -7,9 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class FuelMovement extends Model
 {
     public const TYPE_RECEIPT = 'receipt';
+
     public const TYPE_FILLING = 'filling';
+
     public const TYPE_ADJUSTMENT = 'adjustment';
+
     public const TYPE_REVERSAL = 'reversal';
+
+    public const TYPE_INITIAL_BALANCE = 'initial_balance';
+
+    public const TYPE_LEGACY_OUTFLOW = 'legacy_outflow';
 
     protected $fillable = [
         'tenant_id',

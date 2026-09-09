@@ -2,7 +2,7 @@
 @push('styles')
 <link
     rel="stylesheet"
-    href="{{ asset('css/pages/vehicles.css') }}?v=2"
+    href="{{ asset('css/pages/vehicles.css') }}?v=3"
 >
 @endpush
 @section('content')
@@ -41,6 +41,20 @@
     id="vehicleEditForm"
 >
     @csrf
+    @if ($errors->any())
+        <div class="vehicle-form-errors">
+            <div class="vehicle-form-errors__title">
+                <i class="bi bi-exclamation-triangle"></i>
+                Não foi possível salvar o veículo
+            </div>
+
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     @method('PUT')
 {{-- HERO --}}
 <div class="vehicle-edit-hero vehicle-edit-hero--compact">
@@ -272,6 +286,8 @@
         </div>
         </div>
         
+        @include('vehicle.partials.operational-controls', ['vehicle' => $vehicle])
+
         {{-- CONTROLE PREVENTIVO --}}
         <div class="edit-card vehicle-full-card">
         
@@ -651,6 +667,35 @@ document.addEventListener('DOMContentLoaded', function () {
         );
         updateVehicleTypePreview();
     }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tireControl =
+        document.querySelector(
+            'input[type="checkbox"][name="tire_control_enabled"]'
+        );
+
+    const tireLayout =
+        document.querySelector('.tire-layout-group');
+
+    if (!tireControl || !tireLayout) {
+        return;
+    }
+
+    function syncTireLayoutState() {
+        tireLayout.classList.toggle(
+            'is-control-disabled',
+            !tireControl.checked
+        );
+    }
+
+    tireControl.addEventListener(
+        'change',
+        syncTireLayoutState
+    );
+
+    syncTireLayoutState();
 });
 </script>
 @endsection

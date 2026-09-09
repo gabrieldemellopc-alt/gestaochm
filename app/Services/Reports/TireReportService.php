@@ -192,7 +192,8 @@ class TireReportService
                 $query
                     ->where('tenant_id', $context['tenant_id'])
                     ->where('division_id', $context['division']->id)
-                    ->where('location_id', $context['location']->id);
+                    ->where('location_id', $context['location']->id)
+                    ->where('tire_control_enabled', true);
             })
             ->whereHas('tire', function (Builder $query) use ($context) {
                 $query

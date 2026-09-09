@@ -13,13 +13,15 @@ use Illuminate\Support\Collection;
 
 class OperationalDashboardService
 {
+    private const MAX_PLAUSIBLE_KM_PER_LITER = 20.0;
+
     public function __construct(
         private readonly ReportContextService $reportContext,
         private readonly ProfilePermissionService $permissions
     ) {
     }
 
-    public function indicators(User $user): array
+    public function indicators(User $user, string $fleetRelation = 'all'): array
     {
         $context = $this->reportContext->resolve($user);
 
@@ -35,7 +37,7 @@ class OperationalDashboardService
         ];
         $canViewCosts = $this->permissions->allows($user, 'fuel.view_costs', $permissionScope)
             && $this->permissions->allows($user, 'maintenance.view_costs', $permissionScope);
-        $recentFillings = $this->recentFuelFillings($context);
+        $recentFillings = $this->recentFuelFillings($context, $fleetRelation);
 
         return [
             'fuel_consumption_ranking' => $this->fuelConsumptionRanking($recentFillings, $canViewCosts),
@@ -48,16 +50,21 @@ class OperationalDashboardService
         ];
     }
 
-    private function recentFuelFillings(array $context): Collection
+    private function recentFuelFillings(array $context, string $fleetRelation): Collection
     {
         return FuelFilling::query()
-            ->with(['vehicle:id,name,plate,asset_code', 'product:id,name'])
+            ->with([
+                'vehicle:id,name,plate,asset_code,type,fleet_relation,km_control_enabled,hours_control_enabled,tire_control_enabled',
+                'product:id,name',
+                'vehicleReadingLogs:id,fuel_filling_id,type,reading_status',
+            ])
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
             ->whereNull('cancelled_at')
             ->whereBetween('filled_at', [now()->subDays(30)->startOfDay(), now()])
             ->whereNotNull('vehicle_id')
+            ->when($fleetRelation !== 'all', fn ($query) => $query->whereHas('vehicle', fn ($vehicles) => $vehicles->where('fleet_relation', $fleetRelation)))
             ->orderByDesc('filled_at')
             ->get();
     }
@@ -104,32 +111,47 @@ class OperationalDashboardService
                     ->take(5)
                     ->sortBy('filled_at')
                     ->values();
-                $kmAverage = $this->averageByCounter($recent->filter(fn (FuelFilling $filling) => $filling->is_km_reading_usable)->values(), 'vehicle_km');
+                $firstFilling = $recent->first();
+                $vehicle = $firstFilling?->relationLoaded('vehicle')
+                    ? $firstFilling->vehicle
+                    : null;
+
+                if ($vehicle && ! $vehicle->km_control_enabled && $vehicle->hours_control_enabled) {
+                    $hoursAverage = $this->averageLitersPerHour($recent);
+
+                    return $hoursAverage['value'] !== null
+                        ? $this->fuelAveragePayload($hoursAverage['value'], 'L/H', 'available')
+                        : $this->unavailableFuelAverage($hoursAverage['has_inconsistency']);
+                }
+
+                if ($vehicle && ! $vehicle->km_control_enabled) {
+                    return $this->unavailableFuelAverage(false);
+                }
+
+                // Keep every recent filling in sequence. Filtering first would join two
+                // otherwise valid readings across an invalid historical reading.
+                $kmAverage = $this->averageByCounter($recent, 'vehicle_km');
 
                 if ($kmAverage['value'] !== null) {
                     return $this->fuelAveragePayload($kmAverage['value'], 'km/L', 'available');
                 }
 
-                $hoursAverage = $this->averageByCounter($recent, 'vehicle_hours');
-
-                if ($hoursAverage['value'] !== null) {
-                    return $this->fuelAveragePayload($hoursAverage['value'], 'h/L', 'available');
-                }
-
-                $hasInconsistentData = $kmAverage['has_inconsistency']
-                    || $hoursAverage['has_inconsistency'];
-
-                return [
-                    'value' => null,
-                    'formatted' => 'N/D',
-                    'unit' => null,
-                    'status' => $hasInconsistentData ? 'inconsistent' : 'unavailable',
-                    'title' => $hasInconsistentData
-                        ? 'Leituras insuficientes ou inconsistentes no período'
-                        : 'São necessários ao menos dois abastecimentos com leitura válida',
-                ];
+                return $this->unavailableFuelAverage($kmAverage['has_inconsistency']);
             })
             ->all();
+    }
+
+    private function unavailableFuelAverage(bool $hasInconsistency): array
+    {
+        return [
+            'value' => null,
+            'formatted' => 'N/D',
+            'unit' => null,
+            'status' => $hasInconsistency ? 'inconsistent' : 'unavailable',
+            'title' => $hasInconsistency
+                ? 'Leituras insuficientes ou inconsistentes no período'
+                : 'São necessários ao menos dois abastecimentos com leitura válida',
+        ];
     }
 
     private function averageByCounter(Collection $fillings, string $counterField): array
@@ -144,7 +166,15 @@ class OperationalDashboardService
             $previousCounter = $previous->{$counterField};
             $currentCounter = $current->{$counterField};
 
+            if ($counterField === 'vehicle_km'
+                && (! $this->hasUsableKmForConsumption($previous)
+                    || ! $this->hasUsableKmForConsumption($current))) {
+                $hasInconsistency = true;
+                continue;
+            }
+
             if ($previousCounter === null || $currentCounter === null) {
+                $hasInconsistency = true;
                 continue;
             }
 
@@ -152,6 +182,11 @@ class OperationalDashboardService
             $delta = (float) $currentCounter - (float) $previousCounter;
 
             if ($delta <= 0 || $liters <= 0) {
+                $hasInconsistency = true;
+                continue;
+            }
+
+            if ($counterField === 'vehicle_km' && ($delta / $liters) > self::MAX_PLAUSIBLE_KM_PER_LITER) {
                 $hasInconsistency = true;
                 continue;
             }
@@ -166,6 +201,60 @@ class OperationalDashboardService
         ];
     }
 
+    private function hasUsableKmForConsumption(FuelFilling $filling): bool
+    {
+        // Respect the existing valid/suspect/ignored status, while excluding the
+        // historical sentinel values 0 and 1 from statistical consumption only.
+        return $filling->is_km_reading_usable && (float) $filling->vehicle_km > 1.0;
+    }
+
+    private function averageLitersPerHour(Collection $fillings): array
+    {
+        $totalHours = 0.0;
+        $totalLiters = 0.0;
+        $hasInconsistency = false;
+
+        for ($index = 1; $index < $fillings->count(); $index++) {
+            $previous = $fillings->get($index - 1);
+            $current = $fillings->get($index);
+
+            if (! $this->hasUsableHoursForConsumption($previous)
+                || ! $this->hasUsableHoursForConsumption($current)) {
+                $hasInconsistency = true;
+                continue;
+            }
+
+            $deltaHours = (float) $current->vehicle_hours - (float) $previous->vehicle_hours;
+            $liters = (float) $current->quantity_liters;
+
+            if ($deltaHours <= 0 || $liters <= 0) {
+                $hasInconsistency = true;
+                continue;
+            }
+
+            $totalHours += $deltaHours;
+            $totalLiters += $liters;
+        }
+
+        return [
+            'value' => $totalHours > 0 ? round($totalLiters / $totalHours, 2) : null,
+            'has_inconsistency' => $hasInconsistency,
+        ];
+    }
+
+    private function hasUsableHoursForConsumption(FuelFilling $filling): bool
+    {
+        if ($filling->vehicle_hours === null || (float) $filling->vehicle_hours <= 0) {
+            return false;
+        }
+
+        $hoursLog = $filling->relationLoaded('vehicleReadingLogs')
+            ? $filling->vehicleReadingLogs->firstWhere('type', 'hours')
+            : null;
+
+        return $hoursLog === null || $hoursLog->is_reading_usable;
+    }
+
     private function fuelAveragePayload(float $value, string $unit, string $status): array
     {
         return [
@@ -173,7 +262,7 @@ class OperationalDashboardService
             'formatted' => number_format($value, 1, ',', '.').' '.$unit,
             'unit' => $unit,
             'status' => $status,
-            'title' => 'Média calculada com abastecimentos válidos dos últimos 30 dias',
+            'title' => 'Média baseada no histórico de abastecimentos dos últimos 30 dias; não utiliza o contador operacional atual.',
         ];
     }
 

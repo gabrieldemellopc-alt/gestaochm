@@ -2131,6 +2131,59 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-tires-page .empty-s
     margin-top: 16px;
 }
 
+.reports-page.reports-fuel-page .fuel-fillings-table-controls,
+.reports-page.reports-fuel-page .fuel-fillings-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reports-page.reports-fuel-page .fuel-fillings-table-controls strong {
+    color: var(--tire-text);
+    font-size: 13px;
+    margin-right: 4px;
+}
+
+.reports-page.reports-fuel-page .fuel-fillings-table-controls span,
+.reports-page.reports-fuel-page .fuel-fillings-pagination p {
+    margin: 0;
+    color: var(--tire-subtle);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.reports-page.reports-fuel-page .fuel-fillings-table-controls a {
+    min-width: 34px;
+    padding: 5px 8px;
+    border: 1px solid var(--tire-border);
+    border-radius: 7px;
+    color: var(--tire-muted);
+    text-align: center;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.reports-page.reports-fuel-page .fuel-fillings-table-controls a:hover,
+.reports-page.reports-fuel-page .fuel-fillings-table-controls a.is-active {
+    border-color: var(--tire-accent);
+    color: #fff;
+    background: var(--tire-accent);
+}
+
+.reports-page.reports-fuel-page .fuel-fillings-pagination {
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+.reports-page.reports-fuel-page .fuel-fillings-pagination nav {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 html[data-chm-theme="corporate-light"] .reports-page.reports-fuel-page .fuel-meta-grid > div,
 html[data-chm-theme="corporate-light"] .reports-page.reports-fuel-page .fuel-filter-chip-list span {
     background: var(--tire-panel-muted);
@@ -2148,6 +2201,13 @@ html[data-chm-theme="corporate-light"] .reports-page.reports-fuel-page .fuel-fil
     }
 
     .reports-page.reports-fuel-page .fuel-filter-chip-list {
+        flex-direction: column;
+    }
+
+    .reports-page.reports-fuel-page .fuel-fillings-table-controls,
+    .reports-page.reports-fuel-page .fuel-fillings-pagination {
+        align-items: flex-start;
+        justify-content: flex-start;
         flex-direction: column;
     }
 }

@@ -2,76 +2,147 @@
 
 namespace App\Console\Commands;
 
-use App\Models\FuelFilling;
-use App\Models\FuelProduct;
-use App\Models\Vehicle;
-use Carbon\Carbon;
+use App\Models\FuelImportBatch;
+use App\Models\FuelImportRow;
+use App\Models\FuelTank;
+use App\Models\User;
+use App\Services\AuditLogService;
+use App\Services\FuelOperationContext;
+use App\Services\FuelService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportImperatrizFuelSheet extends Command
 {
-    protected $signature = 'chm:import-imperatriz-fuel {file} {--tenant-id=} {--division-id=} {--location-id=} {--fuel-product-id=} {--dry-run} {--commit} {--update-vehicle-readings}';
-    protected $description = 'Importa histórico de abastecimentos de Imperatriz (dry-run por padrão)';
+    protected $signature = 'chm:import-imperatriz-fuel {file} {--tank-id=} {--user=} {--dry-run} {--commit} {--confirm-location=} {--allow-legacy-balance-anomalies}';
 
-    public function handle(): int
+    protected $description = 'Importa eventos históricos de combustível com transação, auditoria e idempotência.';
+
+    private const C = ['sequence', 'event_type', 'occurred_at', 'tank_id', 'vehicle_id', 'fuel_product_id', 'source', 'quantity_liters', 'unit_cost', 'total_cost', 'invoice_number', 'supplier_name', 'document_number', 'vehicle_km', 'vehicle_hours', 'notes', 'legacy_classification', 'external_reference'];
+
+    public function handle(FuelService $fuel): int
     {
-        if ($this->option('update-vehicle-readings')) {
-            $this->warn('A opção --update-vehicle-readings está preterida e não sincroniza leituras. Use chm:sync-fuel-readings explicitamente após revisar o dry-run.');
+        if (! is_file($this->argument('file'))) {
+            return $this->no('Arquivo não encontrado.');
+        } $tank = FuelTank::find($this->option('tank-id'));
+        if (! $tank) {
+            return $this->no('Informe --tank-id válido.');
         }
-        $path = $this->argument('file');
-        if (! is_file($path)) { $this->error('Arquivo não encontrado.'); return self::FAILURE; }
-        foreach (['tenant-id', 'division-id', 'location-id'] as $option) {
-            if (! $this->option($option)) { $this->error("Informe --{$option}."); return self::FAILURE; }
+        if (! $this->option('dry-run') && ! $this->option('commit')) {
+            return $this->no('Use --dry-run ou --commit.');
+        }if ($this->option('commit') && (int) $this->option('confirm-location') !== $tank->location_id) {
+            return $this->no('Confirme a unidade com --confirm-location='.$tank->location_id);
         }
-        $tenantId = (int) $this->option('tenant-id'); $divisionId = (int) $this->option('division-id'); $locationId = (int) $this->option('location-id');
-        $product = $this->fuelProduct($tenantId);
-        if (! $product) { $this->error('Produto diesel não encontrado; informe --fuel-product-id.'); return self::FAILURE; }
-
-        $indices = $this->vehicleIndices($tenantId, $divisionId, $locationId);
-        $stats = ['lidas' => 0, 'importáveis' => 0, 'importadas' => 0, 'duplicadas' => 0, 'não encontradas' => 0, 'erros de dados' => 0, 'warnings' => 0];
-        $totals = ['liters' => 0.0, 'value' => 0.0]; $found = []; $missing = []; $readySamples = []; $missingSamples = []; $header = null;
-        foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $index => $line) {
-            $cells = array_map('trim', preg_split('/\t|\|/', trim($line, " |\t")));
-            if (! $header) { if (str_contains(mb_strtolower($line), 'data')) $header = array_map(fn ($value) => mb_strtolower(trim($value)), $cells); continue; }
-            if (preg_match('/^-+$/', str_replace(['|', ' ', "\t"], '', $line))) continue;
-            $lineNumber = $index + 1; $stats['lidas']++; $row = array_combine($header, array_pad($cells, count($header), ''));
-            try {
-                $date = $this->date($row['data'] ?? ''); $liters = $this->number($row['volume (l)'] ?? ''); $total = $this->number($row['valor total'] ?? ''); $unit = $this->number($row['valor por litro'] ?? ''); $km = $this->number($row['km atual'] ?? '');
-                if (! $date || $liters <= 0 || ($total <= 0 && $unit <= 0)) throw new \RuntimeException('data/volume/valor inválido');
-                if ($total <= 0) $total = round($liters * $unit, 2);
-                [$vehicle, $method, $plateCandidate, $fleetCandidate] = $this->findVehicle($row, $indices);
-                if (! $vehicle) {
-                    $stats['não encontradas']++; $key = $plateCandidate ?: ($fleetCandidate ?: '(sem identificação)'); $missing[$key] = ($missing[$key] ?? 0) + 1;
-                    if (count($missingSamples) < 10) $missingSamples[] = [$lineNumber, $row['veiculo'] ?? '', $row['frota'] ?? '', $row['veiculo2'] ?? '', $plateCandidate, $fleetCandidate];
-                    continue;
+        $user = User::where('tenant_id', $tank->tenant_id)->find($this->option('user')) ?: User::where('tenant_id', $tank->tenant_id)->first();
+        if (! $user) {
+            return $this->no('Informe --user válido.');
+        }
+        try {
+            $rows = $this->rows($this->argument('file'), $tank->id);
+        } catch (\Throwable $e) {
+            return $this->no($e->getMessage());
+        }$hash = hash_file('sha256', $this->argument('file'));
+        if ($this->option('commit') && FuelImportBatch::where('tenant_id', $tank->tenant_id)->where('source_hash', $hash)->exists()) {
+            return $this->no('Lote já importado; nenhuma duplicação criada.');
+        }
+        $s = ['initial_balance' => 0, 'receipts' => 0, 'receipt_liters' => 0, 'receipt_value' => 0, 'internal_fillings' => 0, 'internal_liters' => 0, 'external_fillings' => 0, 'external_liters' => 0, 'above_capacity' => 0, 'below_zero' => 0, 'duplicates' => 0, 'km_hr_errors' => 0, 'errors' => []];
+        $balances = [];
+        try {
+            DB::transaction(function () use ($fuel, $tank, $user, $rows, $hash, &$s, &$balances) {
+                $batch = $this->option('commit') ? FuelImportBatch::create(['tenant_id' => $tank->tenant_id, 'division_id' => $tank->division_id, 'location_id' => $tank->location_id, 'fuel_tank_id' => $tank->id, 'responsible_user_id' => $user->id, 'source_file' => basename($this->argument('file')), 'source_hash' => $hash, 'status' => 'processing', 'is_historical_import' => true, 'allow_legacy_balance_anomalies' => (bool) $this->option('allow-legacy-balance-anomalies')]) : new FuelImportBatch(['id' => 0]);
+                $service = $fuel->forOperationContext(new FuelOperationContext($user, $tank->tenant_id, $tank->division_id, $tank->location_id, true, $batch->id, (bool) $this->option('allow-legacy-balance-anomalies')));
+                foreach ($rows as $r) {
+                    $p = ['fuel_tank_id' => $tank->id, 'fuel_product_id' => $r['fuel_product_id'] ?: null, 'occurred_at' => $r['occurred_at'], 'received_at' => $r['occurred_at'], 'filled_at' => $r['occurred_at'], 'quantity_liters' => $r['quantity_liters'], 'unit_cost' => $r['unit_cost'] ?: null, 'total_cost' => $r['total_cost'] ?: null, 'invoice_number' => $r['invoice_number'] ?: null, 'supplier_name' => $r['supplier_name'] ?: null, 'document_number' => $r['document_number'] ?: null, 'vehicle_km' => $r['vehicle_km'] ?: null, 'vehicle_hours' => $r['vehicle_hours'] ?: null, 'vehicle_id' => $r['vehicle_id'] ?: null, 'source' => $r['source'] ?: null, 'notes' => trim(($r['notes'] ?? '').' | Importação histórica de combustível – Imperatriz – lote '.($batch->id ?: 'DRY-RUN'))];
+                    try {
+                        $e = match ($r['event_type']) {
+                            'initial_balance' => $service->registerInitialBalance($p),'receipt' => $service->receiveFuel($p),'filling' => $service->registerFilling($p),'legacy_outflow' => $service->registerLegacyOutflow([...$p, 'external_reference' => $r['external_reference'], 'legacy_classification' => $r['legacy_classification'] ?? null]),default => throw new \RuntimeException('event_type inválido')
+                        };
+                        if ($this->option('commit')) {
+                            FuelImportRow::create(['fuel_import_batch_id' => $batch->id, 'row_number' => $r['_line'], 'sequence' => $r['sequence'], 'external_reference' => $r['external_reference'], 'payload' => $r, 'status' => 'imported', 'entity_type' => $e::class, 'entity_id' => $e->id]);
+                            app(AuditLogService::class)->record(['tenant_id' => $tank->tenant_id, 'division_id' => $tank->division_id, 'location_id' => $tank->location_id, 'user_id' => $user->id, 'auditable' => $e, 'module' => 'fuel', 'action' => 'imported', 'summary' => 'Linha importada de combustível.', 'metadata' => ['import_batch_id' => $batch->id, 'external_reference' => $r['external_reference'], 'legacy_classification' => $r['legacy_classification'] ?? null, 'historical_import' => true]]);
+                        }$this->count($s, $r);
+                    } catch (\Throwable $x) {
+                        $s['errors'][] = 'Linha '.$r['_line'].': '.$x->getMessage();
+                        throw $x;
+                    }$t = $tank->fresh();
+                    $balances[] = (float) $t->current_balance_liters;
+                    if (end($balances) > (float) $t->capacity_liters) {
+                        $s['above_capacity']++;
+                    }if (end($balances) < 0) {
+                        $s['below_zero']++;
+                    }
                 }
-                if ($method === 'frota') { $stats['warnings']++; $this->warn("Linha {$lineNumber}: localizado por frota, placa da planilha divergente/ausente."); }
-                $hash = sha1(implode('|', [$date->toDateString(), $vehicle->id, $liters, $total, $km])); $tag = "IMP-IMPERATRIZ-FUEL:{$hash}";
-                if (FuelFilling::where('tenant_id', $tenantId)->where('notes', 'like', "%{$tag}%")->exists()) { $stats['duplicadas']++; continue; }
-                $stats['importáveis']++; $totals['liters'] += $liters; $totals['value'] += $total; $label = "#{$vehicle->id} {$vehicle->plate} / {$vehicle->name}"; $found[$label] = ($found[$label] ?? 0) + 1;
-                if (count($readySamples) < 10) $readySamples[] = [$lineNumber, $date->format('d/m/Y'), $plateCandidate, $row['frota'] ?? '', $label, number_format($liters, 3, ',', '.'), 'R$ '.number_format($total, 2, ',', '.')];
-                if (! $this->option('commit')) continue;
-                FuelFilling::create(['tenant_id' => $tenantId, 'division_id' => $divisionId, 'location_id' => $locationId, 'fuel_product_id' => $product->id, 'source' => FuelFilling::SOURCE_EXTERNAL_STATION, 'vehicle_id' => $vehicle->id, 'filled_at' => $date->setTime(12, 0), 'vehicle_km' => $km, 'quantity_liters' => $liters, 'unit_cost' => $unit ?: round($total / $liters, 4), 'total_cost' => $total, 'supplier_name' => 'Importação planilha Imperatriz', 'document_number' => 'PLANILHA-IMPERATRIZ-2026', 'notes' => "Importação histórica Imperatriz; frota=".($row['frota'] ?? '')."; km anterior=".($row['km anterior'] ?? '')."; percorrido=".($row['percorrido km'] ?? '')."; média=".($row['media km'] ?? '')."; {$tag}"]);
-                $stats['importadas']++;
-            } catch (\Throwable $exception) { $stats['erros de dados']++; $this->warn("Linha {$lineNumber}: {$exception->getMessage()}"); }
+                $t = $tank->fresh();
+                $s += ['final_balance' => $t->current_balance_liters, 'final_average_cost' => $t->average_unit_cost, 'final_stock_value' => $t->estimated_stock_value, 'minimum_balance' => $balances ? min($balances) : (float) $t->current_balance_liters, 'maximum_balance' => $balances ? max($balances) : (float) $t->current_balance_liters];
+                if ($this->option('commit')) {
+                    $batch->update(['status' => 'completed', 'summary' => $s]);
+                } else {
+                    throw new \RuntimeException('__rollback__');
+                }
+            });
+        } catch (\Throwable $e) {
+            if ($e->getMessage() !== '__rollback__') {
+                $s['errors'][] = $e->getMessage();
+            }
         }
-        $this->table(array_keys($stats), [array_values($stats)]);
-        $this->line('Total de litros importáveis: '.number_format($totals['liters'], 3, ',', '.'));
-        $this->line('Total em R$ importável: R$ '.number_format($totals['value'], 2, ',', '.'));
-        $this->line('Quantidade de veículos encontrados: '.count($found)); $this->line('Quantidade de veículos não encontrados: '.count($missing));
-        $this->table(['Top 20 veículos não encontrados', 'linhas'], $this->top($missing)); $this->table(['Top 20 veículos encontrados/importáveis', 'linhas'], $this->top($found));
-        $this->table(['linha', 'data', 'placa planilha', 'frota planilha', 'veículo encontrado', 'litros', 'valor total'], $readySamples);
-        $this->table(['linha', 'Veiculo', 'Frota', 'Veiculo2', 'placa candidata', 'frota normalizada'], $missingSamples);
-        $this->info($this->option('commit') ? 'Importação concluída.' : 'Dry-run: nenhuma gravação foi realizada.'); return self::SUCCESS;
+        $this->table(array_keys($s), [array_map(fn ($v) => is_array($v) ? implode(' | ', $v) : $v, array_values($s))]);
+        $ok = ! $s['errors'];
+        $this->line('RESULTADO: '.($ok ? 'APTO PARA IMPORTAÇÃO' : 'BLOQUEADO'));
+
+        return $ok ? self::SUCCESS : self::FAILURE;
     }
 
-    public static function normalizePlate(mixed $value): string { return preg_replace('/[^A-Z0-9]/', '', strtoupper((string) $value)); }
-    public static function normalizeFleet(mixed $value): string { $fleet = self::normalizePlate($value); return preg_match('/^([A-Z]+)0*(\d+)$/', $fleet, $matches) ? $matches[1].str_pad($matches[2], 3, '0', STR_PAD_LEFT) : $fleet; }
-    private function fuelProduct(int $tenantId): ?FuelProduct { return $this->option('fuel-product-id') ? FuelProduct::where('tenant_id', $tenantId)->find($this->option('fuel-product-id')) : FuelProduct::where('tenant_id', $tenantId)->where('active', true)->where(fn ($query) => $query->where('name', 'like', '%diesel%')->orWhere('name', 'like', '%s10%'))->first(); }
-    private function vehicleIndices(int $tenantId, int $divisionId, int $locationId): array { $plates = []; $fleets = []; Vehicle::where('tenant_id', $tenantId)->where('division_id', $divisionId)->where('location_id', $locationId)->get()->each(function (Vehicle $vehicle) use (&$plates, &$fleets) { if ($plate = self::normalizePlate($vehicle->plate)) $plates[$plate] ??= $vehicle; foreach ([$vehicle->name, $vehicle->asset_code] as $fleet) if ($fleet = self::normalizeFleet($fleet)) $fleets[$fleet] ??= $vehicle; }); return compact('plates', 'fleets'); }
-    private function findVehicle(array $row, array $indices): array { $values = [$row['veiculo'] ?? '', $row['veiculo2'] ?? '', $row['frota'] ?? '']; foreach ($values as $value) { $plate = self::normalizePlate($value); if ($this->looksLikePlate($plate) && isset($indices['plates'][$plate])) return [$indices['plates'][$plate], 'placa', $plate, self::normalizeFleet($row['frota'] ?? '')]; } foreach ($values as $value) { $fleet = self::normalizeFleet($value); if ($fleet && isset($indices['fleets'][$fleet])) return [$indices['fleets'][$fleet], 'frota', '', $fleet]; } $plate = collect($values)->map(fn ($value) => self::normalizePlate($value))->first(fn ($value) => $this->looksLikePlate($value)) ?: ''; return [null, null, $plate, self::normalizeFleet($row['frota'] ?? '')]; }
-    private function looksLikePlate(string $value): bool { return (bool) preg_match('/^[A-Z]{3}[A-Z0-9]{4}$/', $value); }
-    private function top(array $items): array { arsort($items); return array_map(fn ($key, $count) => [$key, $count], array_keys(array_slice($items, 0, 20, true)), array_slice($items, 0, 20, true)); }
-    private function number(mixed $value): float { $value = preg_replace('/[^0-9,.-]/', '', (string) $value); return (float) str_replace(',', '.', str_replace('.', '', $value)); }
-    private function date(mixed $value): ?Carbon { $value = preg_replace('/\s/', '', trim((string) $value)); if (preg_match('/^(\d{1,2})\/(\d{2})(\d{4})$/', $value, $matches)) $value = "{$matches[1]}/{$matches[2]}/{$matches[3]}"; try { return Carbon::createFromFormat('!d/m/Y', $value); } catch (\Throwable) { return null; } }
+    private function rows(string $file, int $tank): array
+    {
+        $a = IOFactory::load($file)->getActiveSheet()->toArray('', true, true, false);
+        $h = array_map(fn ($v) => strtolower(trim((string) $v)), array_shift($a));
+        foreach (self::C as $c) {
+            if (! in_array($c, $h, true)) {
+                throw new \RuntimeException('Coluna obrigatória ausente: '.$c);
+            }
+        }$o = [];
+        $seen = [];
+        foreach ($a as $i => $v) {
+            $r = array_combine($h, array_pad($v, count($h), null));
+            if (! array_filter($r, fn ($x) => $x !== null && $x !== '')) {
+                continue;
+            }$r['_line'] = $i + 2;
+            $r['sequence'] = (int) $r['sequence'];
+            $r['quantity_liters'] = (float) $r['quantity_liters'];
+            $movesTank = $r['event_type'] !== 'filling' || ($r['source'] ?? null) === 'internal_tank';
+            if ($movesTank && (int) $r['tank_id'] !== $tank) {
+                throw new \RuntimeException('Linha '.$r['_line'].': tanque divergente.');
+            }if (! $r['external_reference'] || isset($seen[$r['external_reference']])) {
+                throw new \RuntimeException('Linha '.$r['_line'].': external_reference ausente ou duplicada.');
+            }$seen[$r['external_reference']] = true;
+            $o[] = $r;
+        }usort($o, fn ($x, $y) => [$x['occurred_at'], $x['sequence']] <=> [$y['occurred_at'], $y['sequence']]);
+
+        return $o;
+    }
+
+    private function count(array &$s, array $r): void
+    {
+        if ($r['event_type'] === 'initial_balance') {
+            $s['initial_balance'] += (float) $r['quantity_liters'];
+        }if ($r['event_type'] === 'receipt') {
+            $s['receipts']++;
+            $s['receipt_liters'] += (float) $r['quantity_liters'];
+            $s['receipt_value'] += (float) $r['total_cost'];
+        }if ($r['event_type'] === 'filling' && $r['source'] === 'internal_tank') {
+            $s['internal_fillings']++;
+            $s['internal_liters'] += (float) $r['quantity_liters'];
+        }if ($r['event_type'] === 'filling' && $r['source'] === 'external_station') {
+            $s['external_fillings']++;
+            $s['external_liters'] += (float) $r['quantity_liters'];
+        }
+    }
+
+    private function no(string $s): int
+    {
+        $this->error($s);
+
+        return self::FAILURE;
+    }
 }

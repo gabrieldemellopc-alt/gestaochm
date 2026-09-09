@@ -185,7 +185,7 @@
 
         {{-- Linha inferior com os 3 botões dividindo a largura total dos 2 cards --}}
         <nav class="dashboard-fleet-filter" aria-label="Filtro de frota exibida">
-            @foreach(['internal' => 'Internos', 'aggregated' => 'Agregados', 'all' => 'Todos veículos'] as $value => $label)
+            @foreach(['internal' => 'Internos', 'aggregated' => 'Agregados', 'rented' => 'Alugados', 'all' => 'Todos veículos'] as $value => $label)
                 <a href="{{ route('dashboard', ['fleet_relation' => $value]) }}" 
                    class="{{ request('fleet_relation', 'internal') === $value ? 'is-active' : '' }}" 
                    @if(request('fleet_relation', 'internal') === $value) aria-current="page" @endif>
