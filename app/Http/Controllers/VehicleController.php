@@ -27,6 +27,7 @@ use App\Services\ActiveContextService;
 use App\Services\Permissions\ProfilePermissionService;
 use App\Services\VehicleReadingService;
 use App\Services\VehicleHistoryService;
+use App\Services\VehicleFuelPolicy;
 use App\Models\VehicleDowntimePeriod;
 use App\Models\SystemAuditLog;
 use Illuminate\Support\Collection;
@@ -156,6 +157,7 @@ class VehicleController extends Controller
 
 
 
+        $fuelProducts = app(VehicleFuelPolicy::class)->products(auth()->user()->tenant_id);
         return view(
 
 
@@ -210,7 +212,7 @@ class VehicleController extends Controller
 
                 'divisions',
 
-                'locations')
+                'locations', 'fuelProducts')
 
 
 
@@ -503,6 +505,8 @@ class VehicleController extends Controller
                 'array',
 
             ],
+            'fuel_product_ids' => ['nullable', 'array'],
+            'fuel_product_ids.*' => ['integer'],
 
 
 
@@ -713,6 +717,7 @@ class VehicleController extends Controller
 
 
         ]);
+        $vehicle->fuelProducts()->sync(app(VehicleFuelPolicy::class)->validateIds($vehicle->tenant_id, $validated['fuel_product_ids'] ?? []));
 
 
 
@@ -930,6 +935,7 @@ class VehicleController extends Controller
 
         $locations = Location::orderBy('name')->get();
 
+        $fuelProducts = app(VehicleFuelPolicy::class)->products($vehicle->tenant_id);
         return view(
 
 
@@ -946,7 +952,7 @@ class VehicleController extends Controller
 
                 'divisions',
 
-                'locations'
+                'locations', 'fuelProducts'
 
             )
 
@@ -1240,6 +1246,8 @@ class VehicleController extends Controller
                 'array',
 
             ],
+            'fuel_product_ids' => ['nullable', 'array'],
+            'fuel_product_ids.*' => ['integer'],
 
 
 
@@ -1493,6 +1501,7 @@ class VehicleController extends Controller
 
 
         ]);
+        $vehicle->fuelProducts()->sync(app(VehicleFuelPolicy::class)->validateIds($vehicle->tenant_id, $validated['fuel_product_ids'] ?? []));
 
 
 

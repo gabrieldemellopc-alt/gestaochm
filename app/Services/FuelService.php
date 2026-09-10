@@ -290,6 +290,10 @@ class FuelService
                 }
             }
 
+            if (! $this->operationContext?->isHistoricalImport) {
+                app(VehicleFuelPolicy::class)->ensureAllowed($vehicle, FuelProduct::query()->findOrFail($fuelProductId));
+            }
+
             $filling = FuelFilling::query()->create([
                 'tenant_id' => $context['tenant_id'],
                 'division_id' => $context['division_id'],

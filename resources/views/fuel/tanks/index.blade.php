@@ -411,6 +411,7 @@
                                     <option value="{{ $product->id }}" @selected(old('fuel_product_id') == $product->id)>{{ $product->name }}</option>
                                 @endforeach
                             </select>
+                            <small data-vehicle-fuel-help>Selecione o veículo para consultar os combustíveis permitidos.</small>
                         </label>
                         <label>
                             Nome do tanque
@@ -519,6 +520,7 @@
                                 @foreach($tanks->where('active', true) as $tank)
                                     <option
                                         value="{{ $tank->id }}"
+                                        data-product-id="{{ $tank->fuel_product_id }}"
                                         data-unit-cost="{{ $tank->average_unit_cost ?? 0 }}"
                                         @selected(old('fuel_tank_id') == $tank->id)
                                     >
@@ -533,7 +535,7 @@
                             <select name="fuel_product_id">
                                 <option value="">Selecione</option>
                                 @foreach($products as $product)
-                                    <option value="{{ $product->id }}" @selected(old('fuel_product_id') == $product->id)>{{ $product->name }}</option>
+                                    <option value="{{ $product->id }}" data-product-id="{{ $product->id }}" @selected(old('fuel_product_id') == $product->id)>{{ $product->name }}</option>
                                 @endforeach
                             </select>
                         </label>
@@ -805,6 +807,7 @@
     </div>
 <div id="fuelConsumptionDashboard" class="fuel-dashboard-modal" hidden><div class="fuel-dashboard-card"><button type="button" class="fuel-detail-close" onclick="closeFuelConsumptionDashboard()">×</button><h2>Painel de consumo</h2><div class="fuel-dashboard-toolbar"><p id="fuelDashboardSubtitle">Indicadores e gráficos de abastecimento — Últimos 30 dias</p><label>Período<select id="fuelDashboardPeriod" onchange="openFuelConsumptionDashboard()"><option value="last_30_days">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="previous_month">Mês anterior</option><option value="all">Todo o período</option></select></label></div><div id="fuelDashboardContent">Carregando…</div></div></div>
 <script>
+window.fuelVehicleCompatibility=@json($fuelCompatibility);
 window.openFuelConsumptionDashboard = async function(){
     const modal=document.getElementById('fuelConsumptionDashboard'),content=document.getElementById('fuelDashboardContent'),period=document.getElementById('fuelDashboardPeriod')?.value||'last_30_days';
     modal.hidden=false; content.textContent='Carregando…';
@@ -901,6 +904,27 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
             || 'internal_tank';
     }
 
+    function syncVehicleFuelCompatibility(form) {
+        const vehicle = form.querySelector('select[name="vehicle_id"]');
+        const compatibility = window.fuelVehicleCompatibility?.[vehicle?.value];
+        const help = form.querySelector('[data-vehicle-fuel-help]');
+        if (help) help.textContent = compatibility?.label || 'Selecione o veículo para consultar os combustíveis permitidos.';
+        ['fuel_tank_id', 'fuel_product_id'].forEach(function (name) {
+            const select = form.querySelector(`select[name="${name}"]`);
+            if (!select) return;
+            [...select.options].forEach(function (option) {
+                if (!option.dataset.productId) return;
+                const allowed = !compatibility?.configured || compatibility.allowed_ids.includes(Number(option.dataset.productId));
+                option.disabled = !allowed;
+                option.textContent = option.textContent.replace(' — Veículo não aceita', '') + (allowed ? '' : ' — Veículo não aceita');
+            });
+            if (select.selectedOptions[0]?.disabled) select.value = '';
+            const compatible = [...select.options].filter(o => o.dataset.productId && !o.disabled);
+            if (compatible.length === 1 && !select.value) select.value = compatible[0].value;
+        });
+        updateFillingCostPreview(form);
+    }
+
     function syncFuelFillingSource(form) {
         const source = fuelFillingSource(form);
         const isExternal = source === 'external_station';
@@ -932,6 +956,7 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
         }
 
         updateFillingCostPreview(form);
+        syncVehicleFuelCompatibility(form);
     }
 
     function updateFillingCostPreview(form) {
@@ -1018,11 +1043,14 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
     });
     
     document.addEventListener('change', function (event) {
-        if (event.target.matches('select[name="fuel_tank_id"]') || event.target.matches('input[name="source"]')) {
+        if (event.target.matches('select[name="fuel_tank_id"]') || event.target.matches('select[name="vehicle_id"]') || event.target.matches('input[name="source"]')) {
             const form = event.target.closest('form');
     
             if (form && form.classList.contains('fuel-filling-form')) {
-                if (event.target.matches('input[name="source"]')) {
+                if (event.target.matches('select[name="vehicle_id"]')) {
+                    syncVehicleCounters(form);
+                    syncVehicleFuelCompatibility(form);
+                } else if (event.target.matches('input[name="source"]')) {
                     syncFuelFillingSource(form);
                 } else {
                     updateFillingCostPreview(form);
@@ -1147,8 +1175,9 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
                 if (vehicleSelect && vehicleSelect.value) {
                     syncVehicleCounters(form);
                 }
-    
+
                 syncFuelFillingSource(form);
+                syncVehicleFuelCompatibility(form);
             });
     }
     

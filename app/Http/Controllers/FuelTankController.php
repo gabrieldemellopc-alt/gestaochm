@@ -10,6 +10,7 @@ use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use App\Services\FuelService;
+use App\Services\VehicleFuelPolicy;
 
 use App\Services\TenantFiscalSettingService;
 use App\Services\Permissions\ProfilePermissionService;
@@ -109,6 +110,10 @@ class FuelTankController extends Controller
                 ]
             );
 
+        $vehicles = $this->vehiclesForContext($context);
+        $vehicles->load('fuelProducts');
+        $policy = app(VehicleFuelPolicy::class);
+        $fuelCompatibility = $vehicles->mapWithKeys(fn (Vehicle $vehicle) => [$vehicle->id => $policy->compatibilityForVehicle($vehicle, $products)]);
         return view('fuel.tanks.index', [
             'activeDivision' => $context['division'],
             'activeLocation' => $context['location'],
@@ -118,7 +123,8 @@ class FuelTankController extends Controller
             'fuelBalanceByProduct' => $fuelBalanceByProduct,
             'fuelLast30Days' => $fuelLast30Days,
 
-            'vehicles' => $this->vehiclesForContext($context),
+            'vehicles' => $vehicles,
+            'fuelCompatibility' => $fuelCompatibility,
             'drivers' => $this->driversForContext($context),
             'latestReceipts' => $this->latestReceipts($context),
             'latestFillings' => $this->latestFillings($context),

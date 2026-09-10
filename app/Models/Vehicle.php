@@ -69,6 +69,7 @@ class Vehicle extends Model
     {
         return $this->belongsTo(Tenant::class);
     }
+    public function fuelProducts(){ return $this->belongsToMany(FuelProduct::class, 'fuel_product_vehicle')->withTimestamps(); }
     public function checklistExecutions()
     {
         return $this->hasMany(

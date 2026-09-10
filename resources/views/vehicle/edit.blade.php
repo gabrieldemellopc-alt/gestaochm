@@ -502,6 +502,11 @@
         </div>
         
         
+        <div class="edit-card vehicle-full-card vehicle-fuel-products">
+            <div class="card-header"><h3>Combustível do veículo</h3><p class="card-description">Defina quais combustíveis este veículo pode utilizar.</p></div>
+            <div class="procedures-grid">@foreach($fuelProducts as $product)<label class="procedure-pill"><input type="checkbox" name="fuel_product_ids[]" value="{{ $product->id }}" @checked(in_array($product->id, old('fuel_product_ids', $vehicle->fuelProducts->pluck('id')->all())))><span>{{ $product->name }}</span></label>@endforeach</div>
+            <small class="form-help">Diesel S10 e Diesel S500 são exclusivos. Gasolina e Álcool podem ser combinados para veículo flex.</small>
+        </div>
         {{-- OBSERVAÇÕES --}}
         <div class="edit-card vehicle-full-card">
         
