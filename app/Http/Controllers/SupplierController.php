@@ -6,6 +6,7 @@ use App\Models\Supplier;
 use App\Services\Permissions\ProfilePermissionService;
 use App\Services\SupplierNormalizer;
 use App\Services\SupplierSearchService;
+use App\Services\SupplierMergeService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -73,6 +74,20 @@ class SupplierController extends Controller
         return back()->with('success', $supplier->active
             ? 'Fornecedor reativado.'
             : 'Fornecedor desativado.');
+    }
+
+    public function merge(Request $request, Supplier $supplier, SupplierMergeService $merger)
+    {
+        $this->authorize($request, 'suppliers.merge');
+        abort_unless($supplier->tenant_id === $request->user()->tenant_id, 404);
+        $data = $request->validate([
+            'secondary_supplier_id' => ['required', 'integer'],
+            'name_source' => ['required', 'in:primary,secondary'],
+            'document_source' => ['nullable', 'in:primary,secondary'],
+            'aliases_source' => ['required', 'in:primary,secondary,both'],
+        ]);
+        $merger->merge($supplier, (int) $data['secondary_supplier_id'], $data, $request->user()->id);
+        return redirect()->route('suppliers.index')->with('success', 'Fornecedores mesclados com sucesso.');
     }
 
     private function data(Request $request, SupplierNormalizer $normalizer, ?Supplier $supplier = null): array

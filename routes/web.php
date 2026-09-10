@@ -106,6 +106,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
     Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
     Route::patch('/suppliers/{supplier}/status', [SupplierController::class, 'updateStatus'])->name('suppliers.status');
+    Route::post('/suppliers/{supplier}/merge', [SupplierController::class, 'merge'])->name('suppliers.merge');
     Route::get('/suppliers/search', [SupplierController::class, 'search'])->name('suppliers.search');
 
     Route::patch('/locations/{location}/toggle-active', [LocationController::class, 'toggleActive'])

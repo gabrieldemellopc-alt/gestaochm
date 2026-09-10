@@ -6,10 +6,14 @@ use App\Models\Division;
 use App\Models\Location;
 use App\Models\ProfilePermissionOverride;
 use App\Models\Supplier;
+use App\Models\SupplierAlias;
+use App\Models\SystemAuditLog;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserDivisionAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class SupplierPermissionTest extends TestCase
@@ -70,6 +74,46 @@ class SupplierPermissionTest extends TestCase
         $this->put(route('suppliers.update', $supplier), ['trade_name' => 'Fornecedor Editado', 'document' => '40.187.670/0001-83', 'active' => true])->assertRedirect();
         $this->patch(route('suppliers.status', $supplier), ['active' => false])->assertRedirect();
         $this->assertDatabaseHas('suppliers', ['id' => $supplier->id, 'trade_name' => 'Fornecedor Editado', 'active' => false]);
+    }
+
+    public function test_authorized_merge_keeps_the_first_supplier_transfers_document_and_preserves_old_name_as_alias(): void
+    {
+        [$user, $tenant, $division, $location] = $this->supervisorContext();
+        $scope = ['tenant_id' => $tenant->id, 'division_id' => $division->id, 'location_id' => $location->id, 'module' => 'fleet', 'profile' => 'supervisor'];
+        ProfilePermissionOverride::create([...$scope, 'permission_key' => 'suppliers.merge', 'allowed' => true]);
+        $primary = Supplier::create(['tenant_id' => $tenant->id, 'trade_name' => 'Principal', 'normalized_name' => 'principal', 'active' => true]);
+        $secondary = Supplier::create(['tenant_id' => $tenant->id, 'trade_name' => 'Incorporado', 'document' => '40187670000183', 'document_type' => 'cnpj', 'normalized_name' => 'incorporado', 'active' => true]);
+        SupplierAlias::create(['supplier_id' => $primary->id, 'alias' => 'Comum Ltda', 'normalized_alias' => 'comum']);
+        SupplierAlias::create(['supplier_id' => $secondary->id, 'alias' => 'COMUM', 'normalized_alias' => 'comum']);
+        // Regression coverage: this table intentionally has no tenant_id. Its scope is its maintenance parent.
+        $this->assertFalse(Schema::hasColumn('maintenance_record_items', 'tenant_id'));
+        // A tenant-owning relation must remain constrained during the bulk transfer.
+        DB::table('workshop_expenses')->insert(['tenant_id' => $tenant->id, 'division_id' => $division->id, 'location_id' => $location->id, 'expense_date' => now()->toDateString(), 'category' => 'parts', 'description' => 'Despesa de fornecedor', 'supplier_id' => $secondary->id, 'amount' => 10, 'created_by' => $user->id, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($user)->withSession($this->activeScopeSession($division, $location))
+            ->post(route('suppliers.merge', $primary), ['secondary_supplier_id' => $secondary->id, 'name_source' => 'primary', 'aliases_source' => 'both'])
+            ->assertRedirect(route('suppliers.index'));
+
+        $this->assertDatabaseMissing('suppliers', ['id' => $secondary->id]);
+        $this->assertDatabaseHas('suppliers', ['id' => $primary->id, 'trade_name' => 'Principal', 'document' => '40187670000183']);
+        $this->assertDatabaseHas('supplier_aliases', ['supplier_id' => $primary->id, 'normalized_alias' => 'incorporado']);
+        $this->assertSame(1, SupplierAlias::where('supplier_id', $primary->id)->where('normalized_alias', 'comum')->count());
+        $this->assertDatabaseHas('workshop_expenses', ['tenant_id' => $tenant->id, 'supplier_id' => $primary->id, 'description' => 'Despesa de fornecedor']);
+        $this->assertDatabaseHas('system_audit_logs', ['tenant_id' => $tenant->id, 'action' => 'supplier_merged', 'auditable_id' => $primary->id]);
+    }
+
+    public function test_merge_with_different_documents_requires_an_explicit_choice_and_denies_users_without_permission(): void
+    {
+        [$user, $tenant, $division, $location] = $this->supervisorContext();
+        $primary = Supplier::create(['tenant_id' => $tenant->id, 'trade_name' => 'Primeiro', 'document' => '40187670000183', 'document_type' => 'cnpj', 'normalized_name' => 'primeiro', 'active' => true]);
+        $secondary = Supplier::create(['tenant_id' => $tenant->id, 'trade_name' => 'Segundo', 'document' => '11222333000181', 'document_type' => 'cnpj', 'normalized_name' => 'segundo', 'active' => true]);
+        $client = $this->actingAs($user)->withSession($this->activeScopeSession($division, $location));
+        $client->post(route('suppliers.merge', $primary), ['secondary_supplier_id' => $secondary->id, 'name_source' => 'primary', 'aliases_source' => 'both'])->assertForbidden();
+
+        ProfilePermissionOverride::create(['tenant_id' => $tenant->id, 'division_id' => $division->id, 'location_id' => $location->id, 'module' => 'fleet', 'profile' => 'supervisor', 'permission_key' => 'suppliers.merge', 'allowed' => true]);
+        $this->post(route('suppliers.merge', $primary), ['secondary_supplier_id' => $secondary->id, 'name_source' => 'primary', 'aliases_source' => 'both'])
+            ->assertSessionHasErrors('document_source');
+        $this->assertDatabaseHas('suppliers', ['id' => $secondary->id]);
     }
 
     private function supervisorContext(): array

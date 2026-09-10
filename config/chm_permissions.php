@@ -40,6 +40,7 @@ return [
                 'suppliers.update' => ['label' => 'Editar fornecedores', 'default' => ['supervisor' => false]],
                 'suppliers.change_status' => ['label' => 'Alterar situação dos fornecedores', 'default' => ['supervisor' => false]],
                 'suppliers.select' => ['label' => 'Pesquisar e selecionar fornecedores nos lançamentos', 'default' => ['supervisor' => true]],
+                'suppliers.merge' => ['label' => 'Mesclar fornecedores', 'default' => ['supervisor' => false]],
             ],
         ],
 
