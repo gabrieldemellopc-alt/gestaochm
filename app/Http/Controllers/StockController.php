@@ -376,11 +376,35 @@ class StockController extends Controller
                     $query
                         ->where('tenant_id', $tenantId)
                         ->where('location_id', $locationId)
-                        ->with(['reversalMovement', 'reversedFromMovement'])
+                        ->with([
+                            'reversalMovement',
+                            'reversedFromMovement.materialUsage',
+                            'reversedFromMovement.directPurchaseUsage',
+                            'materialUsage',
+                            'directPurchaseUsage',
+                        ])
                         ->latest()
                         ->limit(10);
             },
         ]);
+
+        $item->movements->each(function ($movement) {
+            $usage = $movement->materialUsage;
+            $reversedUsage = $movement->reversedFromMovement?->materialUsage;
+            $reversedDirectPurchase = $movement->reversedFromMovement?->directPurchaseUsage;
+
+            if ($movement->directPurchaseUsage?->cancelled_at) {
+                $movement->setAttribute('history_role', 'direct_purchase_entry');
+            } elseif ($usage?->purchase_entry_movement_id && $usage->cancelled_at) {
+                $movement->setAttribute('history_role', 'direct_purchase_consumption');
+                $movement->setAttribute('history_hidden', true);
+            } elseif ($reversedUsage?->purchase_entry_movement_id && $reversedUsage->cancelled_at) {
+                $movement->setAttribute('history_role', 'direct_purchase_consumption_reversal');
+                $movement->setAttribute('history_hidden', true);
+            } elseif ($reversedDirectPurchase?->cancelled_at) {
+                $movement->setAttribute('history_role', 'direct_purchase_cancellation');
+            }
+        });
 
         if (Gate::denies('viewAuditLogs')) {
             $item->movements->each->makeHidden([

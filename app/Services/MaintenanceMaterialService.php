@@ -49,6 +49,7 @@ class MaintenanceMaterialService
                         ->where('stock_category_id', $data['stock_category_id'] ?? null)->lockForUpdate()->first();
                 }
             }
+            $createdForDirectPurchase = ! $item;
             if (! $item) $item = StockItem::create(['tenant_id'=>$maintenance->tenant_id,'location_id'=>$locationId,'name'=>$data['name'],'brand'=>$data['brand']??null,'stock_category_id'=>$data['stock_category_id']??null,'unit'=>$data['unit'],'quantity'=>0,'unit_cost'=>0,'minimum_quantity'=>0,'active'=>true,'observation'=>'Criado por compra direta da manutenção #'.$maintenance->id]);
             $total = round((float) $data['total_cost'], 2);
             $purchaseUnitCost = round($total / (int) $data['quantity'], 2);
@@ -58,6 +59,9 @@ class MaintenanceMaterialService
                 'maintenance_record_id' => $maintenance->id,
                 'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,
             ]);
+            if ($createdForDirectPurchase) {
+                $item->update(['direct_purchase_entry_movement_id' => $entry->id]);
+            }
             $usage = $this->createUsage($maintenance, [
                 'stock_item_id' => $item->id,
                 'maintenance_record_item_id' => $data['maintenance_record_item_id'] ?? null,

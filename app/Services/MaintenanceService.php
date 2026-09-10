@@ -122,35 +122,21 @@ class MaintenanceService
                         'reversal_movement_id' => $reverseMovement->id,
                     ]);
 
-                    if ($usage->purchase_entry_movement_id) {
-                        // The direct-purchase entry is a real acquisition and must
-                        // remain in history. Reversing the consumption above is what
-                        // makes the purchased material available again in stock.
-                        app(AuditLogService::class)->record([
-                            'tenant_id' => $movement->tenant_id,
-                            'division_id' => $vehicle->division_id,
-                            'location_id' => $movement->location_id,
-                            'module' => 'stock',
-                            'auditable_type' => StockMovement::class,
-                            'auditable_id' => $usage->purchase_entry_movement_id,
-                            'action' => 'updated',
-                            'summary' => 'Compra direta preservada; saldo devolvido pelo cancelamento da manutenção #'.$maintenance->id.'.',
-                            'metadata' => [
-                                'maintenance_record_id' => $maintenance->id,
-                                'purchase_entry_movement_id' => $usage->purchase_entry_movement_id,
-                                'consumption_movement_id' => $movement->id,
-                                'reversal_movement_id' => $reverseMovement->id,
-                                'quantity_returned_to_stock' => $movement->quantity,
-                            ],
-                            'reason' => $reason,
-                        ]);
-                    }
                 }
     
                 $stockItem->quantity = (float) $stockItem->quantity + (float) $movement->quantity;
                 $stockItem->save();
-    
+
                 $reverseMovements->push($reverseMovement);
+
+                if ($usage?->purchase_entry_movement_id) {
+                    $reverseMovements->push(self::reverseDirectPurchaseEntry(
+                        $maintenance,
+                        $usage,
+                        $reason,
+                        $user
+                    ));
+                }
     
                 app(AuditLogService::class)->created($reverseMovement, [
                     'tenant_id' => $movement->tenant_id,
@@ -1178,13 +1164,78 @@ class MaintenanceService
         $entry->update([
             'cancelled_at' => now(),
             'cancelled_by' => $user->id,
-            'cancel_reason' => $reason,
+            'cancel_reason' => 'Compra direta cancelada pelo cancelamento da OM: '.$reason,
             'reversal_movement_id' => $reverse->id,
         ]);
 
         $item->decrement('quantity', (float) $entry->quantity);
 
+        app(AuditLogService::class)->reversed($entry->fresh(), [
+            'tenant_id' => $entry->tenant_id,
+            'division_id' => $maintenance->vehicle->division_id,
+            'location_id' => $entry->location_id,
+            'module' => 'stock',
+            'summary' => 'Compra direta cancelada pelo cancelamento da OM #'.$maintenance->id.'.',
+            'metadata' => [
+                'maintenance_record_id' => $maintenance->id,
+                'purchase_entry_movement_id' => $entry->id,
+                'reversal_stock_movement_id' => $reverse->id,
+                'stock_item_id' => $item->id,
+                'quantity_neutralized' => (float) $entry->quantity,
+                'user_id' => $user->id,
+            ],
+            'reason' => $reason,
+        ]);
+
+        self::archiveDirectPurchaseOnlyItem($item, $entry, $maintenance, $reason, $user);
+
         return $reverse;
+    }
+
+    private static function archiveDirectPurchaseOnlyItem(
+        StockItem $item,
+        StockMovement $entry,
+        MaintenanceRecord $maintenance,
+        string $reason,
+        User $user
+    ): void {
+        if ((int) $item->direct_purchase_entry_movement_id !== (int) $entry->id || (float) $item->quantity !== 0.0) {
+            return;
+        }
+
+        $hasOtherValidMovements = StockMovement::query()
+            ->where('stock_item_id', $item->id)
+            ->where('id', '!=', $entry->id)
+            ->whereNull('cancelled_at')
+            ->whereNull('reversed_from_movement_id')
+            ->whereNull('reversal_movement_id')
+            ->exists();
+        $hasOtherActiveUsage = MaintenanceMaterialUsage::query()
+            ->where('stock_item_id', $item->id)
+            ->where('maintenance_record_id', '!=', $maintenance->id)
+            ->whereNull('cancelled_at')
+            ->exists();
+
+        if ($hasOtherValidMovements || $hasOtherActiveUsage) {
+            return;
+        }
+
+        $item->update(['active' => false]);
+        app(AuditLogService::class)->updated($item->fresh(), [
+            'tenant_id' => $item->tenant_id,
+            'division_id' => $maintenance->vehicle->division_id,
+            'location_id' => $item->location_id,
+            'module' => 'stock',
+            'summary' => 'Item criado pela compra direta da OM #'.$maintenance->id.' desativado após o cancelamento.',
+            'metadata' => [
+                'maintenance_record_id' => $maintenance->id,
+                'purchase_entry_movement_id' => $entry->id,
+                'stock_item_id' => $item->id,
+                'active' => false,
+                'user_id' => $user->id,
+            ],
+            'reason' => $reason,
+        ]);
     }
 
     public static function serviceStatuses(): array

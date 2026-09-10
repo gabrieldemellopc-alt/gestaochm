@@ -76,6 +76,14 @@ class StockMovement extends Model
     {
         return $this->belongsTo(self::class, 'reversed_from_movement_id');
     }
+    public function materialUsage()
+    {
+        return $this->hasOne(MaintenanceMaterialUsage::class, 'stock_movement_id');
+    }
+    public function directPurchaseUsage()
+    {
+        return $this->hasOne(MaintenanceMaterialUsage::class, 'purchase_entry_movement_id');
+    }
     public function maintenanceRecordItem()
     {
         return $this->belongsTo(MaintenanceRecordItem::class);

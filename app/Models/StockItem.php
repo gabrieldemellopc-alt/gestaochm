@@ -21,6 +21,7 @@ class StockItem extends Model
         'minimum_quantity',
         'unit_cost',
         'stock_category_id',
+        'direct_purchase_entry_movement_id',
         'active',
         'is_workshop_consumable',
         'observation',
