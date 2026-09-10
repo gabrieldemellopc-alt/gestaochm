@@ -349,6 +349,7 @@
             )
             || userHasProfile('manager')
             || userHasProfile('admin')
+            || $sidebarCanPermission('admin.permissions.configure')
             || auth()->user()?->can('viewAuditLogs')
         )
             <div class="sidebar-section-title">
@@ -450,6 +451,17 @@
 
             </a>
 
+        @endif
+
+
+        @if($sidebarCanPermission('admin.permissions.configure'))
+            <a title="Permissões"
+                href="{{ route('permissions.index') }}"
+                class="sidebar-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}"
+            >
+                <span class="sidebar-icon"><i class="bi bi-shield-check"></i></span>
+                <span class="sidebar-link-text">Permissões</span>
+            </a>
         @endif
 
 

@@ -2,6 +2,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/pages/permissions.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/pages/permissions-modern.css') }}?v=1">
 @endpush
 
 @section('content')
@@ -17,12 +18,12 @@
         <header class="permissions-header">
             <div>
                 <span>Gestão administrativa</span>
-                <h1>Permissões</h1>
+                <h1><i class="bi bi-shield-check" aria-hidden="true"></i> Permissões</h1>
                 <p>Configure o que cada perfil pode acessar e executar.</p>
             </div>
 
             <div class="permissions-scope-badge">
-                <span>Escopo ativo</span>
+                <span><i class="bi bi-crosshair" aria-hidden="true"></i> Escopo ativo</span>
                 <strong>{{ $selectedDivision?->name ?? 'Divisão selecionada' }}</strong>
                 <small>{{ $selectedLocation?->name ?? 'Todas as unidades permitidas' }}</small>
             </div>
@@ -46,7 +47,7 @@
             <div class="permissions-context-copy">
                 <i class="bi bi-shield-check"></i>
                 <div>
-                    <span>Escopo da configuração</span>
+                    <span><i class="bi bi-sliders" aria-hidden="true"></i> Escopo da configuração</span>
                     <p>
                         As permissões abaixo são aplicadas ao perfil selecionado dentro da unidade escolhida.
                         Alterações afetam a navegação e as ações operacionais já protegidas no sistema.
@@ -128,7 +129,7 @@
             <div class="permission-management-grid">
                 <div class="permission-management-card">
                     <div class="permission-management-card-body">
-                        <h3>Restaurar padrão</h3>
+                        <h3><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Restaurar padrão</h3>
                         <p>Remove as permissões personalizadas desta unidade e restaura o padrão do sistema.</p>
                     </div>
                     <div class="permission-management-card-actions">
@@ -145,7 +146,7 @@
 
                 <div class="permission-management-card">
                     <div class="permission-management-card-body">
-                        <h3>Aplicar na divisão</h3>
+                        <h3><i class="bi bi-diagram-3" aria-hidden="true"></i> Aplicar na divisão</h3>
                         <p>Aplica as permissões desta unidade para todas as outras unidades da mesma divisão.</p>
                     </div>
                     <div class="permission-management-card-actions">
@@ -164,7 +165,7 @@
 
                 <div class="permission-management-card">
                     <div class="permission-management-card-body">
-                        <h3>Copiar de unidade</h3>
+                        <h3><i class="bi bi-copy" aria-hidden="true"></i> Copiar de unidade</h3>
                         <p>Importa as permissões de outra unidade para a unidade atualmente selecionada.</p>
                     </div>
                     <div class="permission-management-card-actions">
