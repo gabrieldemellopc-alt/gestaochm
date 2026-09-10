@@ -76,6 +76,13 @@ class FuelFullReportPaginationTest extends TestCase
 
         $pdf = view('reports.pdf.fuel', $data)->render();
         $this->assertStringContainsString(now()->subMinutes(30)->format('d/m/Y H:i'), $pdf);
+        $this->assertStringNotContainsString('Motorista/Condutor', $pdf);
+
+        $html = view('reports.fuel-full', $data)->render();
+        $this->assertStringNotContainsString('Motorista/Condutor', $html);
+
+        $rows = (new ReflectionMethod(FuelReportExport::class, 'fillingRows'))->invoke(new FuelReportExport($data));
+        $this->assertNotContains('Motorista/Condutor', $rows[0]);
     }
 
     private function build(array $filters): array

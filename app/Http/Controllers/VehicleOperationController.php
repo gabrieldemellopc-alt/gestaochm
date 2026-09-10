@@ -406,7 +406,7 @@ class VehicleOperationController extends Controller
 
                 ->withInput()
 
-                ->with('error', 'Mecânicos não podem iniciar operações de veículos.');
+                ->with('error', 'Operadores de combustível não podem iniciar operações de veículos.');
 
         }
 

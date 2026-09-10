@@ -21,6 +21,42 @@
 href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 >
 
+<style>
+    .workshop-hero-actions { display:grid; grid-template-columns:repeat(3, minmax(150px, 1fr)); gap:10px; width:min(100%, 520px); }
+    .workshop-hero-actions .workshop-hero-btn { width:100%; white-space:nowrap; }
+    .workshop-hero-btn-primary { color:#052e16; background:#86efac; border-color:#86efac; }
+    .workshop-hero-btn-primary:hover { color:#052e16; background:#bbf7d0; border-color:#bbf7d0; }
+    .workshop-card-header.workshop-recent-entries-toggle { width:100%; padding:0; margin:0; border:0; background:transparent; text-align:left; cursor:pointer; }
+    .workshop-recent-entries-icon { display:inline-flex; align-items:center; gap:12px; color:#86efac; }
+    .workshop-recent-entries-icon .bi-chevron-up, .workshop-recent-entries-icon .bi-chevron-down { color:#94a3b8; font-size:13px; }
+    .workshop-recent-entries-card .workshop-entry-list { padding-top:2px; border-top:1px solid rgba(148, 163, 184, .18); }
+    @media (max-width:900px) { .workshop-hero-actions { width:100%; grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+    @media (max-width:640px) { .workshop-hero-actions { grid-template-columns:1fr; } }
+
+    .tire-dashboard-modal { position:fixed; inset:0; z-index:9999; display:grid; place-items:center; padding:24px; background:rgba(15, 23, 42, .68); backdrop-filter:blur(6px); }
+    .tire-dashboard-modal[hidden] { display:none; }
+    .tire-dashboard-card { --tire-dashboard-surface:var(--chm-theme-card, #111827); --tire-dashboard-surface-soft:var(--chm-theme-card-elevated, #172235); --tire-dashboard-border:var(--chm-theme-border, rgba(148, 163, 184, .18)); --tire-dashboard-border-strong:var(--chm-theme-border-strong, rgba(148, 163, 184, .3)); --tire-dashboard-text:var(--chm-theme-text, #f1f5f9); --tire-dashboard-muted:var(--chm-theme-muted, #a8b1c1); width:min(1080px, 100%); max-height:calc(100vh - 48px); overflow:auto; padding:24px; border:1px solid var(--tire-dashboard-border-strong); border-radius:22px; background:var(--tire-dashboard-surface); color:var(--tire-dashboard-text); box-shadow:0 24px 64px rgba(15, 23, 42, .38); }
+    .tire-dashboard-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding-bottom:18px; border-bottom:1px solid var(--tire-dashboard-border); }
+    .tire-dashboard-heading h2 { margin:0; font-size:24px; line-height:1.15; color:var(--tire-dashboard-text); }
+    .tire-dashboard-heading p { margin:6px 0 0; color:var(--tire-dashboard-muted); font-size:13px; }
+    .tire-dashboard-close { width:38px; height:38px; display:inline-grid; place-items:center; flex:0 0 auto; border:1px solid var(--tire-dashboard-border); border-radius:10px; background:var(--tire-dashboard-surface-soft); color:var(--tire-dashboard-text); font-size:25px; line-height:1; cursor:pointer; }
+    .tire-dashboard-close:hover { border-color:rgba(224, 82, 91, .55); color:#fff; background:#b72d36; }
+    .tire-dashboard-filter { display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--tire-dashboard-muted); font-size:12px; font-weight:800; }
+    .tire-dashboard-filter select { min-height:38px; padding:0 32px 0 11px; border:1px solid var(--tire-dashboard-border-strong); border-radius:9px; outline:none; background:var(--chm-theme-input, #0f172a); color:var(--tire-dashboard-text); font:inherit; }
+    .tire-dashboard-kpis { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px; }
+    .tire-dashboard-kpis article, .tire-dashboard-section { border:1px solid var(--tire-dashboard-border); border-radius:14px; background:var(--tire-dashboard-surface-soft); }
+    .tire-dashboard-kpis article { padding:14px; }
+    .tire-dashboard-kpis span { display:block; color:var(--tire-dashboard-muted); font-size:11px; font-weight:700; }
+    .tire-dashboard-kpis strong { display:block; margin-top:5px; color:var(--tire-dashboard-text); font-size:24px; line-height:1.05; }
+    .tire-dashboard-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; margin-top:12px; }
+    .tire-dashboard-section { min-width:0; padding:16px; }
+    .tire-dashboard-section h3 { margin:0 0 11px; color:var(--tire-dashboard-text); font-size:16px; }
+    .tire-dashboard-section p { display:flex; justify-content:space-between; gap:12px; margin:6px 0; color:var(--tire-dashboard-muted); font-size:13px; }
+    .tire-dashboard-section p b { color:var(--tire-dashboard-text); }
+    .tire-dashboard-loading { padding:26px 0; color:var(--tire-dashboard-muted); text-align:center; }
+    @media (max-width:760px) { .tire-dashboard-modal { padding:12px; } .tire-dashboard-card { padding:18px; max-height:calc(100vh - 24px); } .tire-dashboard-kpis, .tire-dashboard-grid { grid-template-columns:1fr; } }
+</style>
+
 @endpush
 
 
@@ -87,21 +123,17 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-        <button type="button" class="workshop-hero-btn tire-dashboard-trigger" onclick="openTireDashboard()"><i class="bi bi-speedometer2"></i> Painel de pneus</button>
+        <div class="workshop-hero-actions">
+            @if($canCreateTireEntry)
+                <button type="button" class="workshop-hero-btn workshop-hero-btn-primary" onclick="window.dispatchEvent(new CustomEvent('open-tire-entry'))">
+                    <i class="bi bi-box-seam"></i>
+                    Nova entrada
+                </button>
+            @endif
 
-        <a
-
-            href="{{ route('dashboard') }}"
-
-            class="workshop-hero-btn"
-
-        >
-
-            <i class="bi bi-arrow-left"></i>
-
-            Voltar ao dashboard
-
-        </a>
+            <button type="button" class="workshop-hero-btn tire-dashboard-trigger" onclick="openTireDashboard()"><i class="bi bi-speedometer2"></i> Painel de pneus</button>
+            <a href="{{ route('dashboard') }}" class="workshop-hero-btn"><i class="bi bi-arrow-left"></i> Voltar ao dashboard</a>
+        </div>
 
 
 
@@ -177,6 +209,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
             x-data="{
                 open: {{ $errors->any() ? 'true' : 'false' }}
             }"
+            @open-tire-entry.window="open = true; $nextTick(() => $el.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
         >
 
             <div class="workshop-card-header workshop-entry-card-header">
@@ -191,24 +224,9 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    class="workshop-entry-toggle"
-                    @click="open = !open"
-                    :class="{ 'is-open': open }"
-                >
-                    <i
-                        class="bi bi-box-seam"
-                        x-show="! open"
-                    ></i>
-
-                    <i
-                        class="bi bi-x-lg"
-                        x-show="open"
-                        x-cloak
-                    ></i>
-
-                    <span x-text="open ? 'Fechar formulário' : 'Nova entrada'"></span>
+                <button type="button" class="workshop-entry-toggle" @click="open = !open" :class="{ 'is-open': open }" :aria-expanded="open.toString()">
+                    <i class="bi" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                    <span x-text="open ? 'Recolher' : 'Expandir'"></span>
                 </button>
 
             </div>
@@ -602,11 +620,11 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
         @endif
-<aside class="workshop-card">
+<aside class="workshop-card workshop-recent-entries-card" x-data="{ open: false }">
 
 
 
-            <div class="workshop-card-header">
+            <button type="button" class="workshop-card-header workshop-recent-entries-toggle" @click="open = !open" :aria-expanded="open.toString()">
 
 
 
@@ -630,15 +648,18 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-                <i class="bi bi-clock-history"></i>
+                <span class="workshop-recent-entries-icon">
+                    <i class="bi bi-clock-history"></i>
+                    <i class="bi" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                </span>
 
 
 
-            </div>
+            </button>
 
 
 
-            <div class="workshop-entry-list">
+            <div class="workshop-entry-list" x-show="open" x-collapse x-cloak>
 
 
 
@@ -1872,7 +1893,19 @@ function closeEditTireModal() {
 </script>
 
 
-<div id="tireDashboard" class="tire-dashboard-modal" hidden><div class="tire-dashboard-card"><button type="button" class="tire-dashboard-close" onclick="closeTireDashboard()" aria-label="Fechar painel">×</button><h2>Painel de pneus</h2><p id="tireDashboardSubtitle">Indicadores de pneus, sulcagem, recapagens e descartes — período selecionado</p><label>Período <select id="tireDashboardPeriod"><option value="last_30_days">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="last_90_days">Últimos 90 dias</option><option value="current_year">Ano atual</option></select></label><div id="tireDashboardContent" class="tire-dashboard-loading">Carregando indicadores…</div></div></div>
+<div id="tireDashboard" class="tire-dashboard-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tireDashboardTitle">
+    <div class="tire-dashboard-card">
+        <div class="tire-dashboard-header">
+            <div class="tire-dashboard-heading">
+                <h2 id="tireDashboardTitle">Painel de pneus</h2>
+                <p id="tireDashboardSubtitle">Indicadores de pneus, sulcagem, recapagens e descartes — período selecionado</p>
+            </div>
+            <button type="button" class="tire-dashboard-close" onclick="closeTireDashboard()" aria-label="Fechar painel">×</button>
+        </div>
+        <label class="tire-dashboard-filter">Período <select id="tireDashboardPeriod"><option value="last_30_days">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="last_90_days">Últimos 90 dias</option><option value="current_year">Ano atual</option></select></label>
+        <div id="tireDashboardContent" class="tire-dashboard-loading">Carregando indicadores…</div>
+    </div>
+</div>
 @endsection
 @push('scripts')
 <script>

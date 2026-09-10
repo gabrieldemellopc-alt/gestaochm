@@ -76,6 +76,17 @@ class SupplierOperationalFormsViewTest extends TestCase
         $this->assertStringContainsString('supplier-autocomplete.css', file_get_contents(resource_path('views/layouts/app.blade.php')));
     }
 
+    public function test_fuel_receipt_uses_the_supplier_picker_and_forwards_the_document_to_the_service(): void
+    {
+        $view = file_get_contents(resource_path('views/fuel/tanks/index.blade.php'));
+        $controller = file_get_contents(app_path('Http/Controllers/FuelTankController.php'));
+        $receiptModal = substr($view, strpos($view, 'id="fuel-modal-receipt-'));
+
+        $this->assertStringContainsString('<x-supplier-autocomplete', $receiptModal);
+        $this->assertStringContainsString('document-name="supplier_document"', $receiptModal);
+        $this->assertStringContainsString("'supplier_document',", $controller);
+    }
+
     public function test_supplier_edit_modal_reuses_the_form_and_status_toggle(): void
     {
         $view = file_get_contents(resource_path('views/suppliers/index.blade.php'));

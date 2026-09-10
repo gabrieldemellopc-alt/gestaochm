@@ -1531,10 +1531,141 @@ html[data-chm-theme="corporate-light"] .tire-page input,
 html[data-chm-theme="corporate-light"] .tire-page select,
 html[data-chm-theme="corporate-light"] .tire-page textarea { background: #465776; }
 
+/* Tire picker: keep every surface in the same theme scale and preserve spacing. */
+.tire-page .tire-picker-modal {
+    color: var(--vt-text);
+}
+
+.tire-page .tire-picker-header {
+    padding: 20px 22px 18px;
+}
+
+.tire-page .tire-picker-body {
+    min-height: 0;
+    padding: 18px 22px 20px;
+    background: var(--vt-panel);
+}
+
+.tire-page .tire-picker-search {
+    border-color: var(--vt-border-strong);
+    border-radius: 8px;
+    color: var(--vt-muted);
+    background: var(--vt-raised);
+}
+
+.tire-page .tire-picker-search input {
+    min-width: 0;
+    border: 0;
+    color: var(--vt-text);
+    background: transparent;
+}
+
+.tire-page .tire-picker-search input::placeholder {
+    color: var(--vt-muted);
+    opacity: .82;
+}
+
+.tire-page .tire-picker-search:focus-within {
+    border-color: rgba(248, 113, 113, .62);
+    box-shadow: 0 0 0 3px rgba(217, 90, 98, .14);
+}
+
+.tire-page .tire-picker-count,
+.tire-page .tire-picker-count strong,
+.tire-page .tire-picker-count small,
+.tire-page .tire-picker-header p,
+.tire-page .tire-picker-empty p {
+    color: var(--vt-muted);
+}
+
+.tire-page .tire-picker-header h2,
+.tire-page .tire-picker-header p strong,
+.tire-page .tire-picker-empty strong,
+.tire-page .tire-picker-selected strong {
+    color: var(--vt-text);
+}
+
+.tire-page .tire-picker-empty {
+    min-height: 142px;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 3px;
+    padding: 24px;
+    border-style: dashed;
+    background: color-mix(in srgb, var(--vt-raised) 42%, transparent);
+}
+
+.tire-page .tire-picker-empty svg {
+    color: var(--vt-muted);
+}
+
+.tire-page .tire-picker-footer {
+    grid-template-columns: minmax(155px, .58fr) minmax(240px, 1.42fr) auto;
+    align-items: end;
+    gap: 16px;
+    padding: 16px 22px 18px;
+}
+
+.tire-page .tire-picker-km,
+.tire-page .tire-picker-selected {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.tire-page .tire-picker-km label,
+.tire-page .tire-picker-selected span {
+    color: var(--vt-muted);
+}
+
+.tire-page .tire-picker-km input {
+    border-color: var(--vt-border-strong);
+    border-radius: 7px;
+    color: var(--vt-text);
+    background: var(--vt-raised);
+}
+
+.tire-page .tire-picker-selected {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 8px 11px;
+    border: 1px solid var(--vt-border);
+    border-radius: 7px;
+    background: var(--vt-panel);
+}
+
+.tire-page .tire-picker-confirm {
+    min-width: 190px;
+}
+
+.tire-page .tire-picker-confirm:disabled {
+    border-color: var(--vt-border);
+    color: var(--vt-muted);
+    background: color-mix(in srgb, var(--vt-raised) 72%, transparent);
+    opacity: .7;
+}
+
+html[data-chm-theme="corporate-light"] .tire-page .tire-picker-body {
+    background: var(--chm-theme-surface);
+}
+
+html[data-chm-theme="corporate-light"] .tire-page .tire-picker-search,
+html[data-chm-theme="corporate-light"] .tire-page .tire-picker-km input {
+    background: var(--chm-theme-input);
+}
+
+html[data-chm-theme="corporate-light"] .tire-page .tire-picker-selected {
+    background: var(--chm-theme-card);
+}
+
 @media (max-width: 900px) {
     .tire-page .tire-hero,
     .tire-page .tire-picker-footer,
     .tire-page .tire-remove-footer { align-items: stretch; flex-direction: column; }
+    .tire-page .tire-picker-footer { grid-template-columns: 1fr; }
     .tire-page .tire-hero-actions,
     .tire-page .tire-measure-actions { flex-wrap: wrap; }
     .tire-page .tire-form-grid,

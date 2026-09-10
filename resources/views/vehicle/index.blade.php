@@ -33,7 +33,11 @@
 
 
 @section('content')
-@php($canCreateVehicle = app(\App\Services\Permissions\ProfilePermissionService::class)->allows(auth()->user(), 'vehicles.create'))
+@php
+    $vehiclePermissionService = app(\App\Services\Permissions\ProfilePermissionService::class);
+    $canCreateVehicle = $vehiclePermissionService->allows(auth()->user(), 'vehicles.create');
+    $canEditVehicle = $vehiclePermissionService->allows(auth()->user(), 'vehicles.update');
+@endphp
 
 
 <div class="vehicles-page">
@@ -1651,6 +1655,7 @@
 
 
 
+                                @if($canEditVehicle)
                                 <a
 
 
@@ -1676,6 +1681,7 @@
 
 
                                 </a>
+                                @endif
 
 
 
@@ -2315,6 +2321,7 @@
 
 
 
+                        @if($canEditVehicle)
                         <a
 
 
@@ -2340,6 +2347,7 @@
 
 
                         </a>
+                        @endif
 
 
 

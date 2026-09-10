@@ -9,6 +9,7 @@ use App\Models\FuelProduct;
 use App\Models\FuelReceipt;
 use App\Models\FuelTank;
 use App\Models\Location;
+use App\Models\Supplier;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserDivisionAccess;
@@ -43,6 +44,7 @@ class FuelCancellationTest extends TestCase
         $tank = $this->tank(1000, 5000); $vehicle = $this->vehicle(900);
         VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'user_id' => $this->context['user']->id, 'division_id' => $this->context['division']->id, 'location_id' => $this->context['location']->id, 'type' => 'km', 'source' => 'manual', 'new_value' => 900, 'read_at' => now()->subMinute(), 'reading_status' => VehicleUpdateLog::READING_STATUS_VALID]);
         $filling = app(FuelService::class)->registerFilling($this->fillingData($tank, $vehicle, 100, 1000));
+        $this->assertNull($filling->driver_id, 'O abastecimento deve aceitar motorista não informado.');
         $this->assertSame(1000.0, (float) $vehicle->fresh()->current_km, 'O abastecimento operacional continua atualizando o contador atual.');
         $log = VehicleUpdateLog::where('fuel_filling_id', $filling->id)->firstOrFail();
 
@@ -57,6 +59,31 @@ class FuelCancellationTest extends TestCase
 
         try { app(FuelService::class)->cancelFilling($filling, 'Tentativa duplicada'); $this->fail('Esperava validação.'); } catch (ValidationException) {}
         $tank->refresh(); $this->assertEquals(1000, $tank->current_balance_liters); $this->assertSame(1, FuelMovement::where('movement_type', FuelMovement::TYPE_REVERSAL)->count());
+    }
+
+    public function test_historical_filling_with_a_driver_keeps_its_relationship(): void
+    {
+        $tank = $this->tank(1000, 5000);
+        $vehicle = $this->vehicle(800);
+        $driver = User::factory()->create(['tenant_id' => $this->context['tenant']->id, 'name' => 'Motorista histórico']);
+
+        $filling = FuelFilling::create([
+            'tenant_id' => $this->context['tenant']->id,
+            'division_id' => $this->context['division']->id,
+            'location_id' => $this->context['location']->id,
+            'fuel_tank_id' => $tank->id,
+            'fuel_product_id' => $tank->fuel_product_id,
+            'vehicle_id' => $vehicle->id,
+            'driver_id' => $driver->id,
+            'source' => FuelFilling::SOURCE_INTERNAL_TANK,
+            'filled_at' => now(),
+            'quantity_liters' => 10,
+            'unit_cost' => 5,
+            'total_cost' => 50,
+            'responsible_user_id' => $this->context['user']->id,
+        ]);
+
+        $this->assertSame($driver->id, $filling->fresh()->driver->id);
     }
 
     public function test_external_filling_does_not_change_tank(): void
@@ -77,6 +104,59 @@ class FuelCancellationTest extends TestCase
         $unsafe = FuelReceipt::create(['tenant_id' => $this->context['tenant']->id, 'division_id' => $this->context['division']->id, 'location_id' => $this->context['location']->id, 'fuel_tank_id' => $tank->id, 'fuel_product_id' => $tank->fuel_product_id, 'received_at' => now(), 'quantity_liters' => 1200, 'total_cost' => 6000, 'responsible_user_id' => $this->context['user']->id]);
         try { app(FuelService::class)->cancelReceipt($unsafe, 'Saldo insuficiente'); $this->fail('Esperava validação.'); } catch (ValidationException) {}
         $this->assertNull($unsafe->fresh()->cancelled_at);
+    }
+
+    public function test_receipt_resolves_a_supplier_by_cnpj_and_persists_its_snapshot(): void
+    {
+        $tank = $this->tank(1000, 5000);
+        $supplier = Supplier::create([
+            'tenant_id' => $this->context['tenant']->id,
+            'trade_name' => 'Combustíveis AKSA',
+            'document' => '04252011000110',
+            'document_type' => 'cnpj',
+            'normalized_name' => 'combustiveis aksa',
+            'active' => true,
+        ]);
+
+        $receipt = app(FuelService::class)->receiveFuel([
+            'fuel_tank_id' => $tank->id,
+            'received_at' => now(),
+            'quantity_liters' => 100,
+            'total_cost' => 600,
+            'supplier_name' => 'Nome informado no recebimento',
+            'supplier_document' => '04.252.011/0001-10',
+        ]);
+
+        $this->assertSame($supplier->id, $receipt->supplier_id);
+        $this->assertSame('Combustíveis AKSA', $receipt->supplier_name);
+        $this->assertSame('04252011000110', $receipt->supplier_document);
+    }
+
+    public function test_receipt_does_not_associate_a_supplier_from_another_tenant(): void
+    {
+        $tank = $this->tank(1000, 5000);
+        $otherTenant = Tenant::create(['name' => 'Outro tenant']);
+        $foreignSupplier = Supplier::create([
+            'tenant_id' => $otherTenant->id,
+            'trade_name' => 'Fornecedor externo',
+            'document' => '04252011000110',
+            'document_type' => 'cnpj',
+            'normalized_name' => 'fornecedor externo',
+            'active' => true,
+        ]);
+
+        $receipt = app(FuelService::class)->receiveFuel([
+            'fuel_tank_id' => $tank->id,
+            'received_at' => now(),
+            'quantity_liters' => 100,
+            'total_cost' => 600,
+            'supplier_name' => 'Fornecedor local',
+            'supplier_document' => '04.252.011/0001-10',
+        ]);
+
+        $this->assertNotSame($foreignSupplier->id, $receipt->supplier_id);
+        $this->assertSame($this->context['tenant']->id, $receipt->supplier->tenant_id);
+        $this->assertSame('04252011000110', $receipt->supplier_document);
     }
 
     private function tank(float $liters, float $value): FuelTank { $p = FuelProduct::create(['tenant_id'=>$this->context['tenant']->id,'name'=>'Diesel','slug'=>'diesel','unit'=>'L','active'=>true]); return FuelTank::create(['tenant_id'=>$this->context['tenant']->id,'division_id'=>$this->context['division']->id,'location_id'=>$this->context['location']->id,'fuel_product_id'=>$p->id,'name'=>'Tanque','capacity_liters'=>3000,'current_balance_liters'=>$liters,'estimated_stock_value'=>$value,'average_unit_cost'=>5,'minimum_balance_liters'=>0,'active'=>true]); }

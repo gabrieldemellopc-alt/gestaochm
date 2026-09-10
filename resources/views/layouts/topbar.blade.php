@@ -95,7 +95,7 @@
                     'admin' => 'Administrador',
                     'manager' => 'Gestor',
                     'supervisor' => 'Supervisor',
-                    'mechanic' => 'Mecânico',
+                    'mechanic' => 'Operador Combustível',
                     'driver' => 'Motorista',
                     default => ucfirst($profile),
                 };

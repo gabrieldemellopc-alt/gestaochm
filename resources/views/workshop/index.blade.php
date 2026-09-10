@@ -5,6 +5,38 @@
 @push('styles')
 
 <link rel="stylesheet" href="{{ asset('css/pages/workshop.css') }}?v=5">
+<style>
+    .workshop-dashboard-modal { position:fixed; inset:0; z-index:9999; display:grid; place-items:center; padding:24px; background:rgba(15, 23, 42, .68); backdrop-filter:blur(6px); }
+    .workshop-dashboard-modal[hidden] { display:none; }
+    .workshop-dashboard-card { --workshop-dashboard-surface:var(--chm-theme-card, #111827); --workshop-dashboard-surface-soft:var(--chm-theme-card-elevated, #172235); --workshop-dashboard-border:var(--chm-theme-border, rgba(148, 163, 184, .18)); --workshop-dashboard-border-strong:var(--chm-theme-border-strong, rgba(148, 163, 184, .3)); --workshop-dashboard-text:var(--chm-theme-text, #f1f5f9); --workshop-dashboard-muted:var(--chm-theme-muted, #a8b1c1); position:relative; width:min(1180px, 100%); max-height:calc(100vh - 48px); overflow:auto; padding:24px; border:1px solid var(--workshop-dashboard-border-strong); border-radius:22px; background:var(--workshop-dashboard-surface); color:var(--workshop-dashboard-text); box-shadow:0 24px 64px rgba(15, 23, 42, .38); }
+    .workshop-dashboard-close { position:static; width:38px; height:38px; display:inline-grid; place-items:center; flex:0 0 auto; border:1px solid var(--workshop-dashboard-border); border-radius:10px; background:var(--workshop-dashboard-surface-soft); color:var(--workshop-dashboard-text); font-size:25px; line-height:1; cursor:pointer; }
+    .workshop-dashboard-close:hover { border-color:rgba(224, 82, 91, .55); background:#b72d36; color:#fff; }
+    .workshop-dashboard-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:0 0 18px; border-bottom:1px solid var(--workshop-dashboard-border); }
+    .workshop-dashboard-heading > div { min-width:0; }
+    .workshop-dashboard-heading span { color:var(--workshop-dashboard-muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+    .workshop-dashboard-heading h2 { margin:5px 0 4px; color:var(--workshop-dashboard-text); font-size:24px; line-height:1.15; }
+    .workshop-dashboard-heading p { margin:0; color:var(--workshop-dashboard-muted); font-size:13px; }
+    .workshop-dashboard-controls { display:flex; align-items:flex-start; gap:12px; }
+    .workshop-dashboard-heading label { display:grid; gap:5px; color:var(--workshop-dashboard-muted); font-size:11px; font-weight:800; }
+    .workshop-dashboard-heading select { min-width:180px; min-height:38px; padding:0 32px 0 11px; border:1px solid var(--workshop-dashboard-border-strong); border-radius:9px; outline:none; background:var(--chm-theme-input, #0f172a); color:var(--workshop-dashboard-text); font:inherit; }
+    .workshop-dashboard-kpis { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:12px; margin:18px 0 12px; }
+    .workshop-dashboard-kpi, .workshop-dashboard-section { border:1px solid var(--workshop-dashboard-border); border-radius:14px; background:var(--workshop-dashboard-surface-soft); }
+    .workshop-dashboard-kpi { padding:14px; }
+    .workshop-dashboard-kpi span, .workshop-dashboard-kpi small { color:var(--workshop-dashboard-muted); }
+    .workshop-dashboard-kpi strong, .workshop-dashboard-bar strong { color:var(--workshop-dashboard-text); }
+    .workshop-dashboard-grid { gap:12px; }
+    .workshop-dashboard-section { padding:16px; }
+    .workshop-dashboard-section h3 { color:var(--workshop-dashboard-text); }
+    .workshop-dashboard-bar span, .workshop-dashboard-orders span, .workshop-dashboard-empty, .workshop-dashboard-loading, .workshop-dashboard-caption { color:var(--workshop-dashboard-muted); }
+    .workshop-dashboard-bar i { background:var(--chm-theme-input, #0f172a); }
+    .workshop-dashboard-bar i b { background:linear-gradient(90deg, #397fd1, #74c1ff); }
+    .workshop-dashboard-orders a { background:var(--workshop-dashboard-surface); border:1px solid var(--workshop-dashboard-border); color:var(--workshop-dashboard-text); }
+    .workshop-dashboard-orders a:hover { background:var(--workshop-dashboard-surface-soft); border-color:var(--workshop-dashboard-border-strong); }
+    .workshop-dashboard-orders b { color:var(--workshop-dashboard-text); }
+    .workshop-dashboard-loading { padding:42px 0; text-align:center; }
+    @media (max-width:900px) { .workshop-dashboard-kpis { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+    @media (max-width:640px) { .workshop-dashboard-modal { padding:12px; } .workshop-dashboard-card { max-height:calc(100vh - 24px); padding:18px; } .workshop-dashboard-heading { align-items:stretch; flex-direction:column; } .workshop-dashboard-controls, .workshop-dashboard-heading label, .workshop-dashboard-heading select { width:100%; } .workshop-dashboard-kpis, .workshop-dashboard-grid { grid-template-columns:1fr; } }
+</style>
 @endpush
 
 
@@ -639,8 +671,17 @@
 
 <div id="workshopMaintenanceDashboard" class="workshop-dashboard-modal" hidden aria-labelledby="workshopDashboardTitle" role="dialog" aria-modal="true">
     <div class="workshop-dashboard-card">
-        <button type="button" class="workshop-dashboard-close" onclick="closeWorkshopMaintenanceDashboard()" aria-label="Fechar painel">×</button>
-        <div class="workshop-dashboard-heading"><div><span>Painel operacional</span><h2 id="workshopDashboardTitle">Painel de manutenção</h2><p id="workshopDashboardSubtitle">Indicadores consolidados — Últimos 30 dias</p></div><label>Período<select id="workshopDashboardPeriod"><option value="last_30_days">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="last_90_days">Últimos 90 dias</option><option value="current_year">Ano atual</option></select></label></div>
+        <div class="workshop-dashboard-heading">
+            <div>
+                <span>Painel operacional</span>
+                <h2 id="workshopDashboardTitle">Painel de manutenção</h2>
+                <p id="workshopDashboardSubtitle">Indicadores consolidados — Últimos 30 dias</p>
+            </div>
+            <div class="workshop-dashboard-controls">
+                <label>Período<select id="workshopDashboardPeriod"><option value="last_30_days">Últimos 30 dias</option><option value="current_month">Mês atual</option><option value="last_90_days">Últimos 90 dias</option><option value="current_year">Ano atual</option></select></label>
+                <button type="button" class="workshop-dashboard-close" onclick="closeWorkshopMaintenanceDashboard()" aria-label="Fechar painel">×</button>
+            </div>
+        </div>
         <div id="workshopDashboardContent" class="workshop-dashboard-loading">Carregando indicadores…</div>
     </div>
 </div>

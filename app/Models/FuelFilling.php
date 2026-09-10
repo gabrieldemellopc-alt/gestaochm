@@ -29,7 +29,9 @@ class FuelFilling extends Model
         'vehicle_hours',
         'quantity_liters',
         'unit_cost',
+        'source_unit_cost',
         'total_cost',
+        'source_total_cost',
         'supplier_name',
         'supplier_id',
         'supplier_document',
@@ -48,7 +50,9 @@ class FuelFilling extends Model
         'vehicle_hours' => 'decimal:2',
         'quantity_liters' => 'decimal:3',
         'unit_cost' => 'decimal:4',
+        'source_unit_cost' => 'decimal:6',
         'total_cost' => 'decimal:2',
+        'source_total_cost' => 'decimal:3',
         'cancelled_at' => 'datetime',
     ];
 
@@ -154,5 +158,12 @@ class FuelFilling extends Model
         }
 
         return $this->tank?->name ?? 'Tanque da unidade';
+    }
+
+    public function getReportingTotalCostAttribute(): ?float
+    {
+        return $this->source_total_cost !== null
+            ? (float) $this->source_total_cost
+            : ($this->total_cost !== null ? (float) $this->total_cost : null);
     }
 }

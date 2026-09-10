@@ -47,7 +47,7 @@
             ->map(fn ($items) => [
                 'product' => $items->first()?->product,
                 'liters' => $items->sum(fn ($item) => (float) $item->quantity_liters),
-                'cost' => $items->sum(fn ($item) => (float) $item->total_cost),
+                'cost' => $items->sum(fn ($item) => (float) ($item->reporting_total_cost ?? 0)),
                 'count' => $items->count(),
             ])
             ->values()
@@ -246,7 +246,6 @@
                         <th>Data/hora</th>
                         <th>Veiculo</th>
                         <th>Placa</th>
-                        <th>Motorista/Condutor</th>
                         <th>Origem/local</th>
                         <th>Produto</th>
                         <th>KM</th>
@@ -262,18 +261,17 @@
                             <td>{{ $formatDateTime($filling->filled_at) }}</td>
                             <td>{{ $filling->vehicle?->name ?? '-' }}</td>
                             <td>{{ $filling->vehicle?->plate ?? '-' }}</td>
-                            <td>{{ $filling->driver?->name ?? 'Não informado' }}</td>
                             <td><strong>{{ $filling->source_label }}</strong><br><span>{{ $filling->location_label }}</span></td>
                             <td>{{ $filling->product?->name ?? '-' }}</td>
                             <td>{{ $filling->vehicle_km !== null ? $decimal($filling->vehicle_km, 0) : '-' }}</td>
                             <td>{{ $filling->vehicle_hours !== null ? $decimal($filling->vehicle_hours, 1) : '-' }}</td>
                             <td>{{ $liters($filling->quantity_liters) }}</td>
-                            <td>{{ $money($filling->total_cost) }}</td>
+                            <td>{{ $money($filling->reporting_total_cost) }}</td>
                             <td>{{ $filling->responsible?->name ?? 'Não informado' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="empty-state">Nenhum abastecimento no periodo.</td>
+                            <td colspan="10" class="empty-state">Nenhum abastecimento no periodo.</td>
                         </tr>
                     @endforelse
                 </tbody>

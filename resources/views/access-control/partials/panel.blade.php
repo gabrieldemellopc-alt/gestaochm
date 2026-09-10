@@ -187,7 +187,7 @@
 
                                                 @case('mechanic')
 
-                                                    Mecânico
+                                                    Operador Combustível
 
                                                     @break
 
@@ -756,7 +756,7 @@
 
                                 <option value="mechanic">
 
-                                    Mecânico
+                                    Operador Combustível
 
                                 </option>
 
@@ -1456,7 +1456,7 @@
 
                                 <option value="mechanic">
 
-                                    Mecânico
+                                    Operador Combustível
 
                                 </option>
 
@@ -2123,7 +2123,7 @@ const profileLabels = {
 
     driver: 'Motorista',
 
-    mechanic: 'Mecânico',
+    mechanic: 'Operador Combustível',
 
     supervisor: 'Supervisor',
 

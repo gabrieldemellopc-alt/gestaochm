@@ -1050,7 +1050,7 @@ class MaintenanceService
                     'fields' =>
                         $isReplacement
                             ? "Estoque insuficiente para o novo lançamento após considerar a devolução do serviço atual. Item: {$item->name}. Disponível: {$available}. Solicitado: {$requested}."
-                            : "Saldo insuficiente para o item {$item->name}.",
+                            : "Saldo insuficiente para o item {$item->name}. Disponível: {$available}. Solicitado: {$requested}.",
                 ]);
             }
         }

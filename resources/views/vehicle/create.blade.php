@@ -177,6 +177,7 @@
                 <select
 
                     name="division_id"
+                    id="vehicleDivisionSelect"
 
                     class="form-input"
 
@@ -231,6 +232,7 @@
                 <select
 
                     name="location_id"
+                    id="vehicleLocationSelect"
 
                     class="form-input"
 
@@ -247,6 +249,7 @@
                         <option
 
                             value="{{ $location->id }}"
+                            data-division-id="{{ $location->division_id }}"
 
                             @selected(old('location_id') == $location->id)
 
@@ -1155,9 +1158,42 @@
     <div class="edit-card vehicle-full-card vehicle-fuel-products">
         <div class="card-header"><h3>Combustível do veículo</h3><p class="card-description">Defina quais combustíveis este veículo pode utilizar.</p></div>
         <div class="procedures-grid">
-            @foreach($fuelProducts as $product)<label class="procedure-pill"><input type="checkbox" name="fuel_product_ids[]" value="{{ $product->id }}" @checked(in_array($product->id, old('fuel_product_ids', [])))><span>{{ $product->name }}</span></label>@endforeach
+            @foreach($fuelProducts as $product)<label class="procedure-pill"><input type="checkbox" name="fuel_product_ids[]" value="{{ $product->id }}" data-fuel-slug="{{ $product->slug }}" @checked(in_array($product->id, old('fuel_product_ids', [])))><span>{{ $product->name }}</span></label>@endforeach
         </div><small class="form-help">Diesel S10 e Diesel S500 são exclusivos. Gasolina e Álcool podem ser combinados para veículo flex.</small>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = Array.from(document.querySelectorAll('.vehicle-fuel-products input[type="checkbox"]'));
+        const dieselSlugs = ['diesel-s10', 'diesel-s500'];
+
+            function syncFuelChoices() {
+            inputs.forEach((input) => {
+                input.disabled = false;
+                input.closest('.procedure-pill')?.classList.remove('is-disabled');
+            });
+        }
+
+        inputs.forEach((input) => input.addEventListener('change', function () {
+            if (!this.checked) {
+                syncFuelChoices();
+                return;
+            }
+
+            if (dieselSlugs.includes(this.dataset.fuelSlug)) {
+                inputs.forEach((other) => {
+                    if (other !== this) other.checked = false;
+                });
+            } else {
+                inputs.forEach((other) => {
+                    if (dieselSlugs.includes(other.dataset.fuelSlug)) other.checked = false;
+                });
+            }
+            syncFuelChoices();
+        }));
+
+        syncFuelChoices();
+    });
+    </script>
     {{-- OBSERVAÇÕES --}}
 
     <div class="edit-card vehicle-full-card">
@@ -1641,6 +1677,41 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     syncTireLayoutState();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const divisionSelect = document.getElementById('vehicleDivisionSelect');
+    const locationSelect = document.getElementById('vehicleLocationSelect');
+
+    if (!divisionSelect || !locationSelect) {
+        return;
+    }
+
+    function filterLocations() {
+        const divisionId = divisionSelect.value;
+        let selectedLocationIsAvailable = false;
+
+        Array.from(locationSelect.options).forEach(function (option) {
+            const available = option.dataset.divisionId === divisionId;
+            option.hidden = !available;
+            option.disabled = !available;
+            selectedLocationIsAvailable ||= available && option.selected;
+        });
+
+        if (!selectedLocationIsAvailable) {
+            const firstAvailable = Array.from(locationSelect.options)
+                .find(function (option) { return !option.disabled; });
+
+            if (firstAvailable) {
+                locationSelect.value = firstAvailable.value;
+            }
+        }
+    }
+
+    divisionSelect.addEventListener('change', filterLocations);
+    filterLocations();
 });
 </script>
 

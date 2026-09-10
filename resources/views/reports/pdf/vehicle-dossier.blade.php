@@ -570,7 +570,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="empty">
+                        <td colspan="9" class="empty">
                             Nenhuma manutenção encontrada no período.
                         </td>
                     </tr>
@@ -630,7 +630,6 @@
                     <th>Data</th>
                     <th>Produto</th>
                     <th>Origem/local</th>
-                    <th>Motorista/Condutor</th>
                     <th>Registrado por</th>
                     <th>KM/HR</th>
                     <th>Litros</th>
@@ -651,7 +650,6 @@
 
                         <td>{{ $filling['product_name'] }}</td>
                         <td><strong>{{ $filling['source_label'] ?? 'Tanque da unidade' }}</strong><br><span>{{ $filling['location_label'] ?? $filling['tank_name'] ?? '-' }}</span></td>
-                        <td>{{ $filling['driver_name'] ?? 'Não informado' }}</td>
                         <td>{{ $filling['registered_by_name'] ?? $filling['responsible_name'] ?? 'Não informado' }}</td>
 
                         <td>

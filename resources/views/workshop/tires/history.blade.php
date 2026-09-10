@@ -18,6 +18,61 @@
     rel="stylesheet"
     href="{{ asset('css/pages/workshop-tires.css') }}?v=4"
 >
+<style>
+    .workshop-tire-history-page .tire-history-cancel-control {
+        margin-top: .85rem;
+    }
+
+    .workshop-tire-history-page .tire-history-cancel-control summary {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        min-height: 36px;
+        list-style: none;
+        padding: 0 .8rem;
+        border: 1px solid rgba(239, 68, 68, .38);
+        border-radius: 8px;
+        color: #fecaca;
+        background: rgba(127, 29, 29, .24);
+        font-size: .8rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background .16s ease, border-color .16s ease, color .16s ease;
+    }
+
+    .workshop-tire-history-page .tire-history-cancel-control summary::before {
+        content: "×";
+        display: inline-grid;
+        place-items: center;
+        width: 16px;
+        height: 16px;
+        border: 1px solid currentColor;
+        border-radius: 50%;
+        font-size: .95rem;
+        font-weight: 500;
+        line-height: 1;
+    }
+
+    .workshop-tire-history-page .tire-history-cancel-control summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .workshop-tire-history-page .tire-history-cancel-control summary:hover {
+        border-color: rgba(248, 113, 113, .62);
+        color: #fee2e2;
+        background: rgba(185, 28, 28, .38);
+    }
+
+    .workshop-tire-history-page .tire-history-cancel-control summary:focus-visible {
+        outline: 2px solid rgba(248, 113, 113, .7);
+        outline-offset: 2px;
+    }
+
+    .workshop-tire-history-page .tire-history-cancel-control[open] summary {
+        color: #fff;
+        background: rgba(185, 28, 28, .44);
+    }
+</style>
 @endpush
 
 @section('content')
@@ -196,30 +251,34 @@
 
                             @if($canCancelTireRecords)
                                 @if(! ($event['is_cancelled'] ?? false) && in_array($event['type'], ['measurement', 'retread'], true))
-                                    <form
-                                        method="POST"
-                                        action="{{ $event['type'] === 'measurement'
-                                            ? route('workshop.tires.measurements.cancel', [$tire, $event['record']])
-                                            : route('workshop.tires.retreads.cancel', [$tire, $event['record']]) }}"
-                                        class="tire-history-cancel-form"
-                                    >
-                                        @csrf
-                                        <label>
-                                            Motivo do cancelamento
-                                            <textarea
-                                                name="reason"
-                                                rows="2"
-                                                minlength="5"
-                                                maxlength="2000"
-                                                required
-                                                placeholder="Informe o motivo para manter a trilha de auditoria"
-                                            ></textarea>
-                                        </label>
+                                    <details class="tire-history-cancel-control">
+                                        <summary>Cancelar lançamento</summary>
 
-                                        <button type="submit">
-                                            Cancelar lancamento
-                                        </button>
-                                    </form>
+                                        <form
+                                            method="POST"
+                                            action="{{ $event['type'] === 'measurement'
+                                                ? route('workshop.tires.measurements.cancel', [$tire, $event['record']])
+                                                : route('workshop.tires.retreads.cancel', [$tire, $event['record']]) }}"
+                                            class="tire-history-cancel-form"
+                                        >
+                                            @csrf
+                                            <label>
+                                                Motivo do cancelamento
+                                                <textarea
+                                                    name="reason"
+                                                    rows="2"
+                                                    minlength="5"
+                                                    maxlength="2000"
+                                                    required
+                                                    placeholder="Informe o motivo do cancelamento"
+                                                ></textarea>
+                                            </label>
+
+                                            <button type="submit">
+                                                Confirmar cancelamento
+                                            </button>
+                                        </form>
+                                    </details>
                                 @endif
                             @endif
                         </div>

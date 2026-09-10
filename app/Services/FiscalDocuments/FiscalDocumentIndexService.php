@@ -165,7 +165,7 @@ class FiscalDocumentIndexService
     private function externalFuelFillings(array $context, array $filters): Collection
     {
         return FuelFilling::query()
-            ->with(['vehicle', 'product', 'tank.product', 'driver', 'responsible', 'location', 'division'])
+            ->with(['vehicle', 'product', 'tank.product', 'responsible', 'location', 'division'])
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
@@ -192,7 +192,6 @@ class FiscalDocumentIndexService
                     originUrl: route('fuel.tanks.index'),
                     details: [
                         $this->field('Veículo', $vehicle),
-                        $this->field('Motorista/Condutor', $filling->driver?->name),
                         $this->field('Produto', $product),
                         $this->field('Litros', $this->liters($filling->quantity_liters)),
                         $this->field('Custo unitário', $this->money($filling->unit_cost, 4)),

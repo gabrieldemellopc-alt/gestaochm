@@ -57,21 +57,33 @@
             </div>
 
             <div class="permissions-context-grid">
-                <div>
+                <div class="permissions-context-item">
+                    <i class="bi bi-buildings" aria-hidden="true"></i>
+                    <div>
                     <span>Divisão</span>
                     <strong>{{ $selectedDivision?->name ?? 'Não informada' }}</strong>
+                    </div>
                 </div>
-                <div>
+                <div class="permissions-context-item">
+                    <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                    <div>
                     <span>Unidade</span>
                     <strong>{{ $selectedLocation?->name ?? 'Todas permitidas' }}</strong>
+                    </div>
                 </div>
-                <div>
+                <div class="permissions-context-item">
+                    <i class="bi bi-person-badge" aria-hidden="true"></i>
+                    <div>
                     <span>Perfil</span>
                     <strong>{{ $selectedProfile }}</strong>
+                    </div>
                 </div>
-                <div>
+                <div class="permissions-context-item">
+                    <i class="bi bi-grid" aria-hidden="true"></i>
+                    <div>
                     <span>Módulo</span>
                     <strong>{{ $selectedModule }}</strong>
+                    </div>
                 </div>
             </div>
         </section>

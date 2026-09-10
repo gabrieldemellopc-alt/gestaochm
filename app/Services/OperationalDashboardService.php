@@ -323,7 +323,7 @@ class OperationalDashboardService
             ->where('location_id', $context['location']->id)
             ->whereNull('cancelled_at')
             ->whereBetween('filled_at', [$start, $end])
-            ->get(['filled_at', 'total_cost'])
+            ->get(['filled_at', 'total_cost', 'source_total_cost'])
             ->groupBy(fn (FuelFilling $filling) => $filling->filled_at->format('Y-m'));
 
         $maintenanceCosts = $this->reportContext
@@ -339,7 +339,7 @@ class OperationalDashboardService
             return [
                 'key' => $key,
                 'label' => ucfirst($month->locale('pt_BR')->translatedFormat('M')),
-                'fuel' => round((float) ($fuelCosts->get($key)?->sum('total_cost') ?? 0), 2),
+                'fuel' => round((float) ($fuelCosts->get($key)?->sum('reporting_total_cost') ?? 0), 2),
                 'maintenance' => round((float) ($maintenanceCosts->get($key)?->sum('total_cost') ?? 0), 2),
             ];
         });

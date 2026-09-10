@@ -310,7 +310,6 @@
                                     Custo restrito
                                 @endif
                             </span>
-                            <small>Motorista/Condutor: {{ $filling->driver?->name ?: 'Não informado' }}</small>
                             <small>Registrado por: {{ $filling->responsible?->name ?: 'Não informado' }}</small>
                         </div>
                     </article>
@@ -411,7 +410,6 @@
                                     <option value="{{ $product->id }}" @selected(old('fuel_product_id') == $product->id)>{{ $product->name }}</option>
                                 @endforeach
                             </select>
-                            <small data-vehicle-fuel-help>Selecione o veículo para consultar os combustíveis permitidos.</small>
                         </label>
                         <label>
                             Nome do tanque
@@ -496,7 +494,7 @@
                             </p>
                         @endif
 
-                        <label class="fuel-span-6">
+                        <label class="fuel-span-4">
                             Veículo
                             <select name="vehicle_id" required>
                                 <option value="">Selecione</option>
@@ -511,9 +509,10 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <small data-vehicle-fuel-help>Selecione o veículo para consultar os combustíveis permitidos.</small>
                         </label>
                     
-                        <label class="fuel-span-6" data-source-field="internal">
+                        <label class="fuel-span-4" data-source-field="internal">
                             Tanque/produto
                             <select name="fuel_tank_id">
                                 <option value="">Selecione</option>
@@ -530,7 +529,7 @@
                             </select>
                         </label>
                     
-                        <label class="fuel-span-6 is-hidden" data-source-field="external">
+                        <label class="fuel-span-4 is-hidden" data-source-field="external">
                             Produto
                             <select name="fuel_product_id">
                                 <option value="">Selecione</option>
@@ -540,22 +539,6 @@
                             </select>
                         </label>
 
-                        <label class="fuel-span-4">
-                            Motorista
-                            <select name="driver_id">
-                                <option value="">Não informado</option>
-                                @foreach($drivers as $driver)
-                                    <option value="{{ $driver->id }}" @selected(old('driver_id') == $driver->id)>{{ $driver->name }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                    
-                        <label class="fuel-span-4">
-                            Data/hora
-                            <input type="datetime-local" name="filled_at" value="{{ old('filled_at', now()->format('Y-m-d\TH:i')) }}" required>
-                        </label>
-                    
-                    
                         <label class="fuel-span-4">
                             Litros
                             <input
@@ -567,8 +550,14 @@
                                 data-fuel-liters
                             >
                         </label>
-                        <label class="fuel-span-6">
-                            Horas informadas
+
+                        <label class="fuel-span-4">
+                            Data/hora
+                            <input type="datetime-local" name="filled_at" value="{{ old('filled_at', now()->format('Y-m-d\TH:i')) }}" required>
+                        </label>
+
+                        <label class="fuel-span-4">
+                            Horímetro
                             <input
                                 type="number"
                                 name="vehicle_hours"
@@ -578,8 +567,8 @@
                             >
                         </label>
                         
-                        <label class="fuel-span-6">
-                            KM informado
+                        <label class="fuel-span-4">
+                            Hodômetro
                             <input
                                 type="number"
                                 name="vehicle_km"
@@ -697,32 +686,9 @@
                             </label>
                         
                             <label>
-                                Custo unitário calculado
-                                <input
-                                    type="number"
-                                    name="unit_cost"
-                                    min="0"
-                                    step="0.0001"
-                                    readonly
-                                    data-fuel-unit-cost
-                                >
-                            </label>
-                        
-                            <label>
-                                Fornecedor
-                                <input
-                                    type="text"
-                                    name="supplier_name"
-                                    maxlength="255"
-                                    placeholder="Nome do fornecedor"
-                                >
-                            </label>
-                        
-                            <label>
                                 Nota fiscal @if($fuelReceiptInvoiceRequired ?? false) (Obrigatório) @else (Opcional) @endif
                                 <div class="input-with-badge">
                                     <span>NF</span>
-                        
                                     <input
                                         type="text"
                                         name="invoice_number"
@@ -730,6 +696,28 @@
                                         placeholder="12403"
                                     >
                                 </div>
+                            </label>
+
+                            <label class="fuel-form-wide receipt-supplier-field">
+                                Fornecedor
+                                <x-supplier-autocomplete
+                                    value="{{ old('supplier_name') }}"
+                                    document-name="supplier_document"
+                                    document-value="{{ old('supplier_document') }}"
+                                    placeholder="Nome do fornecedor"
+                                />
+                            </label>
+
+                            <label class="fuel-form-wide fuel-cost-preview receipt-unit-cost-preview">
+                                <span>Custo unitário calculado</span>
+                                <strong data-fuel-unit-cost-display>R$ 0,00</strong>
+                                <input
+                                    type="hidden"
+                                    name="unit_cost"
+                                    min="0"
+                                    step="0.01"
+                                    data-fuel-unit-cost
+                                >
                             </label>
                         
                             <label class="fuel-form-wide">
@@ -866,6 +854,7 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
             const litersInput = form.querySelector('[data-fuel-liters]');
             const totalInput = form.querySelector('[data-fuel-total-cost]');
             const unitInput = form.querySelector('[data-fuel-unit-cost]');
+            const unitDisplay = form.querySelector('[data-fuel-unit-cost-display]');
     
             if (!litersInput || !totalInput || !unitInput) {
                 return;
@@ -876,12 +865,19 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
     
             if (liters <= 0 || total <= 0) {
                 unitInput.value = '';
+                if (unitDisplay) unitDisplay.textContent = 'R$ 0,00';
                 return;
             }
     
             const unit = total / liters;
     
-            unitInput.value = unit.toFixed(4);
+            unitInput.value = unit.toFixed(2);
+            if (unitDisplay) unitDisplay.textContent = unit.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
         }
     
         document.addEventListener('input', function (event) {

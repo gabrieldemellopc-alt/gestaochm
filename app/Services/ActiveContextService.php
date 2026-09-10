@@ -19,33 +19,54 @@ class ActiveContextService
             return null;
         }
 
-        return Division::query()
-            ->where('tenant_id', $user->tenant_id)
-            ->find($divisionId);
+        return $this->availableDivisions($user)
+            ->firstWhere('id', (int) $divisionId);
     }
 
-    public function availableLocations(User $user, ?int $divisionId = null): Collection
+    public function availableDivisions(User $user, string $module = 'fleet'): Collection
+    {
+        $query = Division::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->orderBy('name');
+
+        if ($this->hasTenantBypass($user)) {
+            return $query->get();
+        }
+
+        return $query
+            ->whereIn('id', UserDivisionAccess::query()
+                ->select('division_id')
+                ->where('tenant_id', $user->tenant_id)
+                ->where('user_id', $user->id)
+                ->where('module', $module)
+                ->where('active', true))
+            ->get();
+    }
+
+    public function availableLocations(User $user, ?int $divisionId = null, string $module = 'fleet'): Collection
     {
         $divisionId ??= session('active_division_id');
 
-        if (! $divisionId) {
+        if (! $divisionId || ! $this->canAccessDivision($user, (int) $divisionId, $module)) {
             return collect();
+        }
+
+        $locations = Location::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('division_id', $divisionId)
+            ->orderBy('name');
+
+        if ($this->hasTenantBypass($user)) {
+            return $locations->get();
         }
 
         $accesses = UserDivisionAccess::query()
             ->where('tenant_id', $user->tenant_id)
             ->where('user_id', $user->id)
             ->where('division_id', $divisionId)
+            ->where('module', $module)
             ->where('active', true)
             ->get(['location_id']);
-
-        if ($accesses->isEmpty()) {
-            return collect();
-        }
-
-        $locations = Location::query()
-            ->where('tenant_id', $user->tenant_id)
-            ->where('division_id', $divisionId);
 
         if (! $accesses->contains(fn ($access) => $access->location_id === null)) {
             $locations->whereIn(
@@ -54,9 +75,27 @@ class ActiveContextService
             );
         }
 
-        return $locations
-            ->orderBy('name')
-            ->get();
+        return $locations->get();
+    }
+
+    public function availableLocationsAcrossDivisions(User $user, string $module = 'fleet'): Collection
+    {
+        return $this->availableDivisions($user, $module)
+            ->flatMap(fn (Division $division) => $this->availableLocations($user, $division->id, $module))
+            ->sortBy('name')
+            ->values();
+    }
+
+    public function canAccessDivision(User $user, int $divisionId, string $module = 'fleet'): bool
+    {
+        return $this->availableDivisions($user, $module)
+            ->contains('id', $divisionId);
+    }
+
+    public function canAccessLocation(User $user, int $divisionId, int $locationId, string $module = 'fleet'): bool
+    {
+        return $this->availableLocations($user, $divisionId, $module)
+            ->contains('id', $locationId);
     }
 
     public function activeLocation(User $user): ?Location
@@ -117,5 +156,16 @@ class ActiveContextService
     public function clearActiveLocation(): void
     {
         session()->forget('active_location_id');
+    }
+
+    private function hasTenantBypass(User $user): bool
+    {
+        return (int) $user->id === 1
+            || UserDivisionAccess::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->where('user_id', $user->id)
+                ->where('profile', 'admin')
+                ->where('active', true)
+                ->exists();
     }
 }

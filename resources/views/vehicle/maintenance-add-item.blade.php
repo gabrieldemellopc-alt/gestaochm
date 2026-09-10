@@ -329,6 +329,13 @@
 
         @csrf
 
+        @if($errors->any())
+            <div class="maintenance-form-errors" role="alert">
+                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                <span>{{ $errors->first() }}</span>
+            </div>
+        @endif
+
         @if($replacementItem)
             <section class="maintenance-replacement-warning">
                 <strong>Corrigir serviço lançado</strong>
@@ -606,6 +613,12 @@
 
                         @elseif($field->field_type === 'stock_item' && $executionType === 'internal')
                             <div class="maintenance-stock-field">
+                                @error('fields')
+                                    <div class="maintenance-stock-error" role="alert">
+                                        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                                        <span>{{ $message }}</span>
+                                    </div>
+                                @enderror
                                 <div class="form-group">
                                     <label>
                                         {{ $field->label }}
@@ -613,7 +626,7 @@
                                     </label>
                                     <select
                                         name="fields[{{ $field->slug }}]"
-                                        class="form-input"
+                                        class="form-input @error('fields.' . $field->slug) input-invalid @enderror"
                                         x-model="stockFields['{{ $field->slug }}'].itemId"
                                         @change="updateStockField('{{ $field->slug }}')"
                                         {{ $field->required ? 'required' : '' }}
@@ -631,6 +644,9 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                    @error('fields.' . $field->slug)
+                                        <small class="maintenance-field-error">{{ $message }}</small>
+                                    @enderror
                                     @if($procedure->stockItems->isNotEmpty())
                                         <small class="field-help">Itens permitidos neste procedimento.</small>
                                     @elseif($field->stockCategory)
@@ -648,11 +664,14 @@
                                         step="1"
                                         min="1"
                                         name="fields[{{ $field->slug }}_quantity]"
-                                        class="form-input"
+                                        class="form-input @error('fields.' . $field->slug . '_quantity') input-invalid @enderror"
                                         value="{{ old('fields.' . $field->slug . '_quantity') }}"
                                         x-model.number="stockFields['{{ $field->slug }}'].quantity"
                                         {{ $field->required ? 'required' : '' }}
                                     >
+                                    @error('fields.' . $field->slug . '_quantity')
+                                        <small class="maintenance-field-error">{{ $message }}</small>
+                                    @enderror
                                     <small class="field-help">Informe a quantidade consumida na manutenção.</small>
                                 </div>
                             </div>

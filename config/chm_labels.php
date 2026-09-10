@@ -216,7 +216,7 @@ return [
         'tenant-admin' => 'Administrador do tenant',
         'manager' => 'Gestor',
         'supervisor' => 'Supervisor',
-        'mechanic' => 'Mecânico',
+        'mechanic' => 'Operador Combustível',
         'driver' => 'Motorista',
     ],
 

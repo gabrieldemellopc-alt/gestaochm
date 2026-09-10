@@ -6,7 +6,6 @@ use App\Models\FuelFilling;
 use App\Models\FuelProduct;
 use App\Models\FuelReceipt;
 use App\Models\FuelTank;
-use App\Models\UserDivisionAccess;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use App\Services\FuelService;
@@ -28,7 +27,6 @@ class FuelTankController extends Controller
             return $this->missingActiveLocationRedirect();
         }
 
-        $this->authorizeFuelManagement($context);
         $this->authorizeFuelPermission('fuel.view', $context);
         $fuelPermissions = $this->fuelPermissions($context);
 
@@ -125,7 +123,6 @@ class FuelTankController extends Controller
 
             'vehicles' => $vehicles,
             'fuelCompatibility' => $fuelCompatibility,
-            'drivers' => $this->driversForContext($context),
             'latestReceipts' => $this->latestReceipts($context),
             'latestFillings' => $this->latestFillings($context),
             'openFuelModal' => request('fuel_modal') ?: session('fuel_modal'),
@@ -143,7 +140,6 @@ class FuelTankController extends Controller
     {
         $context = $this->activeContext();
         if (! $context) abort(422);
-        $this->authorizeFuelManagement($context);
         $this->authorizeFuelPermission('fuel.view', $context);
 
         $period = $request->input('period', 'last_30_days');
@@ -201,7 +197,6 @@ class FuelTankController extends Controller
             return $this->missingActiveLocationRedirect();
         }
 
-        $this->authorizeFuelManagement($context);
         $this->authorizeFuelPermission('fuel.view', $context);
 
         $validated = $this->validatedData($request, $context, 'fuelTank');
@@ -231,7 +226,6 @@ class FuelTankController extends Controller
             return $this->missingActiveLocationRedirect();
         }
 
-        $this->authorizeFuelManagement($context);
         $this->authorizeFuelPermission('fuel.view', $context);
         $this->ensureTankInActiveContext($tank, $context);
 
@@ -258,7 +252,6 @@ class FuelTankController extends Controller
             return $this->missingActiveLocationRedirect();
         }
 
-        $this->authorizeFuelManagement($context);
         $this->authorizeFuelPermission('fuel.receive', $context);
 
         if (app(TenantFiscalSettingService::class)->requires('fuel_receipt')) {
@@ -276,6 +269,7 @@ class FuelTankController extends Controller
                 'total_cost',
                 'supplier_name',
                 'supplier_id',
+                'supplier_document',
                 'invoice_number',
                 'notes',
             ]));
@@ -299,7 +293,6 @@ class FuelTankController extends Controller
             return $this->missingActiveLocationRedirect();
         }
 
-        $this->authorizeFuelManagement($context);
         $source = $request->input('source', FuelFilling::SOURCE_INTERNAL_TANK);
         $this->authorizeFuelPermission(
             $source === FuelFilling::SOURCE_EXTERNAL_STATION
@@ -349,7 +342,7 @@ class FuelTankController extends Controller
     public function fillingsHistory(Request $request)
     {
         $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.view', $context);
-        $query = FuelFilling::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['vehicle', 'tank', 'product', 'driver', 'responsible', 'canceller']);
+        $query = FuelFilling::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['vehicle', 'tank', 'product', 'responsible', 'canceller']);
         $this->applyPeriod($query, $request, 'filled_at');
         foreach (['vehicle_id', 'fuel_product_id', 'fuel_tank_id'] as $field) if ($request->filled($field)) $query->where($field, $request->integer($field));
         if ($request->filled('source')) {
@@ -420,7 +413,6 @@ class FuelTankController extends Controller
     {
         $context = $this->activeContext();
         if (! $context) abort(422, 'Selecione uma unidade ativa.');
-        $this->authorizeFuelManagement($context);
         return $context;
     }
 
@@ -445,27 +437,6 @@ class FuelTankController extends Controller
             'minimum_balance_liters' => ['nullable', 'numeric', 'min:0'],
             'active' => ['nullable', 'boolean'],
         ]);
-    }
-
-    private function authorizeFuelManagement(array $context): void
-    {
-        $allowed = UserDivisionAccess::query()
-            ->where('tenant_id', $context['tenant_id'])
-            ->where('user_id', $context['user']->id)
-            ->where('division_id', $context['division_id'])
-            ->where('module', 'fleet')
-            ->whereIn('profile', ['supervisor', 'manager', 'admin'])
-            ->where('active', true)
-            ->where(function ($query) use ($context) {
-                $query
-                    ->where('location_id', $context['location_id'])
-                    ->orWhereNull('location_id');
-            })
-            ->exists();
-
-        if (! $allowed) {
-            abort(403);
-        }
     }
 
     private function authorizeFuelPermission(string $permissionKey, array $context): void
@@ -549,7 +520,7 @@ class FuelTankController extends Controller
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division_id'])
             ->where('location_id', $context['location_id'])
-            ->with(['tank.product', 'product', 'vehicle', 'driver', 'responsible'])
+            ->with(['tank.product', 'product', 'vehicle', 'responsible'])
             ->latest('filled_at')
             ->limit(8)
             ->get();
@@ -563,28 +534,6 @@ class FuelTankController extends Controller
             ->where('location_id', $context['location_id'])
             ->orderBy('name')
             ->get(['id', 'name', 'plate', 'current_km', 'current_hours']);
-    }
-
-    private function driversForContext(array $context)
-    {
-        return UserDivisionAccess::query()
-            ->with('user')
-            ->where('tenant_id', $context['tenant_id'])
-            ->where('division_id', $context['division_id'])
-            ->where('module', 'fleet')
-            ->whereIn('profile', ['driver', 'motorista'])
-            ->where('active', true)
-            ->where(function ($query) use ($context) {
-                $query
-                    ->where('location_id', $context['location_id'])
-                    ->orWhereNull('location_id');
-            })
-            ->get()
-            ->filter(fn ($access) => $access->user)
-            ->map(fn ($access) => $access->user)
-            ->unique('id')
-            ->sortBy('name')
-            ->values();
     }
 
     private function missingActiveLocationRedirect()

@@ -3,6 +3,7 @@
 return [
     'profiles' => [
         'supervisor' => 'Supervisor',
+        'mechanic' => 'Operador Combustível',
     ],
 
     'modules' => [
@@ -11,6 +12,7 @@ return [
 
     'managed_profiles' => [
         'supervisor',
+        'mechanic',
     ],
 
     'groups' => [
@@ -21,11 +23,11 @@ return [
                 'navigation.dashboard' => ['label' => 'Acessar Dashboard', 'default' => ['supervisor' => true]],
                 'navigation.vehicles' => ['label' => 'Acessar Veículos', 'default' => ['supervisor' => true]],
                 'navigation.workshop' => ['label' => 'Acessar Oficina', 'default' => ['supervisor' => true]],
-                'navigation.fuel' => ['label' => 'Acessar Abastecimentos', 'default' => ['supervisor' => true]],
+                'navigation.fuel' => ['label' => 'Acessar Abastecimentos', 'default' => ['supervisor' => true, 'mechanic' => true]],
                 'navigation.stock' => ['label' => 'Acessar Estoque', 'default' => ['supervisor' => true]],
                 'navigation.tires' => ['label' => 'Acessar Pneus', 'default' => ['supervisor' => true]],
                 'navigation.checklists' => ['label' => 'Acessar Checklists', 'default' => ['supervisor' => true]],
-                'navigation.reports' => ['label' => 'Acessar Relatórios', 'default' => ['supervisor' => false]],
+                'navigation.reports' => ['label' => 'Acessar Relatórios', 'default' => ['supervisor' => false, 'mechanic' => true]],
                 'navigation.fiscal_documents' => ['label' => 'Acessar Notas Fiscais', 'default' => ['supervisor' => false]],
                 'navigation.audit' => ['label' => 'Acessar Auditoria', 'default' => ['supervisor' => false]],
             ],
@@ -101,10 +103,10 @@ return [
             'label' => 'Abastecimentos',
             'description' => 'Permissões para recebimentos, abastecimentos internos/externos e custos de combustível.',
             'permissions' => [
-                'fuel.view' => ['label' => 'Ver abastecimentos', 'default' => ['supervisor' => true]],
-                'fuel.receive' => ['label' => 'Receber combustível no tanque', 'default' => ['supervisor' => true]],
-                'fuel.fill_internal' => ['label' => 'Lançar abastecimento interno', 'default' => ['supervisor' => true]],
-                'fuel.fill_external' => ['label' => 'Lançar abastecimento externo', 'default' => ['supervisor' => true]],
+                'fuel.view' => ['label' => 'Ver abastecimentos', 'default' => ['supervisor' => true, 'mechanic' => true]],
+                'fuel.receive' => ['label' => 'Receber combustível no tanque', 'default' => ['supervisor' => true, 'mechanic' => true]],
+                'fuel.fill_internal' => ['label' => 'Lançar abastecimento interno', 'default' => ['supervisor' => true, 'mechanic' => true]],
+                'fuel.fill_external' => ['label' => 'Lançar abastecimento externo', 'default' => ['supervisor' => true, 'mechanic' => true]],
                 'fuel.cancel' => ['label' => 'Cancelar abastecimento', 'default' => ['supervisor' => false]],
                 'fuel.view_costs' => ['label' => 'Ver custos de combustível', 'default' => ['supervisor' => true]],
             ],
@@ -146,11 +148,11 @@ return [
             'label' => 'Relatórios e documentos',
             'description' => 'Permissões para consultas gerenciais, exportações e documentos consolidados.',
             'permissions' => [
-                'reports.view' => ['label' => 'Acessar Central de Relatórios', 'default' => ['supervisor' => false]],
+                'reports.view' => ['label' => 'Acessar Central de Relatórios', 'default' => ['supervisor' => false, 'mechanic' => true]],
                 'reports.view_operational' => ['label' => 'Ver relatórios operacionais', 'default' => ['supervisor' => false]],
                 'reports.vehicle_dossier' => ['label' => 'Ver dossiê do veículo', 'default' => ['supervisor' => false]],
                 'reports.maintenance' => ['label' => 'Ver relatório de manutenções', 'default' => ['supervisor' => false]],
-                'reports.fuel' => ['label' => 'Ver relatório de abastecimentos', 'default' => ['supervisor' => false]],
+                'reports.fuel' => ['label' => 'Ver relatório de abastecimentos', 'default' => ['supervisor' => false, 'mechanic' => true]],
                 'reports.financial' => ['label' => 'Ver relatório financeiro', 'default' => ['supervisor' => false]],
                 'reports.stock' => ['label' => 'Ver relatório de estoque', 'default' => ['supervisor' => false]],
                 'reports.tires' => ['label' => 'Ver relatório de pneus', 'default' => ['supervisor' => false]],

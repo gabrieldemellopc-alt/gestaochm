@@ -375,7 +375,7 @@
             </div>
 
             <nav class="maintenance-tabs" aria-label="Seções da ordem de manutenção" data-maintenance-tabs>
-                @foreach(['general' => 'Geral', 'services' => 'Serviços', 'materials' => 'Materiais', 'costs' => 'Custos'] as $tabKey => $tabLabel)
+                @foreach(['general' => 'Geral', 'services' => 'Serviços', 'materials' => 'Materiais', 'costs' => 'Outros'] as $tabKey => $tabLabel)
                     <button type="button" class="maintenance-tab {{ $tabKey === 'general' ? 'is-active' : '' }}" data-maintenance-tab="{{ $tabKey }}" aria-selected="{{ $tabKey === 'general' ? 'true' : 'false' }}">{{ $tabLabel }}</button>
                 @endforeach
             </nav>

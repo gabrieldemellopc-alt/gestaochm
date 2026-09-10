@@ -3958,7 +3958,7 @@
 }
 .dashboard-page .vehicle-card-actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
     width: 100%;
     gap: 6px;
     margin-top: 8px;
@@ -5135,7 +5135,7 @@ html[data-chm-theme="corporate-light"] .dashboard-page .quick-action-card:hover 
 }
 .vehicle-modal-actions-strip {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 14px;
     padding: 18px 22px;
     border-bottom: 1px solid rgba(203,213,225,.14);

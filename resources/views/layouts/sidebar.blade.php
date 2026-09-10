@@ -120,10 +120,8 @@
             $sidebarCurrentUser = auth()->user();
             $sidebarCanPermission = fn (string $permissionKey) => $sidebarCurrentUser
                 && $sidebarPermissionService->allows($sidebarCurrentUser, $permissionKey);
-            $sidebarCanAccessVehicles = $sidebarCanPermission('navigation.vehicles')
-                && $sidebarCanPermission('vehicles.view');
         @endphp
-        @if($sidebarCanAccessVehicles)
+        @if($sidebarCanPermission('navigation.vehicles'))
         <a
 
             href="{{ route('vehicles.index') }}"
@@ -165,7 +163,7 @@
 
 
 
-        @if((userHasProfile('supervisor') || userHasProfile('manager') || userHasProfile('admin')) && $sidebarCanPermission('navigation.fuel'))
+        @if($sidebarCanPermission('navigation.fuel'))
 
         {{-- ABASTECIMENTOS --}}
 
@@ -349,6 +347,7 @@
             )
             || userHasProfile('manager')
             || userHasProfile('admin')
+            || $sidebarCanPermission('admin.access.manage')
             || $sidebarCanPermission('admin.permissions.configure')
             || auth()->user()?->can('viewAuditLogs')
         )
@@ -380,7 +379,20 @@
 
 
 
-        @if($sidebarCanPermission('navigation.reports') || $sidebarCanPermission('reports.view'))
+        @php
+            $sidebarCanAccessReports = $sidebarCanPermission('navigation.reports')
+                && $sidebarCanPermission('reports.view')
+                && collect([
+                    'reports.view_operational',
+                    'reports.vehicle_dossier',
+                    'reports.maintenance',
+                    'reports.fuel',
+                    'reports.financial',
+                    'reports.stock',
+                    'reports.tires',
+                ])->contains($sidebarCanPermission);
+        @endphp
+        @if($sidebarCanAccessReports)
         {{-- RELATÓRIOS --}}
 
         <a
@@ -453,6 +465,17 @@
 
         @endif
 
+
+        @if($sidebarCanPermission('admin.access.manage'))
+            <a
+                title="Gerenciar acessos"
+                href="{{ route('access-control.index') }}"
+                class="sidebar-link {{ request()->routeIs('access-control.*') ? 'active' : '' }}"
+            >
+                <span class="sidebar-icon"><i class="bi bi-people"></i></span>
+                <span class="sidebar-link-text">Gerenciar acessos</span>
+            </a>
+        @endif
 
         @if($sidebarCanPermission('admin.permissions.configure'))
             <a title="Permissões"

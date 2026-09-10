@@ -422,7 +422,6 @@
                             <th>Data/hora</th>
                             <th>Produto</th>
                             <th>Origem/local</th>
-                            <th>Motorista/Condutor</th>
                             <th>KM/HR</th>
                             <th>Litros</th>
                             <th>Custo unit.</th>
@@ -437,7 +436,6 @@
                                 <td>{{ $filling['date'] ? \Carbon\Carbon::parse($filling['date'])->format('d/m/Y H:i') : '-' }}</td>
                                 <td><strong>{{ $filling['product_name'] }}</strong></td>
                                 <td><strong>{{ $filling['source_label'] ?? 'Tanque da unidade' }}</strong><br><span>{{ $filling['location_label'] ?? $filling['tank_name'] ?? '-' }}</span></td>
-                                <td>{{ $filling['driver_name'] }}</td>
                                 <td>
                                     KM {{ $filling['vehicle_km'] !== null ? $number($filling['vehicle_km']) : '-' }}
                                     <br>
@@ -454,7 +452,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="dossier-empty-cell">Nenhum abastecimento valido encontrado para o periodo.</td>
+                                <td colspan="9" class="dossier-empty-cell">Nenhum abastecimento valido encontrado para o periodo.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -178,8 +178,9 @@ class VehicleController extends Controller
 
     public function create()
     {
-        $activeLocation = app(ActiveContextService::class)
-            ->activeLocation(auth()->user());
+        $user = auth()->user();
+        $context = app(ActiveContextService::class);
+        $activeLocation = $context->activeLocation($user);
 
         if (! $activeLocation) {
             return redirect()
@@ -188,17 +189,16 @@ class VehicleController extends Controller
         }
 
         $procedures =
-            Procedure::where('tenant_id', auth()->user()->tenant_id)
+            Procedure::where('tenant_id', $user->tenant_id)
             ->where('location_id', $activeLocation->id)
             ->orderBy('name')
             ->get();
 
 
-        $divisions = Division::orderBy('name')->get();
+        $divisions = $context->availableDivisions($user);
+        $locations = $context->availableLocationsAcrossDivisions($user);
 
-
-
-        $locations = Location::orderBy('name')->get();
+        $fuelProducts = app(VehicleFuelPolicy::class)->products($user->tenant_id);
 
         return view(
 
@@ -224,8 +224,9 @@ class VehicleController extends Controller
 
     public function store(Request $request)
     {
-        $activeLocation = app(ActiveContextService::class)
-            ->activeLocation(auth()->user());
+        $user = auth()->user();
+        $context = app(ActiveContextService::class);
+        $activeLocation = $context->activeLocation($user);
 
         if (! $activeLocation) {
             return redirect()
@@ -337,7 +338,8 @@ class VehicleController extends Controller
 
                 'required',
 
-                'exists:divisions,id',
+                Rule::exists('divisions', 'id')
+                    ->where('tenant_id', $user->tenant_id),
 
             ],
 
@@ -345,8 +347,8 @@ class VehicleController extends Controller
 
             'location_id' => [
                 'required',
-                'exists:locations,id',
-                Rule::in([$activeLocation->id]),
+                Rule::exists('locations', 'id')
+                    ->where('tenant_id', $user->tenant_id),
             ],
 
 
@@ -513,8 +515,7 @@ class VehicleController extends Controller
             'procedures.*' => [
                 Rule::exists('procedures', 'id')
                     ->where(fn ($query) => $query
-                        ->where('tenant_id', auth()->user()->tenant_id)
-                        ->where('location_id', $activeLocation->id)),
+                        ->where('tenant_id', $user->tenant_id)),
             ],
 
 
@@ -589,6 +590,18 @@ class VehicleController extends Controller
 
 
         ]);
+
+        $this->ensureVehicleDestinationInAccessibleScope(
+            $user,
+            (int) $validated['division_id'],
+            (int) $validated['location_id']
+        );
+
+        $procedureIds = $this->procedureIdsInContext(
+            $validated['procedures'] ?? [],
+            (int) $user->tenant_id,
+            (int) $validated['location_id']
+        );
 
 
 
@@ -873,11 +886,7 @@ class VehicleController extends Controller
 
 
 
-            $this->procedureIdsInContext(
-                $validated['procedures'] ?? [],
-                (int) $vehicle->tenant_id,
-                (int) $vehicle->location_id
-            )
+            $procedureIds
 
 
         );
@@ -912,9 +921,7 @@ class VehicleController extends Controller
 
     public function edit(Vehicle $vehicle)
     {
-        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
-            return $redirect;
-        }
+        $this->ensureVehicleInAccessibleScope($vehicle);
 
         $procedures =
             Procedure::where('tenant_id', $vehicle->tenant_id)
@@ -929,11 +936,9 @@ class VehicleController extends Controller
                     ->where('location_id', $vehicle->location_id);
             },
         ]);
-        $divisions = Division::orderBy('name')->get();
-
-
-
-        $locations = Location::orderBy('name')->get();
+        $context = app(ActiveContextService::class);
+        $divisions = $context->availableDivisions(auth()->user());
+        $locations = $context->availableLocationsAcrossDivisions(auth()->user());
 
         $fuelProducts = app(VehicleFuelPolicy::class)->products($vehicle->tenant_id);
         return view(
@@ -968,9 +973,7 @@ class VehicleController extends Controller
         Request $request,
         Vehicle $vehicle
     ) {
-        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
-            return $redirect;
-        }
+        $this->ensureVehicleInAccessibleScope($vehicle);
 
 
         /*
@@ -1213,7 +1216,8 @@ class VehicleController extends Controller
 
                 'required',
 
-                'exists:divisions,id',
+                Rule::exists('divisions', 'id')
+                    ->where('tenant_id', $vehicle->tenant_id),
 
             ],
 
@@ -1232,7 +1236,8 @@ class VehicleController extends Controller
 
             'location_id' => [
                 'required',
-                'exists:locations,id',
+                Rule::exists('locations', 'id')
+                    ->where('tenant_id', $vehicle->tenant_id),
             ],
 
             'transfer_reason' => ['nullable', 'string', 'max:2000'],
@@ -1342,6 +1347,12 @@ class VehicleController extends Controller
 
         ]);
 
+        $this->ensureVehicleDestinationInAccessibleScope(
+            $request->user(),
+            (int) $validated['division_id'],
+            (int) $validated['location_id']
+        );
+
 
 
         $procedureIds = $this->procedureIdsInContext(
@@ -1362,9 +1373,7 @@ class VehicleController extends Controller
 
 
 
-        if ($redirect = $this->ensureVehicleInActiveContext($vehicle)) {
-            return $redirect;
-        }
+        $this->ensureVehicleInAccessibleScope($vehicle);
 
         $oldData = $vehicle->replicate();
 
@@ -2941,6 +2950,36 @@ class VehicleController extends Controller
         }
 
         return $validIds->all();
+    }
+
+    private function ensureVehicleInAccessibleScope(Vehicle $vehicle): void
+    {
+        $user = auth()->user();
+
+        abort_unless(
+            (int) $vehicle->tenant_id === (int) $user->tenant_id
+            && app(ActiveContextService::class)->canAccessLocation(
+                $user,
+                (int) $vehicle->division_id,
+                (int) $vehicle->location_id
+            ),
+            403
+        );
+    }
+
+    private function ensureVehicleDestinationInAccessibleScope($user, int $divisionId, int $locationId): void
+    {
+        $location = Location::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('division_id', $divisionId)
+            ->whereKey($locationId)
+            ->first();
+
+        abort_unless(
+            $location
+            && app(ActiveContextService::class)->canAccessLocation($user, $divisionId, $locationId),
+            403
+        );
     }
 
     private function ensureVehicleInActiveContext(Vehicle $vehicle)

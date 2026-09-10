@@ -49,12 +49,6 @@
 
         if (! $dashboardCurrentUser) { return false; }
 
-        if (userHasProfile('admin') || userHasProfile('manager')) { return true; }
-
-        if (! userHasProfile('supervisor')) { return true; }
-
-
-
         return $dashboardPermissionService->allows($dashboardCurrentUser, $permissionKey);
 
     };
@@ -65,7 +59,16 @@
 
     $canFillVehicle = $fuelEnabled && $dashboardCanPermission('navigation.fuel') && ($dashboardCanPermission('fuel.fill_internal') || $dashboardCanPermission('fuel.fill_external'));
 
-    $canAccessVehicleTires = $dashboardCanPermission('navigation.tires');
+    $canAccessVehicleTires = $dashboardCanPermission('navigation.tires') && $dashboardCanPermission('tires.view');
+
+    $dashboardVehicleActions = [
+        'maintenance' => $canAccessVehicleMaintenance,
+        'history' => $dashboardCanPermission('vehicles.view'),
+        'panel' => $dashboardCanPermission('navigation.vehicles') && $dashboardCanPermission('vehicles.view'),
+        'tires' => $canAccessVehicleTires,
+        'fuel' => $canFillVehicle,
+        'edit' => $dashboardCanPermission('vehicles.update'),
+    ];
 
 
 
@@ -116,7 +119,7 @@
 
 
 
-    x-data="dashboardFleet()"
+    x-data='dashboardFleet(@json($dashboardVehicleActions))'
 
 >
 
@@ -2349,6 +2352,8 @@
 
             {{-- AÇÕES RÁPIDAS --}}
 
+            @if(false)
+
 
 
             <section class="side-widget">
@@ -2622,6 +2627,8 @@
             </section>
 
 
+
+            @endif
 
     </aside>
 
@@ -2919,6 +2926,8 @@
 
                     :href="`/vehicles/${vehicle.id}/details`"
 
+                    x-show="vehicleActions.panel"
+
                 >
 
                     <i class="bi bi-box-arrow-up-right"></i>
@@ -3069,6 +3078,8 @@
 
                 class="vehicle-modal-action primary"
 
+                x-show="vehicleActions.maintenance"
+
             >
 
                 <i class="bi bi-wrench-adjustable"></i>
@@ -3085,6 +3096,8 @@
 
                 class="vehicle-modal-action"
 
+                x-show="vehicleActions.history"
+
             >
 
                 <i class="bi bi-clock-history"></i>
@@ -3100,6 +3113,8 @@
                 :href="`/vehicles/${vehicle.id}/tires`"
 
                 class="vehicle-modal-action"
+
+                x-show="vehicleActions.tires"
 
             >
 
@@ -3119,6 +3134,8 @@
 
                     class="vehicle-modal-action"
 
+                    x-show="vehicleActions.fuel"
+
                 >
 
                     <i class="bi bi-fuel-pump"></i>
@@ -3136,6 +3153,8 @@
                 :href="`/vehicles/${vehicle.id}/edit`"
 
                 class="vehicle-modal-action"
+
+                x-show="vehicleActions.edit"
 
             >
 
@@ -7750,7 +7769,7 @@
 
 
 
-function dashboardFleet() {
+function dashboardFleet(vehicleActions = {}) {
 
 
 
@@ -7807,6 +7826,8 @@ function dashboardFleet() {
 
 
         vehicle: {},
+
+        vehicleActions,
 
         originalOperationalStatus: '',
 

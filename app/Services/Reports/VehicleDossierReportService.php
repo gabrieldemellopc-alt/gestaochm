@@ -783,7 +783,7 @@ class VehicleDossierReportService
     private function fuelFillings(array $context, Vehicle $vehicle, array $filters): Collection
     {
         return FuelFilling::query()
-            ->with(['tank.product', 'product', 'driver', 'responsible'])
+            ->with(['tank.product', 'product', 'responsible'])
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
@@ -812,8 +812,6 @@ class VehicleDossierReportService
             'document_number' => $filling->document_number,
             'location_label' => $filling->location_label,
             'tank_name' => $filling->location_label,
-            'driver' => $filling->driver,
-            'driver_name' => $filling->driver?->name ?? 'Não informado',
             'vehicle_km' => $filling->vehicle_km !== null ? (float) $filling->vehicle_km : null,
             'vehicle_km_status' => $filling->vehicle_km_status,
             'vehicle_hours' => $filling->vehicle_hours !== null ? (float) $filling->vehicle_hours : null,

@@ -711,10 +711,10 @@ html[data-chm-theme="corporate-light"] .fuel-modal-close {
 
     width: 100%;
 
-    border: 1px solid rgba(255,255,255,.18);
+    border: 1px solid var(--chm-theme-border, rgba(255,255,255,.18));
     border-radius: 12px;
 
-    background: rgba(255,255,255,.06);
+    background: var(--chm-theme-input, rgba(255,255,255,.06));
     overflow: hidden;
 }
 
@@ -730,9 +730,9 @@ html[data-chm-theme="corporate-light"] .fuel-modal-close {
     font-weight: 900;
     letter-spacing: .08em;
 
-    color: rgba(255,255,255,.78);
-    background: rgba(255,255,255,.08);
-    border-right: 1px solid rgba(255,255,255,.14);
+    color: var(--chm-theme-muted, rgba(255,255,255,.78));
+    background: var(--chm-theme-card-elevated, rgba(255,255,255,.08));
+    border-right: 1px solid var(--chm-theme-border, rgba(255,255,255,.14));
 }
 
 .input-with-badge input {
@@ -767,6 +767,27 @@ html[data-chm-theme="corporate-light"] .fuel-modal-close {
     text-transform: uppercase;
 
     color: rgba(255,255,255,.42);
+}
+
+.receipt-grid .receipt-supplier-field {
+    align-self: start;
+}
+
+.receipt-grid .receipt-unit-cost-preview {
+    position: relative;
+    min-height: 112px;
+    justify-content: center;
+}
+
+.receipt-grid .receipt-unit-cost-preview strong {
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.receipt-grid .receipt-unit-cost-preview::after {
+    top: 16px;
+    right: 18px;
+    color: var(--chm-theme-muted, rgba(255,255,255,.58));
 }
 .fuel-cost-preview {
     padding: 16px 18px;

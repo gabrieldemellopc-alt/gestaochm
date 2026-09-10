@@ -390,7 +390,7 @@ Route::middleware('auth')->group(function () {
 
 
 
-    Route::middleware('permission:vehicles.view')->group(function () {
+    Route::middleware(['permission:navigation.vehicles', 'permission:vehicles.view'])->group(function () {
 
     Route::get(
 
@@ -1051,6 +1051,8 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
 
         ->controller(FuelTankController::class)
 
+        ->middleware('permission:navigation.fuel')
+
         ->group(function () {
 
 
@@ -1259,7 +1261,7 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
 
             'module:fleet',
 
-            'profile:supervisor,manager',
+            'permission:reports.view',
 
         ])
 

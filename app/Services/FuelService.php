@@ -73,6 +73,8 @@ class FuelService
             'quantity_liters' => ['required', 'numeric', 'gt:0'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
             'total_cost' => ['nullable', 'numeric', 'min:0'],
+            'source_unit_cost' => ['nullable', 'numeric', 'min:0'],
+            'source_total_cost' => ['nullable', 'numeric', 'min:0'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'supplier_id' => ['nullable', 'integer'],
             'supplier_document' => ['nullable', 'string', 'max:20'],
@@ -88,6 +90,11 @@ class FuelService
             $this->ensureProductMatchesTank($tank, $validated['fuel_product_id'] ?? null);
 
             $quantity = $this->decimal($validated['quantity_liters'], 3);
+            $sourceUnitCost = $this->nullableDecimal($validated['source_unit_cost'] ?? $validated['unit_cost'] ?? null, 6);
+            $sourceTotalCost = $this->nullableDecimal($validated['source_total_cost'] ?? $validated['total_cost'] ?? null, 3);
+            if ($sourceTotalCost === null && $sourceUnitCost !== null) {
+                $sourceTotalCost = $this->decimal($quantity * $sourceUnitCost, 3);
+            }
             $totalCost = $this->nullableDecimal($validated['total_cost'] ?? null, 2);
 
             $unitCost = $this->resolveUnitCostFromTotal(
@@ -122,7 +129,9 @@ class FuelService
                 'received_at' => Carbon::parse($validated['received_at']),
                 'quantity_liters' => $quantity,
                 'unit_cost' => $unitCost,
+                'source_unit_cost' => $sourceUnitCost,
                 'total_cost' => $totalCost,
+                'source_total_cost' => $sourceTotalCost,
                 'supplier_name' => $validated['supplier_name'] ?? null,
                 'supplier_id' => $validated['supplier_id'] ?? null,
                 'supplier_document' => $validated['supplier_document'] ?? null,

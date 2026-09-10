@@ -3843,7 +3843,7 @@
     min-width: 0;
     border: 1px solid var(--ac-border-strong);
     border-radius: 7px;
-    color: var(--ac-text);
+    color: #fff;
     background: #202d42;
     box-shadow: none;
 }
@@ -4254,7 +4254,17 @@ html[data-chm-theme="corporate-light"] .access-control-page .chm-select { backgr
 
 .access-control-page .nf-input::placeholder,
 .access-control-page .chm-input::placeholder {
-    color: rgba(203, 213, 225, .55);
+    color: rgba(255, 255, 255, .72);
+    opacity: 1;
+}
+
+.access-control-page .chm-select option {
+    color: #fff;
+    background: var(--ac-input);
+}
+
+.access-control-page .chm-access-builder .chm-access-field:first-child {
+    margin-left: 8px;
 }
 
 .access-control-page .nf-input:focus,

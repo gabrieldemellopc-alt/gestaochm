@@ -66,7 +66,7 @@ class FuelReportService
             'total_received_liters' => $this->sumDecimal($receipts, 'quantity_liters'),
             'total_filled_liters' => $this->sumDecimal($fillings, 'quantity_liters'),
             'total_received_cost' => $this->sumDecimal($receipts, 'total_cost'),
-            'total_filled_cost' => $this->sumDecimal($fillings, 'total_cost'),
+            'total_filled_cost' => $this->sumReportingCost($fillings),
             'average_cost_per_liter' => $this->averageCostPerLiter($receipts, $fillings),
             'vehicles_filled_count' => $fillings->pluck('vehicle_id')->filter()->unique()->count(),
             'fillings_without_km_hr' => $fillings
@@ -256,7 +256,7 @@ class FuelReportService
     private function fillingsQuery(array $context, array $filters): Builder
     {
         $query = FuelFilling::query()
-            ->with(['tank.product', 'product', 'vehicle', 'driver', 'responsible'])
+            ->with(['tank.product', 'product', 'vehicle', 'responsible'])
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
@@ -457,7 +457,7 @@ class FuelReportService
     private function latestFillings(array $context, array $filters): Collection
     {
         $query = FuelFilling::query()
-            ->with(['tank.product', 'product', 'vehicle', 'driver', 'responsible'])
+            ->with(['tank.product', 'product', 'vehicle', 'responsible'])
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division']->id)
             ->where('location_id', $context['location']->id)
@@ -560,13 +560,18 @@ class FuelReportService
     private function averageCostPerLiter(Collection $receipts, Collection $fillings): ?float
     {
         $liters = $this->sumDecimal($receipts, 'quantity_liters') + $this->sumDecimal($fillings, 'quantity_liters');
-        $cost = $this->sumDecimal($receipts, 'total_cost') + $this->sumDecimal($fillings, 'total_cost');
+        $cost = $this->sumDecimal($receipts, 'total_cost') + $this->sumReportingCost($fillings);
 
         if ($liters <= 0 || $cost <= 0) {
             return null;
         }
 
         return round($cost / $liters, 4);
+    }
+
+    private function sumReportingCost(Collection $fillings): float
+    {
+        return round((float) $fillings->sum(fn (FuelFilling $filling) => $filling->reporting_total_cost ?? 0), 3);
     }
 
     private function combinedConsumptionStatus(array $kmResult, array $hoursResult): string
