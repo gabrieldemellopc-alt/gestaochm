@@ -122,6 +122,48 @@ class StockCategoryManagementTest extends TestCase
         $this->assertSame(0.0, (float) $disabled->fresh()->unit_cost);
     }
 
+    public function test_item_category_can_be_changed_within_tenant_without_rewriting_movements_and_is_audited(): void
+    {
+        $old = StockCategory::create(['tenant_id' => $this->context['tenant']->id, 'name' => 'Filtros']);
+        $new = StockCategory::create(['tenant_id' => $this->context['tenant']->id, 'name' => 'Lubrificantes']);
+        $item = StockItem::create(['tenant_id' => $this->context['tenant']->id, 'location_id' => $this->context['location']->id, 'stock_category_id' => $old->id, 'name' => 'Filtro', 'unit' => 'UNID', 'minimum_quantity' => 1]);
+        $movement = \App\Models\StockMovement::create(['tenant_id' => $this->context['tenant']->id, 'location_id' => $this->context['location']->id, 'stock_item_id' => $item->id, 'movement_type' => 'in', 'quantity' => 2, 'unit_cost' => 10, 'total_cost' => 20, 'description' => 'Entrada existente']);
+
+        $this->get(route('stock.items.data', $item))->assertOk()->assertJsonPath('category.id', $old->id);
+        $this->put(route('stock.items.update', $item), ['stock_category_id' => $new->id, 'name' => 'Filtro', 'unit' => 'UNID', 'minimum_quantity' => 1])->assertRedirect();
+
+        $this->assertSame($new->id, $item->fresh()->stock_category_id);
+        $this->assertDatabaseHas('stock_movements', ['id' => $movement->id, 'stock_item_id' => $item->id, 'description' => 'Entrada existente']);
+        $audit = SystemAuditLog::query()->where('auditable_type', StockItem::class)->where('auditable_id', $item->id)->where('action', 'updated')->latest('id')->firstOrFail();
+        $this->assertSame('Filtros', $audit->before_data['category']['name']);
+        $this->assertSame('Lubrificantes', $audit->after_data['category']['name']);
+    }
+
+    public function test_item_update_rejects_category_from_another_tenant(): void
+    {
+        $local = StockCategory::create(['tenant_id' => $this->context['tenant']->id, 'name' => 'Local']);
+        $foreignTenant = Tenant::create(['name' => 'Outro tenant']);
+        $foreign = StockCategory::create(['tenant_id' => $foreignTenant->id, 'name' => 'Estrangeira']);
+        $item = StockItem::create(['tenant_id' => $this->context['tenant']->id, 'location_id' => $this->context['location']->id, 'stock_category_id' => $local->id, 'name' => 'Item', 'unit' => 'UNID', 'minimum_quantity' => 0]);
+
+        $this->put(route('stock.items.update', $item), ['stock_category_id' => $foreign->id, 'name' => 'Item', 'unit' => 'UNID', 'minimum_quantity' => 0])->assertSessionHasErrors('stock_category_id');
+        $this->assertSame($local->id, $item->fresh()->stock_category_id);
+    }
+
+    public function test_user_without_item_management_permission_cannot_change_category(): void
+    {
+        $category = StockCategory::create(['tenant_id' => $this->context['tenant']->id, 'name' => 'Filtros']);
+        $replacement = StockCategory::create(['tenant_id' => $this->context['tenant']->id, 'name' => 'Óleos']);
+        $item = StockItem::create(['tenant_id' => $this->context['tenant']->id, 'location_id' => $this->context['location']->id, 'stock_category_id' => $category->id, 'name' => 'Item', 'unit' => 'UNID', 'minimum_quantity' => 0]);
+        $user = User::factory()->create(['tenant_id' => $this->context['tenant']->id]);
+        UserDivisionAccess::create(['tenant_id' => $this->context['tenant']->id, 'user_id' => $user->id, 'division_id' => $this->context['division']->id, 'location_id' => $this->context['location']->id, 'module' => 'fleet', 'profile' => 'supervisor', 'active' => true]);
+
+        $this->actingAs($user)->withSession(['active_division_id' => $this->context['division']->id, 'active_location_id' => $this->context['location']->id])
+            ->put(route('stock.items.update', $item), ['stock_category_id' => $replacement->id, 'name' => 'Item', 'unit' => 'UNID', 'minimum_quantity' => 0])
+            ->assertForbidden();
+        $this->assertSame($category->id, $item->fresh()->stock_category_id);
+    }
+
     public function test_categories_of_another_tenant_and_users_without_permission_are_blocked(): void
     {
         $otherTenant = Tenant::create(['name' => 'Outro tenant']);

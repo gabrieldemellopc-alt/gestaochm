@@ -1581,6 +1581,18 @@ c94c55
 
 }
 
+.stock-modal-form .stock-form-helper-link {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 2px;
+    color: var(--primary-color, var(--button-primary));
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.stock-modal-form .stock-form-helper-link:hover { text-decoration: underline; }
+
 
 
 .stock-modal-form .form-input {

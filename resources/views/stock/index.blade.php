@@ -1524,6 +1524,18 @@
 
                         </div>
 
+                        <div class="form-group">
+                            <label for="inputItemCategory">Categoria</label>
+                            <select id="inputItemCategory" name="stock_category_id" class="form-input" required>
+                                @foreach($stockEditCategories as $editCategory)
+                                    <option value="{{ $editCategory->id }}">{{ $editCategory->name }}</option>
+                                @endforeach
+                            </select>
+                            @if($canManageStockCategories)
+                                <a href="#" class="stock-form-helper-link" onclick="event.preventDefault(); openCategoryModal();">Gerenciar categorias</a>
+                            @endif
+                        </div>
+
 
 
                         <div class="form-group">
@@ -2446,6 +2458,8 @@ async function openEditItemModal(id)
 
             item.unit;
 
+    document.getElementById('inputItemCategory').value = item.stock_category_id;
+
 
 
     document
@@ -2514,10 +2528,15 @@ async function openEditItemModal(id)
 
 
         item.movements.forEach(movement => {
+            if (movement.history_hidden) return;
+
             const isCancelled = Boolean(movement.cancelled_at);
             const isReversal = Boolean(movement.reversed_from_movement_id);
             const isMaintenance = Boolean(movement.maintenance_record_id);
             const isReverted = Boolean(movement.reversal_movement_id);
+            const historyRole = movement.history_role || null;
+            const isMaintenanceCancellation = isCancelled && isMaintenance && isReverted;
+            const isMaintenanceCancellationOutput = historyRole === 'direct_purchase_cancellation';
             const canCancelMovement = canCancelStockMovements
                 && !isCancelled
                 && !isReversal
@@ -2529,7 +2548,11 @@ async function openEditItemModal(id)
             ].filter(Boolean).join(' ');
             const movementBadges = [
                 isCancelled ? '<span class="stock-status-badge danger">Cancelada</span>' : '',
-                isReversal ? '<span class="stock-status-badge warning">Reversão</span>' : '',
+                historyRole === 'direct_purchase_entry' ? '<span class="stock-status-badge info">Compra direta da OM</span>' : '',
+                isMaintenanceCancellation ? '<span class="stock-status-badge warning">Cancelamento da OM</span>' : '',
+                isMaintenanceCancellationOutput
+                    ? '<span class="stock-status-badge warning">Cancelamento da OM</span>'
+                    : (isReversal ? '<span class="stock-status-badge warning">Reversão</span>' : ''),
                 isMaintenance ? '<span class="stock-status-badge info">Manutenção</span>' : '',
                 isReverted && !isCancelled ? '<span class="stock-status-badge muted">Revertida</span>' : '',
             ].filter(Boolean).join('');
@@ -2538,7 +2561,9 @@ async function openEditItemModal(id)
                 : '';
             const lockReason = !canCancelMovement
                 ? (isCancelled
-                    ? 'Movimento já cancelado.'
+                    ? (isMaintenanceCancellation
+                        ? 'Consumo cancelado pelo cancelamento da manutenção.'
+                        : 'Movimento já cancelado.')
                     : (isReversal
                         ? 'Movimento reverso não pode ser cancelado diretamente.'
                         : (isMaintenance
@@ -2551,9 +2576,15 @@ async function openEditItemModal(id)
             const movementIcon = isCancelled
                 ? 'circle-x'
                 : (isReversal ? 'rotate-ccw' : (movement.movement_type === 'in' ? 'arrow-down-left' : 'arrow-up-right'));
-            const movementTitle = isReversal
-                ? 'Reversão'
-                : (movement.movement_type === 'in' ? 'Entrada' : 'Saída');
+            const movementTitle = historyRole === 'direct_purchase_entry'
+                ? 'Entrada pela OM'
+                : (isMaintenanceCancellationOutput
+                ? 'Saída por cancelamento da manutenção'
+                : (isMaintenanceCancellation
+                    ? 'Saída cancelada pela manutenção'
+                    : (isReversal
+                        ? 'Reversão'
+                        : (movement.movement_type === 'in' ? 'Entrada' : 'Saída'))));
             const movementQuantity = Number(movement.quantity || 0).toLocaleString('pt-BR', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
