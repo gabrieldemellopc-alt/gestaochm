@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Division;
 use App\Models\Location;
+use App\Models\ProfilePermissionOverride;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Models\Tenant;
@@ -82,9 +83,57 @@ class WorkshopFinancialTest extends TestCase
         $this->assertTrue((bool) $allowed->is_workshop_consumable);
     }
 
+    public function test_expense_update_and_soft_delete_require_specific_permissions_and_keep_audit_history(): void
+    {
+        [$user, $location] = $this->context();
+        $expense = WorkshopExpense::create(['tenant_id'=>$user->tenant_id,'division_id'=>$location->division_id,'location_id'=>$location->id,'expense_date'=>now(),'category'=>'tools','description'=>'Original','amount'=>10,'created_by'=>$user->id]);
+        $session = ['active_division_id'=>$location->division_id,'active_location_id'=>$location->id];
+        $payload = ['expense_date'=>now()->toDateString(),'category'=>'tools','description'=>'Alterada','amount'=>20];
+        $this->actingAs($user)->withSession($session)->put(route('workshop.expenses.update', $expense), $payload)->assertForbidden();
+        $this->grant($user, $location, 'workshop.expenses.update');
+        $this->actingAs($user)->withSession($session)->put(route('workshop.expenses.update', $expense), $payload)->assertRedirect();
+        $this->assertDatabaseHas('workshop_expenses', ['id'=>$expense->id,'description'=>'Alterada','amount'=>20]);
+        $this->grant($user, $location, 'workshop.expenses.delete');
+        $this->actingAs($user)->withSession($session)->delete(route('workshop.expenses.destroy', $expense))->assertRedirect();
+        $this->assertSoftDeleted('workshop_expenses', ['id'=>$expense->id]);
+        $this->assertDatabaseHas('system_audit_logs', ['auditable_id'=>$expense->id,'action'=>'deleted','module'=>'workshop']);
+    }
+
+    public function test_consumption_deletion_reverses_stock_once_and_cannot_be_repeated(): void
+    {
+        [$user, $location] = $this->context();
+        $session = ['active_division_id'=>$location->division_id,'active_location_id'=>$location->id];
+        $this->actingAs($user)->withSession($session); session($session);
+        $item = StockItem::create(['tenant_id'=>$user->tenant_id,'location_id'=>$location->id,'name'=>'Graxa','unit'=>'L','quantity'=>10,'minimum_quantity'=>0,'unit_cost'=>12,'active'=>true,'is_workshop_consumable'=>true]);
+        $movement = app(WorkshopConsumptionService::class)->record($item, 2, now()->toDateString(), 'Uso interno', $user);
+        $this->grant($user, $location, 'workshop.consumptions.delete');
+        $this->actingAs($user)->withSession($session)->delete(route('workshop.consumption.destroy', $movement))->assertRedirect();
+        $this->assertSame(10.0, (float) $item->fresh()->quantity);
+        $this->assertNotNull($movement->fresh()->cancelled_at);
+        $this->assertDatabaseHas('stock_movements', ['reversed_from_movement_id'=>$movement->id,'movement_type'=>'in','quantity'=>2]);
+        $this->actingAs($user)->withSession($session)->delete(route('workshop.consumption.destroy', $movement))->assertSessionHasErrors('consumption');
+        $this->assertDatabaseCount('stock_movements', 2);
+    }
+
+    public function test_consumption_correction_reverses_original_before_creating_the_replacement(): void
+    {
+        [$user, $location] = $this->context();
+        $session = ['active_division_id'=>$location->division_id,'active_location_id'=>$location->id];
+        $this->actingAs($user)->withSession($session); session($session);
+        $item = StockItem::create(['tenant_id'=>$user->tenant_id,'location_id'=>$location->id,'name'=>'Óleo','unit'=>'L','quantity'=>10,'minimum_quantity'=>0,'unit_cost'=>10,'active'=>true,'is_workshop_consumable'=>true]);
+        $original = app(WorkshopConsumptionService::class)->record($item, 2, now()->toDateString(), 'Original', $user);
+        $this->grant($user, $location, 'workshop.consumptions.update');
+        $this->actingAs($user)->withSession($session)->put(route('workshop.consumption.update', $original), ['stock_item_id'=>$item->id,'quantity'=>3,'moved_at'=>now()->toDateString(),'notes'=>'Corrigido'])->assertRedirect();
+        $this->assertNotNull($original->fresh()->cancelled_at);
+        $this->assertSame(7.0, (float) $item->fresh()->quantity);
+        $this->assertDatabaseHas('stock_movements', ['reversed_from_movement_id'=>$original->id,'movement_type'=>'in','quantity'=>2]);
+        $this->assertDatabaseHas('stock_movements', ['movement_type'=>'out','quantity'=>3,'description'=>StockMovement::WORKSHOP_CONSUMPTION_PREFIX.' Corrigido']);
+    }
+
     private function context(): array
     {
         $tenant=Tenant::create(['name'=>'Oficina']); $division=Division::create(['tenant_id'=>$tenant->id,'name'=>'Divisão']); $location=Location::create(['tenant_id'=>$tenant->id,'division_id'=>$division->id,'name'=>'Local']); User::factory()->create(['tenant_id'=>$tenant->id]); $user=User::factory()->create(['tenant_id'=>$tenant->id]); UserDivisionAccess::create(['tenant_id'=>$tenant->id,'user_id'=>$user->id,'division_id'=>$division->id,'location_id'=>$location->id,'module'=>'fleet','profile'=>'supervisor','active'=>true]); return [$user,$location];
     }
     private function otherLocation(User $user): Location { return Location::firstOrCreate(['tenant_id'=>$user->tenant_id,'division_id'=>Division::first()->id,'name'=>'Outro local']); }
+    private function grant(User $user, Location $location, string $permission): void { ProfilePermissionOverride::updateOrCreate(['tenant_id'=>$user->tenant_id,'division_id'=>$location->division_id,'location_id'=>$location->id,'module'=>'fleet','profile'=>'supervisor','permission_key'=>$permission], ['allowed'=>true,'created_by'=>$user->id,'updated_by'=>$user->id]); }
 }

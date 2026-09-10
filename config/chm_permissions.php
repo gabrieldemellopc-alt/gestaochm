@@ -84,6 +84,19 @@ return [
             ],
         ],
 
+        'workshop_financial' => [
+            'label' => 'Financeiro da Oficina',
+            'description' => 'Permissões específicas para despesas operacionais e consumos internos da oficina.',
+            'permissions' => [
+                'workshop.expenses.create' => ['label' => 'Registrar despesas da oficina', 'default' => ['supervisor' => true]],
+                'workshop.expenses.update' => ['label' => 'Editar despesas da oficina', 'default' => ['supervisor' => false]],
+                'workshop.expenses.delete' => ['label' => 'Excluir despesas da oficina', 'default' => ['supervisor' => false]],
+                'workshop.consumptions.create' => ['label' => 'Registrar consumo interno da oficina', 'default' => ['supervisor' => true]],
+                'workshop.consumptions.update' => ['label' => 'Corrigir consumo interno da oficina', 'default' => ['supervisor' => false]],
+                'workshop.consumptions.delete' => ['label' => 'Reverter consumo interno da oficina', 'default' => ['supervisor' => false]],
+            ],
+        ],
+
         'fuel' => [
             'label' => 'Abastecimentos',
             'description' => 'Permissões para recebimentos, abastecimentos internos/externos e custos de combustível.',

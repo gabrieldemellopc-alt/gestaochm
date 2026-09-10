@@ -6,6 +6,7 @@ use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Models\WorkshopExpense;
 use App\Services\ActiveContextService;
+use App\Services\Permissions\ProfilePermissionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -29,6 +30,7 @@ class WorkshopFinancialComposer
             'workshopOperationalCostMonth' => 0.0,
             'workshopConsumableStockItems' => collect(),
             'workshopExpenseCategories' => WorkshopExpense::LABELS,
+            'workshopFinancialPermissions' => ['expenses_update' => false, 'expenses_delete' => false, 'consumptions_update' => false, 'consumptions_delete' => false],
         ];
 
         if (! $user || ! $location) {
@@ -81,6 +83,12 @@ class WorkshopFinancialComposer
             'workshopConsumptionRecent' => $movementQuery ? (clone $movementQuery)->latest('moved_at')->latest('id')->limit(5)->get() : collect(),
             'workshopOperationalCostMonth' => round($expenseMonthTotal + $consumptionMonthTotal, 2),
             'workshopConsumableStockItems' => $stockItems,
+            'workshopFinancialPermissions' => [
+                'expenses_update' => app(ProfilePermissionService::class)->allows($user, 'workshop.expenses.update', ['tenant_id'=>$user->tenant_id, 'division_id'=>$location->division_id, 'location_id'=>$location->id, 'module'=>'fleet']),
+                'expenses_delete' => app(ProfilePermissionService::class)->allows($user, 'workshop.expenses.delete', ['tenant_id'=>$user->tenant_id, 'division_id'=>$location->division_id, 'location_id'=>$location->id, 'module'=>'fleet']),
+                'consumptions_update' => app(ProfilePermissionService::class)->allows($user, 'workshop.consumptions.update', ['tenant_id'=>$user->tenant_id, 'division_id'=>$location->division_id, 'location_id'=>$location->id, 'module'=>'fleet']),
+                'consumptions_delete' => app(ProfilePermissionService::class)->allows($user, 'workshop.consumptions.delete', ['tenant_id'=>$user->tenant_id, 'division_id'=>$location->division_id, 'location_id'=>$location->id, 'module'=>'fleet']),
+            ],
         ]);
     }
 }

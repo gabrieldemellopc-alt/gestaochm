@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkshopExpense extends Model
 {
+    use SoftDeletes;
     public const CATEGORIES = ['tools', 'equipment', 'ppe', 'cleaning', 'service', 'consumables', 'other'];
     public const LABELS = ['tools'=>'Ferramentas','equipment'=>'Equipamentos','ppe'=>'EPI','cleaning'=>'Limpeza','service'=>'Serviços da oficina','consumables'=>'Materiais de consumo','other'=>'Outros'];
     protected $fillable = ['tenant_id','division_id','location_id','expense_date','category','description','supplier_name','supplier_id','supplier_document','invoice_number','amount','notes','created_by'];
