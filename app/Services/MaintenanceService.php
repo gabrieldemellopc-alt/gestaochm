@@ -101,6 +101,9 @@ class MaintenanceService
                 ]);
     
                 $movement->update([
+                    'cancelled_at' => now(),
+                    'cancelled_by' => $user->id,
+                    'cancel_reason' => 'Consumo revertido por cancelamento da OM: '.$reason,
                     'reversal_movement_id' => $reverseMovement->id,
                 ]);
 
@@ -115,17 +118,32 @@ class MaintenanceService
                     $usage->update([
                         'cancelled_at' => now(),
                         'cancelled_by' => $user->id,
-                        'cancel_reason' => $reason,
+                        'cancel_reason' => 'Consumo revertido por cancelamento da OM: '.$reason,
                         'reversal_movement_id' => $reverseMovement->id,
                     ]);
 
                     if ($usage->purchase_entry_movement_id) {
-                        $reverseMovements->push(self::reverseDirectPurchaseEntry(
-                            $maintenance,
-                            $usage,
-                            $reason,
-                            $user
-                        ));
+                        // The direct-purchase entry is a real acquisition and must
+                        // remain in history. Reversing the consumption above is what
+                        // makes the purchased material available again in stock.
+                        app(AuditLogService::class)->record([
+                            'tenant_id' => $movement->tenant_id,
+                            'division_id' => $vehicle->division_id,
+                            'location_id' => $movement->location_id,
+                            'module' => 'stock',
+                            'auditable_type' => StockMovement::class,
+                            'auditable_id' => $usage->purchase_entry_movement_id,
+                            'action' => 'updated',
+                            'summary' => 'Compra direta preservada; saldo devolvido pelo cancelamento da manutenção #'.$maintenance->id.'.',
+                            'metadata' => [
+                                'maintenance_record_id' => $maintenance->id,
+                                'purchase_entry_movement_id' => $usage->purchase_entry_movement_id,
+                                'consumption_movement_id' => $movement->id,
+                                'reversal_movement_id' => $reverseMovement->id,
+                                'quantity_returned_to_stock' => $movement->quantity,
+                            ],
+                            'reason' => $reason,
+                        ]);
                     }
                 }
     
@@ -147,6 +165,23 @@ class MaintenanceService
                         'original_stock_movement_id' => $movement->id,
                         'stock_item_id' => $movement->stock_item_id,
                         'quantity_reversed' => $movement->quantity,
+                    ],
+                    'reason' => $reason,
+                ]);
+
+                app(AuditLogService::class)->reversed($movement->fresh(), [
+                    'tenant_id' => $movement->tenant_id,
+                    'division_id' => $vehicle->division_id,
+                    'location_id' => $movement->location_id,
+                    'module' => 'maintenance',
+                    'summary' => 'Consumo revertido por cancelamento da OM #'.$maintenance->id.'.',
+                    'metadata' => [
+                        'maintenance_record_id' => $maintenance->id,
+                        'stock_item_id' => $movement->stock_item_id,
+                        'quantity' => $movement->quantity,
+                        'original_stock_movement_id' => $movement->id,
+                        'reversal_stock_movement_id' => $reverseMovement->id,
+                        'user_id' => $user->id,
                     ],
                     'reason' => $reason,
                 ]);
