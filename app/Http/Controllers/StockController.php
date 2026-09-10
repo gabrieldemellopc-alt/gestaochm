@@ -109,8 +109,15 @@ class StockController extends Controller
             }
         }
 
+        // Categories are tenant-scoped (not location-scoped), so the item edit
+        // modal must receive the full tenant catalog even while the page is filtered.
+        $stockEditCategories = StockCategory::query()
+            ->where('tenant_id', $tenantId)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         $stockEntryInvoiceRequired = app(TenantFiscalSettingService::class)->requires('stock_entry');
-        return view('stock.index', compact('categories', 'search', 'stockPermissions', 'stockEntryInvoiceRequired'));
+        return view('stock.index', compact('categories', 'search', 'stockPermissions', 'stockEntryInvoiceRequired', 'stockEditCategories'));
     }
 
     /** Normalize text without changing the values persisted in the database. */
@@ -611,7 +618,16 @@ class StockController extends Controller
 
         $this->authorizeStockPermission('stock.manage_items');
 
+        $tenantId = auth()->user()->tenant_id;
         $validated = $request->validate([
+            'stock_category_id' => [
+                'sometimes', 'required', 'integer',
+                function ($attribute, $value, $fail) use ($tenantId) {
+                    if (! StockCategory::query()->where('tenant_id', $tenantId)->whereKey($value)->exists()) {
+                        $fail('A categoria selecionada não pertence ao tenant atual.');
+                    }
+                },
+            ],
             'name' => ['required', 'string', 'max:255'],
             'brand' => ['nullable', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:50'],
@@ -622,10 +638,24 @@ class StockController extends Controller
 
         $isWorkshopConsumable = (bool) ($validated['is_workshop_consumable'] ?? false);
 
-        $item->update([
-            ...$validated,
-            'is_workshop_consumable' => $isWorkshopConsumable,
-        ]);
+        $validated['stock_category_id'] ??= $item->stock_category_id;
+
+        DB::transaction(function () use ($item, $validated, $isWorkshopConsumable, $tenantId) {
+            $item = StockItem::query()->whereKey($item->id)->where('tenant_id', $tenantId)->lockForUpdate()->firstOrFail();
+            $before = $item->toArray();
+            $beforeCategory = StockCategory::query()->where('tenant_id', $tenantId)->find($item->stock_category_id);
+            $category = StockCategory::query()->where('tenant_id', $tenantId)->whereKey($validated['stock_category_id'])->lockForUpdate()->firstOrFail();
+            $item->update([...$validated, 'is_workshop_consumable' => $isWorkshopConsumable]);
+
+            app(AuditLogService::class)->updated($item, [
+                'tenant_id' => $tenantId,
+                'location_id' => $item->location_id,
+                'module' => 'stock',
+                'summary' => 'Item de estoque atualizado.',
+                'before_data' => ['item' => $before, 'category' => ['id' => $beforeCategory?->id, 'name' => $beforeCategory?->name]],
+                'after_data' => ['item' => $item->fresh()->toArray(), 'category' => ['id' => $category->id, 'name' => $category->name]],
+            ]);
+        });
 
         return redirect()->back();
     }
