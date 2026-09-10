@@ -12,7 +12,7 @@ class MaintenanceFinishedAtTest extends TestCase
 
         $this->assertStringContainsString('name="finished_at"', $view);
         $this->assertStringContainsString('type="datetime-local"', $view);
-        $this->assertStringContainsString("old('finished_at', now()->format('Y-m-d\\TH:i'))", $view);
+        $this->assertStringContainsString("old('finished_at', now(config('app.timezone'))->format('Y-m-d\\TH:i'))", $view);
         $this->assertStringContainsString('required', $view);
     }
 
@@ -22,9 +22,9 @@ class MaintenanceFinishedAtTest extends TestCase
 
         $this->assertStringContainsString("'finished_at' => [", $controller);
         $this->assertStringContainsString("'required'", $controller);
-        $this->assertStringContainsString("'date'", $controller);
-        $this->assertStringContainsString('->afterOrEqual($maintenance->started_at ?? $maintenance->created_at)', $controller);
-        $this->assertStringContainsString('->beforeOrEqual(now())', $controller);
+        $this->assertStringContainsString('MaintenanceService::validateClosingDateTime(', $controller);
+        $service = file_get_contents(app_path('Services/MaintenanceService.php'));
+        $this->assertStringContainsString('A data e hora do encerramento não pode ser anterior à abertura da manutenção.', $service);
     }
 
     public function test_close_persists_the_informed_value_and_retains_a_defensive_fallback(): void
@@ -32,7 +32,9 @@ class MaintenanceFinishedAtTest extends TestCase
         $service = file_get_contents(app_path('Services/MaintenanceService.php'));
 
         $this->assertStringContainsString('?string $finishedAt = null', $service);
-        $this->assertStringContainsString('$effectiveFinishedAt = $finishedAt ? Carbon::parse($finishedAt) : now();', $service);
+        $this->assertStringContainsString('$effectiveFinishedAt = $finishedAt', $service);
+        $this->assertStringContainsString('? self::validateClosingDateTime($finishedAt, $maintenance->started_at ?? $maintenance->created_at)', $service);
+        $this->assertStringContainsString("Carbon::now(\$timezone)->addMinute()", $service);
         $this->assertStringContainsString("'finished_at' => \$effectiveFinishedAt", $service);
     }
 

@@ -1249,22 +1249,10 @@ class MaintenanceService
                 ]);
             }
 
-            // datetime-local does not include an offset; Carbon therefore follows the
-            // application's existing timezone convention when parsing this value.
-            $effectiveFinishedAt = $finishedAt ? Carbon::parse($finishedAt) : now();
+            $effectiveFinishedAt = $finishedAt
+                ? self::validateClosingDateTime($finishedAt, $maintenance->started_at ?? $maintenance->created_at)
+                : Carbon::now(config('app.timezone'));
             $openedAt = $maintenance->started_at ?? $maintenance->created_at;
-
-            if ($openedAt && $effectiveFinishedAt->lt($openedAt)) {
-                throw ValidationException::withMessages([
-                    'finished_at' => 'A data e hora do encerramento não pode ser anterior à abertura da manutenção.',
-                ]);
-            }
-
-            if ($effectiveFinishedAt->gt(now())) {
-                throw ValidationException::withMessages([
-                    'finished_at' => 'A data e hora do encerramento não pode ser futura.',
-                ]);
-            }
     
             if (! $maintenance->hasAnyActiveComposition()) {
                 throw ValidationException::withMessages([
@@ -1345,6 +1333,42 @@ class MaintenanceService
     
             return $maintenanceAfter;
         });
+    }
+
+    /** Parse a datetime-local wall-clock value in the application timezone. */
+    public static function parseLocalDateTime(string $value): Carbon
+    {
+        $timezone = config('app.timezone');
+        foreach (['Y-m-d\\TH:i:s', 'Y-m-d\\TH:i'] as $format) {
+            try {
+                $parsed = Carbon::createFromFormat($format, $value, $timezone);
+                if ($parsed->format($format) === $value) return $parsed;
+            } catch (\Throwable) {
+                // Try the next supported datetime-local precision.
+            }
+        }
+        throw ValidationException::withMessages(['finished_at' => 'A data e hora do encerramento é inválida.']);
+    }
+
+    /** Validate a datetime-local closing value against the OM opening and local clock. */
+    public static function validateClosingDateTime(string $value, $openedAt = null): Carbon
+    {
+        $finishedAt = self::parseLocalDateTime($value);
+        $timezone = config('app.timezone');
+
+        if ($openedAt && $finishedAt->lt(Carbon::parse($openedAt)->setTimezone($timezone))) {
+            throw ValidationException::withMessages([
+                'finished_at' => 'A data e hora do encerramento não pode ser anterior à abertura da manutenção.',
+            ]);
+        }
+
+        if ($finishedAt->gt(Carbon::now($timezone)->addMinute())) {
+            throw ValidationException::withMessages([
+                'finished_at' => 'A data e hora do encerramento não pode ser futura.',
+            ]);
+        }
+
+        return $finishedAt;
     }
 
     public static function addExtraCost(

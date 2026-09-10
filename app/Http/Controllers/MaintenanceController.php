@@ -1090,15 +1090,20 @@ class MaintenanceController extends Controller
             ],
             'finished_at' => [
                 'required',
-                'date',
-                Rule::date()
-                    ->afterOrEqual($maintenance->started_at ?? $maintenance->created_at)
-                    ->beforeOrEqual(now()),
+                'string',
+                function ($attribute, $value, $fail) use ($maintenance) {
+                    try {
+                        MaintenanceService::validateClosingDateTime(
+                            $value,
+                            $maintenance->started_at ?? $maintenance->created_at
+                        );
+                    } catch (\Illuminate\Validation\ValidationException $exception) {
+                        $fail($exception->errors()['finished_at'][0] ?? 'A data e hora do encerramento é inválida.');
+                    }
+                },
             ],
             'closure_notes' => ['nullable', 'string', 'max:2000'],
         ], [
-            'finished_at.after_or_equal' => 'A data e hora do encerramento não pode ser anterior à abertura da manutenção.',
-            'finished_at.before_or_equal' => 'A data e hora do encerramento não pode ser futura.',
         ]);
 
         MaintenanceService::close(

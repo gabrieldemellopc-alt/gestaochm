@@ -552,7 +552,7 @@
                                 name="finished_at"
                                 type="datetime-local"
                                 class="form-input"
-                                value="{{ old('finished_at', now()->format('Y-m-d\TH:i')) }}"
+                                value="{{ old('finished_at', now(config('app.timezone'))->format('Y-m-d\TH:i')) }}"
                                 required
                             >
                         </div>
