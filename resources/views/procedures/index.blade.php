@@ -40,10 +40,13 @@
 
             <a
                 href="{{ route('procedures.create') }}"
-                class="chm-page-button primary"
+                class="chm-page-button primary"
+                @unless($canCreateProcedures) style="display: none !important;" aria-hidden="true" @endunless
             >
                 <i class="bi bi-plus-lg"></i>
-                Novo procedimento
+                @if($canCreateProcedures)
+                    Novo procedimento
+                @endif
             </a>
 
         </div>
@@ -250,11 +253,14 @@
 
                     <a
                         href="{{ route('procedures.edit', $procedure->id) }}"
-                        class="procedure-edit-btn"
+                        class="procedure-edit-btn"
+                        @unless($canUpdateProcedures) style="display: none !important;" aria-hidden="true" @endunless
                     >
                         <i class="bi bi-pencil"></i>
 
-                        Editar procedimento
+                        @if($canUpdateProcedures)
+                            Editar procedimento
+                        @endif
                     </a>
 
                 </div>
@@ -279,11 +285,14 @@
 
                 <a
                     href="{{ route('procedures.create') }}"
-                    class="chm-page-button primary"
+                    class="chm-page-button primary"
+                    @unless($canCreateProcedures) style="display: none !important;" aria-hidden="true" @endunless
                 >
                     <i class="bi bi-plus-lg"></i>
 
-                    Criar primeiro procedimento
+                    @if($canCreateProcedures)
+                        Criar primeiro procedimento
+                    @endif
                 </a>
 
             </div>

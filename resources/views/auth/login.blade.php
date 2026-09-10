@@ -119,12 +119,13 @@
             @endif
 
             <div class="form-group">
-                <label>Email</label>
+                <label>Email ou usuário</label>
 
                 <input
-                    type="email"
+                    type="text"
                     name="email"
                     value="{{ old('email') }}"
+                    placeholder=""
                     required
                 >
             </div>

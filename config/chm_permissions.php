@@ -86,6 +86,17 @@ return [
             ],
         ],
 
+        'maintenance_procedures' => [
+            'label' => 'Procedimentos',
+            'description' => 'Permissões para consultar e administrar os procedimentos operacionais da oficina.',
+            'permissions' => [
+                'maintenance.procedures.view' => ['label' => 'Ver procedimentos', 'default' => ['supervisor' => true]],
+                'maintenance.procedures.create' => ['label' => 'Criar procedimentos', 'default' => ['supervisor' => true]],
+                'maintenance.procedures.update' => ['label' => 'Editar procedimentos', 'default' => ['supervisor' => true]],
+                'maintenance.procedures.delete' => ['label' => 'Excluir/desativar procedimentos', 'default' => ['supervisor' => false]],
+            ],
+        ],
+
         'workshop_financial' => [
             'label' => 'Financeiro da Oficina',
             'description' => 'Permissões específicas para despesas operacionais e consumos internos da oficina.',

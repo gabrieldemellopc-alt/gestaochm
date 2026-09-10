@@ -5342,3 +5342,68 @@ html.maintenance-modal-open { overflow:hidden; }
 .maintenance-field-error { display:block; margin-top:6px; color:#ffb4ba; font-size:.78rem; font-weight:700; line-height:1.35; }
 .maintenance-stock-error { grid-column:1 / -1; display:flex; align-items:flex-start; gap:8px; margin-bottom:2px; padding:10px 12px; border:1px solid rgba(224,82,91,.45); border-radius:9px; background:rgba(155,54,64,.2); color:#ffd2d6; font-size:.84rem; font-weight:700; line-height:1.35; }
 .maintenance-stock-error i { margin-top:1px; }
+
+.maintenance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px 16px;
+    align-items: end;
+}
+
+
+/* Oficina ocupa as colunas 2 e 3 */
+.maintenance-provider-field {
+    grid-column: span 2;
+}
+
+
+/* Observações ocupa a largura inteira */
+.maintenance-observations-field {
+    grid-column: 1 / -1;
+}
+
+
+/* Garante que os campos não estourem o grid */
+.maintenance-grid .form-group {
+    min-width: 0;
+}
+
+
+/* Padronização da altura dos campos */
+.maintenance-grid .form-input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+
+/* Responsivo */
+@media (max-width: 1100px) {
+    .maintenance-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .maintenance-provider-field {
+        grid-column: span 2;
+    }
+
+    .maintenance-observations-field {
+        grid-column: 1 / -1;
+    }
+}
+
+
+@media (max-width: 700px) {
+    .maintenance-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-provider-field,
+    .maintenance-observations-field {
+        grid-column: auto;
+    }
+}
+.maintenance-provider-field > * {
+    width: 100%;
+    min-width: 0;
+}

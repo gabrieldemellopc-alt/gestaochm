@@ -907,13 +907,11 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
 
 
 
-    Route::resource(
-
-        'procedures',
-
-        ProcedureController::class
-
-    );
+    Route::resource('procedures', ProcedureController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update'])
+        ->middleware(['permission:navigation.workshop', 'permission:maintenance.procedures.view'])
+        ->middlewareFor(['create', 'store'], 'permission:maintenance.procedures.create')
+        ->middlewareFor(['edit', 'update'], 'permission:maintenance.procedures.update');
 
 
 

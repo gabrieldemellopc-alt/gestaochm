@@ -12,12 +12,28 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    private const DEFAULT_EMAIL_DOMAIN = 'gestaochm.com.br';
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Normalize a username into the corporate email before validation and authentication.
+     */
+    protected function prepareForValidation(): void
+    {
+        $identifier = trim((string) $this->input('email', ''));
+
+        if ($identifier !== '' && ! str_contains($identifier, '@')) {
+            $identifier .= '@'.self::DEFAULT_EMAIL_DOMAIN;
+        }
+
+        $this->merge(['email' => $identifier]);
     }
 
     /**

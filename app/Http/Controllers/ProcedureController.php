@@ -6,6 +6,7 @@ use App\Models\Procedure;
 use App\Models\StockCategory;
 use App\Models\StockItem;
 use App\Services\ActiveContextService;
+use App\Services\Permissions\ProfilePermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,11 @@ class ProcedureController extends Controller
             ->latest()
             ->get();
 
-        return view('procedures.index', compact('procedures'));
+        $permissionService = app(ProfilePermissionService::class);
+        $canCreateProcedures = $permissionService->allows(auth()->user(), 'maintenance.procedures.create');
+        $canUpdateProcedures = $permissionService->allows(auth()->user(), 'maintenance.procedures.update');
+
+        return view('procedures.index', compact('procedures', 'canCreateProcedures', 'canUpdateProcedures'));
     }
 
     public function create()

@@ -222,8 +222,8 @@
 
         ['permission' => 'navigation.stock', 'route' => 'stock.index', 'active' => 'stock.*', 'label' => 'Estoque', 'dropdown_label' => 'Estoque', 'icon' => 'boxes'],
 
-        ['permission' => 'navigation.workshop', 'route' => 'procedures.index', 'active' => 'procedures.*', 'label' => 'Procedimentos', 'dropdown_label' => 'Procedimentos', 'icon' => 'clipboard-check'],
-])->filter(fn (array $item) => $sidebarCanPermission($item['permission']))->values();
+        ['permissions' => ['navigation.workshop', 'maintenance.procedures.view'], 'route' => 'procedures.index', 'active' => 'procedures.*', 'label' => 'Procedimentos', 'dropdown_label' => 'Procedimentos', 'icon' => 'clipboard-check'],
+])->filter(fn (array $item) => collect($item['permissions'] ?? [$item['permission']])->every($sidebarCanPermission))->values();
     $sidebarWorkshopIsFlat = $sidebarWorkshopItems->count() <= 5;
 @endphp
 

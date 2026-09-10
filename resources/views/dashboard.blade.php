@@ -3118,7 +3118,7 @@
 
             >
 
-                <i class="bi bi-aperture"></i>
+                <i class="bi bi-record-circle-fill"></i>
 
                 <span>Pneus</span>
 

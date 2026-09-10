@@ -74,6 +74,14 @@ class ProcedureLocationContextTest extends TestCase
         $tenant = Tenant::create(['name' => 'Tenant sem unidade']);
         $division = Division::create(['tenant_id' => $tenant->id, 'name' => 'Divisão']);
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        UserDivisionAccess::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'division_id' => $division->id,
+            'module' => 'fleet',
+            'profile' => 'manager',
+            'active' => true,
+        ]);
 
         $this->actingAs($user)
             ->withSession(['active_division_id' => $division->id])

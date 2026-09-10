@@ -348,309 +348,196 @@
 
                     <div class="maintenance-grid">
 
-
-
-                        <div class="form-group">
-
-
-
-                            <label>
-
-                                Data de entrada
-
-                            </label>
-
-
-
-                            <input
-                                type="datetime-local"
-                                name="started_at"
-                                class="form-input"
-                                value="{{ old('started_at', now()->format('Y-m-d\TH:i')) }}"
-                                required
-                            >
-
-
-
-                        </div>
-
-
-
-                        <div class="form-group">
-
-
-
-                            <label>
-
-                                Motivo
-
-                            </label>
-
-
-
-                            <select
-
-                                name="reason"
-
-                                class="form-input"
-
-                                required
-
-                            >
-
-
-
-                                <option
-
-                                    value="preventive"
-
-                                    @selected(old('reason') === 'preventive')
-
-                                >
-
-                                    Preventiva
-
-                                </option>
-
-
-
-                                <option
-
-                                    value="corrective"
-
-                                    @selected(old('reason') === 'corrective')
-
-                                >
-
-                                    Corretiva
-
-                                </option>
-
-
-
-                                <option
-
-                                    value="inspection"
-
-                                    @selected(old('reason') === 'inspection')
-
-                                >
-
-                                    Inspeção
-
-                                </option>
-
-
-
-                                <option
-
-                                    value="other"
-
-                                    @selected(old('reason') === 'other')
-
-                                >
-
-                                    Outros
-
-                                </option>
-
-
-
-                            </select>
-
-
-
-                        </div>
-
-                        <div class="form-group">
-                        
-                            <label>
-                                Categoria
-                            </label>
-                        
-                            <select
-                                name="maintenance_category"
-                                class="form-input"
-                                required
-                            >
-                                <option value="">
-                                    Selecione...
-                                </option>
-                        
-                                @foreach(
-                                    \App\Services\MaintenanceService::maintenanceCategories()
-                                    as $categoryKey => $categoryLabel
-                                )
-                                    <option
-                                        value="{{ $categoryKey }}"
-                                        @selected(
-                                            old('maintenance_category') === $categoryKey
-                                        )
-                                    >
-                                        {{ $categoryLabel }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        
-                        </div>
-
-                        <div class="form-group">
-                            <label>Oficina / prestador principal</label>
-                            <x-supplier-autocomplete text-name="provider_name" id-name="supplier_id" document-name="supplier_document" value="{{ old('provider_name') }}" supplier-id-value="{{ old('supplier_id') }}" document-value="{{ old('supplier_document') }}" placeholder="Opcional — nome da oficina ou prestador" />
-                        </div>
-
-                        <div class="form-group">
-
-
-
-                            <label>
-
-                                Hodômetro no lançamento
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                step="1"
-
-                                min="{{ $vehicle->current_km ?? 0 }}"
-
-                                name="performed_km"
-                                data-current-reading="{{ $vehicle->current_km ?? 0 }}"
-
-                                class="form-input"
-
-                                value="{{ old('performed_km', $vehicle->current_km ?? 0) }}"
-                                required
-
-                            >
-
-
-
-                        </div>
-
-
-
-                        <div class="form-group">
-
-
-
-                            <label>
-
-                                Horímetro no lançamento
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                step="1"
-
-                                min="{{ $vehicle->current_hours ?? 0 }}"
-
-                                name="performed_hours"
-                                data-current-reading="{{ $vehicle->current_hours ?? 0 }}"
-                                class="form-input"
-
-                                value="{{ old('performed_hours', $vehicle->current_hours ?? 0) }}"
-                                required
-
-                            >
-
-
-
-                        </div>
-
-
-
-                        <div class="form-group">
-
-
-
-                            <label>
-
-                                Custo adicional
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                step="0.01"
-
-                                min="0"
-
-                                name="extra_cost"
-                                class="form-input"
-
-                                value="{{ old('extra_cost', 0) }}"      
-                            >
-
-
-
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                Status inicial
-                            </label>
-                        
-                            <select
-                                name="service_status"
-                                class="form-input"
-                                required
-                            >
-                                @foreach(\App\Services\MaintenanceService::serviceStatuses() as $statusKey => $statusLabel)
-                                    <option
-                                        value="{{ $statusKey }}"
-                                        @selected(old('service_status', \App\Services\MaintenanceService::defaultServiceStatus()) === $statusKey)
-                                    >
-                                        {{ $statusLabel }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="form-group maintenance-observations-field">
-
-
-                            <label>
-
-                                Observações
-
-                            </label>
-
-
-
-                            <textarea
-
-                                name="notes"
-
-                                rows="2"
-
-                                class="form-input"
-
-                                placeholder="Descreva detalhes da manutenção, diagnóstico, peças trocadas ou observações relevantes..."
-
-                            >{{ old('notes') }}</textarea>
-
-
-
-                        </div>
-
-
-
-                    </div>
+    {{-- LINHA 1 --}}
+
+    <div class="form-group">
+        <label>Data de entrada</label>
+
+        <input
+            type="datetime-local"
+            name="started_at"
+            class="form-input"
+            value="{{ old('started_at', now()->format('Y-m-d\TH:i')) }}"
+            required
+        >
+    </div>
+
+
+    <div class="form-group">
+        <label>Motivo</label>
+
+        <select
+            name="reason"
+            class="form-input"
+            required
+        >
+            <option
+                value="preventive"
+                @selected(old('reason') === 'preventive')
+            >
+                Preventiva
+            </option>
+
+            <option
+                value="corrective"
+                @selected(old('reason') === 'corrective')
+            >
+                Corretiva
+            </option>
+
+            <option
+                value="inspection"
+                @selected(old('reason') === 'inspection')
+            >
+                Inspeção
+            </option>
+
+            <option
+                value="other"
+                @selected(old('reason') === 'other')
+            >
+                Outros
+            </option>
+        </select>
+    </div>
+
+
+    <div class="form-group">
+        <label>Categoria</label>
+
+        <select
+            name="maintenance_category"
+            class="form-input"
+            required
+        >
+            <option value="">
+                Selecione...
+            </option>
+
+            @foreach(
+                \App\Services\MaintenanceService::maintenanceCategories()
+                as $categoryKey => $categoryLabel
+            )
+                <option
+                    value="{{ $categoryKey }}"
+                    @selected(
+                        old('maintenance_category') === $categoryKey
+                    )
+                >
+                    {{ $categoryLabel }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+
+    {{-- LINHA 2 --}}
+
+    <div class="form-group">
+        <label>Status inicial</label>
+
+        <select
+            name="service_status"
+            class="form-input"
+            required
+        >
+            @foreach(
+                \App\Services\MaintenanceService::serviceStatuses()
+                as $statusKey => $statusLabel
+            )
+                <option
+                    value="{{ $statusKey }}"
+                    @selected(
+                        old(
+                            'service_status',
+                            \App\Services\MaintenanceService::defaultServiceStatus()
+                        ) === $statusKey
+                    )
+                >
+                    {{ $statusLabel }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+
+    <div class="form-group maintenance-provider-field">
+        <label>Oficina / prestador principal</label>
+
+        <x-supplier-autocomplete
+            text-name="provider_name"
+            id-name="supplier_id"
+            document-name="supplier_document"
+            value="{{ old('provider_name') }}"
+            supplier-id-value="{{ old('supplier_id') }}"
+            document-value="{{ old('supplier_document') }}"
+            placeholder="Opcional — nome da oficina ou prestador"
+        />
+    </div>
+
+
+    {{-- LINHA 3 --}}
+
+    <div class="form-group">
+        <label>Hodômetro no lançamento</label>
+
+        <input
+            type="number"
+            step="1"
+            min="{{ $vehicle->current_km ?? 0 }}"
+            name="performed_km"
+            data-current-reading="{{ $vehicle->current_km ?? 0 }}"
+            class="form-input"
+            value="{{ old('performed_km', $vehicle->current_km ?? 0) }}"
+            required
+        >
+    </div>
+
+
+    <div class="form-group">
+        <label>Horímetro no lançamento</label>
+
+        <input
+            type="number"
+            step="1"
+            min="{{ $vehicle->current_hours ?? 0 }}"
+            name="performed_hours"
+            data-current-reading="{{ $vehicle->current_hours ?? 0 }}"
+            class="form-input"
+            value="{{ old('performed_hours', $vehicle->current_hours ?? 0) }}"
+            required
+        >
+    </div>
+
+
+    <div class="form-group">
+        <label>Custo inicial</label>
+
+        <input
+            type="number"
+            step="0.01"
+            min="0"
+            name="extra_cost"
+            class="form-input"
+            value="{{ old('extra_cost', 0) }}"
+        >
+    </div>
+
+
+    {{-- LINHA 4 --}}
+
+    <div class="form-group maintenance-observations-field">
+        <label>Observações</label>
+
+        <textarea
+            name="notes"
+            rows="2"
+            class="form-input"
+            placeholder="Descreva detalhes da manutenção, diagnóstico, peças trocadas ou observações relevantes..."
+        >{{ old('notes') }}</textarea>
+    </div>
+
+</div>
 
 
 
