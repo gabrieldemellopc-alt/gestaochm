@@ -6,6 +6,9 @@ class VehicleTypeCatalogTest extends TestCase
 {
     public function test_catalog_contains_new_types_and_icons_with_fallback(): void
     {
+        $this->assertSame('automovel.png', Vehicle::iconForType('automovel'));
+        $this->assertSame('lixo.png', Vehicle::iconForType('lixo'));
+        $this->assertSame('retro.png', Vehicle::iconForType('retroescavadeira'));
         foreach (['caminhonete'=>'caminhonete.png','onibus'=>'onibus.png','varredeira'=>'bobcat.png','pipa'=>'pipa.png','carroceria_aberta'=>'carroceria_aberta.png','retroescavadeira'=>'retro.png'] as $type => $icon) $this->assertSame($icon, Vehicle::iconForType($type));
         $this->assertSame('automovel.png', Vehicle::iconForType('desconhecido'));
     }

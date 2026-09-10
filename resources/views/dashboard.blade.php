@@ -2729,7 +2729,7 @@
 
 
 
-                        :src="`/images/${vehicle.type_icon ?? 'lixo.png'}`"
+                        :src="vehicle.icon_url"
 
 
 

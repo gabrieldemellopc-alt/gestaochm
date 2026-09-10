@@ -294,6 +294,10 @@ class DashboardController extends Controller
 
         ->get();
 
+        $vehicles->each(function (Vehicle $vehicle): void {
+            $vehicle->setAttribute('icon_url', asset('images/'.Vehicle::iconForType($vehicle->type)));
+        });
+
 
 
 
