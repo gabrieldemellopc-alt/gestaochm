@@ -720,7 +720,16 @@
             document.getElementById('workshopDashboardSubtitle').textContent = 'Indicadores consolidados — ' + data.period_label;
             const kpi = (label, value, note) => `<article class="workshop-dashboard-kpi"><span>${label}</span><strong>${value}</strong><small>${note}</small></article>`;
             content.className = '';
-            content.innerHTML = `<div class="workshop-dashboard-kpis">${kpi('OMs abertas', number(summary.open_orders), 'Em andamento agora')}${kpi('Veículos em manutenção', number(summary.vehicles_in_maintenance), 'Com ordem aberta')}${kpi('OMs concluídas', number(summary.completed_orders), 'No período')}${kpi('Tempo médio parado', summary.average_downtime_days === null ? 'N/D' : String(summary.average_downtime_days).replace('.', ',') + ' dias', 'Abertura até encerramento')}${data.permissions.view_costs ? kpi('Custo total', money(summary.total_cost), 'No período') : ''}</div><div class="workshop-dashboard-grid">${bars('Status das ordens', data.status)}${bars('Manutenções por categoria', data.types)}${bars('Veículos com mais ordens', data.top_vehicles)}${data.permissions.view_costs ? bars('Veículos com maior custo', data.top_vehicles_by_cost, true) : ''}${bars('Procedimentos recorrentes', data.procedures)}${bars('Ordens abertas há mais tempo', data.old_open_orders)}</div>${trendChart(data.trend)}`;
+            const financial = summary.financial;
+            const financialKpis = data.permissions.view_costs && financial ? [
+                kpi('Custo das manutenções', money(financial.maintenance_total), 'Materiais, serviços e custos avulsos'),
+                kpi('Materiais', money(financial.materials), 'Consumo no período'),
+                kpi('Serviços / outros custos', money(financial.services_other), 'Serviços executados'),
+                kpi('Despesas da oficina', money(financial.workshop_expenses), 'Despesas no período'),
+                kpi('Custo total da oficina', money(financial.workshop_total), 'Manutenções + despesas'),
+                kpi('Custo médio / OM', money(financial.average_per_maintenance), financial.maintenance_ids?.length ? `Média entre OMs` : 'Nenhuma OM participante'),
+            ].join('') : '';
+            content.innerHTML = `<div class="workshop-dashboard-kpis">${kpi('OMs abertas', number(summary.open_orders), 'Em andamento agora')}${kpi('Veículos em manutenção', number(summary.vehicles_in_maintenance), 'Com ordem aberta')}${kpi('OMs concluídas', number(summary.completed_orders), 'Encerradas no período')}${kpi('Tempo médio parado', summary.average_downtime_days === null ? 'N/D' : String(summary.average_downtime_days).replace('.', ',') + ' dias', 'Início até encerramento')}${financialKpis}</div><div class="workshop-dashboard-grid">${bars('Status das ordens', data.status)}${bars('Manutenções por categoria', data.types)}${bars('Veículos com mais ordens', data.top_vehicles)}${bars('Procedimentos recorrentes', data.procedures)}${bars('Ordens abertas há mais tempo', data.old_open_orders)}</div>${trendChart(data.trend)}`;
         } catch (error) { content.className = 'workshop-dashboard-loading'; content.textContent = 'Não foi possível carregar o painel de manutenção.'; }
     };
     window.closeWorkshopMaintenanceDashboard = function () { document.getElementById('workshopMaintenanceDashboard').hidden = true; };
