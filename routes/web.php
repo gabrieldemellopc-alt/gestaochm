@@ -884,6 +884,8 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
         Route::put('/expenses/{expense}', [WorkshopExpenseController::class, 'update'])->name('expenses.update');
         Route::delete('/expenses/{expense}', [WorkshopExpenseController::class, 'destroy'])->name('expenses.destroy');
         Route::post('/consumption', [WorkshopExpenseController::class, 'consume'])->name('consumption.store');
+        Route::put('/consumption/{movement}', [WorkshopExpenseController::class, 'updateConsumption'])->name('consumption.update');
+        Route::delete('/consumption/{movement}', [WorkshopExpenseController::class, 'destroyConsumption'])->name('consumption.destroy');
 
 
 

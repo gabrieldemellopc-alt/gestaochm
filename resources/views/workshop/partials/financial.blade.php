@@ -132,7 +132,7 @@
                     <label class="chm-wf-field chm-wf-wide">Observação<textarea class="chm-wf-textarea" name="notes" rows="3"></textarea></label>
                 </div>
                 <footer class="chm-wf-modal-footer">
-                    <small class="chm-wf-help" id="workshopExpenseAddAnotherNotice" aria-live="polite"></small>
+                    <div class="chm-wf-save-notice" id="workshopExpenseAddAnotherNotice" aria-live="polite" role="status" hidden><i class="bi bi-check-circle-fill"></i><span></span></div>
                     <button type="button" class="chm-wf-button-secondary" onclick="closeWorkshopFinancialModal('workshopExpenseModal')">Cancelar</button>
                     <button class="chm-wf-button-secondary" type="submit" name="add_another" value="1">Salvar e adicionar outra</button>
                     <button class="chm-wf-button-primary">Salvar despesa</button>
@@ -205,10 +205,10 @@
 
 @push('scripts')
 <script>
-    window.openWorkshopExpenseModal = () => document.getElementById('workshopExpenseModal').classList.remove('is-hidden');
+    window.openWorkshopExpenseModal = () => { const notice=document.getElementById('workshopExpenseAddAnotherNotice'); if (notice) { notice.hidden=true; notice.querySelector('span').textContent=''; } document.getElementById('workshopExpenseModal').classList.remove('is-hidden'); };
     window.openWorkshopConsumptionModal = () => document.getElementById('workshopConsumptionModal').classList.remove('is-hidden');
     window.closeWorkshopFinancialModal = id => document.getElementById(id).classList.add('is-hidden');
-    window.openWorkshopExpenseEdit = expense => { const form=document.getElementById('workshopExpenseEditForm'); form.action=`/workshop/expenses/${expense.id}`; Object.entries(expense).forEach(([key, value]) => { const field=form.elements[key]; if (field) field.value=value ?? ''; }); document.getElementById('workshopExpenseEditModal').classList.remove('is-hidden'); };
+    window.openWorkshopExpenseEdit = expense => { const form=document.getElementById('workshopExpenseEditForm'); form.action=`/workshop/expenses/${expense.id}`; Object.entries(expense).forEach(([key, value]) => { const field=form.elements[key]; if (field) field.value=key === 'expense_date' ? String(value ?? '').slice(0, 10) : (value ?? ''); }); document.getElementById('workshopExpenseEditModal').classList.remove('is-hidden'); };
     window.openWorkshopConsumptionEdit = consumption => { const form=document.getElementById('workshopConsumptionEditForm'); form.action=`/workshop/consumption/${consumption.id}`; Object.entries(consumption).forEach(([key, value]) => { const field=form.elements[key]; if (field) field.value=value ?? ''; }); document.getElementById('workshopConsumptionEditModal').classList.remove('is-hidden'); };
 
     (() => {
@@ -226,7 +226,7 @@
                 expenseForm.querySelectorAll('input[name="description"], input[name="supplier_name"], input[name="supplier_document"], input[name="supplier_id"], input[name="invoice_number"], input[name="amount"], textarea[name="notes"]').forEach(field => field.value = '');
                 expenseForm.querySelector('input[name="description"]')?.focus();
                 const notice = document.getElementById('workshopExpenseAddAnotherNotice');
-                if (notice) notice.textContent = 'Despesa salva. Você pode registrar outra.';
+                if (notice) { notice.hidden = false; notice.querySelector('span').textContent = 'Despesa salva. Você pode registrar outra.'; }
                 const list = document.querySelector('.chm-wf-expenses-card');
                 const empty = list?.querySelector('.chm-wf-empty');
                 empty?.remove();
