@@ -70,6 +70,12 @@
         'edit' => $dashboardCanPermission('vehicles.update'),
     ];
 
+    $dashboardFuelFillingUrlTemplate = route('fuel.tanks.index', [
+        'fuel_modal' => 'filling',
+        'fuel_vehicle_id' => '__vehicle_id__',
+        'return_to' => 'fleet_dashboard',
+    ]);
+
 
 
 @endphp
@@ -1387,7 +1393,7 @@
                                 @endif
 
                                 @if($canFillVehicle)
-                                    <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id, 'return_to' => 'fleet_dashboard']) }}" class="vehicle-card-action vehicle-card-action--fuel" title="Lançar abastecimento do veículo" aria-label="Lançar abastecimento do veículo" onclick="event.stopPropagation();">
+                                    <a href="{{ str_replace('__vehicle_id__', $vehicle->id, $dashboardFuelFillingUrlTemplate) }}" class="vehicle-card-action vehicle-card-action--fuel" title="Lançar abastecimento do veículo" aria-label="Lançar abastecimento do veículo" onclick="event.stopPropagation();">
 
                                         <span class="vehicle-action-hover-arrow" aria-hidden="true">&uarr;</span>
 
@@ -3130,7 +3136,7 @@
 
                 <a
 
-                    :href="`/fuel/tanks?fuel_modal=filling&fuel_vehicle_id=${vehicle.id}&return_to=fleet_dashboard`"
+                    :href="fuelFillingUrl(vehicle.id)"
 
                     class="vehicle-modal-action"
 
@@ -7769,6 +7775,8 @@
 
 
 
+const dashboardFuelFillingUrlTemplate = @json($dashboardFuelFillingUrlTemplate);
+
 function dashboardFleet(vehicleActions = {}) {
 
 
@@ -7828,6 +7836,12 @@ function dashboardFleet(vehicleActions = {}) {
         vehicle: {},
 
         vehicleActions,
+
+        fuelFillingUrl(vehicleId) {
+
+            return dashboardFuelFillingUrlTemplate.replace('__vehicle_id__', encodeURIComponent(vehicleId));
+
+        },
 
         originalOperationalStatus: '',
 

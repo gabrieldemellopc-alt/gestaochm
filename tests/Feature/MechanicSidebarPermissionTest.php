@@ -225,6 +225,56 @@ class MechanicSidebarPermissionTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_dashboard_fuel_shortcuts_share_the_official_get_route(): void
+    {
+        [$user, $division, $location] = $this->mechanicContext();
+        $scope = [
+            'tenant_id' => $user->tenant_id,
+            'division_id' => $division->id,
+            'location_id' => $location->id,
+            'module' => 'fleet',
+            'profile' => 'mechanic',
+        ];
+
+        foreach (['navigation.dashboard', 'navigation.fuel', 'fuel.fill_internal'] as $permissionKey) {
+            ProfilePermissionOverride::create([
+                ...$scope,
+                'permission_key' => $permissionKey,
+                'allowed' => true,
+            ]);
+        }
+
+        $vehicle = Vehicle::create([
+            'tenant_id' => $user->tenant_id,
+            'division_id' => $division->id,
+            'location_id' => $location->id,
+            'name' => 'Veículo do atalho de abastecimento',
+            'plate' => 'FUE-1234',
+            'type' => 'truck',
+        ]);
+
+        $expectedUrl = route('fuel.tanks.index', [
+            'fuel_modal' => 'filling',
+            'fuel_vehicle_id' => $vehicle->id,
+            'return_to' => 'fleet_dashboard',
+        ]);
+
+        $dashboard = $this->actingAs($user)->withSession([
+            'active_division_id' => $division->id,
+            'active_location_id' => $location->id,
+        ])->get(route('dashboard'))
+            ->assertOk();
+
+        $content = html_entity_decode($dashboard->getContent());
+
+        $this->assertStringContainsString('href="'.$expectedUrl.'"', $content);
+        $this->assertStringContainsString(':href="fuelFillingUrl(vehicle.id)"', $content);
+        $this->assertStringContainsString("'fuel_modal' => 'filling'", file_get_contents(resource_path('views/dashboard.blade.php')));
+        $this->assertStringContainsString("'return_to' => 'fleet_dashboard'", file_get_contents(resource_path('views/dashboard.blade.php')));
+        $this->assertStringContainsString('fuelFillingUrl(vehicleId)', $content);
+        $this->assertStringNotContainsString('/fuel/tanks?fuel_modal=filling', $content);
+    }
+
     private function mechanicContext(string $profile = 'mechanic'): array
     {
         $tenant = Tenant::create(['name' => 'Tenant sidebar']);
