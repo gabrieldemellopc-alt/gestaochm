@@ -386,7 +386,7 @@
 
                         x-model="search"
 
-                        placeholder="Nome, placa, marca, modelo, ano..."
+                        placeholder="Nome, placa, código, RENAVAM, série..."
 
                     >
 
@@ -442,6 +442,12 @@
 
                             ($vehicle->plate ?? '') . ' ' .
 
+                            ($vehicle->asset_code ?? '') . ' ' .
+
+                            ($vehicle->renavam ?? '') . ' ' .
+
+                            ($vehicle->serial_number ?? '') . ' ' .
+
 
 
                             ($vehicle->brand ?? '') . ' ' .
@@ -461,6 +467,14 @@
 
 
                     );
+
+                    $secondaryIdentifier = match (true) {
+                        filled($vehicle->plate) => $vehicle->plate,
+                        filled($vehicle->asset_code) => 'Código: '.$vehicle->asset_code,
+                        filled($vehicle->renavam) => 'RENAVAM: '.$vehicle->renavam,
+                        filled($vehicle->serial_number) => 'Série: '.$vehicle->serial_number,
+                        default => null,
+                    };
 
 
 
@@ -687,22 +701,6 @@
 
 
 
-                                <span class="vehicle-plate">
-
-
-
-                                    {{ $vehicle->plate }}
-
-
-
-                                </span>
-
-
-
-                    
-
-
-
                                 <h3>
 
 
@@ -712,6 +710,10 @@
 
 
                                 </h3>
+
+                                @if($secondaryIdentifier)
+                                    <span class="vehicle-plate">{{ $secondaryIdentifier }}</span>
+                                @endif
 
 
 
@@ -2834,7 +2836,7 @@
 
 
 
-                        <span x-text="vehicle.plate"></span>
+                        <span x-text="vehicleSecondaryIdentifier(vehicle)"></span>
 
 
 
@@ -7889,6 +7891,8 @@ function dashboardFleet(vehicleActions = {}) {
 
             const normalizedSearch = String(searchText ?? '').toLowerCase();
 
+            const normalizedQuery = this.normalizeVehicleSearch(this.search);
+
             const normalizedStatus = String(operationalStatus ?? 'operational');
 
             const normalizedAlert = String(alertStatus ?? 'clean');
@@ -7905,7 +7909,7 @@ function dashboardFleet(vehicleActions = {}) {
 
                     String(this.search).toLowerCase().trim()
 
-                );
+                ) || this.normalizeVehicleSearch(normalizedSearch).includes(normalizedQuery);
 
 
 
@@ -7988,6 +7992,23 @@ function dashboardFleet(vehicleActions = {}) {
 
 
             return true;
+
+        },
+
+        normalizeVehicleSearch(value) {
+
+            return String(value ?? '').toLowerCase().replace(/[\s-]+/g, '');
+
+        },
+
+        vehicleSecondaryIdentifier(vehicle) {
+
+            if (vehicle?.plate) return vehicle.plate;
+            if (vehicle?.asset_code) return `Código: ${vehicle.asset_code}`;
+            if (vehicle?.renavam) return `RENAVAM: ${vehicle.renavam}`;
+            if (vehicle?.serial_number) return `Série: ${vehicle.serial_number}`;
+
+            return '';
 
         },
 

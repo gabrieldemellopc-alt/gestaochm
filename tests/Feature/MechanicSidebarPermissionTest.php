@@ -275,6 +275,51 @@ class MechanicSidebarPermissionTest extends TestCase
         $this->assertStringNotContainsString('/fuel/tanks?fuel_modal=filling', $content);
     }
 
+    public function test_dashboard_uses_the_secondary_vehicle_identifier_priority_and_searches_all_identifiers(): void
+    {
+        [$user, $division, $location] = $this->mechanicContext();
+        $scope = [
+            'tenant_id' => $user->tenant_id,
+            'division_id' => $division->id,
+            'location_id' => $location->id,
+            'module' => 'fleet',
+            'profile' => 'mechanic',
+        ];
+
+        foreach (['navigation.dashboard', 'navigation.fuel', 'fuel.fill_internal'] as $permissionKey) {
+            ProfilePermissionOverride::create([
+                ...$scope,
+                'permission_key' => $permissionKey,
+                'allowed' => true,
+            ]);
+        }
+
+        Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $location->id, 'name' => 'Ford Ka', 'plate' => 'ABD-2222', 'asset_code' => 'IGNORADO-PELA-PLACA', 'brand' => 'Ford', 'model' => 'Ka', 'year' => 2025, 'type' => 'automovel']);
+        Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $location->id, 'name' => 'Escavadeira 01', 'asset_code' => 'ESC001', 'type' => 'machine']);
+        Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $location->id, 'name' => 'Máquina X', 'renavam' => '00123456789', 'type' => 'machine']);
+        Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $location->id, 'name' => 'Equipamento Y', 'serial_number' => 'CAT-123/ABC', 'type' => 'machine']);
+
+        $otherLocation = Location::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'name' => 'Outra localidade', 'active' => true]);
+        Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $otherLocation->id, 'name' => 'Fora do escopo', 'asset_code' => 'NAO-EXIBIR', 'type' => 'machine']);
+
+        $content = $this->actingAs($user)->withSession([
+            'active_division_id' => $division->id,
+            'active_location_id' => $location->id,
+        ])->get(route('dashboard'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/Ford Ka\s*<\/h3>\s*<span class="vehicle-plate">ABD-2222<\/span>/s', $content);
+        $this->assertStringContainsString('Código: ESC001', $content);
+        $this->assertStringContainsString('RENAVAM: 00123456789', $content);
+        $this->assertStringContainsString('Série: CAT-123/ABC', $content);
+        $this->assertMatchesRegularExpression('/data-search="[^"]*ford ka[^"]*abd-2222[^"]*ignorado-pela-placa[^"]*ford[^"]*ka[^"]*2025[^"]*"/i', $content);
+        $this->assertMatchesRegularExpression('/data-search="[^"]*escavadeira 01[^"]*esc001[^"]*"/i', $content);
+        $this->assertMatchesRegularExpression('/data-search="[^"]*máquina x[^"]*00123456789[^"]*"/iu', $content);
+        $this->assertMatchesRegularExpression('/data-search="[^"]*equipamento y[^"]*cat-123\/abc[^"]*"/i', $content);
+        $this->assertStringContainsString('normalizeVehicleSearch', $content);
+        $this->assertStringNotContainsString('Fora do escopo', $content);
+        $this->assertStringNotContainsString('NAO-EXIBIR', $content);
+    }
+
     private function mechanicContext(string $profile = 'mechanic'): array
     {
         $tenant = Tenant::create(['name' => 'Tenant sidebar']);
