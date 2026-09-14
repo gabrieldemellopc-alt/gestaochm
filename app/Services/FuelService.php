@@ -256,7 +256,6 @@ class FuelService
             }
             $vehicle = $this->vehicleForContext((int) $validated['vehicle_id'], $context);
             if (! $this->operationContext?->isHistoricalImport) {
-                $this->validateVehicleCounters($vehicle, $validated);
             }
             $this->validateDriverForContext($validated['driver_id'] ?? null, $context);
 
@@ -585,31 +584,6 @@ class FuelService
         }
 
         return $product;
-    }
-
-    private function validateVehicleCounters(Vehicle $vehicle, array $validated): void
-    {
-        if (
-            array_key_exists('vehicle_km', $validated)
-            && $validated['vehicle_km'] !== null
-            && $vehicle->current_km !== null
-            && (float) $validated['vehicle_km'] < (float) $vehicle->current_km
-        ) {
-            throw ValidationException::withMessages([
-                'vehicle_km' => 'O KM informado não pode ser menor que o KM atual do veículo.',
-            ]);
-        }
-
-        if (
-            array_key_exists('vehicle_hours', $validated)
-            && $validated['vehicle_hours'] !== null
-            && $vehicle->current_hours !== null
-            && (float) $validated['vehicle_hours'] < (float) $vehicle->current_hours
-        ) {
-            throw ValidationException::withMessages([
-                'vehicle_hours' => 'As horas informadas não podem ser menores que as horas atuais do veículo.',
-            ]);
-        }
     }
 
     private function validateDriverForContext(mixed $driverId, array $context): void

@@ -446,7 +446,7 @@
                         <input
                             type="number"
                             step="1"
-                            min="{{ $vehicle->current_km ?? 0 }}"
+                            min="0"
                             name="performed_km"
                             class="form-input"
                             value="{{ old('km', $vehicle->current_km ?? 0) }}"
@@ -459,7 +459,7 @@
                         <input
                             type="number"
                             step="1"
-                            min="{{ $vehicle->current_hours ?? 0 }}"
+                            min="0"
                             name="performed_hours"
                             class="form-input"
                             value="{{ old('hours', $vehicle->current_hours ?? 0) }}"

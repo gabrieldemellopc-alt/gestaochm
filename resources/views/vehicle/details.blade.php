@@ -386,7 +386,7 @@
                             type="number"
                             name="km"
                             value="{{ $vehicle->current_km ?? 0 }}"
-                            min="{{ $vehicle->current_km ?? 0 }}"
+                            min="0"
                             step="1"
                         >
 
@@ -414,7 +414,7 @@
                             type="number"
                             name="hours"
                             value="{{ $vehicle->current_hours ?? 0 }}"
-                            min="{{ $vehicle->current_hours ?? 0 }}"
+                            min="0"
                             step="1"
                         >
 

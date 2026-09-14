@@ -542,7 +542,7 @@
 
                                 value="{{ old('vehicle_km', $vehicle->current_km ?? 0) }}"
 
-                                min="{{ $vehicle->current_km ?? 0 }}"
+                                min="0"
 
                                 step="1"
 

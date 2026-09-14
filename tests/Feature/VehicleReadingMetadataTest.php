@@ -235,6 +235,51 @@ class VehicleReadingMetadataTest extends TestCase
         $this->assertSame('2026-07-02 12:00:00', $reading['date']->toDateTimeString());
     }
 
+    public function test_coherent_backdated_reading_is_recorded_without_regressing_current_counter(): void
+    {
+        [$vehicle, $user] = $this->vehicleAndUser(152000, '2026-09-10 08:00:00');
+        VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'type' => 'km', 'new_value' => 151000, 'read_at' => '2026-09-05 08:00:00']);
+        VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'type' => 'km', 'new_value' => 152000, 'read_at' => '2026-09-10 08:00:00']);
+
+        $this->assertTrue(app(VehicleReadingService::class)->updateKm($vehicle, 151400, $user, 'fuel_filling', null, 'vehicle_km', false, '2026-09-07 08:00:00'));
+        $vehicle->refresh();
+
+        $this->assertSame(152000.0, (float) $vehicle->current_km);
+        $this->assertSame('2026-09-10 08:00:00', Carbon::parse($vehicle->last_km_update_at)->toDateTimeString());
+        $this->assertDatabaseHas('vehicle_update_logs', ['vehicle_id' => $vehicle->id, 'new_value' => '151400', 'reading_status' => VehicleUpdateLog::READING_STATUS_VALID]);
+    }
+
+    public function test_inconsistent_backdated_reading_requires_confirmation_then_is_suspect(): void
+    {
+        [$vehicle, $user] = $this->vehicleAndUser(152000, '2026-09-10 08:00:00');
+        VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'type' => 'km', 'new_value' => 151000, 'read_at' => '2026-09-05 08:00:00']);
+        VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'type' => 'km', 'new_value' => 152000, 'read_at' => '2026-09-10 08:00:00']);
+
+        try {
+            app(VehicleReadingService::class)->updateKm($vehicle, 149000, $user, 'fuel_filling', null, 'vehicle_km', false, '2026-09-07 08:00:00');
+            $this->fail('A confirmação cronológica deveria ser exigida.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('Anterior:', $exception->errors()['vehicle_km'][0]);
+            $this->assertStringContainsString('Posterior:', $exception->errors()['vehicle_km'][0]);
+        }
+
+        $this->assertTrue(app(VehicleReadingService::class)->updateKm($vehicle, 149000, $user, 'fuel_filling', null, 'vehicle_km', true, '2026-09-07 08:00:00'));
+        $this->assertSame(152000.0, (float) $vehicle->fresh()->current_km);
+        $this->assertDatabaseHas('vehicle_update_logs', ['vehicle_id' => $vehicle->id, 'new_value' => '149000', 'reading_status' => VehicleUpdateLog::READING_STATUS_SUSPECT]);
+    }
+
+    public function test_hours_use_the_same_backdated_timeline_rule(): void
+    {
+        [$vehicle, $user] = $this->vehicleAndUser(0);
+        $vehicle->update(['current_hours' => 152, 'last_hours_update_at' => '2026-09-10 08:00:00']);
+        VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'type' => 'hours', 'new_value' => 151, 'read_at' => '2026-09-05 08:00:00']);
+        VehicleUpdateLog::create(['vehicle_id' => $vehicle->id, 'type' => 'hours', 'new_value' => 152, 'read_at' => '2026-09-10 08:00:00']);
+
+        $this->assertTrue(app(VehicleReadingService::class)->updateHours($vehicle, 151.4, $user, 'maintenance_open', null, 'performed_hours', false, '2026-09-07 08:00:00'));
+        $this->assertSame(152.0, (float) $vehicle->fresh()->current_hours);
+        $this->assertDatabaseHas('vehicle_update_logs', ['vehicle_id' => $vehicle->id, 'type' => 'hours', 'new_value' => '151.4', 'reading_status' => VehicleUpdateLog::READING_STATUS_VALID]);
+    }
+
     private function vehicleAndUser(float $km, ?string $lastUpdateAt = null): array
     {
         return [

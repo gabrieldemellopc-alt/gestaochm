@@ -282,7 +282,8 @@ class MaintenanceService
                     'maintenance_open',
                     'KM atualizado na abertura de manutenção.',
                     'performed_km',
-                    ! empty($data['km_reading_confirmed'])
+                    ! empty($data['km_reading_confirmed']),
+                    $data['performed_at'] ?? $data['started_at'] ?? null,
                 );
             }
 
@@ -294,7 +295,8 @@ class MaintenanceService
                     'maintenance_open',
                     'Horímetro atualizado na abertura de manutenção.',
                     'performed_hours',
-                    ! empty($data['hours_reading_confirmed'])
+                    ! empty($data['hours_reading_confirmed']),
+                    $data['performed_at'] ?? $data['started_at'] ?? null,
                 );
             }
     

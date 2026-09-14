@@ -484,7 +484,7 @@
         <input
             type="number"
             step="1"
-            min="{{ $vehicle->current_km ?? 0 }}"
+            min="0"
             name="performed_km"
             data-current-reading="{{ $vehicle->current_km ?? 0 }}"
             class="form-input"
@@ -500,7 +500,7 @@
         <input
             type="number"
             step="1"
-            min="{{ $vehicle->current_hours ?? 0 }}"
+            min="0"
             name="performed_hours"
             data-current-reading="{{ $vehicle->current_hours ?? 0 }}"
             class="form-input"

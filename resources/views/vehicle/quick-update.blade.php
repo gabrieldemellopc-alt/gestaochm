@@ -223,7 +223,7 @@
                                             <input
                                                 type="number"
                                                 step="1"
-                                                min="{{ $vehicle->current_km ?? 0 }}"
+                                                min="0"
                                                 name="vehicles[{{ $index }}][current_km]"
                                                 class="quick-input"
                                                 value="{{ $vehicle->current_km }}"
@@ -246,7 +246,7 @@
                                             <input
                                                 type="number"
                                                 step="1"
-                                                min="{{ $vehicle->current_hours ?? 0 }}"
+                                                min="0"
                                                 name="vehicles[{{ $index }}][current_hours]"
                                                 class="quick-input"
                                                 value="{{ $vehicle->current_hours }}"

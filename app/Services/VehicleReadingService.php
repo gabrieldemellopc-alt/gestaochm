@@ -154,29 +154,7 @@ class VehicleReadingService
             return false;
         }
 
-        $numericValue = (float) $value;
-        $previousValue = VehicleUpdateLog::query()
-            ->where('vehicle_id', $vehicle->id)
-            ->where('type', 'km')
-            ->whereRaw('COALESCE(read_at, created_at) < ?', [$effectiveAt])
-            ->orderByRaw('COALESCE(read_at, created_at) desc')
-            ->value('new_value');
-
-        VehicleUpdateLog::create([
-            'vehicle_id' => $vehicle->id,
-            'user_id' => $user->id,
-            'division_id' => $vehicle->division_id,
-            'location_id' => $vehicle->location_id,
-            'type' => 'km',
-            'source' => $source,
-            'read_at' => $effectiveAt,
-            'fuel_filling_id' => $fillingId,
-            'old_value' => $previousValue,
-            'new_value' => $numericValue,
-            'observation' => $observation,
-        ]);
-
-        return true;
+        return $this->recordHistoricalReading($vehicle, 'km', $value, $user, $source, $observation, $effectiveAt, $fillingId);
     }
 
     /**
@@ -201,28 +179,7 @@ class VehicleReadingService
             return false;
         }
 
-        $previousValue = VehicleUpdateLog::query()
-            ->where('vehicle_id', $vehicle->id)
-            ->where('type', 'hours')
-            ->whereRaw('COALESCE(read_at, created_at) < ?', [$effectiveAt])
-            ->orderByRaw('COALESCE(read_at, created_at) desc')
-            ->value('new_value');
-
-        VehicleUpdateLog::create([
-            'vehicle_id' => $vehicle->id,
-            'user_id' => $user->id,
-            'division_id' => $vehicle->division_id,
-            'location_id' => $vehicle->location_id,
-            'type' => 'hours',
-            'source' => $source,
-            'read_at' => $effectiveAt,
-            'fuel_filling_id' => $fillingId,
-            'old_value' => $previousValue,
-            'new_value' => (float) $value,
-            'observation' => $observation,
-        ]);
-
-        return true;
+        return $this->recordHistoricalReading($vehicle, 'hours', $value, $user, $source, $observation, $effectiveAt, $fillingId);
     }
 
     public function updateHours(
@@ -345,18 +302,28 @@ class VehicleReadingService
             return false;
         }
 
-        if ($oldValue !== null && $numericValue < (float) $oldValue) {
+        $timeline = $this->timelineContext($vehicle, $type, $effectiveAt, $numericValue);
+
+        // Legacy vehicles can have an operational counter before their first log.
+        // In that case a lower contemporaneous value remains suspicious; a dated
+        // event before last_*_update_at is already classified as retroactive above.
+        if (! $timeline['retroactive'] && $oldValue !== null && $numericValue < (float) $oldValue) {
+            $timeline['inconsistent'] = true;
+        }
+
+        if ($timeline['inconsistent'] && ! $confirmedSuspicious) {
             throw ValidationException::withMessages([
-                $errorField => $lowerValueMessage,
+                $errorField => $this->timelineMessage($timeline, $type),
             ]);
         }
 
-        if ($oldValue !== null && $numericValue === (float) $oldValue) {
+        if (! $timeline['retroactive'] && ! $timeline['inconsistent'] && $oldValue !== null && $numericValue === (float) $oldValue) {
             return false;
         }
 
         if (
-            $oldValue !== null
+            ! $timeline['retroactive']
+            && $oldValue !== null
             && $numericValue - (float) $oldValue > $suspiciousThreshold
             && ! $confirmedSuspicious
         ) {
@@ -365,10 +332,13 @@ class VehicleReadingService
             ]);
         }
 
-        $vehicle->update([
-            $field => $value,
-            $updatedAtField => $effectiveAt,
-        ]);
+        $updatesCounter = ! $timeline['retroactive']
+            && ! $timeline['inconsistent']
+            && ($oldValue === null || $numericValue > (float) $oldValue);
+
+        if ($updatesCounter) {
+            $vehicle->update([$field => $value, $updatedAtField => $effectiveAt]);
+        }
 
         VehicleUpdateLog::create([
             'vehicle_id' => $vehicle->id,
@@ -379,8 +349,10 @@ class VehicleReadingService
             'source' => $source,
             'read_at' => $effectiveAt,
             'fuel_filling_id' => $fillingId,
-            'old_value' => $oldValue,
+            'old_value' => $timeline['previous']?->new_value ?? $oldValue,
             'new_value' => $value,
+            'reading_status' => $timeline['inconsistent'] ? VehicleUpdateLog::READING_STATUS_SUSPECT : VehicleUpdateLog::READING_STATUS_VALID,
+            'reading_issue' => $timeline['inconsistent'] ? $this->timelineMessage($timeline, $type) : ($timeline['retroactive'] ? 'Leitura retroativa coerente; não alterou o contador operacional atual.' : null),
             'observation' => $observation,
         ]);
 
@@ -395,6 +367,52 @@ class VehicleReadingService
     private function fuelFillingId(FuelFilling|int|null $fuelFilling): ?int
     {
         return $fuelFilling instanceof FuelFilling ? $fuelFilling->id : $fuelFilling;
+    }
+
+    private function recordHistoricalReading(Vehicle $vehicle, string $type, float|int $value, User $user, string $source, ?string $observation, CarbonInterface $effectiveAt, ?int $fillingId): bool
+    {
+        $timeline = $this->timelineContext($vehicle, $type, $effectiveAt, (float) $value);
+        VehicleUpdateLog::create([
+            'vehicle_id' => $vehicle->id, 'user_id' => $user->id,
+            'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id,
+            'type' => $type, 'source' => $source, 'read_at' => $effectiveAt,
+            'fuel_filling_id' => $fillingId, 'old_value' => $timeline['previous']?->new_value,
+            'new_value' => (float) $value,
+            ...$this->readingMetadata($timeline['inconsistent'] ? VehicleUpdateLog::READING_STATUS_SUSPECT : VehicleUpdateLog::READING_STATUS_VALID, $timeline['inconsistent'] ? $this->timelineMessage($timeline, $type) : 'Leitura histórica/retroativa; contador operacional preservado.'),
+            'observation' => $observation,
+        ]);
+        return true;
+    }
+
+    /** Finds only usable readings immediately before and after the effective event time. */
+    private function timelineContext(Vehicle $vehicle, string $type, CarbonInterface $at, float $value): array
+    {
+        $base = VehicleUpdateLog::query()->where('vehicle_id', $vehicle->id)->where('type', $type)->usableReading();
+        $previous = (clone $base)->whereRaw('COALESCE(read_at, created_at) < ?', [$at])->orderByRaw('COALESCE(read_at, created_at) desc')->orderByDesc('id')->first();
+        $next = (clone $base)->whereRaw('COALESCE(read_at, created_at) > ?', [$at])->orderByRaw('COALESCE(read_at, created_at) asc')->orderBy('id')->first();
+        $lastAt = $vehicle->{$type === 'km' ? 'last_km_update_at' : 'last_hours_update_at'};
+        $retroactive = $next !== null || ($lastAt !== null && $at->lt(Carbon::parse($lastAt)));
+        $inconsistent = ($previous && $value < (float) $previous->new_value) || ($next && $value > (float) $next->new_value);
+        return compact('previous', 'next', 'retroactive', 'inconsistent');
+    }
+
+    private function timelineMessage(array $timeline, string $type): string
+    {
+        $unit = $type === 'km' ? 'km' : 'h';
+        $format = fn ($log) => number_format((float) $log->new_value, $type === 'km' ? 0 : 1, ',', '.') . " {$unit} em " . ($log->read_at ?? $log->created_at)->format('d/m/Y H:i');
+        $parts = ['Esta leitura gera regressão na linha do tempo e exige confirmação explícita para ser registrada como suspeita.'];
+        if ($timeline['previous']) $parts[] = 'Anterior: '.$format($timeline['previous']).'.';
+        if ($timeline['next']) $parts[] = 'Posterior: '.$format($timeline['next']).'.';
+        return implode(' ', $parts);
+    }
+
+    private function readingMetadata(?string $status, ?string $issue): array
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('vehicle_update_logs', 'reading_status')) {
+            return [];
+        }
+
+        return ['reading_status' => $status, 'reading_issue' => $issue];
     }
 
     private function analyzeReading(mixed $currentValue, float|int $value, float|int $threshold): array
