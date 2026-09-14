@@ -6726,3 +6726,73 @@ button.fleet-summary-item.warning:hover {
     background-color: #ef4444; /* Vermelho/alaranjado do sistema */
 }
 .dashboard-page .vehicle-card-action.is-disabled { cursor:not-allowed; opacity:.55; }
+
+/* Fleet dashboard: mobile-first KPI composition. */
+@media (max-width: 760px) {
+    .dashboard-page {
+        min-width: 0;
+        overflow-x: clip;
+    }
+
+    .dashboard-workspace-grid,
+    .dashboard-main-column .kpi-grid,
+    .dashboard-overview-main .kpi-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .dashboard-main-column .kpi-double-group {
+        grid-column: auto;
+        min-width: 0;
+    }
+
+    .dashboard-main-column .kpi-cards-row {
+        gap: 8px;
+    }
+
+    .dashboard-main-column .kpi-cards-row .kpi-card {
+        min-height: 104px;
+        padding: 14px 10px;
+        gap: 10px;
+    }
+
+    .dashboard-main-column .kpi-cards-row .kpi-icon {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+        border-radius: 10px;
+    }
+
+    .dashboard-main-column .kpi-cards-row .kpi-content small {
+        font-size: 11px;
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-main-column .kpi-cards-row .kpi-content strong {
+        margin-top: 6px;
+        font-size: 24px;
+    }
+
+    .dashboard-main-column .dashboard-fleet-filter {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0;
+    }
+
+    .dashboard-main-column .dashboard-fleet-filter a {
+        min-width: 0;
+        min-height: 42px;
+        padding: 8px;
+        font-size: 12px;
+        white-space: normal;
+    }
+
+    .dashboard-main-column .dashboard-fleet-filter a:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .dashboard-main-column .kpi-alert-card,
+    .dashboard-main-column .kpi-quick-action {
+        min-height: 0;
+    }
+}

@@ -32,6 +32,7 @@
 --}}
 
 @php
+    $isPortalTopbar = request()->routeIs('portal') || request()->routeIs('division.*');
     $topbarLogo = 'logo-chm_.png';
 
     if ($activeDivision && $activeDivision->logo) {
@@ -113,7 +114,7 @@
 
 
 
-    @if(($pageTitle ?? null) !== 'Portal Corporativo')
+    @if(! $isPortalTopbar)
 
 
 
@@ -144,7 +145,7 @@
 
     @endif
 
-    @if(($pageTitle ?? null) !== 'Portal Corporativo')
+    @if(! $isPortalTopbar)
 
         {{-- RETRAIR SIDEBAR — DESKTOP --}}
         <button
@@ -176,7 +177,7 @@
 
             {{
 
-                ($pageTitle ?? null) !== 'Portal Corporativo' 
+                ! $isPortalTopbar
 
                     ? ($activeDivision->logo_theme ?? 'dark')
 
@@ -354,27 +355,6 @@
             </form>
         @endif
 
-
-        <button
-            type="button"
-            class="chm-theme-toggle"
-            data-chm-theme-toggle
-            aria-label="Ativar modo claro corporativo"
-            aria-pressed="false"
-            title="Ativar modo claro corporativo"
-        >
-            <span class="chm-theme-toggle-icon chm-theme-toggle-icon-dark" aria-hidden="true">
-                <i class="bi bi-moon"></i>
-            </span>
-
-            <span class="chm-theme-toggle-icon chm-theme-toggle-icon-light" aria-hidden="true">
-                <i class="bi bi-sun"></i>
-            </span>
-
-            <span class="chm-theme-toggle-label" data-chm-theme-label>
-                Escuro
-            </span>
-        </button>
 
         <div
             class="topbar-user-wrapper"

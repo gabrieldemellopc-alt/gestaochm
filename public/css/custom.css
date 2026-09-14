@@ -14520,6 +14520,96 @@ html.sidebar-collapsed {
     }
 }
 
+/* Portal: compact and non-overlapping topbar on small screens. */
+.portal-layout > .topbar {
+    width: 100%;
+    min-width: 0;
+}
+
+.portal-layout > .topbar .topbar-context,
+.portal-layout > .topbar .topbar-right,
+.portal-layout > .topbar .topbar-title-group {
+    min-width: 0;
+}
+
+@media (max-width: 760px) {
+    .portal-layout > .topbar {
+        height: auto;
+        min-height: 76px;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .portal-layout > .topbar .topbar-context {
+        flex: 1 1 auto;
+        gap: 10px;
+    }
+
+    .portal-layout > .topbar .topbar-brand {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+    }
+
+    .portal-layout > .topbar .topbar-brand img {
+        max-width: 32px;
+        max-height: 32px;
+    }
+
+    .portal-layout > .topbar .topbar-title-group h1 {
+        max-width: none;
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.15;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .portal-layout > .topbar .topbar-title-group span {
+        display: block;
+        overflow: hidden;
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .portal-layout > .topbar .topbar-right {
+        flex: 0 0 auto;
+        gap: 6px;
+    }
+
+    .portal-layout > .topbar .topbar-location-selector,
+    .portal-layout > .topbar .topbar-user strong,
+    .portal-layout > .topbar .topbar-user small,
+    .portal-layout > .topbar .user-chevron {
+        display: none !important;
+    }
+
+    .portal-layout > .topbar .topbar-user {
+        width: 40px;
+        min-height: 40px;
+        padding: 0;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 420px) {
+    .portal-layout > .topbar {
+        padding-inline: 10px;
+    }
+
+    .portal-layout > .topbar .topbar-brand {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+    }
+
+    .portal-layout > .topbar .topbar-title-group h1 {
+        font-size: 16px;
+    }
+}
+
 @media (min-width: 1025px) {
     .mobile-menu-button {
         display: none;

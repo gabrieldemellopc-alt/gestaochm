@@ -12,7 +12,7 @@
     function getCurrentTheme() {
         var theme = root.getAttribute('data-chm-theme');
 
-        return isAllowedTheme(theme) ? theme : 'dark';
+        return 'corporate-light';
     }
 
     function saveTheme(theme) {
@@ -40,7 +40,7 @@
     }
 
     function applyTheme(theme, persist) {
-        var validTheme = isAllowedTheme(theme) ? theme : 'dark';
+        var validTheme = 'corporate-light';
 
         root.setAttribute('data-chm-theme', validTheme);
 

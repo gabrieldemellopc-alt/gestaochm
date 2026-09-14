@@ -9,20 +9,7 @@
 
         <script>
             (function () {
-                var allowedThemes = ['dark', 'corporate-light'];
-                var theme = 'dark';
-
-                try {
-                    var savedTheme = localStorage.getItem('chm-theme');
-
-                    if (allowedThemes.indexOf(savedTheme) !== -1) {
-                        theme = savedTheme;
-                    }
-                } catch (error) {
-                    theme = 'dark';
-                }
-
-                document.documentElement.setAttribute('data-chm-theme', theme);
+                document.documentElement.setAttribute('data-chm-theme', 'corporate-light');
             })();
         </script>
 
