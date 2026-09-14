@@ -288,6 +288,7 @@ class DashboardController extends Controller
         ->where('tenant_id', auth()->user()->tenant_id)
 
         ->where('location_id', $activeLocation->id)
+        ->where('status', 'active')
         ->when($fleetRelation !== 'all', fn ($query) => $query->where('fleet_relation', $fleetRelation))
 
         ->latest()

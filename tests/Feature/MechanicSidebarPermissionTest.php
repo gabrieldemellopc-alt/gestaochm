@@ -320,6 +320,44 @@ class MechanicSidebarPermissionTest extends TestCase
         $this->assertStringNotContainsString('NAO-EXIBIR', $content);
     }
 
+    public function test_dashboard_excludes_inactive_vehicles_without_deleting_them(): void
+    {
+        [$user, $division, $location] = $this->mechanicContext();
+        $scope = [
+            'tenant_id' => $user->tenant_id,
+            'division_id' => $division->id,
+            'location_id' => $location->id,
+            'module' => 'fleet',
+            'profile' => 'mechanic',
+        ];
+
+        foreach (['navigation.dashboard', 'navigation.fuel', 'fuel.fill_internal'] as $permissionKey) {
+            ProfilePermissionOverride::create([
+                ...$scope,
+                'permission_key' => $permissionKey,
+                'allowed' => true,
+            ]);
+        }
+
+        $activeVehicle = Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $location->id, 'name' => 'Veículo ativo do dashboard', 'asset_code' => 'ATIVO-01', 'type' => 'machine', 'status' => 'active']);
+        $inactiveVehicle = Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $location->id, 'name' => 'Veículo inativo mesclado', 'asset_code' => 'MERGED-90', 'type' => 'machine', 'status' => 'inactive']);
+        $otherLocation = Location::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'name' => 'Localidade fora do dashboard', 'active' => true]);
+        Vehicle::create(['tenant_id' => $user->tenant_id, 'division_id' => $division->id, 'location_id' => $otherLocation->id, 'name' => 'Veículo ativo de outra localidade', 'asset_code' => 'OUTRO-01', 'type' => 'machine', 'status' => 'active']);
+
+        $content = $this->actingAs($user)->withSession([
+            'active_division_id' => $division->id,
+            'active_location_id' => $location->id,
+        ])->get(route('dashboard'))->assertOk()->getContent();
+
+        $this->assertStringContainsString($activeVehicle->name, $content);
+        $this->assertStringContainsString($activeVehicle->asset_code, $content);
+        $this->assertStringNotContainsString($inactiveVehicle->name, $content);
+        $this->assertStringNotContainsString($inactiveVehicle->asset_code, $content);
+        $this->assertStringNotContainsString('Veículo ativo de outra localidade', $content);
+        $this->assertStringNotContainsString('OUTRO-01', $content);
+        $this->assertDatabaseHas('vehicles', ['id' => $inactiveVehicle->id, 'status' => 'inactive']);
+    }
+
     private function mechanicContext(string $profile = 'mechanic'): array
     {
         $tenant = Tenant::create(['name' => 'Tenant sidebar']);
