@@ -86,6 +86,20 @@ class FuelCancellationTest extends TestCase
         $this->assertSame($driver->id, $filling->fresh()->driver->id);
     }
 
+    public function test_probable_duplicate_is_blocked_until_backend_override_and_km_divergence_still_alerts(): void
+    {
+        $tank = $this->tank(1000, 5000); $vehicle = $this->vehicle(900); $service = app(FuelService::class);
+        $data = $this->fillingData($tank, $vehicle, 100, 500);
+        $first = $service->registerFilling($data);
+        $second = [...$data, 'filled_at' => now()->addHours(2), 'vehicle_km' => 999];
+        $this->assertNotNull($service->findProbableDuplicate(['tenant_id'=>$this->context['tenant']->id,'division_id'=>$this->context['division']->id,'location_id'=>$this->context['location']->id], $second));
+        try { $service->registerFilling($second); $this->fail('Deveria exigir confirmação.'); } catch (ValidationException $e) { $this->assertArrayHasKey('duplicate', $e->errors()); }
+        $this->assertSame(1, FuelFilling::count()); $this->assertSame(1, FuelMovement::count());
+        $service->registerFilling([...$second, 'confirm_duplicate' => true]);
+        $this->assertSame(2, FuelFilling::count()); $this->assertSame(2, FuelMovement::count());
+        $this->assertDatabaseHas('system_audit_logs', ['action'=>'duplicate_override','auditable_id'=>FuelFilling::latest('id')->value('id')]);
+    }
+
     public function test_external_filling_does_not_change_tank(): void
     {
         $tank = $this->tank(1000, 5000); $vehicle = $this->vehicle(800); $product = $tank->product;

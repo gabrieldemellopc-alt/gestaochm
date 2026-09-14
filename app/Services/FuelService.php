@@ -233,6 +233,7 @@ class FuelService
             'confirm_high_vehicle_hours' => ['nullable', 'boolean'],
             'km_reading_confirmed' => ['nullable', 'boolean'],
             'hours_reading_confirmed' => ['nullable', 'boolean'],
+            'confirm_duplicate' => ['nullable', 'boolean'],
         ])->validate();
 
         $source = $validated['source'] ?? FuelFilling::SOURCE_INTERNAL_TANK;
@@ -255,6 +256,12 @@ class FuelService
                 $validated = array_merge($validated, app(SupplierSnapshotService::class)->fromResolvedSupplier($supplier, $validated['supplier_name'] ?? null));
             }
             $vehicle = $this->vehicleForContext((int) $validated['vehicle_id'], $context);
+            $duplicate = ! $this->operationContext?->isHistoricalImport
+                ? $this->findProbableDuplicate($context, $validated)
+                : null;
+            if ($duplicate && empty($validated['confirm_duplicate'])) {
+                throw ValidationException::withMessages(['duplicate' => 'Possível abastecimento duplicado: #'.$duplicate->id.' em '.$duplicate->filled_at->format('d/m/Y H:i').' — '.$duplicate->quantity_liters.' L. Confirme para registrar mesmo assim.']);
+            }
             if (! $this->operationContext?->isHistoricalImport) {
             }
             $this->validateDriverForContext($validated['driver_id'] ?? null, $context);
@@ -382,6 +389,9 @@ class FuelService
                     'legacy_balance_anomaly_allowed' => $this->operationContext?->allowLegacyBalanceAnomalies,
                 ],
             ]);
+            if ($duplicate) {
+                $this->auditLog->record(['tenant_id'=>$context['tenant_id'],'division_id'=>$context['division_id'],'location_id'=>$context['location_id'],'user_id'=>$context['user']->id,'auditable'=>$filling,'module'=>'fuel','action'=>'duplicate_override','summary'=>'Possível duplicidade confirmada conscientemente.','metadata'=>['duplicate_filling_id'=>$duplicate->id,'compared'=>['filled_at'=>$validated['filled_at'],'quantity_liters'=>$quantity,'total_cost'=>$totalCost,'vehicle_km'=>$validated['vehicle_km'] ?? null,'vehicle_hours'=>$validated['vehicle_hours'] ?? null]]]);
+            }
 
             return $filling;
         });
@@ -584,6 +594,18 @@ class FuelService
         }
 
         return $product;
+    }
+
+    /** Strong same-day match; intentionally excludes cancelled records. */
+    public function findProbableDuplicate(array $context, array $data): ?FuelFilling
+    {
+        $query = FuelFilling::query()
+            ->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])
+            ->where('vehicle_id', $data['vehicle_id'])->whereDate('filled_at', Carbon::parse($data['filled_at'])->toDateString())
+            ->whereNull('cancelled_at')
+            ->whereBetween('quantity_liters', [(float) $data['quantity_liters'] - .01, (float) $data['quantity_liters'] + .01]);
+        if (($data['total_cost'] ?? null) !== null) $query->whereBetween('total_cost', [(float) $data['total_cost'] - .02, (float) $data['total_cost'] + .02]);
+        return $query->first();
     }
 
     private function validateDriverForContext(mixed $driverId, array $context): void

@@ -459,6 +459,15 @@
 
                 <form method="POST" action="{{ route('fuel.fillings.store') }}" class="fuel-form fuel-filling-form"     onsubmit="return validateFuelFillingCounters(this);">
                     @csrf
+                    <input type="hidden" name="confirm_duplicate" value="{{ old('confirm_duplicate', 0) }}">
+                    @if($errors->fuelFilling->has('duplicate'))
+                        <div class="fuel-span-12 fuel-alert danger">
+                            <strong><i class="bi bi-exclamation-triangle"></i> Possível abastecimento duplicado</strong>
+                            <p>{{ $errors->fuelFilling->first('duplicate') }}</p>
+                            <p>Confira os dados antes de continuar.</p>
+                            <button type="button" class="fuel-action-btn" onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='1'; this.closest('form').submit();">Registrar mesmo assim</button>
+                        </div>
+                    @endif
                     <div class="fuel-form-grid fuel-filling-layout">
                     <input type="hidden" name="km_reading_confirmed" value="0">
                     <input type="hidden" name="hours_reading_confirmed" value="0">

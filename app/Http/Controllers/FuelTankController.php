@@ -326,6 +326,7 @@ class FuelTankController extends Controller
                 'notes',
                 'km_reading_confirmed',
                 'hours_reading_confirmed',
+                'confirm_duplicate',
             ]));
         } catch (ValidationException $exception) {
             return back()
