@@ -212,6 +212,12 @@ class VehicleReadingService
         );
     }
 
+    /** Records an observed reading that must stay out of automatic counters and consumption. */
+    public function recordSuspectReading(Vehicle $vehicle, string $type, float|int $value, User $user, string $source, ?string $observation = null, CarbonInterface|string|null $readAt = null, FuelFilling|int|null $fuelFilling = null, string $reason = 'Leitura marcada como suspeita.'): bool
+    {
+        return $this->recordUnreliableMeterReading($vehicle, $type, (float) $value, $user, $source, $observation, $this->effectiveDate($readAt), $this->fuelFillingId($fuelFilling), Vehicle::METER_STATUS_UNRELIABLE, $reason);
+    }
+
     /**
      * Records that the current operational counter was physically checked without
      * changing its value. This is intentionally separate from a generic touch().
@@ -389,14 +395,14 @@ class VehicleReadingService
         return true;
     }
 
-    private function recordUnreliableMeterReading(Vehicle $vehicle, string $type, float $value, User $user, string $source, ?string $observation, CarbonInterface $effectiveAt, ?int $fillingId, string $meterStatus): bool
+    private function recordUnreliableMeterReading(Vehicle $vehicle, string $type, float $value, User $user, string $source, ?string $observation, CarbonInterface $effectiveAt, ?int $fillingId, string $meterStatus, ?string $explicitReason = null): bool
     {
         $label = $meterStatus === Vehicle::METER_STATUS_FAULTY ? 'medidor marcado como com defeito' : 'medidor marcado como não confiável';
         VehicleUpdateLog::create([
             'vehicle_id' => $vehicle->id, 'user_id' => $user->id, 'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id,
             'type' => $type, 'source' => $source, 'read_at' => $effectiveAt, 'fuel_filling_id' => $fillingId,
             'old_value' => $vehicle->{$type === 'km' ? 'current_km' : 'current_hours'}, 'new_value' => $value,
-            ...$this->readingMetadata(VehicleUpdateLog::READING_STATUS_SUSPECT, 'Leitura observada; '.$label.'. Não altera contador nem participa de consumo.'),
+            ...$this->readingMetadata(VehicleUpdateLog::READING_STATUS_SUSPECT, $explicitReason ?? ('Leitura observada; '.$label.'. Não altera contador nem participa de consumo.')),
             'observation' => $observation,
         ]);
         if ($type === 'km' && $fillingId && \Illuminate\Support\Facades\Schema::hasColumn('fuel_fillings', 'vehicle_km_status')) {

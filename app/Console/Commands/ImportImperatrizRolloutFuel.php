@@ -37,8 +37,7 @@ class ImportImperatrizRolloutFuel extends Command
         if (! $user) return $this->blocked('Usuário responsável não encontrado.');
         $rows = $this->rows($file);
         $hash = hash_file('sha256', $file);
-        if ($this->option('commit') && FuelImportBatch::query()->where('tenant_id', $tank->tenant_id)->where('source_hash', $hash)->exists()) return $this->blocked('Este arquivo já possui lote importado.');
-        $summary = array_fill_keys(['total','existing','probable_duplicate','new','normal','unreliable','suspect','pending','missing','errors'], 0);
+        $summary = array_fill_keys(['total','existing','probable_duplicate','new','importable','normal','unreliable','suspect','pending','missing','errors'], 0);
         $summary['liters'] = $summary['value'] = 0;
         $actions = [];
         $run = function () use ($rows, $tank, $user, $hash, $readings, $audit, &$summary, &$actions) {
@@ -47,13 +46,15 @@ class ImportImperatrizRolloutFuel extends Command
                 $summary['total']++; $summary['liters'] += $row['liters']; $summary['value'] += $row['total'];
                 [$status, $vehicle, $reason] = $this->classify($row, $tank);
                 $summary[$status] = ($summary[$status] ?? 0) + 1;
+                if (in_array($status, ['normal','unreliable','suspect'], true)) { $summary['new']++; $summary['importable']++; }
                 $actions[] = [$row['line'], $row['date']->format('d/m/Y'), $row['plate'], $row['liters'], $row['reading'], $status, $reason];
-                if (! in_array($status, ['new','normal','unreliable','suspect'], true) || ! $this->option('commit')) continue;
-                $filling = FuelFilling::create(['tenant_id'=>$tank->tenant_id,'division_id'=>$tank->division_id,'location_id'=>3,'fuel_product_id'=>$tank->fuel_product_id,'source'=>FuelFilling::SOURCE_EXTERNAL_STATION,'vehicle_id'=>$vehicle->id,'filled_at'=>$row['date'],'quantity_liters'=>$row['liters'],'unit_cost'=>$row['unit'],'source_unit_cost'=>$row['unit'],'total_cost'=>$row['total'],'source_total_cost'=>$row['total'],'supplier_name'=>'Importação histórica Imperatriz','notes'=>'Importação rollout Imperatriz; ref '.$row['reference'].'; linha '.$row['line']]);
+                if (! in_array($status, ['normal','unreliable','suspect'], true)) { if ($batch) FuelImportRow::create(['fuel_import_batch_id'=>$batch->id,'row_number'=>$row['line'],'sequence'=>$row['line'],'external_reference'=>$row['reference'],'payload'=>$row + ['classification'=>$status,'reason'=>$reason],'status'=>$status,'entity_type'=>null,'entity_id'=>null]); continue; }
+                if (! $this->option('commit')) continue;
+                $filling = FuelFilling::create(['tenant_id'=>$tank->tenant_id,'division_id'=>$tank->division_id,'location_id'=>3,'fuel_tank_id'=>3,'fuel_product_id'=>$tank->fuel_product_id,'source'=>FuelFilling::SOURCE_INTERNAL_TANK,'vehicle_id'=>$vehicle->id,'filled_at'=>$row['date'],'quantity_liters'=>$row['liters'],'unit_cost'=>$row['unit'],'source_unit_cost'=>$row['unit'],'total_cost'=>$row['total'],'source_total_cost'=>$row['total'],'supplier_name'=>'Importação histórica Imperatriz','notes'=>'Importação rollout Imperatriz; sem movimento físico; ref '.$row['reference'].'; linha '.$row['line']]);
                 $type = $vehicle->km_control_enabled ? 'km' : ($vehicle->hours_control_enabled ? 'hours' : null);
-                if ($type && ! in_array($status, ['unreliable'], true)) {
-                    if ($status === 'suspect') $vehicle->setAttribute($type.'_meter_status', Vehicle::METER_STATUS_UNRELIABLE);
-                    $type === 'km' ? $readings->updateKm($vehicle, $row['reading'], $user, 'fuel_filling_import', 'Importação histórica '.$row['reference'], 'vehicle_km', true, $row['date'], $filling) : $readings->updateHours($vehicle, $row['reading'], $user, 'fuel_filling_import', 'Importação histórica '.$row['reference'], 'vehicle_hours', true, $row['date'], $filling);
+                if ($type) {
+                    if ($status === 'suspect' || ($status === 'unreliable' && $vehicle->{$type.'_meter_status'} !== Vehicle::METER_STATUS_UNRELIABLE)) $readings->recordSuspectReading($vehicle, $type, $row['reading'], $user, 'fuel_filling_import', 'Importação histórica '.$row['reference'], $row['date'], $filling, $reason);
+                    else $type === 'km' ? $readings->updateKm($vehicle, $row['reading'], $user, 'fuel_filling_import', 'Importação histórica '.$row['reference'], 'vehicle_km', true, $row['date'], $filling) : $readings->updateHours($vehicle, $row['reading'], $user, 'fuel_filling_import', 'Importação histórica '.$row['reference'], 'vehicle_hours', true, $row['date'], $filling);
                 }
                 FuelImportRow::create(['fuel_import_batch_id'=>$batch->id,'row_number'=>$row['line'],'sequence'=>$row['line'],'external_reference'=>$row['reference'],'payload'=>$row + ['classification'=>$status,'reason'=>$reason],'status'=>'imported','entity_type'=>FuelFilling::class,'entity_id'=>$filling->id]);
                 $audit->record(['tenant_id'=>$tank->tenant_id,'division_id'=>$tank->division_id,'location_id'=>3,'user_id'=>$user->id,'auditable'=>$filling,'module'=>'fuel','action'=>'imported','summary'=>'Rollout Imperatriz importado.','metadata'=>['import_batch_id'=>$batch->id,'external_reference'=>$row['reference'],'classification'=>$status,'reason'=>$reason,'historical_import'=>true]]);
@@ -63,7 +64,7 @@ class ImportImperatrizRolloutFuel extends Command
         $this->option('commit') ? DB::transaction($run) : $run();
         $this->table(['Linha','Data','Veículo','Litros','Leitura','Status','Ação'], $actions);
         $this->table(array_keys($summary), [array_values($summary)]);
-        $this->line('Efeito no saldo atual do tanque: nenhum (abastecimentos históricos externos, sem movimento físico).');
+        $this->line('Efeito no saldo atual do tanque: nenhum (abastecimentos históricos do tanque interno, sem movimento físico).');
         return self::SUCCESS;
     }
 
@@ -92,7 +93,7 @@ class ImportImperatrizRolloutFuel extends Command
         $lookup = ['JAV7132' => 'JAV7I32'][$r['plate']] ?? $r['plate'];
         $vehicle = Vehicle::query()->where('tenant_id',$tank->tenant_id)->where('division_id',$tank->division_id)->where('location_id',3)->where(fn($q)=>$q->whereRaw("REPLACE(plate,'-','')=?",[$lookup])->orWhere('asset_code',$lookup)->orWhere('name',$lookup))->first();
         if (! $vehicle) return ['missing', null, 'Veículo não encontrado'];
-        if (FuelImportRow::query()->where('external_reference',$r['reference'])->exists()) return ['existing',$vehicle,'Referência já importada'];
+        if (FuelImportRow::query()->where('external_reference',$r['reference'])->where('status','imported')->exists()) return ['existing',$vehicle,'Referência já importada'];
         $same = FuelFilling::query()->where('vehicle_id',$vehicle->id)->whereDate('filled_at',$r['date'])->whereBetween('quantity_liters',[$r['liters']-.01,$r['liters']+.01])->whereBetween('source_total_cost',[$r['total']-.02,$r['total']+.02])->exists();
         if ($same) return ['probable_duplicate',$vehicle,'Combinação veículo/data/litros/valor já existe'];
         if (in_array($r['plate'], self::SUSPECT, true)) return ['suspect',$vehicle,'Leitura conhecida como inconsistente'];
