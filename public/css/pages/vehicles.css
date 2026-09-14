@@ -3567,6 +3567,19 @@ select.form-input {
     font-weight: 800;
 }
 
+.vehicle-create-page .required-mark,
+.vehicle-edit-page .required-mark {
+    color: #f87171;
+    font-weight: 800;
+}
+
+.vehicle-create-page .form-required-note,
+.vehicle-edit-page .form-required-note {
+    margin: 0;
+    color: var(--vehicles-subtle);
+    font-size: 12px;
+}
+
 .vehicles-page .vehicles-search-wrap,
 .vehicles-page .vehicles-filter,
 .vehicle-create-page .form-input,

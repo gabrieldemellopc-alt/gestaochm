@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Division;
 use App\Models\Location;
 use App\Models\Procedure;
+use App\Models\SystemAuditLog;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserDivisionAccess;
@@ -63,6 +64,115 @@ class VehicleProcedurePersistenceTest extends TestCase
         $this->actingAs($user)->withSession(['active_division_id'=>$vehicle->division_id,'active_location_id'=>$vehicle->location_id]);
         $data = $this->payload($vehicle, []); $data['renavam'] = str_repeat('1', 41); $data['serial_number'] = str_repeat('A', 121);
         $this->put(route('vehicles.update', $vehicle), $data)->assertSessionHasErrors(['renavam','serial_number']);
+    }
+
+    public function test_store_creates_a_vehicle_with_operational_controls_and_no_meter_change_audit(): void
+    {
+        [$user, $existingVehicle] = $this->context();
+        $this->actingAs($user)->withSession(['active_division_id' => $existingVehicle->division_id, 'active_location_id' => $existingVehicle->location_id]);
+
+        $response = $this->post(route('vehicles.store'), [
+            'division_id' => $existingVehicle->division_id,
+            'location_id' => $existingVehicle->location_id,
+            'type' => 'automovel',
+            'name' => 'Veículo criado pelo fluxo real',
+            'plate' => 'NEW-1A23',
+            'current_km' => 1234,
+            'current_hours' => 56,
+            'operational_status' => 'operational',
+            'status' => 'active',
+            'km_control_enabled' => 1,
+            'hours_control_enabled' => 1,
+            'tire_control_enabled' => 1,
+            'km_meter_status' => Vehicle::METER_STATUS_NORMAL,
+            'hours_meter_status' => Vehicle::METER_STATUS_NORMAL,
+            'asset_code' => 'VEIC-001',
+            'renavam' => '012.345.678-90',
+            'serial_number' => '  CAT-123/ABC  ',
+        ]);
+
+        $response->assertRedirect(route('vehicles.index'));
+
+        $vehicle = Vehicle::query()->where('plate', 'NEW-1A23')->firstOrFail();
+        $this->assertSame('Veículo criado pelo fluxo real', $vehicle->name);
+        $this->assertSame('VEIC-001', $vehicle->asset_code);
+        $this->assertSame('01234567890', $vehicle->renavam);
+        $this->assertSame('CAT-123/ABC', $vehicle->serial_number);
+        $this->assertTrue($vehicle->km_control_enabled);
+        $this->assertTrue($vehicle->hours_control_enabled);
+        $this->assertTrue($vehicle->tire_control_enabled);
+        $this->assertSame(Vehicle::METER_STATUS_NORMAL, $vehicle->km_meter_status);
+        $this->assertSame(Vehicle::METER_STATUS_NORMAL, $vehicle->hours_meter_status);
+        $this->assertSame(0, SystemAuditLog::query()->where('auditable_type', Vehicle::class)->where('auditable_id', $vehicle->id)->where('action', 'vehicle_meter_status_updated')->count());
+    }
+
+    public function test_update_audits_meter_status_only_when_it_changes(): void
+    {
+        [$user, $vehicle] = $this->context();
+        $this->actingAs($user)->withSession(['active_division_id' => $vehicle->division_id, 'active_location_id' => $vehicle->location_id]);
+
+        $payload = $this->payload($vehicle, []);
+        $payload['km_meter_status'] = Vehicle::METER_STATUS_FAULTY;
+        $payload['hours_meter_status'] = Vehicle::METER_STATUS_NORMAL;
+
+        $this->put(route('vehicles.update', $vehicle), $payload)->assertRedirect();
+
+        $audit = SystemAuditLog::query()
+            ->where('auditable_type', Vehicle::class)
+            ->where('auditable_id', $vehicle->id)
+            ->where('action', 'vehicle_meter_status_updated')
+            ->sole();
+
+        $this->assertSame(Vehicle::METER_STATUS_NORMAL, $audit->before_data['km_meter_status']);
+        $this->assertSame(Vehicle::METER_STATUS_FAULTY, $audit->after_data['km_meter_status']);
+
+        $this->put(route('vehicles.update', $vehicle->fresh()), $payload)->assertRedirect();
+
+        $this->assertSame(1, SystemAuditLog::query()
+            ->where('auditable_type', Vehicle::class)
+            ->where('auditable_id', $vehicle->id)
+            ->where('action', 'vehicle_meter_status_updated')
+            ->count());
+    }
+
+    public function test_store_allows_omitted_renavam_and_serial_number(): void
+    {
+        [$user, $existingVehicle] = $this->context();
+        $this->actingAs($user)->withSession(['active_division_id' => $existingVehicle->division_id, 'active_location_id' => $existingVehicle->location_id]);
+
+        $this->post(route('vehicles.store'), [
+            'division_id' => $existingVehicle->division_id,
+            'location_id' => $existingVehicle->location_id,
+            'type' => 'automovel',
+            'name' => 'Veículo sem identificadores opcionais',
+            'plate' => 'NUL-1A23',
+            'km_control_enabled' => 1,
+            'hours_control_enabled' => 0,
+            'tire_control_enabled' => 1,
+        ])->assertRedirect(route('vehicles.index'));
+
+        $vehicle = Vehicle::query()->where('plate', 'NUL-1A23')->firstOrFail();
+        $this->assertNull($vehicle->renavam);
+        $this->assertNull($vehicle->serial_number);
+    }
+
+    public function test_create_and_edit_forms_identify_only_required_fields(): void
+    {
+        [$user, $vehicle] = $this->context();
+        $this->actingAs($user)->withSession(['active_division_id' => $vehicle->division_id, 'active_location_id' => $vehicle->location_id]);
+
+        $create = $this->get(route('vehicles.create'))->assertOk()->getContent();
+        $edit = $this->get(route('vehicles.edit', $vehicle))->assertOk()->getContent();
+
+        foreach ([$create, $edit] as $form) {
+            $this->assertStringContainsString('class="form-required-note"', $form);
+            $this->assertStringContainsString('Campos obrigatórios', $form);
+            $this->assertStringContainsString('Nome <span class="required-mark">*</span>', $form);
+            $this->assertStringContainsString('RENAVAM</label>', $form);
+            $this->assertStringContainsString('Nº de série</label>', $form);
+            $this->assertStringNotContainsString('RENAVAM <span class="required-mark">*</span>', $form);
+            $this->assertStringNotContainsString('Nº de série <span class="required-mark">*</span>', $form);
+        }
     }
 
     private function payload(Vehicle $vehicle, array $procedures): array

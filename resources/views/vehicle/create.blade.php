@@ -123,6 +123,8 @@
         </div>
     @endif
 
+    <p class="form-required-note"><span class="required-mark">*</span> Campos obrigatórios</p>
+
 
     {{-- HERO --}}
 
@@ -168,7 +170,7 @@
 
                 <label>
 
-                    Divisão
+                    Divisão <span class="required-mark">*</span>
 
                 </label>
 
@@ -223,7 +225,7 @@
 
                 <label>
 
-                    Localidade
+                    Localidade <span class="required-mark">*</span>
 
                 </label>
 
@@ -275,7 +277,7 @@
 
             <div class="form-group">
 
-                <label>Tipo</label>
+                <label>Tipo <span class="required-mark">*</span></label>
 
                 <select
 
@@ -500,7 +502,7 @@
 
                     <label>
 
-                        Nome
+                        Nome <span class="required-mark">*</span>
 
                     </label>
 
@@ -793,8 +795,6 @@
                     type="date"
 
                     name="operation_started_at"
-
-                    required
 
                     class="form-input @error('operation_started_at') input-invalid @enderror"
 

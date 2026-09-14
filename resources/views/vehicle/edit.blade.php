@@ -56,6 +56,7 @@
         </div>
     @endif
     @method('PUT')
+    <p class="form-required-note"><span class="required-mark">*</span> Campos obrigatórios</p>
 {{-- HERO --}}
 <div class="vehicle-edit-hero vehicle-edit-hero--compact">
     <div class="vehicle-edit-hero-icon-col">
@@ -70,12 +71,13 @@
     <div class="vehicle-edit-hero-fields">
         <div class="form-group">
             <label>
-                Divisão
+                Divisão <span class="required-mark">*</span>
             </label>
             <select
                 name="division_id"
                 id="vehicleDivisionSelect"
                 class="form-input"
+                required
             >
                 @foreach($divisions as $division)
                     <option
@@ -89,12 +91,13 @@
         </div>
         <div class="form-group">
             <label>
-                Localidade
+                Localidade <span class="required-mark">*</span>
             </label>
             <select
                 name="location_id"
                 id="vehicleLocationSelect"
                 class="form-input"
+                required
             >
                 @foreach($locations as $location)
                     <option
@@ -109,12 +112,13 @@
         </div>
         <div class="form-group">
             <label>
-                Tipo
+                Tipo <span class="required-mark">*</span>
             </label>
             <select
                 name="type"
                 id="vehicleTypeSelect"
                 class="form-input"
+                required
             >
                 @foreach($vehicleTypes as $value => $type)
                     <option value="{{ $value }}" @selected(old('type', $vehicle->type) === $value)>{{ $type['label'] }}</option>
@@ -163,11 +167,12 @@
             </div>
             <div class="form-group">
                 <label>
-                    Status 
+                    Status <span class="required-mark">*</span>
                 </label>
                 <select
                     name="operational_status"
                     class="form-input"
+                    required
                 >
                     <option
                         value="operational"
@@ -199,13 +204,14 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label>
-                        Nome
+                        Nome <span class="required-mark">*</span>
                     </label>
                     <input
                         type="text"
                         name="name"
                         class="form-input"
                         value="{{ $vehicle->name }}"
+                        required
                     >
                 </div>
                 <div class="form-group">
@@ -335,12 +341,13 @@
                 <div class="form-group">
         
                     <label>
-                        Situação
+                        Situação <span class="required-mark">*</span>
                     </label>
         
                     <select
                         name="status"
                         class="form-input"
+                        required
                     >
         
                         <option

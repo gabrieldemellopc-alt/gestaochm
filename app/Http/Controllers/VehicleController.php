@@ -408,6 +408,7 @@ class VehicleController extends Controller
             ],
             'renavam' => ['nullable', 'string', 'max:40'],
             'serial_number' => ['nullable', 'string', 'max:120'],
+            'asset_code' => ['nullable', 'string', 'max:255'],
 
 
 
@@ -666,6 +667,7 @@ class VehicleController extends Controller
 
             'renavam' => $validated['renavam'] ?? null,
             'serial_number' => $validated['serial_number'] ?? null,
+            'asset_code' => $validated['asset_code'] ?? null,
 
 
 
@@ -744,15 +746,6 @@ class VehicleController extends Controller
 
 
         ]);
-        $meterBefore = $oldData->only(['km_meter_status', 'hours_meter_status']);
-        $meterAfter = $vehicle->only(['km_meter_status', 'hours_meter_status']);
-        if ($meterBefore !== $meterAfter) {
-            app(\App\Services\AuditLogService::class)->updated($vehicle, [
-                'tenant_id' => $vehicle->tenant_id, 'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id,
-                'user_id' => $request->user()->id, 'module' => 'fleet', 'action' => 'vehicle_meter_status_updated',
-                'summary' => 'Confiabilidade do medidor do veículo atualizada.', 'before_data' => $meterBefore, 'after_data' => $meterAfter,
-            ]);
-        }
         $vehicle->fuelProducts()->sync(app(VehicleFuelPolicy::class)->validateIds($vehicle->tenant_id, $validated['fuel_product_ids'] ?? []));
 
 
@@ -1126,6 +1119,7 @@ class VehicleController extends Controller
             ],
             'renavam' => ['nullable', 'string', 'max:40'],
             'serial_number' => ['nullable', 'string', 'max:120'],
+            'asset_code' => ['nullable', 'string', 'max:255'],
 
 
 
@@ -1462,6 +1456,7 @@ class VehicleController extends Controller
 
             'renavam' => $validated['renavam'] ?? null,
             'serial_number' => $validated['serial_number'] ?? null,
+            'asset_code' => $validated['asset_code'] ?? null,
 
 
 
@@ -1546,6 +1541,25 @@ class VehicleController extends Controller
 
 
         ]);
+
+        $meterBefore = $oldData->only(['km_meter_status', 'hours_meter_status']);
+        $meterAfter = $vehicle->only(['km_meter_status', 'hours_meter_status']);
+
+        if ($meterBefore !== $meterAfter) {
+            app(\App\Services\AuditLogService::class)->record([
+                'auditable' => $vehicle,
+                'tenant_id' => $vehicle->tenant_id,
+                'division_id' => $vehicle->division_id,
+                'location_id' => $vehicle->location_id,
+                'user_id' => $request->user()->id,
+                'module' => 'fleet',
+                'action' => 'vehicle_meter_status_updated',
+                'summary' => 'Confiabilidade do medidor do veículo atualizada.',
+                'before_data' => $meterBefore,
+                'after_data' => $meterAfter,
+            ]);
+        }
+
         $vehicle->fuelProducts()->sync(app(VehicleFuelPolicy::class)->validateIds($vehicle->tenant_id, $validated['fuel_product_ids'] ?? []));
 
 
