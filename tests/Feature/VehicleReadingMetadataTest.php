@@ -280,6 +280,18 @@ class VehicleReadingMetadataTest extends TestCase
         $this->assertDatabaseHas('vehicle_update_logs', ['vehicle_id' => $vehicle->id, 'type' => 'hours', 'new_value' => '151.4', 'reading_status' => VehicleUpdateLog::READING_STATUS_VALID]);
     }
 
+    public function test_fuel_filling_form_keeps_counter_minimums_technical_and_does_not_bind_them_to_current_readings(): void
+    {
+        $view = file_get_contents(resource_path('views/fuel/tanks/index.blade.php'));
+
+        $this->assertMatchesRegularExpression('/name="vehicle_hours"\s+min="0"/s', $view);
+        $this->assertMatchesRegularExpression('/name="vehicle_km"\s+min="0"/s', $view);
+        $this->assertStringNotContainsString('kmInput.min = currentKm', $view);
+        $this->assertStringNotContainsString('hoursInput.min = currentHours', $view);
+        $this->assertStringNotContainsString('informedKm < currentKm', $view);
+        $this->assertStringNotContainsString('informedHours < currentHours', $view);
+    }
+
     private function vehicleAndUser(float $km, ?string $lastUpdateAt = null): array
     {
         return [

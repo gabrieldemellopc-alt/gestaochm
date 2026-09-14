@@ -1068,19 +1068,22 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
         if (!selected || !selected.value) {
             kmInput.value = '';
             hoursInput.value = '';
-            kmInput.removeAttribute('min');
-            hoursInput.removeAttribute('min');
+            kmInput.min = 0;
+            hoursInput.min = 0;
             return;
         }
     
         const currentKm = Number(selected.dataset.currentKm || 0);
         const currentHours = Number(selected.dataset.currentHours || 0);
-    
+
         kmInput.value = currentKm;
-        kmInput.min = currentKm;
-    
+        // The current counter is a convenience default only. A filling may be
+        // backdated, so HTML must not reject a value before the service can
+        // classify it against the chronological timeline.
+        kmInput.min = 0;
+
         hoursInput.value = currentHours;
-        hoursInput.min = currentHours;
+        hoursInput.min = 0;
     }
     
     function validateFuelFillingCounters(form) {
@@ -1105,28 +1108,6 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
         const informedKm = kmInput.value !== '' ? Number(kmInput.value) : null;
         const informedHours = hoursInput.value !== '' ? Number(hoursInput.value) : null;
     
-        if (informedKm !== null && informedKm < currentKm) {
-            alert(
-                `O KM informado não pode ser menor que o KM atual do veículo.\n\n` +
-                `KM atual: ${currentKm.toLocaleString('pt-BR')}\n` +
-                `KM informado: ${informedKm.toLocaleString('pt-BR')}`
-            );
-    
-            kmInput.focus();
-            return false;
-        }
-    
-        if (informedHours !== null && informedHours < currentHours) {
-            alert(
-                `O horímetro informado não pode ser menor que o horímetro atual do veículo.\n\n` +
-                `Horímetro atual: ${currentHours.toLocaleString('pt-BR')}\n` +
-                `Horímetro informado: ${informedHours.toLocaleString('pt-BR')}`
-            );
-    
-            hoursInput.focus();
-            return false;
-        }
-        
         const newKm = Number(kmInput.value || 0);
         
         if (informedKm !== null && informedKm - currentKm > 500) {
