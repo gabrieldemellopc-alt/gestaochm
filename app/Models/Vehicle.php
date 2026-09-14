@@ -34,6 +34,8 @@ class Vehicle extends Model
         'tenant_id',
         'name',
         'plate',
+        'renavam',
+        'serial_number',
         'brand',
         'model',
         'year',

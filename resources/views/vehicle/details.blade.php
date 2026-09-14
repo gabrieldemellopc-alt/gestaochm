@@ -173,6 +173,14 @@
 
                     @endif
 
+                    @if($vehicle->renavam)
+                        <span>• RENAVAM: {{ $vehicle->renavam }}</span>
+                    @endif
+
+                    @if($vehicle->serial_number)
+                        <span>• Nº de série: {{ $vehicle->serial_number }}</span>
+                    @endif
+
 
 
                     @if($vehicle->currentAllocation?->location)

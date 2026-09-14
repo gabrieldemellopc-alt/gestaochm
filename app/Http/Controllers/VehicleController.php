@@ -326,6 +326,11 @@ class VehicleController extends Controller
 
         */
 
+        $request->merge([
+            'renavam' => ($value = preg_replace('/\D/', '', (string) $request->input('renavam'))) !== '' ? $value : null,
+            'serial_number' => ($value = trim((string) $request->input('serial_number'))) !== '' ? $value : null,
+        ]);
+
 
 
         $validated = $request->validate([
@@ -401,6 +406,8 @@ class VehicleController extends Controller
                 Rule::unique('vehicles', 'plate'),
 
             ],
+            'renavam' => ['nullable', 'string', 'max:40'],
+            'serial_number' => ['nullable', 'string', 'max:120'],
 
 
 
@@ -656,6 +663,9 @@ class VehicleController extends Controller
             'plate' =>
 
                 $validated['plate'],
+
+            'renavam' => $validated['renavam'] ?? null,
+            'serial_number' => $validated['serial_number'] ?? null,
 
 
 
@@ -987,6 +997,10 @@ class VehicleController extends Controller
         Vehicle $vehicle
     ) {
         $this->ensureVehicleInAccessibleScope($vehicle);
+        $request->merge([
+            'renavam' => ($value = preg_replace('/\D/', '', (string) $request->input('renavam'))) !== '' ? $value : null,
+            'serial_number' => ($value = trim((string) $request->input('serial_number'))) !== '' ? $value : null,
+        ]);
 
 
         /*
@@ -1110,6 +1124,8 @@ class VehicleController extends Controller
                     ->ignore($vehicle->id),
 
             ],
+            'renavam' => ['nullable', 'string', 'max:40'],
+            'serial_number' => ['nullable', 'string', 'max:120'],
 
 
 
@@ -1443,6 +1459,9 @@ class VehicleController extends Controller
             'plate' =>
 
                 $validated['plate'],
+
+            'renavam' => $validated['renavam'] ?? null,
+            'serial_number' => $validated['serial_number'] ?? null,
 
 
 

@@ -35,6 +35,36 @@ class VehicleProcedurePersistenceTest extends TestCase
         $this->assertFalse($vehicle->fresh()->load('procedures')->procedures->contains('id', $procedure->id));
     }
 
+    public function test_update_normalizes_renavam_and_serial_number_without_losing_leading_zeroes(): void
+    {
+        [$user, $vehicle] = $this->context();
+        $this->actingAs($user)->withSession(['active_division_id'=>$vehicle->division_id,'active_location_id'=>$vehicle->location_id]);
+        $data = $this->payload($vehicle, []);
+        $data['renavam'] = ' 001.234.567-89 '; $data['serial_number'] = '  CAT-123/ABC  ';
+        $this->put(route('vehicles.update', $vehicle), $data)->assertRedirect();
+        $vehicle->refresh();
+        $this->assertSame('00123456789', $vehicle->renavam);
+        $this->assertSame('CAT-123/ABC', $vehicle->serial_number);
+    }
+
+    public function test_update_allows_empty_identifiers_and_persists_null(): void
+    {
+        [$user, $vehicle] = $this->context();
+        $vehicle->update(['renavam'=>'01234567890','serial_number'=>'CAT-1']);
+        $this->actingAs($user)->withSession(['active_division_id'=>$vehicle->division_id,'active_location_id'=>$vehicle->location_id]);
+        $data = $this->payload($vehicle, []); $data['renavam'] = ''; $data['serial_number'] = '   ';
+        $this->put(route('vehicles.update', $vehicle), $data)->assertRedirect();
+        $this->assertNull($vehicle->fresh()->renavam); $this->assertNull($vehicle->fresh()->serial_number);
+    }
+
+    public function test_identifier_lengths_are_validated(): void
+    {
+        [$user, $vehicle] = $this->context();
+        $this->actingAs($user)->withSession(['active_division_id'=>$vehicle->division_id,'active_location_id'=>$vehicle->location_id]);
+        $data = $this->payload($vehicle, []); $data['renavam'] = str_repeat('1', 41); $data['serial_number'] = str_repeat('A', 121);
+        $this->put(route('vehicles.update', $vehicle), $data)->assertSessionHasErrors(['renavam','serial_number']);
+    }
+
     private function payload(Vehicle $vehicle, array $procedures): array
     {
         return ['name' => $vehicle->name, 'plate' => $vehicle->plate, 'brand' => $vehicle->brand, 'model' => $vehicle->model, 'year' => $vehicle->year, 'current_km' => $vehicle->current_km, 'current_hours' => $vehicle->current_hours, 'status' => 'active', 'operational_status' => 'operational', 'type' => 'automovel', 'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id, 'tire_layout' => 'truck_6_mixed', 'km_control_enabled' => true, 'hours_control_enabled' => false, 'tire_control_enabled' => true, 'procedures' => $procedures];

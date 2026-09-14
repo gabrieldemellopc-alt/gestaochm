@@ -285,6 +285,8 @@
                     >
                 
                 </div>
+                <div class="form-group"><label>RENAVAM</label><input type="text" name="renavam" class="form-input" placeholder="Ex: 01234567890" value="{{ old('renavam', $vehicle->renavam) }}"></div>
+                <div class="form-group"><label>Nº de série</label><input type="text" name="serial_number" class="form-input" placeholder="Ex: CAT123456 ou 8A12345" value="{{ old('serial_number', $vehicle->serial_number) }}"></div>
             </div>
         </div>
         </div>
