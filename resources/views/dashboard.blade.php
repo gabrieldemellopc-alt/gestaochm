@@ -1387,7 +1387,7 @@
                                 @endif
 
                                 @if($canFillVehicle)
-                                    <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}" class="vehicle-card-action vehicle-card-action--fuel" title="Lançar abastecimento do veículo" aria-label="Lançar abastecimento do veículo" onclick="event.stopPropagation();">
+                                    <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id, 'return_to' => 'fleet_dashboard']) }}" class="vehicle-card-action vehicle-card-action--fuel" title="Lançar abastecimento do veículo" aria-label="Lançar abastecimento do veículo" onclick="event.stopPropagation();">
 
                                         <span class="vehicle-action-hover-arrow" aria-hidden="true">&uarr;</span>
 
@@ -3130,7 +3130,7 @@
 
                 <a
 
-                    :href="`/fuel/tanks?fuel_modal=filling&fuel_vehicle_id=${vehicle.id}`"
+                    :href="`/fuel/tanks?fuel_modal=filling&fuel_vehicle_id=${vehicle.id}&return_to=fleet_dashboard`"
 
                     class="vehicle-modal-action"
 

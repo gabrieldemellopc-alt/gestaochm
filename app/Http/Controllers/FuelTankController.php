@@ -127,6 +127,7 @@ class FuelTankController extends Controller
             'latestFillings' => $this->latestFillings($context),
             'openFuelModal' => request('fuel_modal') ?: session('fuel_modal'),
             'selectedFuelVehicleId' => request('fuel_vehicle_id') ?: old('vehicle_id'),
+            'fuelReturnTo' => request('return_to') === 'fleet_dashboard' || session('fuel_return_to') === 'fleet_dashboard' ? 'fleet_dashboard' : 'fuel_tanks',
             'fuelPermissions' => $fuelPermissions,
             'canViewFuelReport' => $canViewFuelReport,
 
@@ -327,18 +328,21 @@ class FuelTankController extends Controller
                 'km_reading_confirmed',
                 'hours_reading_confirmed',
                 'confirm_duplicate',
+                'return_to',
             ]));
         } catch (ValidationException $exception) {
             return back()
                 ->withErrors($exception->errors(), 'fuelFilling')
                 ->withInput()
-                ->with('fuel_modal', 'filling');
+                ->with('fuel_modal', 'filling')
+                ->with('fuel_return_to', $this->fuelReturnTo($request));
         }
 
-        return redirect()
-            ->route('fuel.tanks.index')
+        return redirect()->route($this->fuelReturnTo($request) === 'fleet_dashboard' ? 'dashboard' : 'fuel.tanks.index')
             ->with('success', 'Abastecimento registrado com sucesso.');
     }
+
+    private function fuelReturnTo(Request $request): string { return $request->input('return_to') === 'fleet_dashboard' ? 'fleet_dashboard' : 'fuel_tanks'; }
 
     public function fillingsHistory(Request $request)
     {

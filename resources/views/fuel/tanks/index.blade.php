@@ -449,7 +449,7 @@
                     </button>
                 </div>
 
-                @if($errors->fuelFilling->any())
+                @if($errors->fuelFilling->any() && ! $errors->fuelFilling->has('duplicate'))
                     <div class="fuel-form-error">
                         @foreach($errors->fuelFilling->all() as $message)
                             <span>{{ $message }}</span>
@@ -459,13 +459,14 @@
 
                 <form method="POST" action="{{ route('fuel.fillings.store') }}" class="fuel-form fuel-filling-form"     onsubmit="return validateFuelFillingCounters(this);">
                     @csrf
+                    <input type="hidden" name="return_to" value="{{ $fuelReturnTo }}">
                     <input type="hidden" name="confirm_duplicate" value="{{ old('confirm_duplicate', 0) }}">
                     @if($errors->fuelFilling->has('duplicate'))
-                        <div class="fuel-span-12 fuel-alert danger">
+                        <div class="fuel-span-12 fuel-alert danger" role="alert">
                             <strong><i class="bi bi-exclamation-triangle"></i> Possível abastecimento duplicado</strong>
                             <p>{{ $errors->fuelFilling->first('duplicate') }}</p>
                             <p>Confira os dados antes de continuar.</p>
-                            <button type="button" class="fuel-action-btn" onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='1'; this.closest('form').submit();">Registrar mesmo assim</button>
+                            <div class="fuel-form-actions"><button type="button" class="fuel-action-btn" onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='0'; this.closest('form').querySelector('[name=vehicle_km]').focus();">Voltar e revisar</button><button type="button" class="fuel-action-btn" onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='1'; this.closest('form').submit();">Registrar mesmo assim</button></div>
                         </div>
                     @endif
                     <div class="fuel-form-grid fuel-filling-layout">
