@@ -374,6 +374,8 @@ class VehicleController extends Controller
             ],
             'km_control_enabled' => ['required', 'boolean'],
             'hours_control_enabled' => ['required', 'boolean'],
+            'km_meter_status' => ['nullable', Rule::in(Vehicle::METER_STATUSES)],
+            'hours_meter_status' => ['nullable', Rule::in(Vehicle::METER_STATUSES)],
             'tire_control_enabled' => ['required', 'boolean'],
 
 
@@ -679,6 +681,8 @@ class VehicleController extends Controller
                 $request->tire_layout,
             'km_control_enabled' => $request->boolean('km_control_enabled'),
             'hours_control_enabled' => $request->boolean('hours_control_enabled'),
+            'km_meter_status' => $validated['km_meter_status'] ?? Vehicle::METER_STATUS_NORMAL,
+            'hours_meter_status' => $validated['hours_meter_status'] ?? Vehicle::METER_STATUS_NORMAL,
             'tire_control_enabled' => $request->boolean('tire_control_enabled'),
 
             'current_km' =>
@@ -730,6 +734,15 @@ class VehicleController extends Controller
 
 
         ]);
+        $meterBefore = $oldData->only(['km_meter_status', 'hours_meter_status']);
+        $meterAfter = $vehicle->only(['km_meter_status', 'hours_meter_status']);
+        if ($meterBefore !== $meterAfter) {
+            app(\App\Services\AuditLogService::class)->updated($vehicle, [
+                'tenant_id' => $vehicle->tenant_id, 'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id,
+                'user_id' => $request->user()->id, 'module' => 'fleet', 'action' => 'vehicle_meter_status_updated',
+                'summary' => 'Confiabilidade do medidor do veículo atualizada.', 'before_data' => $meterBefore, 'after_data' => $meterAfter,
+            ]);
+        }
         $vehicle->fuelProducts()->sync(app(VehicleFuelPolicy::class)->validateIds($vehicle->tenant_id, $validated['fuel_product_ids'] ?? []));
 
 
@@ -1232,6 +1245,8 @@ class VehicleController extends Controller
             ],
             'km_control_enabled' => ['required', 'boolean'],
             'hours_control_enabled' => ['required', 'boolean'],
+            'km_meter_status' => ['nullable', Rule::in(Vehicle::METER_STATUSES)],
+            'hours_meter_status' => ['nullable', Rule::in(Vehicle::METER_STATUSES)],
             'tire_control_enabled' => ['required', 'boolean'],
 
             'location_id' => [
@@ -1495,6 +1510,8 @@ class VehicleController extends Controller
                 $request->tire_layout,
             'km_control_enabled' => $request->boolean('km_control_enabled'),
             'hours_control_enabled' => $request->boolean('hours_control_enabled'),
+            'km_meter_status' => $validated['km_meter_status'] ?? Vehicle::METER_STATUS_NORMAL,
+            'hours_meter_status' => $validated['hours_meter_status'] ?? Vehicle::METER_STATUS_NORMAL,
             'tire_control_enabled' => $request->boolean('tire_control_enabled'),
 
             'division_id' =>

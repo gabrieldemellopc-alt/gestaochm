@@ -3,6 +3,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Vehicle extends Model
 {
+    public const METER_STATUS_NORMAL = 'normal';
+    public const METER_STATUS_FAULTY = 'faulty';
+    public const METER_STATUS_UNRELIABLE = 'unreliable';
+    public const METER_STATUSES = [self::METER_STATUS_NORMAL, self::METER_STATUS_FAULTY, self::METER_STATUS_UNRELIABLE];
     public const FLEET_RELATION_INTERNAL = 'internal';
     public const FLEET_RELATION_AGGREGATED = 'aggregated';
     public const FLEET_RELATION_RENTED = 'rented';
@@ -50,6 +54,8 @@ class Vehicle extends Model
         'km_control_enabled',
         'hours_control_enabled',
         'tire_control_enabled',
+        'km_meter_status',
+        'hours_meter_status',
     ];
     protected $casts = [
         'status_changed_at' => 'datetime',  

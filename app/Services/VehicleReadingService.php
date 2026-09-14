@@ -294,12 +294,17 @@ class VehicleReadingService
         $numericValue = (float) $value;
         $effectiveAt = $this->effectiveDate($readAt);
         $fillingId = $this->fuelFillingId($fuelFilling);
+        $meterStatus = $vehicle->{$type === 'km' ? 'km_meter_status' : 'hours_meter_status'} ?? Vehicle::METER_STATUS_NORMAL;
 
         if ($fillingId && VehicleUpdateLog::query()
             ->where('fuel_filling_id', $fillingId)
             ->where('type', $type)
             ->exists()) {
             return false;
+        }
+
+        if (in_array($meterStatus, [Vehicle::METER_STATUS_FAULTY, Vehicle::METER_STATUS_UNRELIABLE], true)) {
+            return $this->recordUnreliableMeterReading($vehicle, $type, $numericValue, $user, $source, $observation, $effectiveAt, $fillingId, $meterStatus);
         }
 
         $timeline = $this->timelineContext($vehicle, $type, $effectiveAt, $numericValue);
@@ -381,6 +386,25 @@ class VehicleReadingService
             ...$this->readingMetadata($timeline['inconsistent'] ? VehicleUpdateLog::READING_STATUS_SUSPECT : VehicleUpdateLog::READING_STATUS_VALID, $timeline['inconsistent'] ? $this->timelineMessage($timeline, $type) : 'Leitura histórica/retroativa; contador operacional preservado.'),
             'observation' => $observation,
         ]);
+        return true;
+    }
+
+    private function recordUnreliableMeterReading(Vehicle $vehicle, string $type, float $value, User $user, string $source, ?string $observation, CarbonInterface $effectiveAt, ?int $fillingId, string $meterStatus): bool
+    {
+        $label = $meterStatus === Vehicle::METER_STATUS_FAULTY ? 'medidor marcado como com defeito' : 'medidor marcado como não confiável';
+        VehicleUpdateLog::create([
+            'vehicle_id' => $vehicle->id, 'user_id' => $user->id, 'division_id' => $vehicle->division_id, 'location_id' => $vehicle->location_id,
+            'type' => $type, 'source' => $source, 'read_at' => $effectiveAt, 'fuel_filling_id' => $fillingId,
+            'old_value' => $vehicle->{$type === 'km' ? 'current_km' : 'current_hours'}, 'new_value' => $value,
+            ...$this->readingMetadata(VehicleUpdateLog::READING_STATUS_SUSPECT, 'Leitura observada; '.$label.'. Não altera contador nem participa de consumo.'),
+            'observation' => $observation,
+        ]);
+        if ($type === 'km' && $fillingId && \Illuminate\Support\Facades\Schema::hasColumn('fuel_fillings', 'vehicle_km_status')) {
+            FuelFilling::query()->whereKey($fillingId)->update([
+                'vehicle_km_status' => FuelFilling::KM_STATUS_SUSPECT,
+                'vehicle_km_issue' => 'Leitura registrada com '.$label.'.',
+            ]);
+        }
         return true;
     }
 

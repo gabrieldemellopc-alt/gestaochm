@@ -28,7 +28,7 @@ class VehicleReadingMetadataTest extends TestCase
 
         Schema::create('users', function (Blueprint $table) { $table->id(); $table->string('name'); $table->timestamps(); });
         Schema::create('fuel_fillings', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->unsignedBigInteger('vehicle_id')->nullable(); $table->dateTime('filled_at')->nullable(); $table->decimal('vehicle_km', 12, 2)->nullable(); $table->string('vehicle_km_status')->nullable(); $table->timestamp('cancelled_at')->nullable(); $table->timestamps(); });
-        Schema::create('vehicles', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->string('operational_status')->default('operational'); $table->decimal('current_km', 12, 2)->nullable(); $table->decimal('current_hours', 12, 2)->nullable(); $table->timestamp('last_km_update_at')->nullable(); $table->timestamp('last_hours_update_at')->nullable(); $table->boolean('km_control_enabled')->default(true); $table->boolean('hours_control_enabled')->default(false); $table->boolean('tire_control_enabled')->default(true); $table->timestamps(); });
+        Schema::create('vehicles', function (Blueprint $table) { $table->id(); $table->unsignedBigInteger('tenant_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->string('operational_status')->default('operational'); $table->decimal('current_km', 12, 2)->nullable(); $table->decimal('current_hours', 12, 2)->nullable(); $table->timestamp('last_km_update_at')->nullable(); $table->timestamp('last_hours_update_at')->nullable(); $table->boolean('km_control_enabled')->default(true); $table->string('km_meter_status')->default('normal'); $table->boolean('hours_control_enabled')->default(false); $table->string('hours_meter_status')->default('normal'); $table->boolean('tire_control_enabled')->default(true); $table->timestamps(); });
         Schema::create('vehicle_update_logs', function (Blueprint $table) {
             $table->id(); $table->unsignedBigInteger('vehicle_id'); $table->unsignedBigInteger('user_id')->nullable(); $table->unsignedBigInteger('division_id')->nullable(); $table->unsignedBigInteger('location_id')->nullable(); $table->string('type'); $table->string('source')->nullable(); $table->dateTime('read_at')->nullable(); $table->unsignedBigInteger('fuel_filling_id')->nullable(); $table->string('old_value')->nullable(); $table->string('new_value')->nullable(); $table->text('observation')->nullable(); $table->string('reading_status')->nullable(); $table->text('reading_issue')->nullable(); $table->unsignedBigInteger('reviewed_by')->nullable(); $table->timestamp('reviewed_at')->nullable(); $table->timestamps(); $table->unique(['fuel_filling_id', 'type']);
         });
@@ -290,6 +290,16 @@ class VehicleReadingMetadataTest extends TestCase
         $this->assertStringNotContainsString('hoursInput.min = currentHours', $view);
         $this->assertStringNotContainsString('informedKm < currentKm', $view);
         $this->assertStringNotContainsString('informedHours < currentHours', $view);
+    }
+
+    public function test_unreliable_meter_records_a_suspect_reading_without_promoting_the_counter(): void
+    {
+        [$vehicle, $user] = $this->vehicleAndUser(2500, '2026-09-10 08:00:00');
+        $vehicle->setAttribute('km_meter_status', Vehicle::METER_STATUS_UNRELIABLE);
+
+        $this->assertTrue(app(VehicleReadingService::class)->updateKm($vehicle, 2700, $user, 'fuel_filling', null, 'vehicle_km', false, '2026-09-11 08:00:00'));
+        $this->assertSame(2500.0, (float) $vehicle->fresh()->current_km);
+        $this->assertDatabaseHas('vehicle_update_logs', ['vehicle_id' => $vehicle->id, 'new_value' => '2700', 'reading_status' => VehicleUpdateLog::READING_STATUS_SUSPECT]);
     }
 
     private function vehicleAndUser(float $km, ?string $lastUpdateAt = null): array

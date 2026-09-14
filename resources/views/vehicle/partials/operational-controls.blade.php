@@ -135,4 +135,27 @@
 
     </div>
 
+    <div class="vehicle-operational-controls__grid">
+        <label class="operational-control-card">
+            <span class="operational-control-card__content">
+                <strong>Confiabilidade do hodômetro</strong>
+                <select name="km_meter_status" class="form-input">
+                    <option value="normal" @selected(old('km_meter_status', $vehicle->km_meter_status ?? 'normal') === 'normal')>Normal</option>
+                    <option value="faulty" @selected(old('km_meter_status', $vehicle->km_meter_status ?? 'normal') === 'faulty')>Com defeito</option>
+                    <option value="unreliable" @selected(old('km_meter_status', $vehicle->km_meter_status ?? 'normal') === 'unreliable')>Não confiável</option>
+                </select>
+            </span>
+        </label>
+        <label class="operational-control-card">
+            <span class="operational-control-card__content">
+                <strong>Confiabilidade do horímetro</strong>
+                <select name="hours_meter_status" class="form-input">
+                    <option value="normal" @selected(old('hours_meter_status', $vehicle->hours_meter_status ?? 'normal') === 'normal')>Normal</option>
+                    <option value="faulty" @selected(old('hours_meter_status', $vehicle->hours_meter_status ?? 'normal') === 'faulty')>Com defeito</option>
+                    <option value="unreliable" @selected(old('hours_meter_status', $vehicle->hours_meter_status ?? 'normal') === 'unreliable')>Não confiável</option>
+                </select>
+            </span>
+        </label>
+    </div>
+
 </section>

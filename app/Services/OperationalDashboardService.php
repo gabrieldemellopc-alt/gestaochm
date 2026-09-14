@@ -54,7 +54,7 @@ class OperationalDashboardService
     {
         return FuelFilling::query()
             ->with([
-                'vehicle:id,name,plate,asset_code,type,fleet_relation,km_control_enabled,hours_control_enabled,tire_control_enabled',
+                'vehicle:id,name,plate,asset_code,type,fleet_relation,km_control_enabled,hours_control_enabled,km_meter_status,hours_meter_status,tire_control_enabled',
                 'product:id,name',
                 'vehicleReadingLogs:id,fuel_filling_id,type,reading_status',
             ])
@@ -205,7 +205,13 @@ class OperationalDashboardService
     {
         // Respect the existing valid/suspect/ignored status, while excluding the
         // historical sentinel values 0 and 1 from statistical consumption only.
-        return $filling->is_km_reading_usable && (float) $filling->vehicle_km > 1.0;
+        $kmLog = $filling->relationLoaded('vehicleReadingLogs')
+            ? $filling->vehicleReadingLogs->firstWhere('type', 'km')
+            : null;
+
+        return $filling->is_km_reading_usable
+            && ($kmLog === null || $kmLog->is_reading_usable)
+            && (float) $filling->vehicle_km > 1.0;
     }
 
     private function averageLitersPerHour(Collection $fillings): array
