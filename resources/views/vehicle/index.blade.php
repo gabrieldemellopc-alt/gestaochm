@@ -939,23 +939,7 @@
 
 
 
-                                            asset(
-
-
-
-                                                'images/' .
-
-
-
-                                                ($vehicle->type ?? 'lixo') .
-
-
-
-                                                '.png'
-
-
-
-                                            )
+                                            asset('images/' . $vehicle->type_icon)
 
 
 
@@ -1837,23 +1821,7 @@
 
 
 
-                                    asset(
-
-
-
-                                        'images/' .
-
-
-
-                                        ($vehicle->type ?? 'lixo') .
-
-
-
-                                        '.png'
-
-
-
-                                    )
+                                    asset('images/' . $vehicle->type_icon)
 
 
 

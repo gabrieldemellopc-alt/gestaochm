@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\ActiveContextService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +49,36 @@ class AuthenticatedSessionController extends Controller
     
         $request->session()->regenerate();
     
+        /*
+         * Inicializa o contexto operacional antes de retornar para uma URL
+         * acessada diretamente e preservada pelo Laravel como "intended".
+         */
+        if ($user) {
+            $activeContext = app(ActiveContextService::class);
+
+            $activeDivision = $activeContext->activeDivision($user);
+
+            if (! $activeDivision) {
+                $activeDivision = $activeContext
+                    ->availableDivisions($user)
+                    ->first();
+
+                if ($activeDivision) {
+                    $request->session()->put(
+                        'active_division_id',
+                        $activeDivision->id
+                    );
+                }
+            }
+
+            if ($activeDivision) {
+                $activeContext->initializeActiveLocation(
+                    $user,
+                    $activeDivision->id
+                );
+            }
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
     /**

@@ -199,8 +199,41 @@ class DashboardController extends Controller
 
 
 
-        $fleetRelation = $request->query('fleet_relation', Vehicle::FLEET_RELATION_INTERNAL);
-        abort_unless(in_array($fleetRelation, [Vehicle::FLEET_RELATION_INTERNAL, Vehicle::FLEET_RELATION_AGGREGATED, Vehicle::FLEET_RELATION_RENTED, 'all'], true), 404);
+        $allowedFleetRelations = [
+            Vehicle::FLEET_RELATION_INTERNAL,
+            Vehicle::FLEET_RELATION_AGGREGATED,
+            Vehicle::FLEET_RELATION_RENTED,
+            'all',
+        ];
+
+        $fleetRelationCookie = 'chm_fleet_relation_'.$activeLocation->id;
+
+        if ($request->has('fleet_relation')) {
+            $fleetRelation = (string) $request->query('fleet_relation');
+
+            abort_unless(
+                in_array($fleetRelation, $allowedFleetRelations, true),
+                404
+            );
+
+            cookie()->queue(
+                cookie(
+                    $fleetRelationCookie,
+                    $fleetRelation,
+                    0
+                )
+            );
+        } else {
+            $savedFleetRelation = $request->cookie($fleetRelationCookie);
+
+            $fleetRelation = in_array(
+                $savedFleetRelation,
+                $allowedFleetRelations,
+                true
+            )
+                ? $savedFleetRelation
+                : Vehicle::FLEET_RELATION_INTERNAL;
+        }
         $vehicles = Vehicle::with([
 
         
@@ -1961,6 +1994,7 @@ class DashboardController extends Controller
 
 
         return view('dashboard', compact(
+            'fleetRelation',
 
 
 
