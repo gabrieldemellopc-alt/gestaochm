@@ -18,9 +18,9 @@ return new class extends Migration {
             $table->string('related_entity_type')->nullable(); $table->unsignedBigInteger('related_entity_id')->nullable();
             $table->string('fingerprint', 128); $table->string('status')->default('new');
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamp('reviewed_at')->nullable(); $table->text('resolution_note')->nullable();
-            $table->timestamp('first_detected_at'); $table->timestamp('last_detected_at');
-            $table->timestamp('resolved_at')->nullable(); $table->timestamp('ignored_at')->nullable(); $table->timestamp('archived_at')->nullable();
+            $table->dateTime('reviewed_at')->nullable(); $table->text('resolution_note')->nullable();
+            $table->dateTime('first_detected_at'); $table->dateTime('last_detected_at');
+            $table->dateTime('resolved_at')->nullable(); $table->dateTime('ignored_at')->nullable(); $table->dateTime('archived_at')->nullable();
             $table->timestamps();
             $table->unique(['tenant_id', 'fingerprint'], 'consistency_alert_tenant_fingerprint_unique');
             $table->index(['tenant_id', 'division_id', 'location_id', 'status'], 'consistency_alert_scope_status_index');
