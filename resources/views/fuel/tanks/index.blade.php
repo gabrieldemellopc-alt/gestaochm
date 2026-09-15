@@ -196,17 +196,32 @@
                         @endif
                     </dl>
 
-                    <div class="fuel-card-actions">
-                        @if($tank->active && $canReceiveFuel)
-                            <button type="button" class="fuel-secondary-action" onclick="openFuelModal('receipt-{{ $tank->id }}')">
-                                <i class="bi bi-plus-circle"></i>
-                                Recebimento
-                            </button>
-                        @endif
+                    <div class="fuel-card-actions fuel-tank-actions">
+                        <div class="fuel-tank-actions__primary">
+                            @if($tank->active && $canReceiveFuel)
+                                <button
+                                    type="button"
+                                    class="fuel-tank-receive-action"
+                                    onclick="openFuelModal('receipt-{{ $tank->id }}')"
+                                    title="Registrar a chegada de combustível e adicionar o volume ao tanque"
+                                >
+                                    <i class="bi bi-truck"></i>
+                                    <span>
+                                        <strong>Registrar recebimento</strong>
+                                        <small>Entrada de produto no tanque</small>
+                                    </span>
+                                </button>
+                            @endif
+                        </div>
 
-                        <button type="button" class="fuel-secondary-action" onclick="openFuelModal('edit-{{ $tank->id }}')">
+                        <button
+                            type="button"
+                            class="fuel-tank-edit-action"
+                            onclick="openFuelModal('edit-{{ $tank->id }}')"
+                            title="Editar configuração do tanque"
+                        >
                             <i class="bi bi-pencil"></i>
-                            Editar
+                            Editar tanque
                         </button>
                     </div>
                 </article>
@@ -229,8 +244,10 @@
                 <div class="fuel-panel-actions">
                     <p>Exibindo os 8 registros mais recentes.</p>
             
-                    <a href="{{ route('fuel.receipts.history') }}" class="fuel-secondary-action">
-                        Histórico completo
+                    <a href="{{ route('fuel.receipts.history') }}" class="fuel-history-action">
+                        <i class="bi bi-clock-history"></i>
+                        Ver todos os recebimentos
+                        <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -279,8 +296,10 @@
                 <div class="fuel-panel-actions">
                     <p>Exibindo os 8 registros mais recentes.</p>
             
-                    <a href="{{ route('fuel.fillings.history') }}" class="fuel-secondary-action">
-                        Histórico completo
+                    <a href="{{ route('fuel.fillings.history') }}" class="fuel-history-action">
+                        <i class="bi bi-clock-history"></i>
+                        Ver todos os abastecimentos
+                        <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>

@@ -1340,3 +1340,185 @@ body.corporate-dark .fuel-source-single-note {
 .fuel-history-reading strong { display:block; color:#fff; white-space:nowrap; }
 .fuel-history-reading small { display:block; margin-top:4px; color:#aeb9dc; }
 .fuel-cancel-action:hover { border-color:rgba(239,68,68,.45); color:#fecaca; }
+
+/* =========================================================
+   AÇÕES DOS TANQUES / HISTÓRICOS
+========================================================= */
+
+.fuel-tank-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.fuel-tank-actions__primary {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.fuel-tank-receive-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 46px;
+    padding: 8px 15px;
+
+    border: 1px solid rgba(224, 82, 91, .62);
+    border-radius: 10px;
+
+    background: rgba(224, 82, 91, .12);
+    color: var(--chm-theme-text, #f1f5f9);
+
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
+}
+
+.fuel-tank-receive-action:hover {
+    background: rgba(224, 82, 91, .18);
+    border-color: rgba(224, 82, 91, .82);
+    transform: translateY(-1px);
+}
+
+.fuel-tank-receive-action > i {
+    flex: 0 0 auto;
+    color: #e0525b;
+    font-size: 1.05rem;
+}
+
+.fuel-tank-receive-action span,
+.fuel-tank-receive-action strong,
+.fuel-tank-receive-action small {
+    display: block;
+}
+
+.fuel-tank-receive-action strong {
+    color: inherit;
+    font-size: .88rem;
+    line-height: 1.2;
+}
+
+.fuel-tank-receive-action small {
+    margin-top: 2px;
+    color: var(--chm-theme-muted, #b7c3d5);
+    font-size: .69rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.fuel-tank-edit-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 38px;
+    padding: 0 11px;
+
+    border: 1px solid rgba(203, 213, 225, .16);
+    border-radius: 9px;
+
+    background: transparent;
+    color: var(--chm-theme-muted, #b7c3d5);
+
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    transition:
+        color .15s ease,
+        background .15s ease,
+        border-color .15s ease;
+}
+
+.fuel-tank-edit-action:hover {
+    color: var(--chm-theme-text, #f1f5f9);
+    background: rgba(148, 163, 184, .08);
+    border-color: rgba(203, 213, 225, .28);
+}
+
+/* Botão para acessar listagens completas */
+
+.fuel-history-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    min-height: 40px;
+    padding: 0 14px;
+
+    border: 1px solid rgba(203, 213, 225, .24);
+    border-radius: 10px;
+
+    background: rgba(148, 163, 184, .08);
+    color: var(--chm-theme-text, #f1f5f9);
+
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 800;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
+}
+
+.fuel-history-action:hover {
+    background: rgba(148, 163, 184, .14);
+    border-color: rgba(203, 213, 225, .38);
+    transform: translateY(-1px);
+}
+
+.fuel-history-action .bi-arrow-right {
+    opacity: .72;
+    font-size: .78rem;
+}
+
+/* Tema claro/corporativo */
+
+html[data-chm-theme="corporate-light"] .fuel-tank-receive-action {
+    background: rgba(224, 82, 91, .10);
+}
+
+html[data-chm-theme="corporate-light"] .fuel-tank-edit-action,
+html[data-chm-theme="corporate-light"] .fuel-history-action {
+    border-color: rgba(226, 232, 240, .22);
+}
+
+/* Responsivo */
+
+@media (max-width: 700px) {
+    .fuel-tank-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fuel-tank-actions__primary,
+    .fuel-tank-receive-action,
+    .fuel-tank-edit-action {
+        width: 100%;
+    }
+
+    .fuel-tank-edit-action {
+        min-height: 40px;
+    }
+
+    .fuel-panel-actions {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .fuel-history-action {
+        width: 100%;
+    }
+}
