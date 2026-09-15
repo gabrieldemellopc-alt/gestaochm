@@ -867,7 +867,11 @@
 
 
 
-                    data-plate="{{ strtolower($vehicle->plate) }}"
+                    data-plate="{{ strtolower($vehicle->plate ?? '') }}"
+                    data-renavam="{{ strtolower($vehicle->renavam ?? '') }}"
+                    data-chassis="{{ strtolower($vehicle->chassis ?? '') }}"
+                    data-serial="{{ strtolower($vehicle->serial_number ?? '') }}"
+                    data-asset-code="{{ strtolower($vehicle->asset_code ?? '') }}"
 
 
 
@@ -1083,7 +1087,11 @@
 
 
 
-                                {{ $vehicle->plate }}
+                                {{ $vehicle->plate
+    ?: ($vehicle->renavam ? 'RENAVAM: '.$vehicle->renavam
+    : ($vehicle->chassis ? 'CHASSI: '.$vehicle->chassis
+    : ($vehicle->serial_number ? 'Série: '.$vehicle->serial_number
+    : ($vehicle->asset_code ? 'Código: '.$vehicle->asset_code : '—')))) }}
 
 
 
@@ -1773,7 +1781,11 @@
 
 
 
-                    data-plate="{{ strtolower($vehicle->plate) }}"
+                    data-plate="{{ strtolower($vehicle->plate ?? '') }}"
+                    data-renavam="{{ strtolower($vehicle->renavam ?? '') }}"
+                    data-chassis="{{ strtolower($vehicle->chassis ?? '') }}"
+                    data-serial="{{ strtolower($vehicle->serial_number ?? '') }}"
+                    data-asset-code="{{ strtolower($vehicle->asset_code ?? '') }}"
 
 
 
@@ -2061,7 +2073,11 @@
 
 
 
-                                {{ $vehicle->plate }}
+                                {{ $vehicle->plate
+    ?: ($vehicle->renavam ? 'RENAVAM: '.$vehicle->renavam
+    : ($vehicle->chassis ? 'CHASSI: '.$vehicle->chassis
+    : ($vehicle->serial_number ? 'Série: '.$vehicle->serial_number
+    : ($vehicle->asset_code ? 'Código: '.$vehicle->asset_code : '—')))) }}
 
 
 
@@ -2568,6 +2584,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                     ${row.dataset.plate}
+                    ${row.dataset.renavam}
+                    ${row.dataset.chassis}
+                    ${row.dataset.serial}
+                    ${row.dataset.assetCode}
 
 
 
@@ -2720,6 +2740,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                     ${card.dataset.plate}
+                    ${card.dataset.renavam}
+                    ${card.dataset.chassis}
+                    ${card.dataset.serial}
+                    ${card.dataset.assetCode}
 
 
 
