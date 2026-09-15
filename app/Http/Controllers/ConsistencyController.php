@@ -4,6 +4,7 @@ use App\Models\DataConsistencyAlert;
 use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use App\Services\AuditLogService;
+use App\Support\ConsistencyAlertPresenter;
 use Illuminate\Http\Request;
 class ConsistencyController extends Controller
 {
@@ -21,7 +22,7 @@ class ConsistencyController extends Controller
         $alerts=$query->latest('last_detected_at')->paginate(20)->withQueryString();
         $vehicles=Vehicle::query()->whereIn('id',$alerts->getCollection()->where('entity_type',Vehicle::class)->pluck('entity_id'))->get(['id','name','plate','asset_code','renavam','serial_number'])->keyBy('id');
         $alerts->getCollection()->each(fn(DataConsistencyAlert $alert) => $alert->setRelation('consistencyVehicle',$vehicles->get($alert->entity_id)));
-        return view('administration.consistency.index',['alerts'=>$alerts,'locations'=>$locations,'filters'=>$request->all(),'kpis'=>['new'=>(clone $base)->whereIn('status',['new','reviewing'])->count(),'critical'=>(clone $base)->where('severity','critical')->where('context_type','current')->whereIn('status',['new','reviewing'])->count(),'reviewing'=>(clone $base)->where('status','reviewing')->count(),'historical'=>(clone $base)->where('context_type','historical')->whereIn('status',['new','reviewing'])->count(),'resolved'=>(clone $base)->where('status','resolved')->count(),'ignored'=>(clone $base)->where('status','ignored')->count()]]);
+        return view('administration.consistency.index',['presenter'=>app(ConsistencyAlertPresenter::class),'alerts'=>$alerts,'locations'=>$locations,'filters'=>$request->all(),'kpis'=>['new'=>(clone $base)->whereIn('status',['new','reviewing'])->count(),'critical'=>(clone $base)->where('severity','critical')->where('context_type','current')->whereIn('status',['new','reviewing'])->count(),'reviewing'=>(clone $base)->where('status','reviewing')->count(),'historical'=>(clone $base)->where('context_type','historical')->whereIn('status',['new','reviewing'])->count(),'resolved'=>(clone $base)->where('status','resolved')->count(),'ignored'=>(clone $base)->where('status','ignored')->count()]]);
     }
     public function update(Request $request, DataConsistencyAlert $alert, AuditLogService $audit)
     {
