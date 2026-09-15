@@ -89,9 +89,9 @@ class FuelCancellationTest extends TestCase
     public function test_probable_duplicate_is_blocked_until_backend_override_and_km_divergence_still_alerts(): void
     {
         $tank = $this->tank(1000, 5000); $vehicle = $this->vehicle(900); $service = app(FuelService::class);
-        $data = $this->fillingData($tank, $vehicle, 100, 500);
+        $data = [...$this->fillingData($tank, $vehicle, 100, 500), 'filled_at' => now()->startOfDay()->addHours(9)];
         $first = $service->registerFilling($data);
-        $second = [...$data, 'filled_at' => now()->addHours(2), 'vehicle_km' => 999];
+        $second = [...$data, 'filled_at' => now()->startOfDay()->addHours(11), 'vehicle_km' => 999];
         $this->assertNotNull($service->findProbableDuplicate(['tenant_id'=>$this->context['tenant']->id,'division_id'=>$this->context['division']->id,'location_id'=>$this->context['location']->id], $second));
         try { $service->registerFilling($second); $this->fail('Deveria exigir confirmação.'); } catch (ValidationException $e) { $this->assertArrayHasKey('duplicate', $e->errors()); }
         $this->assertSame(1, FuelFilling::count()); $this->assertSame(1, FuelMovement::count());
