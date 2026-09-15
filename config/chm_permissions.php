@@ -190,6 +190,7 @@ return [
             'permissions' => [
                 'admin.access.manage' => ['label' => 'Gerenciar acessos', 'default' => ['supervisor' => false]],
                 'admin.permissions.configure' => ['label' => 'Configurar permissões', 'default' => ['supervisor' => false]],
+                'administration.data_consistency.view' => ['label' => 'Acessar Central de Consistência', 'default' => ['supervisor' => false]],
             ],
         ],
     ],

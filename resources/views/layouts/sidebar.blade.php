@@ -487,6 +487,14 @@
             </a>
         @endif
 
+        @if($sidebarCanPermission('administration.data_consistency.view') && ((int) auth()->id() === 1 || userHasProfile('admin')))
+            <a title="Central de Consistência" href="{{ route('consistency.index') }}"
+                class="sidebar-link {{ request()->routeIs('consistency.*') ? 'active' : '' }}">
+                <span class="sidebar-icon"><i class="bi bi-shield-exclamation"></i></span>
+                <span class="sidebar-link-text">Central de Consistência</span>
+            </a>
+        @endif
+
 
 
 
