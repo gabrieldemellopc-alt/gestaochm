@@ -25,7 +25,14 @@ class FinancialReportService
         $end = !empty($filters['end_date']) ? Carbon::parse($filters['end_date'])->endOfDay() : Carbon::now()->endOfDay();
         $valid = $start->lte($end);
         $maintenance = $valid ? $this->maintenanceComposition($context, $start, $end)['maintenance_total'] : 0.0;
-        $fuel = $valid ? (float) FuelFilling::query()->where('tenant_id',$context['tenant_id'])->where('division_id',$context['division']->id)->where('location_id',$context['location']->id)->whereNull('cancelled_at')->whereBetween('filled_at',[$start,$end])->sum('total_cost') : 0.0;
+        $fuel = $valid ? (float) FuelFilling::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division']->id)
+            ->where('location_id', $context['location']->id)
+            ->whereNull('cancelled_at')
+            ->whereBetween('filled_at', [$start, $end])
+            ->selectRaw('COALESCE(SUM(COALESCE(source_total_cost, total_cost, 0)), 0) AS total')
+            ->value('total') : 0.0;
         $expenses = $valid && Schema::hasTable('workshop_expenses') ? (float) WorkshopExpense::query()->where('tenant_id',$context['tenant_id'])->where('division_id',$context['division']->id)->where('location_id',$context['location']->id)->whereBetween('expense_date',[$start,$end])->sum('amount') : 0.0;
         $consumption = $valid ? (float) $this->reportContext->stockMovementQuery($context)->where('movement_type','out')->where('description','like',StockMovement::WORKSHOP_CONSUMPTION_PREFIX.'%')->whereNull('cancelled_at')->whereBetween('moved_at',[$start,$end])->sum('total_cost') : 0.0;
         $stockPurchases = $valid ? $this->stockPurchases($context, $start, $end) : ['total' => 0.0, 'count' => 0];
