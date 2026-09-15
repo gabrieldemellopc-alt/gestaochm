@@ -4665,3 +4665,26 @@ input:checked
 .vehicle-form-errors li {
     margin: 3px 0;
 }
+
+/* =========================================================
+   DADOS DO VEÍCULO - GRID DE IDENTIFICAÇÃO
+========================================================= */
+
+.vehicle-create-page .vehicle-data-grid,
+.vehicle-edit-page .vehicle-data-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1080px) {
+    .vehicle-create-page .vehicle-data-grid,
+    .vehicle-edit-page .vehicle-data-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .vehicle-create-page .vehicle-data-grid,
+    .vehicle-edit-page .vehicle-data-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

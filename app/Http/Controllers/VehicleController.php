@@ -329,6 +329,7 @@ class VehicleController extends Controller
         $request->merge([
             'renavam' => ($value = preg_replace('/\D/', '', (string) $request->input('renavam'))) !== '' ? $value : null,
             'serial_number' => ($value = trim((string) $request->input('serial_number'))) !== '' ? $value : null,
+            'chassis' => ($value = trim((string) $request->input('chassis'))) !== '' ? strtoupper($value) : null,
         ]);
 
 
@@ -408,6 +409,7 @@ class VehicleController extends Controller
             ],
             'renavam' => ['nullable', 'string', 'max:40'],
             'serial_number' => ['nullable', 'string', 'max:120'],
+            'chassis' => ['nullable', 'string', 'max:120'],
             'asset_code' => ['nullable', 'string', 'max:255'],
 
 
@@ -667,6 +669,7 @@ class VehicleController extends Controller
 
             'renavam' => $validated['renavam'] ?? null,
             'serial_number' => $validated['serial_number'] ?? null,
+            'chassis' => $validated['chassis'] ?? null,
             'asset_code' => $validated['asset_code'] ?? null,
 
 
@@ -993,6 +996,7 @@ class VehicleController extends Controller
         $request->merge([
             'renavam' => ($value = preg_replace('/\D/', '', (string) $request->input('renavam'))) !== '' ? $value : null,
             'serial_number' => ($value = trim((string) $request->input('serial_number'))) !== '' ? $value : null,
+            'chassis' => ($value = trim((string) $request->input('chassis'))) !== '' ? strtoupper($value) : null,
         ]);
 
 
@@ -1119,6 +1123,7 @@ class VehicleController extends Controller
             ],
             'renavam' => ['nullable', 'string', 'max:40'],
             'serial_number' => ['nullable', 'string', 'max:120'],
+            'chassis' => ['nullable', 'string', 'max:120'],
             'asset_code' => ['nullable', 'string', 'max:255'],
 
 
@@ -1456,6 +1461,7 @@ class VehicleController extends Controller
 
             'renavam' => $validated['renavam'] ?? null,
             'serial_number' => $validated['serial_number'] ?? null,
+            'chassis' => $validated['chassis'] ?? null,
             'asset_code' => $validated['asset_code'] ?? null,
 
 

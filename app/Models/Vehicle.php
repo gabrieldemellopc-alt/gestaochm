@@ -36,6 +36,7 @@ class Vehicle extends Model
         'plate',
         'renavam',
         'serial_number',
+        'chassis',
         'brand',
         'model',
         'year',

@@ -201,7 +201,7 @@
                     Dados do veículo
                 </h3>
             </div>
-            <div class="form-grid">
+            <div class="form-grid vehicle-data-grid">
                 <div class="form-group">
                     <label>
                         Nome <span class="required-mark">*</span>
@@ -293,6 +293,7 @@
                 </div>
                 <div class="form-group"><label>RENAVAM</label><input type="text" name="renavam" class="form-input" placeholder="Ex: 01234567890" value="{{ old('renavam', $vehicle->renavam) }}"></div>
                 <div class="form-group"><label>Nº de série</label><input type="text" name="serial_number" class="form-input" placeholder="Ex: CAT123456 ou 8A12345" value="{{ old('serial_number', $vehicle->serial_number) }}"></div>
+                <div class="form-group"><label>CHASSI</label><input type="text" name="chassis" class="form-input" placeholder="Ex: 9BWZZZ377VT004251" value="{{ old('chassis', $vehicle->chassis) }}"></div>
             </div>
         </div>
         </div>

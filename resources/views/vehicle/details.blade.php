@@ -181,6 +181,10 @@
                         <span>• Nº de série: {{ $vehicle->serial_number }}</span>
                     @endif
 
+                    @if($vehicle->chassis)
+                        <span>• CHASSI: {{ $vehicle->chassis }}</span>
+                    @endif
+
 
 
                     @if($vehicle->currentAllocation?->location)
