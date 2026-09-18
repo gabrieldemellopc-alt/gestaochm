@@ -20,6 +20,10 @@ class FuelReceipt extends Model
         'supplier_id',
         'supplier_document',
         'invoice_number',
+        'invoice_date',
+        'invoice_pending',
+        'replaces_receipt_id',
+        'replaced_by_receipt_id',
         'responsible_user_id',
         'notes',
         'cancelled_at',
@@ -32,6 +36,8 @@ class FuelReceipt extends Model
         'quantity_liters' => 'decimal:3',
         'unit_cost' => 'decimal:4',
         'total_cost' => 'decimal:2',
+        'invoice_date' => 'date',
+        'invoice_pending' => 'boolean',
         'cancelled_at' => 'datetime',
     ];
 
@@ -73,6 +79,22 @@ class FuelReceipt extends Model
     public function canceller()
     {
         return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function replacesReceipt()
+    {
+        return $this->belongsTo(
+            self::class,
+            'replaces_receipt_id'
+        );
+    }
+
+    public function replacedByReceipt()
+    {
+        return $this->belongsTo(
+            self::class,
+            'replaced_by_receipt_id'
+        );
     }
     public function supplier(){return $this->belongsTo(Supplier::class);}
 }

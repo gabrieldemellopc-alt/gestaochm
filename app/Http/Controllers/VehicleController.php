@@ -2106,6 +2106,114 @@ class VehicleController extends Controller
         $canCorrectReadings = app(ProfilePermissionService::class)
             ->allows(auth()->user(), 'vehicles.correct_readings');
 
+        /*
+        |--------------------------------------------------------------------------
+        | PAINEL COMPACTO - TENDÊNCIAS
+        |--------------------------------------------------------------------------
+        */
+
+        $fuelTrend = \App\Models\FuelFilling::query()
+            ->where('vehicle_id', $vehicle->id)
+            ->whereNull('cancelled_at')
+            ->orderByDesc('filled_at')
+            ->limit(12)
+            ->get([
+                'id',
+                'filled_at',
+                'quantity_liters',
+                'vehicle_km',
+            ])
+            ->sortBy('filled_at')
+            ->values()
+            ->map(fn ($filling) => [
+                'id' => $filling->id,
+                'date' => $filling->filled_at?->format('d/m'),
+                'datetime' => $filling->filled_at?->format('d/m/Y H:i'),
+                'liters' => round((float) $filling->quantity_liters, 3),
+            ])
+            ->values();
+
+        $kmReadings = \App\Models\VehicleUpdateLog::query()
+            ->where('vehicle_id', $vehicle->id)
+            ->where('type', 'km')
+            ->usableReading()
+            ->whereNotNull('new_value')
+            ->orderByDesc('read_at')
+            ->limit(13)
+            ->get()
+            ->sortBy(fn ($log) => $log->read_at ?? $log->created_at)
+            ->values();
+
+        $kmDeltaTrend = collect();
+
+        for ($i = 1; $i < $kmReadings->count(); $i++) {
+            $previous = $kmReadings[$i - 1];
+            $current = $kmReadings[$i];
+
+            $delta = (float) $current->new_value - (float) $previous->new_value;
+
+            if ($delta < 0) {
+                continue;
+            }
+
+            $date = $current->read_at ?? $current->created_at;
+
+            $kmDeltaTrend->push([
+                'date' => $date?->format('d/m'),
+                'datetime' => $date?->format('d/m/Y H:i'),
+                'delta' => round($delta, 1),
+                'reading' => round((float) $current->new_value, 1),
+            ]);
+        }
+
+        $kmDeltaTrend = $kmDeltaTrend->take(-12)->values();
+
+        $recentMaintenances = $vehicle->maintenances
+            ->sortByDesc(fn ($maintenance) =>
+                $maintenance->performed_at
+                ?? $maintenance->started_at
+                ?? $maintenance->created_at
+            )
+            ->take(3)
+            ->values();
+
+        $kmReadingHistoryRaw = \App\Models\VehicleUpdateLog::query()
+            ->with('user')
+            ->where('vehicle_id', $vehicle->id)
+            ->where('type', 'km')
+            ->usableReading()
+            ->whereNotNull('new_value')
+            ->orderBy('read_at')
+            ->orderBy('id')
+            ->get();
+
+        $kmReadingHistory = $kmReadingHistoryRaw
+            ->values()
+            ->map(function ($log, $index) use ($kmReadingHistoryRaw) {
+                $previous = $index > 0
+                    ? $kmReadingHistoryRaw[$index - 1]
+                    : null;
+
+                $delta = $previous
+                    ? (float) $log->new_value - (float) $previous->new_value
+                    : null;
+
+                $date = $log->read_at ?? $log->created_at;
+
+                return [
+                    'id' => $log->id,
+                    'date' => $date?->format('Y-m-d'),
+                    'datetime' => $date?->format('d/m/Y H:i'),
+                    'reading' => (float) $log->new_value,
+                    'delta' => $delta !== null && $delta >= 0 ? $delta : null,
+                    'source' => $log->source_label,
+                    'observation' => $log->observation,
+                    'user' => $log->user?->name,
+                ];
+            })
+            ->reverse()
+            ->values();
+
         return view(
 
             'vehicle.details',
@@ -2126,7 +2234,11 @@ class VehicleController extends Controller
                 'availabilityRate',
                 'availabilityText',
                 'availabilitySubtext',
-                'canCorrectReadings'
+                'canCorrectReadings',
+                'fuelTrend',
+                'kmDeltaTrend',
+                'recentMaintenances',
+                'kmReadingHistory'
 
             )
 

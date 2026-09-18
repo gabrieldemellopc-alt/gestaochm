@@ -192,6 +192,11 @@ class FuelTankController extends Controller
     }
     public function store(Request $request)
     {
+        abort_unless(
+            (int) auth()->id() === 1 || userHasProfile('admin'),
+            403
+        );
+
         $context = $this->activeContext();
 
         if (! $context) {
@@ -221,6 +226,11 @@ class FuelTankController extends Controller
 
     public function update(Request $request, FuelTank $tank)
     {
+        abort_unless(
+            (int) auth()->id() === 1 || userHasProfile('admin'),
+            403
+        );
+
         $context = $this->activeContext();
 
         if (! $context) {
@@ -255,12 +265,17 @@ class FuelTankController extends Controller
 
         $this->authorizeFuelPermission('fuel.receive', $context);
 
-        if (app(TenantFiscalSettingService::class)->requires('fuel_receipt')) {
-            $request->validate(['invoice_number' => ['required', 'string', 'max:255']], ['invoice_number.required' => 'Documento fiscal obrigatório para recebimento de combustível.']);
-        }
+        $invoiceRequired = app(
+            TenantFiscalSettingService::class
+        )->requires('fuel_receipt');
+
+        $invoicePending =
+            $invoiceRequired
+            && blank($request->input('invoice_number'));
 
         try {
-            $fuelService->receiveFuel($request->only([
+            $fuelService->receiveFuel(array_merge(
+                $request->only([
                 'source',
                 'fuel_tank_id',
                 'fuel_product_id',
@@ -272,8 +287,13 @@ class FuelTankController extends Controller
                 'supplier_id',
                 'supplier_document',
                 'invoice_number',
+                'invoice_date',
                 'notes',
-            ]));
+            ]),
+            [
+                'invoice_pending' => $invoicePending,
+            ]
+            ));
         } catch (ValidationException $exception) {
             return back()
                 ->withErrors($exception->errors(), 'fuelReceipt')
@@ -285,6 +305,80 @@ class FuelTankController extends Controller
             ->route('fuel.tanks.index')
             ->with('success', 'Recebimento registrado com sucesso.');
     }
+
+    public function replaceReceipt(
+        Request $request,
+        FuelReceipt $receipt,
+        FuelService $fuelService
+    ) {
+        $context = $this->activeContext();
+
+        if (! $context) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $this->authorizeFuelPermission(
+            'fuel.receive',
+            $context
+        );
+
+        $invoiceRequired = app(
+            TenantFiscalSettingService::class
+        )->requires('fuel_receipt');
+
+        $invoicePending =
+            $invoiceRequired
+            && blank($request->input('invoice_number'));
+
+        try {
+
+            $newReceipt = $fuelService->replaceReceipt(
+                $receipt,
+                array_merge(
+                    $request->only([
+                        'received_at',
+                        'quantity_liters',
+                        'unit_cost',
+                        'total_cost',
+                        'supplier_name',
+                        'supplier_id',
+                        'supplier_document',
+                        'invoice_number',
+                        'invoice_date',
+                        'notes',
+                    ]),
+                    [
+                        'invoice_pending' =>
+                            $invoicePending,
+                    ]
+                ),
+                (string) $request->input('reason')
+            );
+
+        } catch (ValidationException $exception) {
+
+            return back()
+                ->withErrors(
+                    $exception->errors(),
+                    'fuelReceiptEdit'.$receipt->id
+                )
+                ->withInput()
+                ->with(
+                    'edit_receipt_id',
+                    $receipt->id
+                );
+        }
+
+        return redirect()
+            ->route('fuel.receipts.history')
+            ->with(
+                'success',
+                'Recebimento #'.$receipt->id
+                .' substituído pelo #'
+                .$newReceipt->id.'.'
+            );
+    }
+
 
     public function storeFilling(Request $request, FuelService $fuelService)
     {
@@ -347,7 +441,24 @@ class FuelTankController extends Controller
     public function fillingsHistory(Request $request)
     {
         $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.view', $context);
-        $query = FuelFilling::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['vehicle', 'tank', 'product', 'responsible', 'canceller']);
+
+        $fleetRelation = $this->resolveFuelFleetRelation(
+            $request,
+            (int) $context['location_id']
+        );
+
+        $query = FuelFilling::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['vehicle', 'tank', 'product', 'responsible', 'canceller', 'replacesFilling', 'replacedByFilling']);
+        $query->when(
+            $fleetRelation !== 'all',
+            fn ($query) => $query->whereHas(
+                'vehicle',
+                fn ($vehicleQuery) => $vehicleQuery->where(
+                    'fleet_relation',
+                    $fleetRelation
+                )
+            )
+        );
+
         $this->applyPeriod($query, $request, 'filled_at');
         foreach (['vehicle_id', 'fuel_product_id', 'fuel_tank_id'] as $field) if ($request->filled($field)) $query->where($field, $request->integer($field));
         if ($request->filled('source')) {
@@ -357,7 +468,259 @@ class FuelTankController extends Controller
         }
         if ($request->input('status') === 'active') $query->whereNull('cancelled_at');
         if ($request->input('status') === 'cancelled') $query->whereNotNull('cancelled_at');
-        return view('fuel.tanks.fillings-history', ['fillings' => $query->latest('filled_at')->paginate(25)->withQueryString(), 'vehicles' => $this->vehiclesForContext($context), 'products' => FuelProduct::where('tenant_id', $context['tenant_id'])->orderBy('name')->get(), 'tanks' => FuelTank::where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->orderBy('name')->get(), 'fuelPermissions' => $this->fuelPermissions($context)]);
+        $filteredCount = (clone $query)->count();
+
+        $historyVehicles = $this->vehiclesForContext($context);
+
+        if ($fleetRelation !== 'all') {
+            $historyVehicles = $historyVehicles
+                ->where('fleet_relation', $fleetRelation)
+                ->values();
+        }
+
+        return view('fuel.tanks.fillings-history', [
+            'fillings' => $query->latest('filled_at')->paginate(25)->withQueryString(),
+            'filteredCount' => $filteredCount,
+            'vehicles' => $historyVehicles,
+            'fleetRelation' => $fleetRelation,
+            'products' => FuelProduct::where('tenant_id', $context['tenant_id'])->orderBy('name')->get(),
+            'tanks' => FuelTank::where('tenant_id', $context['tenant_id'])
+                ->where('division_id', $context['division_id'])
+                ->where('location_id', $context['location_id'])
+                ->orderBy('name')
+                ->get(),
+            'fuelPermissions' => $this->fuelPermissions($context),
+        ]);
+    }
+
+    public function manualFuelSheetPdf(Request $request)
+    {
+        $context = $this->historyContext();
+
+        $this->authorizeFuelPermission('fuel.view', $context);
+
+        $validated = $request->validate([
+            'sheet_mode' => ['required', Rule::in(['blank', 'prefilled'])],
+
+            'vehicle_ids' => ['nullable', 'array', 'max:100'],
+            'vehicle_ids.*' => ['integer'],
+
+            'show_code' => ['nullable', 'boolean'],
+            'show_plate' => ['nullable', 'boolean'],
+            'show_km' => ['nullable', 'boolean'],
+            'show_arla' => ['nullable', 'boolean'],
+
+            'blank_rows' => ['required', 'integer', 'min:0', 'max:40'],
+        ]);
+
+        $mode = $validated['sheet_mode'];
+
+        $selectedIds = collect(
+            $validated['vehicle_ids'] ?? []
+        )
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $vehicles = collect();
+
+        if ($mode === 'prefilled' && $selectedIds->isNotEmpty()) {
+
+            /*
+             * Usa a própria coleção contextual do módulo.
+             * Assim nenhum veículo de outra unidade/tenant pode
+             * ser inserido no PDF por manipulação do formulário.
+             */
+            $vehicles = $this->vehiclesForContext($context)
+                ->whereIn('id', $selectedIds)
+                ->sortBy(fn ($vehicle) => strtolower(
+                    trim(
+                        ($vehicle->name ?? '')
+                        .'|'.
+                        ($vehicle->plate ?? '')
+                    )
+                ))
+                ->values();
+        }
+
+        $blankRows = (int) $validated['blank_rows'];
+
+        /*
+         * Folha totalmente em branco:
+         * garante uma página utilizável mesmo que o usuário
+         * informe zero por engano.
+         */
+        if ($mode === 'blank' && $blankRows === 0) {
+            $blankRows = 28;
+        }
+
+        $location = \App\Models\Location::query()
+            ->find($context['location_id']);
+
+        $options = [
+            'mode' => $mode,
+
+            'show_code' => $request->boolean('show_code'),
+            'show_plate' => $request->boolean('show_plate'),
+            'show_km' => $request->boolean('show_km'),
+            'show_arla' => $request->boolean('show_arla'),
+
+            'blank_rows' => $blankRows,
+        ];
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'fuel.tanks.manual-fuel-sheet-pdf',
+            [
+                'vehicles' => $vehicles,
+                'location' => $location,
+                'options' => $options,
+            ]
+        )
+            ->setPaper('a4', 'portrait')
+            ->stream(
+                'ficha-manual-abastecimento-'
+                .now()->format('Y-m-d-His')
+                .'.pdf'
+            );
+    }
+
+
+    public function fillingsHistoryPdf(Request $request)
+    {
+        $context = $this->historyContext();
+        $this->authorizeFuelPermission('fuel.view', $context);
+
+        $permissions = $this->fuelPermissions($context);
+
+        $fleetRelation = $this->resolveFuelFleetRelation(
+            $request,
+            (int) $context['location_id']
+        );
+
+        $query = FuelFilling::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->with([
+                'vehicle',
+                'tank',
+                'product',
+                'responsible',
+                'canceller',
+                'replacesFilling',
+                'replacedByFilling',
+            ]);
+
+        $query->when(
+            $fleetRelation !== 'all',
+            fn ($query) => $query->whereHas(
+                'vehicle',
+                fn ($vehicleQuery) => $vehicleQuery->where(
+                    'fleet_relation',
+                    $fleetRelation
+                )
+            )
+        );
+
+        $this->applyPeriod($query, $request, 'filled_at');
+
+        foreach (['vehicle_id', 'fuel_product_id', 'fuel_tank_id'] as $field) {
+            if ($request->filled($field)) {
+                $query->where($field, $request->integer($field));
+            }
+        }
+
+        if ($request->filled('source')) {
+            $request->input('source') === FuelFilling::SOURCE_INTERNAL_TANK
+                ? $query->where(fn ($q) => $q
+                    ->where('source', FuelFilling::SOURCE_INTERNAL_TANK)
+                    ->orWhereNull('source'))
+                : $query->where('source', $request->input('source'));
+        }
+
+        if ($request->input('status') === 'active') {
+            $query->whereNull('cancelled_at');
+        }
+
+        if ($request->input('status') === 'cancelled') {
+            $query->whereNotNull('cancelled_at');
+        }
+
+        $pdfRecordCount = (clone $query)->count();
+
+        if ($pdfRecordCount > 250) {
+            return redirect()
+                ->route('fuel.fillings.history', $request->query())
+                ->with(
+                    'error',
+                    'O limite para geração de PDF é de até 250 registros de abastecimentos. Refine o período ou os filtros.'
+                );
+        }
+
+        $summaryQuery = clone $query;
+
+        /*
+         * Cancelados podem aparecer na listagem conforme o filtro,
+         * mas nunca compõem os totais operacionais.
+         */
+        $activeSummary = (clone $summaryQuery)->whereNull('cancelled_at');
+
+        $summary = [
+            'fillings_count' => (clone $activeSummary)->count(),
+            'vehicles_count' => (clone $activeSummary)
+                ->distinct('vehicle_id')
+                ->count('vehicle_id'),
+            'liters_total' => (float) (clone $activeSummary)
+                ->sum('quantity_liters'),
+            'cost_total' => $permissions['view_costs']
+                ? (float) (clone $activeSummary)
+                    ->selectRaw('COALESCE(SUM(COALESCE(source_total_cost, total_cost, 0)), 0) AS total')
+                    ->value('total')
+                : null,
+        ];
+
+        $fillings = $query
+            ->orderByDesc('filled_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $division = \App\Models\Division::find($context['division_id']);
+        $location = \App\Models\Location::find($context['location_id']);
+
+        $vehicle = $request->filled('vehicle_id')
+            ? \App\Models\Vehicle::query()
+                ->where('id', $request->integer('vehicle_id'))
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('division_id', $context['division_id'])
+                ->where('location_id', $context['location_id'])
+                ->first()
+            : null;
+
+        $generatedAt = now();
+        $generatedBy = auth()->user();
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'fuel.tanks.fillings-history-pdf',
+            compact(
+                'fillings',
+                'summary',
+                'permissions',
+                'division',
+                'location',
+                'vehicle',
+                'generatedAt',
+                'generatedBy',
+                'request',
+                'fleetRelation'
+            )
+        )
+            ->setPaper('a4', 'landscape')
+            ->download(
+                'historico-abastecimentos-'
+                .$generatedAt->format('Ymd-His')
+                .'.pdf'
+            );
     }
 
     public function receiptsHistory(Request $request)
@@ -365,11 +728,113 @@ class FuelTankController extends Controller
         $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.view', $context);
         $query = FuelReceipt::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['tank', 'product', 'responsible', 'canceller']);
         $this->applyPeriod($query, $request, 'received_at');
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+
+            $query->where(function ($q) use ($search) {
+                $q->where('supplier_name', 'like', '%'.$search.'%')
+                    ->orWhere('invoice_number', 'like', '%'.$search.'%')
+                    ->orWhereHas(
+                        'responsible',
+                        fn ($userQuery) => $userQuery->where(
+                            'name',
+                            'like',
+                            '%'.$search.'%'
+                        )
+                    );
+
+                $numericSearch = str_replace(
+                    ',',
+                    '.',
+                    preg_replace('/[^0-9,.-]/', '', $search)
+                );
+
+                if ($numericSearch !== '' && is_numeric($numericSearch)) {
+                    $q->orWhere(
+                        'quantity_liters',
+                        (float) $numericSearch
+                    );
+                }
+            });
+        }
         foreach (['fuel_product_id', 'fuel_tank_id'] as $field) if ($request->filled($field)) $query->where($field, $request->integer($field));
         if ($request->filled('supplier_name')) $query->where('supplier_name', 'like', '%'.$request->input('supplier_name').'%');
         if ($request->input('status') === 'active') $query->whereNull('cancelled_at');
         if ($request->input('status') === 'cancelled') $query->whereNotNull('cancelled_at');
         return view('fuel.tanks.receipts-history', ['receipts' => $query->latest('received_at')->paginate(25)->withQueryString(), 'products' => FuelProduct::where('tenant_id', $context['tenant_id'])->orderBy('name')->get(), 'tanks' => FuelTank::where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->orderBy('name')->get(), 'fuelPermissions' => $this->fuelPermissions($context)]);
+    }
+
+    public function replaceFilling(Request $request, FuelFilling $filling, FuelService $fuelService)
+    {
+        $context = $this->historyContext();
+        $this->authorizeFuelPermission('fuel.cancel', $context);
+
+        if (
+            (int) $filling->tenant_id !== (int) $context['tenant_id']
+            || (int) $filling->division_id !== (int) $context['division_id']
+            || (int) $filling->location_id !== (int) $context['location_id']
+        ) {
+            abort(403);
+        }
+
+        $source = $request->input('source', FuelFilling::SOURCE_INTERNAL_TANK);
+
+        $vehicle = \App\Models\Vehicle::query()
+            ->where('id', $request->input('vehicle_id'))
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->first();
+
+        if ($vehicle) {
+            app(\App\Services\AggregatedVehiclePolicy::class)
+                ->ensureFuelAllowed($vehicle, $context['location']);
+        }
+
+        if (
+            $source === FuelFilling::SOURCE_EXTERNAL_STATION
+            && app(TenantFiscalSettingService::class)->requires('external_fuel_filling')
+        ) {
+            $request->validate([
+                'document_number' => ['required', 'string', 'max:255'],
+            ], [
+                'document_number.required' => 'Documento fiscal obrigatório para abastecimento externo.',
+            ]);
+        }
+
+        try {
+            $fuelService->replaceFilling($filling, $request->only([
+                'source',
+                'fuel_tank_id',
+                'fuel_product_id',
+                'vehicle_id',
+                'driver_id',
+                'filled_at',
+                'vehicle_km',
+                'vehicle_hours',
+                'quantity_liters',
+                'unit_cost',
+                'total_cost',
+                'supplier_name',
+                'supplier_document',
+                'document_number',
+                'notes',
+                'km_reading_confirmed',
+                'hours_reading_confirmed',
+                'confirm_duplicate',
+            ]));
+        } catch (ValidationException $exception) {
+            return back()
+                ->withErrors($exception->errors())
+                ->withInput()
+                ->with('edit_filling_id', $filling->id);
+        }
+
+        return back()->with(
+            'success',
+            'Abastecimento corrigido. O lançamento original foi cancelado e preservado para auditoria.'
+        );
     }
 
     public function cancelFilling(Request $request, FuelFilling $filling, FuelService $fuelService)
@@ -386,6 +851,43 @@ class FuelTankController extends Controller
         $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:2000']]);
         try { $fuelService->cancelReceipt($receipt, $data['reason']); } catch (ValidationException $e) { return back()->withErrors($e->errors())->withInput(); }
         return back()->with('success', 'Recebimento cancelado e mantido no histórico para auditoria.');
+    }
+
+    private function resolveFuelFleetRelation(Request $request, int $locationId): string
+    {
+        $allowed = [
+            \App\Models\Vehicle::FLEET_RELATION_INTERNAL,
+            \App\Models\Vehicle::FLEET_RELATION_AGGREGATED,
+            \App\Models\Vehicle::FLEET_RELATION_RENTED,
+            'all',
+        ];
+
+        $cookieName = 'chm_fleet_relation_'.$locationId;
+
+        if ($request->has('fleet_relation')) {
+            $fleetRelation = (string) $request->query('fleet_relation');
+
+            abort_unless(
+                in_array($fleetRelation, $allowed, true),
+                404
+            );
+
+            cookie()->queue(
+                cookie(
+                    $cookieName,
+                    $fleetRelation,
+                    0
+                )
+            );
+
+            return $fleetRelation;
+        }
+
+        $saved = $request->cookie($cookieName);
+
+        return in_array($saved, $allowed, true)
+            ? $saved
+            : \App\Models\Vehicle::FLEET_RELATION_INTERNAL;
     }
 
     private function activeContext(): ?array
@@ -538,7 +1040,14 @@ class FuelTankController extends Controller
             ->where('division_id', $context['division_id'])
             ->where('location_id', $context['location_id'])
             ->orderBy('name')
-            ->get(['id', 'name', 'plate', 'current_km', 'current_hours']);
+            ->get([
+                'id',
+                'name',
+                'plate',
+                'current_km',
+                'current_hours',
+                'fleet_relation',
+            ]);
     }
 
     private function missingActiveLocationRedirect()

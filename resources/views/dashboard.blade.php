@@ -59,6 +59,10 @@
 
     $canFillVehicle = $fuelEnabled && $dashboardCanPermission('navigation.fuel') && ($dashboardCanPermission('fuel.fill_internal') || $dashboardCanPermission('fuel.fill_external'));
 
+    $canViewVehicleFuelHistory = $fuelEnabled
+        && $dashboardCanPermission('navigation.fuel')
+        && $dashboardCanPermission('fuel.view');
+
     $canAccessVehicleTires = $dashboardCanPermission('navigation.tires') && $dashboardCanPermission('tires.view');
 
     $dashboardVehicleActions = [
@@ -67,6 +71,7 @@
         'panel' => $dashboardCanPermission('navigation.vehicles') && $dashboardCanPermission('vehicles.view'),
         'tires' => $canAccessVehicleTires,
         'fuel' => $canFillVehicle,
+        'fuel_history' => $canViewVehicleFuelHistory,
         'edit' => $dashboardCanPermission('vehicles.update'),
     ];
 
@@ -139,7 +144,7 @@
 
 
 
-    
+
 
 {{-- VISÃO GERAL DO TOPO --}}
 
@@ -156,7 +161,7 @@
         <div class="kpi-grid">
 {{-- Grupo composto por Frota Ativa + Em manutenção + Filtros abaixo --}}
     <div class="kpi-double-group">
-        
+
         {{-- Linha superior com os 2 cards --}}
         <div class="kpi-cards-row">
             {{-- Frota ativa --}}
@@ -429,7 +434,7 @@
 
 
 
-                
+
 
 
 
@@ -483,7 +488,7 @@
 
 
 
-                
+
 
 
 
@@ -491,7 +496,7 @@
 
 
 
-                
+
 
 
 
@@ -499,7 +504,7 @@
 
 
 
-                
+
 
 
 
@@ -559,7 +564,7 @@
 
 
 
-                
+
 
 
 
@@ -570,7 +575,7 @@
 
 
 
-                    class="vehicle-card {{ $vehicle->alert_status }} {{ $vehicle->is_in_operation ? 'is-in-operation' : '' }}"          
+                    class="vehicle-card {{ $vehicle->alert_status }} {{ $vehicle->is_in_operation ? 'is-in-operation' : '' }}"
 
 
 
@@ -626,7 +631,7 @@
 
 
 
-                    
+
 
 
 
@@ -638,11 +643,11 @@
 
 
 
-                
 
 
 
-                    
+
+
 
 
 
@@ -650,7 +655,7 @@
 
 
 
-                    
+
 
 
 
@@ -658,7 +663,7 @@
 
 
 
-                    
+
 
 
 
@@ -666,7 +671,7 @@
 
 
 
-                    
+
 
 
 
@@ -686,7 +691,7 @@
 
 
 
-                    
+
 
 
 
@@ -694,7 +699,7 @@
 
 
 
-                    
+
 
 
 
@@ -702,7 +707,7 @@
 
 
 
-                    
+
 
 
 
@@ -722,7 +727,7 @@
 
 
 
-                    
+
 
 
 
@@ -730,7 +735,7 @@
 
 
 
-                    
+
 
 
 
@@ -738,7 +743,7 @@
 
 
 
-                    
+
 
 
 
@@ -906,7 +911,7 @@
 
 
 
-                    
+
 
 
 
@@ -1056,7 +1061,7 @@
 
 
 
-                
+
 
 
 
@@ -1076,7 +1081,7 @@
 
 
 
-                    
+
 
 
 
@@ -1084,7 +1089,7 @@
 
 
 
-                    
+
 
 
 
@@ -1092,7 +1097,7 @@
 
 
 
-                    
+
 
 
 
@@ -1108,7 +1113,7 @@
 
 
 
-                    
+
 
 
 
@@ -1116,7 +1121,7 @@
 
 
 
-                    
+
 
 
 
@@ -1124,7 +1129,7 @@
 
 
 
-                    
+
 
 
 
@@ -1132,7 +1137,7 @@
 
 
 
-                    
+
 
 
 
@@ -1148,7 +1153,7 @@
 
 
 
-                    
+
 
 
 
@@ -1156,7 +1161,7 @@
 
 
 
-                    
+
 
 
 
@@ -1164,7 +1169,7 @@
 
 
 
-                    
+
 
 
 
@@ -1176,7 +1181,7 @@
 
 
 
-                    
+
 
 
 
@@ -1184,7 +1189,7 @@
 
 
 
-                
+
 
 
 
@@ -1192,7 +1197,7 @@
 
 
 
-                
+
 
 
 
@@ -1220,7 +1225,7 @@
 
 
 
-                
+
 
 
 
@@ -1293,7 +1298,7 @@
 
 
 
-                
+
 
 
 
@@ -1301,13 +1306,13 @@
 
 
 
-                
+
 
 
 
                         @if($operationsEnabled && !$cannotStartOperation)
 
-                
+
 
 
 
@@ -1371,7 +1376,7 @@
 
 
 
-                
+
 
 
 
@@ -1421,7 +1426,7 @@
                             </div>
                         @endif
 
-                
+
 
 
 
@@ -1429,7 +1434,7 @@
 
 
 
-                
+
 
 
 
@@ -1463,7 +1468,7 @@
 
 
 
-    
+
 
     {{-- COLUNA LATERAL --}}
     <aside class="dashboard-side-column">
@@ -1488,7 +1493,6 @@
                 <div class="operational-ranking-list">
                     @forelse($fuelConsumptionRanking as $index => $item)
                         <div class="operational-ranking-item">
-                            <span class="operational-ranking-position">{{ $index + 1 }}</span>
 
                             <div class="operational-ranking-main">
                                 <strong>{{ $item['vehicle_label'] }}</strong>
@@ -1520,7 +1524,6 @@
                 <div class="operational-ranking-list">
                     @forelse($longestStoppedVehicles as $index => $item)
                         <div class="operational-ranking-item stopped">
-                            <span class="operational-ranking-position">{{ $index + 1 }}</span>
 
                             <div class="operational-ranking-main">
                                 <strong>{{ $item['vehicle_label'] }}</strong>
@@ -1701,7 +1704,7 @@
 
         </section>
 
-        
+
 
             {{-- PRIORIDADES OPERACIONAIS --}}
 
@@ -1711,7 +1714,7 @@
 
 
 
-        
+
 
 
 
@@ -1719,7 +1722,7 @@
 
 
 
-        
+
 
 
 
@@ -1739,7 +1742,7 @@
 
 
 
-        
+
 
 
 
@@ -1759,7 +1762,7 @@
 
 
 
-        
+
 
 
 
@@ -1775,7 +1778,7 @@
 
 
 
-        
+
 
 
 
@@ -1783,7 +1786,7 @@
 
 
 
-        
+
 
 
 
@@ -2355,7 +2358,7 @@
 
 
 
-        
+
 
 
 
@@ -2373,7 +2376,7 @@
 
 
 
-        
+
 
 
 
@@ -2381,7 +2384,7 @@
 
 
 
-        
+
 
 
 
@@ -2401,7 +2404,7 @@
 
 
 
-        
+
 
 
 
@@ -2421,7 +2424,7 @@
 
 
 
-        
+
 
 
 
@@ -2429,7 +2432,7 @@
 
 
 
-        
+
 
 
 
@@ -2437,7 +2440,7 @@
 
 
 
-        
+
 
 
 
@@ -2445,7 +2448,7 @@
 
 
 
-        
+
 
 
 
@@ -2469,7 +2472,7 @@
 
 
 
-        
+
 
 
 
@@ -2489,7 +2492,7 @@
 
 
 
-        
+
 
 
 
@@ -2513,7 +2516,7 @@
 
 
 
-        
+
 
 
 
@@ -2533,7 +2536,7 @@
 
 
 
-        
+
 
 
 
@@ -2557,7 +2560,7 @@
 
 
 
-        
+
 
 
 
@@ -2577,7 +2580,7 @@
 
 
 
-        
+
 
 
 
@@ -2605,7 +2608,7 @@
 
 
 
-                    
+
 
 
 
@@ -2625,7 +2628,7 @@
 
 
 
-        
+
 
 
 
@@ -2633,7 +2636,7 @@
 
 
 
-        
+
 
 
 
@@ -2651,7 +2654,7 @@
 
 
 
-    
+
 
 
 
@@ -2805,19 +2808,7 @@
 
 
 
-                        <span
 
-                            class="vehicle-center-status"
-
-                            :class="statusConfig(vehicle.operational_status).class"
-
-                        >
-
-                            <i :class="statusConfig(vehicle.operational_status).icon"></i>
-
-                            <span x-text="statusConfig(vehicle.operational_status).label"></span>
-
-                        </span>
 
 
 
@@ -2929,46 +2920,47 @@
 
 
 
-            <div class="vehicle-center-header-actions">
-
-        
+            <div class="vehicle-center-header-actions vehicle-center-header-actions--expanded">
 
                 <a
-
                     class="vehicle-center-open-page"
-
                     :href="`/vehicles/${vehicle.id}/details`"
-
                     x-show="vehicleActions.panel"
-
+                    title="Abrir painel completo do veículo"
                 >
-
-                    <i class="bi bi-box-arrow-up-right"></i>
-
-        
-
-                    Abrir painel
-
+                    <i class="bi bi-layout-text-window-reverse"></i>
+                    <span>Painel completo</span>
                 </a>
 
-        
+                <a
+                    class="vehicle-center-open-page"
+                    :href="`/vehicle/${vehicle.id}/history`"
+                    x-show="vehicleActions.history"
+                    title="Consultar histórico veicular"
+                >
+                    <i class="bi bi-clock-history"></i>
+                    <span>Histórico veicular</span>
+                </a>
+
+                <a
+                    class="vehicle-center-open-page"
+                    :href="`/vehicles/${vehicle.id}/edit`"
+                    x-show="vehicleActions.edit"
+                    title="Editar cadastro do veículo"
+                >
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Editar veículo</span>
+                </a>
 
                 <button
-
                     type="button"
-
                     class="vehicle-center-close"
-
                     @click="close()"
-
+                    title="Fechar"
                 >
-
                     <i class="bi bi-x-lg"></i>
-
                 </button>
 
-        
-
             </div>
 
 
@@ -2985,209 +2977,942 @@
 
 
 
-        {{-- KPIS --}}
+
+
+        {{-- BODY V2 --}}
+        <div class="vehicle-modal-v3">
+
+            {{-- ATALHOS + GRÁFICO --}}
+
+<div class="vehicle-modal-v3-main">
+
+    <div class="vehicle-modal-v3-summary-row">
+
+        <div class="vehicle-modal-v3-summary-status">
+            <section class="vehicle-modal-v3-status-compact">
+
+                                <div class="vehicle-modal-v3-status-copy">
+
+                                    <small>Situação operacional</small>
+
+                                    <div class="vehicle-modal-v3-status-line">
+
+                                        <span
+                                            class="vehicle-modal-v3-status-badge"
+                                            :class="'is-' + originalOperationalStatus"
+                                        >
+                                            <i
+                                                class="bi"
+                                                :class="
+                                                    originalOperationalStatus === 'operational'
+                                                        ? 'bi-check-circle'
+                                                        : originalOperationalStatus === 'maintenance'
+                                                            ? 'bi-wrench-adjustable'
+                                                            : 'bi-exclamation-circle'
+                                                "
+                                            ></i>
+
+                                            <span
+                                                x-text="
+    originalOperationalStatus === 'operational'
+        ? 'Operacional'
+        : originalOperationalStatus === 'maintenance'
+            ? 'Em manutenção'
+            : originalOperationalStatus === 'inactive'
+                ? 'Inativo'
+                : originalOperationalStatus === 'inoperant'
+                    ? 'Inoperante'
+                    : originalOperationalStatus === 'accident'
+                        ? 'Sinistro'
+                        : originalOperationalStatus === 'support'
+                            ? 'Socorro'
+                            : originalOperationalStatus === 'testing'
+                                ? 'Em testes'
+                                : originalOperationalStatus === 'transfer'
+                                    ? 'Em transferência'
+                                    : originalOperationalStatus === 'transferred'
+                                        ? 'Transferido'
+                                        : originalOperationalStatus
+"
+                                            ></span>
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="vehicle-modal-v3-status-compact-action"
+                                    @click="
+                                        selectedOperationalStatus = originalOperationalStatus;
+                                        statusReason = '';
+                                        window.dispatchEvent(
+                                            new CustomEvent('open-vehicle-status-modal')
+                                        );
+                                    "
+                                >
+                                    <i class="bi bi-pencil"></i>
+                                    Alterar
+                                </button>
+
+                            </section>
+        </div>
+
+        <div class="vehicle-modal-v3-summary-kpis">
+            <div class="vehicle-modal-kpi-strip">
 
 
 
-        {{-- RESUMO COMPACTO --}}
+                        <div class="vehicle-modal-kpi vehicle-modal-kpi--editable">
+
+    <small>Hodômetro</small>
+
+    <div class="vehicle-modal-inline-reading">
+
+        <input
+            type="number"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            x-model="inlineKm"
+            :min="originalKm"
+            :readonly="!vehicleActions.edit"
+            aria-label="Hodômetro atual"
+        >
+
+        <span>km</span>
+
+    </div>
+
+    <button
+        type="button"
+        class="vehicle-modal-inline-save"
+        x-show="vehicleActions.edit"
+        :disabled="
+            savingInlineKm
+            ||
+            Number(inlineKm) === Number(vehicle.current_km ?? 0)
+        "
+        @click="saveInlineVehicleReading('km')"
+    >
+        <i class="bi bi-arrow-repeat"></i>
+        <span x-text="savingInlineKm ? 'Atualizando...' : 'Atualizar'"></span>
+    </button>
+
+</div>
 
 
 
-        <div class="vehicle-modal-kpi-strip">
+                        <div class="vehicle-modal-kpi vehicle-modal-kpi--editable">
 
-        
+    <small>Horímetro</small>
 
-            <div class="vehicle-modal-kpi">
+    <div class="vehicle-modal-inline-reading">
 
-                <small>Hodômetro</small>
+        <input
+            type="number"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            x-model="inlineHours"
+            :min="originalHours"
+            :readonly="!vehicleActions.edit"
+            aria-label="Horímetro atual"
+        >
 
-                <strong x-text="Number(vehicle.current_km ?? 0).toLocaleString('pt-BR') + ' km'"></strong>
+        <span>h</span>
 
-            </div>
+    </div>
 
-        
+    <button
+        type="button"
+        class="vehicle-modal-inline-save"
+        x-show="vehicleActions.edit"
+        :disabled="
+            savingInlineHours
+            ||
+            Number(inlineHours) === Number(vehicle.current_hours ?? 0)
+        "
+        @click="saveInlineVehicleReading('hours')"
+    >
+        <i class="bi bi-arrow-repeat"></i>
+        <span x-text="savingInlineHours ? 'Atualizando...' : 'Atualizar'"></span>
+    </button>
 
-            <div class="vehicle-modal-kpi">
+</div>
 
-                <small>Horímetro</small>
 
-                <strong x-text="(vehicle.current_hours ?? 0) + ' h'"></strong>
 
-            </div>
+                        <div class="vehicle-modal-kpi">
 
-        
+                            <small>Tempo parado</small>
 
-            <div class="vehicle-modal-kpi">
+                            <strong x-text="vehicle.total_downtime_text ?? '--'"></strong>
 
-                <small>Tempo parado</small>
+                            <span x-text="vehicle.total_downtime_subtext ?? ''"></span>
 
-                <strong x-text="vehicle.total_downtime_text ?? '--'"></strong>
+                        </div>
 
-                <span x-text="vehicle.total_downtime_subtext ?? ''"></span>
 
-            </div>
 
-        
+                        <div class="vehicle-modal-kpi">
 
-            <div class="vehicle-modal-kpi">
+                            <small>Disponível</small>
 
-                <small>Disponível</small>
+                            <strong x-text="vehicle.availability_text ?? '--'"></strong>
 
-                <strong x-text="vehicle.availability_text ?? '--'"></strong>
+                            <span x-text="vehicle.availability_subtext ?? ''"></span>
 
-                <span x-text="vehicle.availability_subtext ?? ''"></span>
+                        </div>
 
-            </div>
 
-        
 
-            <div
+                        <div
 
-                class="vehicle-modal-kpi"
+                            class="vehicle-modal-kpi"
 
-                :class="vehicle.alert_status == 'danger' ? 'danger' : vehicle.alert_status == 'warning' ? 'warning' : 'success'"
+                            :class="vehicle.alert_status == 'danger' ? 'danger' : vehicle.alert_status == 'warning' ? 'warning' : 'success'"
 
-            >
+                role="button"
+                tabindex="0"
+                title="Ver todos os alertas"
+                @click="
+                    if (vehicle.alerts && vehicle.alerts.length) {
+                        window.dispatchEvent(
+                            new CustomEvent('open-vehicle-alerts-modal')
+                        );
+                    }
+                "
+                @keydown.enter.prevent="
+                    if (vehicle.alerts && vehicle.alerts.length) {
+                        window.dispatchEvent(
+                            new CustomEvent('open-vehicle-alerts-modal')
+                        );
+                    }
+                "
 
-                <small>Alertas</small>
+                        >
 
-                <strong
+                            <small>Alertas</small>
 
-                    x-text="vehicle.alert_status == 'danger' ? 'Crítico' : vehicle.alert_status == 'warning' ? 'Atenção' : 'OK'"
+                            <strong
 
-                ></strong>
+                                x-text="vehicle.alert_status == 'danger' ? 'Crítico' : vehicle.alert_status == 'warning' ? 'Atenção' : 'OK'"
 
-                <span
+                            ></strong>
 
-                    x-text="(vehicle.alerts ? vehicle.alerts.length : 0) + ((vehicle.alerts && vehicle.alerts.length === 1) ? ' alerta ativo' : ' alertas ativos')"
+                            <span
 
-                ></span>
+                                x-text="(vehicle.alerts ? vehicle.alerts.length : 0) + ((vehicle.alerts && vehicle.alerts.length === 1) ? ' alerta ativo' : ' alertas ativos')"
 
-            </div>
+                            ></span>
 
-        
+                        </div>
+
+
+
+                    </div>
+        </div>
+
+    </div>
+
+    <div class="vehicle-modal-v3-work-row">
+
+        <aside class="vehicle-modal-v3-actions-column">
+            <nav class="vehicle-modal-v3-nav">
+            <a
+                                    :href="`/vehicle/${vehicle.id}/maintenance`"
+                                    x-show="vehicleActions.maintenance"
+                                    class="vehicle-modal-v3-nav-item"
+                                >
+                                    <i class="bi bi-wrench-adjustable"></i>
+
+                                    <span>
+                                        <strong>Setor de Manutenções</strong>
+                                        <small>Ordens e serviços</small>
+                                    </span>
+
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+            <a
+                                    :href="`/vehicles/${vehicle.id}/tires`"
+                                    x-show="vehicleActions.tires"
+                                    class="vehicle-modal-v3-nav-item"
+                                >
+                                    <i class="bi bi-record-circle"></i>
+
+                                    <span>
+                                        <strong>Setor de Pneus</strong>
+                                        <small>Controle de pneus</small>
+                                    </span>
+
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+            <a
+                                        :href="fuelFillingUrl(vehicle.id)"
+                                        x-show="vehicleActions.fuel"
+                                        class="vehicle-modal-v3-nav-item is-accent"
+                                    >
+                                        <i class="bi bi-fuel-pump"></i>
+
+                                        <span>
+                                            <strong>Novo abastecimento</strong>
+                                            <small>Registrar consumo</small>
+                                        </span>
+
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+            <a
+                                        :href="`/fuel/fillings/history?vehicle_id=${vehicle.id}`"
+                                        x-show="vehicleActions.fuel_history"
+                                        class="vehicle-modal-v3-nav-item is-accent-soft"
+                                    >
+                                        <i class="bi bi-list-ul"></i>
+
+                                        <span>
+                                            <strong>Últimos abastecimentos</strong>
+                                            <small>Ver histórico</small>
+                                        </span>
+
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+            </nav>
+        </aside>
+
+        <div class="vehicle-modal-v3-chart-column">
+            <section class="vehicle-modal-v3-card vehicle-modal-v3-chart-card">
+
+    <header class="vehicle-modal-v3-card-head vehicle-modal-v3-chart-head">
+
+        <div class="vehicle-modal-v3-chart-title">
+
+            <small
+                x-text="
+                    activeVehicleTrend === 'km'
+                        ? 'Rodagem'
+                        : activeVehicleTrend === 'efficiency'
+                            ? 'Consumo'
+                            : 'Combustível'
+                "
+            ></small>
+
+            <h3
+                x-text="
+                    activeVehicleTrend === 'km'
+                        ? 'Rodagem diária entre leituras'
+                        : activeVehicleTrend === 'efficiency'
+                            ? 'Evolução de eficiência'
+                            : 'Abastecimentos recentes'
+                "
+            ></h3>
+
+            <p
+                x-text="
+                    activeVehicleTrend === 'km'
+                        ? 'KM por dia entre cada leitura'
+                        : activeVehicleTrend === 'efficiency'
+                            ? 'Rendimento entre abastecimentos em km/L'
+                            : 'Volume abastecido em litros'
+                "
+            ></p>
 
         </div>
 
+        <div class="vehicle-modal-chart-head-actions">
 
+            <div class="vehicle-modal-chart-toggle">
 
-        
-
-
-
-        {{-- AÇÕES --}}
-
-
-
-        <div class="vehicle-modal-actions-strip">
-
-        
-
-            <a
-
-                href="#"
-
-                id="vehicleMaintenanceLink"
-
-                class="vehicle-modal-action primary"
-
-                x-show="vehicleActions.maintenance"
-
-            >
-
-                <i class="bi bi-wrench-adjustable"></i>
-
-                <span>Manutenção</span>
-
-            </a>
-
-        
-
-            <a
-
-                :href="`/vehicle/${vehicle.id}/history`"
-
-                class="vehicle-modal-action"
-
-                x-show="vehicleActions.history"
-
-            >
-
-                <i class="bi bi-clock-history"></i>
-
-                <span>Histórico</span>
-
-            </a>
-
-        
-
-            <a
-
-                :href="`/vehicles/${vehicle.id}/tires`"
-
-                class="vehicle-modal-action"
-
-                x-show="vehicleActions.tires"
-
-            >
-
-                <i class="bi bi-record-circle-fill"></i>
-
-                <span>Pneus</span>
-
-            </a>
-
-            
-
-            @if($fuelEnabled)
-
-                <a
-
-                    :href="fuelFillingUrl(vehicle.id)"
-
-                    class="vehicle-modal-action"
-
-                    x-show="vehicleActions.fuel"
-
+                <button
+                    type="button"
+                    class="vehicle-modal-chart-toggle-btn"
+                    :class="{ 'is-active': activeVehicleTrend === 'km' }"
+                    @click="activeVehicleTrend = 'km'"
                 >
+                    <i class="bi bi-graph-up"></i>
+                    Evolução KM
+                </button>
 
+                <button
+                    type="button"
+                    class="vehicle-modal-chart-toggle-btn"
+                    :class="{ 'is-active': activeVehicleTrend === 'fuel' }"
+                    @click="activeVehicleTrend = 'fuel'"
+                >
                     <i class="bi bi-fuel-pump"></i>
+                    Abastecimentos
+                </button>
 
-                    <span>Abastecimento</span>
+                <button
+                    type="button"
+                    class="vehicle-modal-chart-toggle-btn"
+                    :class="{ 'is-active': activeVehicleTrend === 'efficiency' }"
+                    @click="activeVehicleTrend = 'efficiency'"
+                >
+                    <i class="bi bi-speedometer"></i>
+                    Evolução KM/L
+                </button>
 
-                </a>
-
-            @endif
-
-        
+            </div>
 
             <a
-
-                :href="`/vehicles/${vehicle.id}/edit`"
-
-                class="vehicle-modal-action"
-
-                x-show="vehicleActions.edit"
-
+                :href="`/fuel/fillings/history?vehicle_id=${vehicle.id}`"
+                x-show="
+                    activeVehicleTrend === 'fuel'
+                    && vehicleActions.fuel_history
+                "
             >
-
-                <i class="bi bi-pencil"></i>
-
-                <span>Editar veículo</span>
-
+                Ver todos
+                <i class="bi bi-arrow-right"></i>
             </a>
 
-        
+        </div>
+
+    </header>
+
+    <div
+        class="vehicle-modal-chart vehicle-modal-chart--large"
+        x-data
+        x-effect="
+            vehicle.id;
+            vehicle.fuel_trend;
+            vehicle.km_trend;
+            vehicle.efficiency_trend;
+            activeVehicleTrend;
+
+            $nextTick(() => {
+                if (window.renderDashboardVehicleTrendChart) {
+                    window.renderDashboardVehicleTrendChart(
+                        $el,
+                        activeVehicleTrend === 'km'
+                            ? (
+                                Array.isArray(vehicle.km_trend)
+                                    ? vehicle.km_trend
+                                    : []
+                            )
+                            : activeVehicleTrend === 'efficiency'
+                                ? (
+                                    Array.isArray(vehicle.efficiency_trend)
+                                        ? vehicle.efficiency_trend
+                                        : []
+                                )
+                                : (
+                                    Array.isArray(vehicle.fuel_trend)
+                                        ? vehicle.fuel_trend
+                                        : []
+                                ),
+                        activeVehicleTrend
+                    );
+                }
+            })
+        "
+    >
+        <div class="vehicle-modal-chart-empty">
+            <i class="bi bi-graph-up"></i>
+            <span>Carregando gráfico...</span>
+        </div>
+    </div>
+
+</section>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+            {{-- ALERTAS + MANUTENÇÕES --}}
+            <div class="vehicle-modal-v3-secondary">
+
+                <section class="vehicle-modal-v3-card">
+
+                    <header class="vehicle-modal-v3-card-head">
+                        <div>
+                            <small>Monitoramento</small>
+                            <h3>Alertas e monitoramento</h3>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="vehicle-modal-v3-count vehicle-modal-v3-count--button"
+                            x-show="vehicle.alerts && vehicle.alerts.length > 3"
+                            x-text="'+' + ((vehicle.alerts?.length || 0) - 3)"
+                            title="Ver todos os alertas"
+                            @click="
+                                window.dispatchEvent(
+                                    new CustomEvent('open-vehicle-alerts-modal')
+                                )
+                            "
+                        ></button>
+                    </header>
+
+                    <template x-if="!vehicle.alerts || vehicle.alerts.length === 0">
+                        <div class="vehicle-modal-v3-empty">
+                            <i class="bi bi-check-circle"></i>
+                            Nenhum alerta ativo.
+                        </div>
+                    </template>
+
+                    <div class="vehicle-modal-v3-list">
+
+                        <template
+                            x-for="(alert, index) in (vehicle.alerts || []).slice(0, 3)"
+                            :key="'alert-v3-' + index"
+                        >
+                            <article class="vehicle-modal-v3-alert-row">
+
+                                <span
+                                    class="vehicle-modal-v3-alert-marker"
+                                    :class="alert.status || 'warning'"
+                                ></span>
+
+                                <div>
+                                    <strong
+                                        x-text="alert.message || 'Alerta operacional'"
+                                    ></strong>
+
+                                    <small
+                                        x-text="alert.procedure || 'Monitoramento do veículo'"
+                                    ></small>
+                                </div>
+
+                            </article>
+                        </template>
+
+                    </div>
+
+                </section>
+
+
+                <section class="vehicle-modal-v3-card">
+
+                    <header class="vehicle-modal-v3-card-head">
+                        <div>
+                            <small>Manutenção</small>
+                            <h3>Últimas manutenções</h3>
+                        </div>
+
+                        <a
+                            :href="`/vehicle/${vehicle.id}/maintenance`"
+                            x-show="vehicleActions.maintenance"
+                        >
+                            Ver histórico
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </header>
+
+                    <template
+                        x-if="
+                            !vehicle.recent_maintenances_modal
+                            ||
+                            vehicle.recent_maintenances_modal.length === 0
+                        "
+                    >
+                        <div class="vehicle-modal-v3-empty">
+                            <i class="bi bi-clipboard"></i>
+                            Nenhuma manutenção registrada.
+                        </div>
+                    </template>
+
+                    <div class="vehicle-modal-v3-list">
+
+                        <template
+                            x-for="maintenance in (vehicle.recent_maintenances_modal || [])"
+                            :key="'maintenance-v3-' + maintenance.id"
+                        >
+                            <a
+                                class="vehicle-modal-v3-maintenance-row"
+                                :href="maintenance.url"
+                            >
+
+                                <span class="vehicle-modal-v3-maintenance-icon">
+                                    <i class="bi bi-wrench-adjustable"></i>
+                                </span>
+
+                                <div class="vehicle-modal-v3-maintenance-main">
+
+                                    <div class="vehicle-modal-v3-maintenance-title">
+                                        <strong
+                                            x-text="'#' + maintenance.id + ' · ' + maintenance.name"
+                                        ></strong>
+
+                                        <span
+                                            class="vehicle-modal-v3-maintenance-status"
+                                            :class="'is-' + (maintenance.workflow_status || 'open')"
+                                            x-text="maintenance.workflow_label"
+                                        ></span>
+                                    </div>
+
+                                    <div class="vehicle-modal-v3-maintenance-meta">
+                                        <span x-text="maintenance.reason"></span>
+
+                                        <template x-if="maintenance.service_status_label">
+                                            <span
+                                                x-text="maintenance.service_status_label"
+                                            ></span>
+                                        </template>
+                                    </div>
+
+                                    <div class="vehicle-modal-v3-maintenance-dates">
+
+                                        <span>
+                                            <i class="bi bi-box-arrow-in-right"></i>
+                                            <b>Entrada:</b>
+                                            <span x-text="maintenance.started_at || '—'"></span>
+                                        </span>
+
+                                        <template x-if="maintenance.finished_at">
+                                            <span>
+                                                <i class="bi bi-check2-circle"></i>
+                                                <b>Saída:</b>
+                                                <span x-text="maintenance.finished_at"></span>
+                                            </span>
+                                        </template>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="vehicle-modal-v3-maintenance-side">
+
+                                    <template x-if="maintenance.can_view_cost">
+                                        <strong
+                                            class="vehicle-modal-v3-maintenance-cost"
+                                            x-text="
+                                                Number(maintenance.total_cost || 0)
+                                                    .toLocaleString(
+                                                        'pt-BR',
+                                                        {
+                                                            style: 'currency',
+                                                            currency: 'BRL'
+                                                        }
+                                                    )
+                                            "
+                                        ></strong>
+                                    </template>
+
+                                    <i class="bi bi-chevron-right"></i>
+
+                                </div>
+
+                            </a>
+                        </template>
+
+                    </div>
+
+                </section>
+
+            </div>
 
         </div>
 
 
 
-        {{-- BODY --}}
+        {{-- MODAL DE ALERTAS DO VEÍCULO --}}
+        <div
+            class="vehicle-alerts-modal-overlay"
+            x-data="{ open: false }"
+            x-show="open"
+            x-cloak
+            style="display:none;"
+            @open-vehicle-alerts-modal.window="open = true"
+            @keydown.escape.window="open = false"
+            @click.self="open = false"
+        >
+
+            <section
+                class="vehicle-alerts-modal"
+                x-show="open"
+                x-transition.opacity.scale.95
+            >
+
+                <header class="vehicle-alerts-modal-head">
+
+                    <div>
+
+                        <small>Monitoramento</small>
+
+                        <h3>Alertas do veículo</h3>
+
+                        <p>
+                            <strong x-text="vehicle.name || vehicle.plate || 'Veículo'"></strong>
+
+                            <span
+                                x-text="
+                                    ' · '
+                                    + ((vehicle.alerts?.length || 0))
+                                    + (
+                                        (vehicle.alerts?.length || 0) === 1
+                                            ? ' alerta ativo'
+                                            : ' alertas ativos'
+                                    )
+                                "
+                            ></span>
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        class="vehicle-alerts-modal-close"
+                        @click="open = false"
+                        aria-label="Fechar"
+                    >
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+
+                </header>
 
 
+                <div class="vehicle-alerts-modal-body">
 
-        <div class="vehicle-center-body">
+                    <template
+                        x-if="!vehicle.alerts || vehicle.alerts.length === 0"
+                    >
+                        <div class="vehicle-alerts-modal-empty">
+
+                            <i class="bi bi-check-circle"></i>
+
+                            <strong>Nenhum alerta ativo</strong>
+
+                            <span>
+                                Não há alertas de monitoramento para este veículo.
+                            </span>
+
+                        </div>
+                    </template>
+
+
+                    <div
+                        class="vehicle-alerts-modal-list"
+                        x-show="vehicle.alerts && vehicle.alerts.length"
+                    >
+
+                        <template
+                            x-for="(alert, index) in (vehicle.alerts || [])"
+                            :key="'alert-modal-' + index"
+                        >
+
+                            <article
+                                class="vehicle-alerts-modal-row"
+                                :class="'is-' + (alert.status || 'warning')"
+                            >
+
+                                <span
+                                    class="vehicle-alerts-modal-marker"
+                                    :class="alert.status || 'warning'"
+                                >
+                                    <i
+                                        class="bi"
+                                        :class="
+                                            alert.status === 'danger'
+                                                ? 'bi-exclamation-octagon'
+                                                : alert.status === 'success'
+                                                    ? 'bi-check-circle'
+                                                    : 'bi-exclamation-triangle'
+                                        "
+                                    ></i>
+                                </span>
+
+
+                                <div class="vehicle-alerts-modal-copy">
+
+                                    <strong
+                                        x-text="
+                                            alert.message
+                                            || 'Alerta operacional'
+                                        "
+                                    ></strong>
+
+                                    <small
+                                        x-text="
+                                            alert.procedure
+                                            || 'Monitoramento do veículo'
+                                        "
+                                    ></small>
+
+                                </div>
+
+
+                                <span
+                                    class="vehicle-alerts-modal-level"
+                                    :class="alert.status || 'warning'"
+                                    x-text="
+                                        alert.status === 'danger'
+                                            ? 'Crítico'
+                                            : alert.status === 'success'
+                                                ? 'Informativo'
+                                                : 'Atenção'
+                                    "
+                                ></span>
+
+                            </article>
+
+                        </template>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        {{-- MODAL STATUS OPERACIONAL --}}
+        <div
+            class="vehicle-status-modal-overlay"
+            x-data="{ open: false }"
+            x-show="open"
+            x-cloak
+            @open-vehicle-status-modal.window="open = true"
+            @keydown.escape.window="open = false"
+            @click.self="open = false"
+        >
+
+            <section
+                class="vehicle-status-modal"
+                role="dialog"
+                aria-modal="true"
+            >
+
+                <header class="vehicle-status-modal-head">
+
+                    <div>
+                        <small>Situação do veículo</small>
+                        <h3>Status operacional</h3>
+
+                        <p>
+                            Consulte ou altere a situação operacional do veículo.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="open = false"
+                    >
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+
+                </header>
+
+
+                <div class="vehicle-status-modal-current">
+
+                    <span>Status atual</span>
+
+                    <strong
+                        x-text="operationalStatusLabel(originalOperationalStatus)"
+                    ></strong>
+
+                </div>
+
+
+                <template x-if="originalOperationalStatus !== 'maintenance'">
+
+                    <div class="vehicle-status-modal-form">
+
+                        <label>
+                            Novo status
+
+                            <select x-model="selectedOperationalStatus">
+                                <option value="operational">Operacional</option>
+                                <option value="inactive">Inativo</option>
+                                <option value="inoperant">Inoperante</option>
+                                <option value="accident">Sinistro</option>
+                                <option value="support">Socorro</option>
+                                <option value="testing">Testes</option>
+                                <option value="transfer">Transferência</option>
+                                <option value="transferred">Transferido</option>
+                            </select>
+                        </label>
+
+
+                        <label
+                            x-show="
+                                selectedOperationalStatus
+                                !==
+                                originalOperationalStatus
+                            "
+                            x-cloak
+                        >
+                            Motivo / observação
+
+                            <textarea
+                                x-model="statusReason"
+                                rows="4"
+                                maxlength="300"
+                                placeholder="Informe o motivo da alteração..."
+                            ></textarea>
+
+                            <small
+                                x-text="`${statusReason.length}/300 caracteres`"
+                            ></small>
+                        </label>
+
+
+                        <footer>
+
+                            <button
+                                type="button"
+                                class="secondary"
+                                @click="open = false"
+                            >
+                                Cancelar
+                            </button>
+
+                            <button
+                                type="button"
+                                class="primary"
+                                @click="saveOperationalStatus()"
+                                :disabled="
+                                    selectedOperationalStatus
+                                    ===
+                                    originalOperationalStatus
+                                    ||
+                                    !statusReason.trim()
+                                "
+                            >
+                                <i class="bi bi-check-lg"></i>
+                                Salvar alteração
+                            </button>
+
+                        </footer>
+
+                    </div>
+
+                </template>
+
+
+                <template x-if="originalOperationalStatus === 'maintenance'">
+
+                    <div class="vehicle-status-modal-lock">
+
+                        <i class="bi bi-lock"></i>
+
+                        <div>
+                            <strong>
+                                Status controlado pela manutenção
+                            </strong>
+
+                            <p>
+                                Para alterar a situação deste veículo,
+                                encerre a ordem de manutenção atualmente aberta.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </template>
+
+            </section>
+
+        </div>
+
+
+        {{-- BODY LEGADO - mantido temporariamente para rollback --}}
+        <div class="vehicle-center-body vehicle-center-body--legacy">
 
 
 
@@ -3553,7 +4278,7 @@
 
                 <section class="vehicle-center-card vehicle-modal-status-card">
 
-                
+
 
                     <div class="vehicle-center-card-header">
 
@@ -3565,7 +4290,7 @@
 
                         </div>
 
-                
+
 
                         <div
 
@@ -3583,11 +4308,11 @@
 
                     </div>
 
-                
+
 
                     <div class="vehicle-modal-status-metrics">
 
-                
+
 
                         <div>
 
@@ -3599,7 +4324,7 @@
 
                         </div>
 
-                
+
 
                         <div>
 
@@ -3611,11 +4336,11 @@
 
                         </div>
 
-                
+
 
                     </div>
 
-                
+
 
                     <template x-if="vehicle.open_downtime_reason">
 
@@ -3629,9 +4354,9 @@
 
                     </template>
 
-                
 
-                    
+
+
 
                     <template x-if="originalOperationalStatus !== 'maintenance'">
 
@@ -3639,15 +4364,15 @@
 
                     <div class="vehicle-center-status-form">
 
-                
+
 
                         <div class="vehicle-center-field">
 
-                
+
 
                             <select x-model="selectedOperationalStatus">
 
-                
+
 
                                 <option value="operational">
 
@@ -3655,7 +4380,7 @@
 
                                 </option>
 
-                
+
 
                                 <option value="inactive">
 
@@ -3663,7 +4388,7 @@
 
                                 </option>
 
-                
+
 
                                 <option value="inoperant">
 
@@ -3671,7 +4396,7 @@
 
                                 </option>
 
-                
+
 
                                 <option value="accident">
 
@@ -3679,7 +4404,7 @@
 
                                 </option>
 
-                
+
 
                                 <option value="support">
 
@@ -3687,7 +4412,7 @@
 
                                 </option>
 
-                
+
 
                                 <option value="testing">
 
@@ -3695,7 +4420,7 @@
 
                                 </option>
 
-                
+
 
                                 <option value="transfer">
 
@@ -3703,7 +4428,7 @@
 
                                 </option>
 
-                
+
 
                                 <option value="transferred">
 
@@ -3711,15 +4436,15 @@
 
                                 </option>
 
-                
+
 
                             </select>
 
-                
+
 
                         </div>
 
-                
+
 
                         <div
 
@@ -3739,7 +4464,7 @@
 
                         >
 
-                
+
 
                             <label>
 
@@ -3747,7 +4472,7 @@
 
                             </label>
 
-                
+
 
                             <textarea
 
@@ -3759,11 +4484,11 @@
 
                             ></textarea>
 
-                
+
 
                         </div>
 
-                
+
 
                         <button
 
@@ -3799,11 +4524,11 @@
 
                         </button>
 
-                
+
 
                     </div>
 
-                
+
 
                 </template>
 
@@ -3813,19 +4538,19 @@
 
                     <div class="vehicle-maintenance-status-lock">
 
-                
+
 
                         <div class="vehicle-maintenance-status-lock-text">
 
-                
+
 
                             <i class="bi bi-lock"></i>
 
-                
+
 
                             <div>
 
-                
+
 
                                 <strong>
 
@@ -3833,7 +4558,7 @@
 
                                 </strong>
 
-                
+
 
                                 <p>
 
@@ -3843,15 +4568,15 @@
 
                                 </p>
 
-                
+
 
                             </div>
 
-                
+
 
                         </div>
 
-                
+
 
                         <a
 
@@ -3863,17 +4588,17 @@
 
                             <i class="bi bi-wrench-adjustable"></i>
 
-                
+
 
                             Ir para manutenção
 
                         </a>
 
-                
+
 
                     </div>
 
-                
+
 
                 </template>
 
@@ -3901,7 +4626,7 @@
 
 
 
-            
+
 
 
 
@@ -3913,7 +4638,7 @@
 
 
 
-            
+
 
 
 
@@ -3921,7 +4646,7 @@
 
 
 
-            
+
 
 
 
@@ -3941,7 +4666,7 @@
 
 
 
-            
+
 
 
 
@@ -3961,7 +4686,7 @@
 
 
 
-            
+
 
 
 
@@ -3969,7 +4694,7 @@
 
 
 
-            
+
 
 
 
@@ -3977,7 +4702,7 @@
 
 
 
-            
+
 
 
 
@@ -4009,7 +4734,7 @@
 
 
 
-            
+
 
 
 
@@ -4017,7 +4742,7 @@
 
 
 
-            
+
 
 
 
@@ -4025,7 +4750,7 @@
 
 
 
-            
+
 
 
 
@@ -4041,7 +4766,7 @@
 
 
 
-            
+
 
 
 
@@ -4057,7 +4782,7 @@
 
 
 
-            
+
 
 
 
@@ -4065,7 +4790,7 @@
 
 
 
-            
+
 
 
 
@@ -4073,7 +4798,7 @@
 
 
 
-            
+
 
 
 
@@ -4081,7 +4806,7 @@
 
 
 
-            
+
 
 
 
@@ -4101,7 +4826,7 @@
 
 
 
-            
+
 
 
 
@@ -4121,7 +4846,7 @@
 
 
 
-            
+
 
 
 
@@ -4129,7 +4854,7 @@
 
 
 
-            
+
 
 
 
@@ -4149,7 +4874,7 @@
 
 
 
-            
+
 
 
 
@@ -4169,7 +4894,7 @@
 
 
 
-            
+
 
 
 
@@ -4177,7 +4902,7 @@
 
 
 
-            
+
 
 
 
@@ -4185,7 +4910,7 @@
 
 
 
-            
+
 
 
 
@@ -4193,7 +4918,7 @@
 
 
 
-            
+
 
 
 
@@ -4201,7 +4926,7 @@
 
 
 
-            
+
 
 
 
@@ -4213,7 +4938,7 @@
 
 
 
-            
+
 
 
 
@@ -4225,7 +4950,7 @@
 
 
 
-            
+
 
 
 
@@ -4233,7 +4958,7 @@
 
 
 
-            
+
 
 
 
@@ -4253,7 +4978,7 @@
 
 
 
-            
+
 
 
 
@@ -4273,7 +4998,7 @@
 
 
 
-            
+
 
 
 
@@ -4281,7 +5006,7 @@
 
 
 
-            
+
 
 
 
@@ -4289,7 +5014,7 @@
 
 
 
-            
+
 
 
 
@@ -4321,7 +5046,7 @@
 
 
 
-            
+
 
 
 
@@ -4329,7 +5054,7 @@
 
 
 
-            
+
 
 
 
@@ -4337,7 +5062,7 @@
 
 
 
-            
+
 
 
 
@@ -4353,7 +5078,7 @@
 
 
 
-            
+
 
 
 
@@ -4369,7 +5094,7 @@
 
 
 
-            
+
 
 
 
@@ -4377,7 +5102,7 @@
 
 
 
-            
+
 
 
 
@@ -4385,7 +5110,7 @@
 
 
 
-            
+
 
 
 
@@ -4393,7 +5118,7 @@
 
 
 
-            
+
 
 
 
@@ -4413,7 +5138,7 @@
 
 
 
-            
+
 
 
 
@@ -4421,7 +5146,7 @@
 
 
 
-            
+
 
 
 
@@ -4429,7 +5154,7 @@
 
 
 
-            
+
 
 
 
@@ -4437,7 +5162,7 @@
 
 
 
-            
+
 
 
 
@@ -4453,7 +5178,7 @@
 
 
 
-            
+
 
 
 
@@ -4473,7 +5198,7 @@
 
 
 
-            
+
 
 
 
@@ -4497,7 +5222,7 @@
 
 
 
-            
+
 
 
 
@@ -4525,7 +5250,7 @@
 
 
 
-            
+
 
 
 
@@ -4533,7 +5258,7 @@
 
 
 
-            
+
 
 
 
@@ -4541,7 +5266,7 @@
 
 
 
-            
+
 
 
 
@@ -4549,7 +5274,7 @@
 
 
 
-            
+
 
 
 
@@ -4557,7 +5282,7 @@
 
 
 
-            
+
 
 
 
@@ -4565,7 +5290,7 @@
 
 
 
-            
+
 
 
 
@@ -4577,7 +5302,7 @@
 
 
 
-            
+
 
 
 
@@ -4585,7 +5310,7 @@
 
 
 
-            
+
 
 
 
@@ -4605,7 +5330,7 @@
 
 
 
-            
+
 
 
 
@@ -4625,7 +5350,7 @@
 
 
 
-            
+
 
 
 
@@ -4633,7 +5358,7 @@
 
 
 
-            
+
 
 
 
@@ -4641,7 +5366,7 @@
 
 
 
-            
+
 
 
 
@@ -4673,7 +5398,7 @@
 
 
 
-            
+
 
 
 
@@ -4681,7 +5406,7 @@
 
 
 
-            
+
 
 
 
@@ -4689,7 +5414,7 @@
 
 
 
-            
+
 
 
 
@@ -4705,7 +5430,7 @@
 
 
 
-            
+
 
 
 
@@ -4721,7 +5446,7 @@
 
 
 
-            
+
 
 
 
@@ -4729,7 +5454,7 @@
 
 
 
-            
+
 
 
 
@@ -4737,7 +5462,7 @@
 
 
 
-            
+
 
 
 
@@ -4745,7 +5470,7 @@
 
 
 
-            
+
 
 
 
@@ -4765,7 +5490,7 @@
 
 
 
-            
+
 
 
 
@@ -4773,7 +5498,7 @@
 
 
 
-            
+
 
 
 
@@ -4781,7 +5506,7 @@
 
 
 
-            
+
 
 
 
@@ -4809,7 +5534,7 @@
 
 
 
-            
+
 
 
 
@@ -4837,7 +5562,7 @@
 
 
 
-            
+
 
 
 
@@ -4845,7 +5570,7 @@
 
 
 
-            
+
 
 
 
@@ -4881,7 +5606,7 @@
 
 
 
-            
+
 
 
 
@@ -4889,7 +5614,7 @@
 
 
 
-            
+
 
 
 
@@ -4897,7 +5622,7 @@
 
 
 
-            
+
 
 
 
@@ -4905,7 +5630,7 @@
 
 
 
-            
+
 
 
 
@@ -4913,7 +5638,7 @@
 
 
 
-            
+
 
 
 
@@ -4921,7 +5646,7 @@
 
 
 
-            
+
 
 
 
@@ -5589,7 +6314,7 @@
 
 
 
-                    
+
 
 
 
@@ -6225,7 +6950,7 @@
 
 
 
-            
+
 
 
 
@@ -6237,7 +6962,7 @@
 
 
 
-            
+
 
 
 
@@ -6297,7 +7022,7 @@
 
 
 
-            
+
 
 
 
@@ -6457,7 +7182,7 @@
 
 
 
-            <div class="operation-delay-box" id="startDelayBox" style="display:none;">             
+            <div class="operation-delay-box" id="startDelayBox" style="display:none;">
 
 
 
@@ -7013,7 +7738,7 @@
 
 
 
-    
+
 
 
 
@@ -7021,7 +7746,7 @@
 
 
 
-    
+
 
 
 
@@ -7033,7 +7758,7 @@
 
 
 
-    
+
 
 
 
@@ -7041,7 +7766,7 @@
 
 
 
-    
+
 
 
 
@@ -7049,7 +7774,7 @@
 
 
 
-    
+
 
 
 
@@ -7057,7 +7782,7 @@
 
 
 
-    
+
 
 
 
@@ -7069,7 +7794,7 @@
 
 
 
-    
+
 
 
 
@@ -7081,7 +7806,7 @@
 
 
 
-    
+
 
 
 
@@ -7101,7 +7826,7 @@
 
 
 
-    
+
 
 
 
@@ -7113,7 +7838,7 @@
 
 
 
-    
+
 
 
 
@@ -7137,7 +7862,7 @@
 
 
 
-    
+
 
 
 
@@ -7149,7 +7874,7 @@
 
 
 
-    
+
 
 
 
@@ -7157,7 +7882,7 @@
 
 
 
-    
+
 
 
 
@@ -7169,7 +7894,7 @@
 
 
 
-    
+
 
 
 
@@ -7181,7 +7906,7 @@
 
 
 
-    
+
 
 
 
@@ -7217,7 +7942,7 @@
 
 
 
-        
+
 
 
 
@@ -7314,7 +8039,7 @@
 
 
 
-    
+
 
 
 
@@ -7330,7 +8055,7 @@
 
 
 
-    
+
 
 
 
@@ -7338,7 +8063,7 @@
 
 
 
-    
+
 
 
 
@@ -7346,7 +8071,7 @@
 
 
 
-    
+
 
 
 
@@ -7354,7 +8079,7 @@
 
 
 
-    
+
 
 
 
@@ -7382,7 +8107,7 @@
 
 
 
-    
+
 
 
 
@@ -7402,7 +8127,7 @@
 
 
 
-    
+
 
 
 
@@ -7410,7 +8135,7 @@
 
 
 
-    
+
 
 
 
@@ -7430,7 +8155,7 @@
 
 
 
-    
+
 
 
 
@@ -7438,7 +8163,7 @@
 
 
 
-    
+
 
 
 
@@ -7454,7 +8179,7 @@
 
 
 
-    
+
 
 
 
@@ -7466,7 +8191,7 @@
 
 
 
-    
+
 
 
 
@@ -7762,6 +8487,133 @@
 
 
 
+
+function renderDashboardVehicleTrendChart(container, fuelTrend = [], kmTrend = [], mode = 'fuel') {
+    const points = mode === 'km' ? kmTrend : fuelTrend;
+    const stroke = mode === 'km' ? '#8ab4ff' : '#ef5a62';
+    const suffix = mode === 'km' ? ' km' : ' L';
+    const decimals = mode === 'km' ? 0 : 1;
+    const emptyText = mode === 'km'
+        ? 'Sem leituras suficientes para gerar a evolução de KM.'
+        : 'Sem abastecimentos suficientes para gerar o gráfico.';
+
+    container.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'vehicle-modal-chart-inner';
+
+    if (!Array.isArray(points) || points.length < 2) {
+        const empty = document.createElement('div');
+        empty.className = 'vehicle-modal-chart-empty';
+        empty.textContent = emptyText;
+        wrapper.appendChild(empty);
+        container.appendChild(wrapper);
+        return;
+    }
+
+    const width = container.clientWidth || 760;
+    const height = 260;
+    const padding = { top: 16, right: 18, bottom: 34, left: 18 };
+
+    const values = points.map(p => Number(p.value || 0));
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = Math.max(max - min, 1);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('class', 'vehicle-modal-chart-svg');
+
+    for (let i = 0; i < 4; i++) {
+        const y = padding.top + ((height - padding.top - padding.bottom) / 3) * i;
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', padding.left);
+        line.setAttribute('x2', width - padding.right);
+        line.setAttribute('y1', y);
+        line.setAttribute('y2', y);
+        line.setAttribute('class', 'vehicle-modal-chart-grid-line');
+        svg.appendChild(line);
+    }
+
+    const stepX = (width - padding.left - padding.right) / Math.max(points.length - 1, 1);
+
+    const coords = points.map((point, index) => {
+        const x = padding.left + (stepX * index);
+        const normalized = (Number(point.value || 0) - min) / range;
+        const y = (height - padding.bottom) - normalized * (height - padding.top - padding.bottom);
+        return { ...point, x, y };
+    });
+
+    const polyline = document.createElementNS(svgNS, 'polyline');
+    polyline.setAttribute(
+        'points',
+        coords.map(point => `${point.x},${point.y}`).join(' ')
+    );
+    polyline.setAttribute('fill', 'none');
+    polyline.setAttribute('stroke', stroke);
+    polyline.setAttribute('stroke-width', '3');
+    polyline.setAttribute('stroke-linecap', 'round');
+    polyline.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(polyline);
+
+    coords.forEach((point, index) => {
+        const circle = document.createElementNS(svgNS, 'circle');
+        circle.setAttribute('cx', point.x);
+        circle.setAttribute('cy', point.y);
+        circle.setAttribute('r', '4');
+        circle.setAttribute('fill', stroke);
+        svg.appendChild(circle);
+
+        const label = document.createElementNS(svgNS, 'text');
+        label.setAttribute('x', point.x);
+        label.setAttribute('y', height - 10);
+        label.setAttribute('text-anchor', index === 0 ? 'start' : index === coords.length - 1 ? 'end' : 'middle');
+        label.setAttribute('class', 'vehicle-modal-chart-label');
+        label.textContent = point.label || '';
+        svg.appendChild(label);
+    });
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'vehicle-modal-chart-tooltip';
+    wrapper.appendChild(tooltip);
+
+    coords.forEach(point => {
+        const hover = document.createElementNS(svgNS, 'circle');
+        hover.setAttribute('cx', point.x);
+        hover.setAttribute('cy', point.y);
+        hover.setAttribute('r', '12');
+        hover.setAttribute('fill', 'transparent');
+        hover.style.cursor = 'pointer';
+
+        hover.addEventListener('mouseenter', () => {
+            tooltip.innerHTML = `
+                <strong>${point.formatted_value ?? Number(point.value).toLocaleString('pt-BR', {
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
+                }) + suffix}</strong>
+                <span>${point.date ?? point.label ?? ''}</span>
+            `;
+            tooltip.classList.add('is-visible');
+        });
+
+        hover.addEventListener('mousemove', (event) => {
+            const rect = container.getBoundingClientRect();
+            tooltip.style.left = `${event.clientX - rect.left + 12}px`;
+            tooltip.style.top = `${event.clientY - rect.top - 10}px`;
+        });
+
+        hover.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('is-visible');
+        });
+
+        svg.appendChild(hover);
+    });
+
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
+}
+
 </script>
 
 
@@ -7812,7 +8664,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -7852,6 +8704,13 @@ function dashboardFleet(vehicleActions = {}) {
 
         originalOperationalStatus: '',
 
+        inlineKm: '',
+        inlineHours: '',
+        savingInlineKm: false,
+        savingInlineHours: false,
+
+        activeVehicleTrend: 'fuel',
+
         selectedOperationalStatus: '',
 
         statusReason: '',
@@ -7860,7 +8719,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -7868,7 +8727,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -7876,7 +8735,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -7888,7 +8747,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8023,7 +8882,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8039,7 +8898,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8099,7 +8958,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8107,7 +8966,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8123,7 +8982,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8139,7 +8998,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8155,7 +9014,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8171,7 +9030,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8187,7 +9046,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8243,7 +9102,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8251,7 +9110,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8259,7 +9118,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8267,7 +9126,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8275,7 +9134,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8339,7 +9198,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -8383,7 +9242,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8391,7 +9250,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8399,7 +9258,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8419,7 +9278,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8439,7 +9298,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8447,7 +9306,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8459,7 +9318,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8471,7 +9330,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8487,7 +9346,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8503,7 +9362,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8531,7 +9390,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8567,7 +9426,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8607,7 +9466,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8615,7 +9474,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8643,7 +9502,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -8651,7 +9510,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -8679,7 +9538,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -8703,7 +9562,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -8723,7 +9582,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8735,7 +9594,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8747,7 +9606,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8763,7 +9622,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8779,7 +9638,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8807,7 +9666,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8819,7 +9678,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8887,7 +9746,7 @@ function dashboardFleet(vehicleActions = {}) {
 
         };
 
-    
+
 
         return statuses[status] ?? statuses.operational;
 
@@ -8911,7 +9770,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8935,7 +9794,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8971,7 +9830,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -8995,7 +9854,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9003,7 +9862,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9011,7 +9870,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9019,7 +9878,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9031,7 +9890,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9047,7 +9906,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9067,7 +9926,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9091,7 +9950,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9127,7 +9986,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9151,7 +10010,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9159,7 +10018,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9167,7 +10026,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9175,7 +10034,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9183,7 +10042,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9191,7 +10050,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9203,7 +10062,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-    
+
 
 
 
@@ -9219,7 +10078,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9235,7 +10094,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9243,7 +10102,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9251,7 +10110,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9259,7 +10118,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9267,7 +10126,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9283,7 +10142,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9302,16 +10161,20 @@ function dashboardFleet(vehicleActions = {}) {
                 );
 
             this.originalOperationalStatus = this.vehicle.operational_status;
+            this.activeVehicleTrend = 'fuel';
 
-            
+            this.inlineKm = this.vehicle.current_km ?? '';
+            this.inlineHours = this.vehicle.current_hours ?? '';
+
+
 
             this.selectedOperationalStatus = this.vehicle.operational_status;
 
-            
+
 
             this.statusReason = '';
 
-        
+
 
 
 
@@ -9323,7 +10186,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -9335,7 +10198,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9359,7 +10222,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9371,7 +10234,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9391,7 +10254,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9415,7 +10278,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9423,7 +10286,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9431,7 +10294,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9439,7 +10302,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9447,7 +10310,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9455,7 +10318,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9463,7 +10326,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9471,7 +10334,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9479,7 +10342,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9487,7 +10350,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9571,7 +10434,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9579,7 +10442,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9587,7 +10450,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9595,7 +10458,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9603,7 +10466,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9619,7 +10482,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9627,7 +10490,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9651,7 +10514,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9659,7 +10522,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9667,7 +10530,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9679,7 +10542,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9691,7 +10554,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9715,7 +10578,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9727,7 +10590,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9751,7 +10614,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9759,7 +10622,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -9779,8 +10642,87 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
 
+
+
+
+        async saveInlineVehicleReading(type) {
+
+            if (type === 'km') {
+
+                const value = Number(
+                    String(this.inlineKm ?? '').replace(',', '.')
+                );
+
+                if (! Number.isFinite(value) || value < 0) {
+                    alert('Informe um hodômetro válido.');
+                    return;
+                }
+
+                this.savingInlineKm = true;
+
+                try {
+
+                    this.vehicle.current_km = value;
+
+                    await this.updateKm();
+
+                    /*
+                     * Se updateKm abortar por validação,
+                     * ele restaura vehicle.current_km.
+                     */
+                    this.inlineKm =
+                        this.vehicle.current_km
+                        ?? this.originalKm
+                        ?? '';
+
+                } finally {
+
+                    this.savingInlineKm = false;
+
+                }
+
+                return;
+            }
+
+
+            if (type === 'hours') {
+
+                const value = Number(
+                    String(this.inlineHours ?? '').replace(',', '.')
+                );
+
+                if (! Number.isFinite(value) || value < 0) {
+                    alert('Informe um horímetro válido.');
+                    return;
+                }
+
+                this.savingInlineHours = true;
+
+                try {
+
+                    this.vehicle.current_hours = value;
+
+                    await this.updateHours();
+
+                    /*
+                     * Se updateHours abortar por validação,
+                     * ele restaura vehicle.current_hours.
+                     */
+                    this.inlineHours =
+                        this.vehicle.current_hours
+                        ?? this.originalHours
+                        ?? '';
+
+                } finally {
+
+                    this.savingInlineHours = false;
+
+                }
+
+            }
+
+        },
 
 
         async updateKm(event) {
@@ -9793,7 +10735,7 @@ function dashboardFleet(vehicleActions = {}) {
 
             }
 
-        
+
 
             const currentKm = Number(this.vehicle.current_km);
 
@@ -9801,23 +10743,23 @@ function dashboardFleet(vehicleActions = {}) {
 
             const diffKm = currentKm - originalKm;
 
-        
+
 
             if (currentKm < originalKm) {
 
                 alert(`O novo KM não pode ser menor que o KM atual (${this.originalKm}).`);
 
-        
+
 
                 this.vehicle.current_km = this.originalKm;
 
-        
+
 
                 return;
 
             }
 
-        
+
 
             let kmReadingConfirmed = false;
 
@@ -9834,7 +10776,7 @@ function dashboardFleet(vehicleActions = {}) {
 
                 );
 
-        
+
 
                 if (! confirmed) {
                     this.vehicle.current_km = this.originalKm;
@@ -9846,7 +10788,7 @@ function dashboardFleet(vehicleActions = {}) {
                 kmReadingConfirmed = true;
             }
 
-        
+
 
             const response = await fetch(
 
@@ -9882,11 +10824,11 @@ function dashboardFleet(vehicleActions = {}) {
 
             );
 
-        
+
 
             const data = await response.json();
 
-        
+
 
             if (! response.ok) {
 
@@ -9896,7 +10838,7 @@ function dashboardFleet(vehicleActions = {}) {
 
             }
 
-        
+
 
             alert(data.message || 'Novo hodômetro salvo!');
 
@@ -9904,7 +10846,7 @@ function dashboardFleet(vehicleActions = {}) {
 
         },
 
-        
+
 
 
 
@@ -9918,7 +10860,7 @@ function dashboardFleet(vehicleActions = {}) {
 
             }
 
-        
+
 
             const currentHours = Number(this.vehicle.current_hours);
 
@@ -9926,23 +10868,23 @@ function dashboardFleet(vehicleActions = {}) {
 
             const diffHours = currentHours - originalHours;
 
-        
+
 
             if (currentHours < originalHours) {
 
                 alert(`O novo horímetro não pode ser menor que o horímetro atual (${this.originalHours}).`);
 
-        
+
 
                 this.vehicle.current_hours = this.originalHours;
 
-        
+
 
                 return;
 
             }
 
-        
+
 
             let hoursReadingConfirmed = false;
 
@@ -9959,7 +10901,7 @@ function dashboardFleet(vehicleActions = {}) {
 
                 );
 
-        
+
 
                 if (! confirmed) {
                     this.vehicle.current_hours = this.originalHours;
@@ -9971,7 +10913,7 @@ function dashboardFleet(vehicleActions = {}) {
                 hoursReadingConfirmed = true;
             }
 
-        
+
 
             const response = await fetch(
 
@@ -10007,11 +10949,11 @@ function dashboardFleet(vehicleActions = {}) {
 
             );
 
-        
+
 
             const data = await response.json();
 
-        
+
 
             if (! response.ok) {
 
@@ -10021,7 +10963,7 @@ function dashboardFleet(vehicleActions = {}) {
 
             }
 
-        
+
 
             alert(data.message || 'Novo horímetro salvo!');
 
@@ -10033,7 +10975,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10041,7 +10983,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10057,7 +10999,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10071,7 +11013,7 @@ function dashboardFleet(vehicleActions = {}) {
 
         async updateOperationalStatus() {
 
-        
+
 
             if (
 
@@ -10081,45 +11023,45 @@ function dashboardFleet(vehicleActions = {}) {
 
             ) {
 
-        
+
 
                 alert('Informe uma observação para alterar o status.');
 
-        
+
 
                 return;
 
             }
 
-        
+
 
             const response = await fetch(
 
-        
+
 
                 `/vehicles/${this.vehicle.id}/operational-status`,
 
-        
+
 
                 {
 
-        
+
 
                     method: 'POST',
 
-        
+
 
                     headers: {
 
-        
+
 
                         'Content-Type': 'application/json',
 
-        
+
 
                         'Accept': 'application/json',
 
-        
+
 
                         'X-CSRF-TOKEN':
 
@@ -10129,19 +11071,19 @@ function dashboardFleet(vehicleActions = {}) {
 
                                 .content
 
-        
+
 
                     },
 
-        
+
 
                     body: JSON.stringify({
 
-        
+
 
                         operational_status: this.selectedOperationalStatus,
 
-        
+
 
                         status_reason:
 
@@ -10151,55 +11093,55 @@ function dashboardFleet(vehicleActions = {}) {
 
                                 : null
 
-        
+
 
                     })
 
-        
+
 
                 }
 
-        
+
 
             );
 
-        
+
 
             const data = await response.json();
 
-        
+
 
             if (!response.ok) {
 
-        
+
 
                 alert(data.message ?? 'Erro ao atualizar.');
 
-        
+
 
                 return;
 
             }
 
-        
+
 
             alert(data.message);
 
-        
+
 
             location.reload();
 
-        
+
 
         },
 
-        
+
 
         async saveMaintenance() {
 
 
 
-            
+
 
 
 
@@ -10207,7 +11149,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -10223,7 +11165,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -10231,7 +11173,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -10243,7 +11185,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-            
+
 
 
 
@@ -10251,7 +11193,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10263,7 +11205,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10275,7 +11217,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10287,7 +11229,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10311,7 +11253,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10323,7 +11265,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10335,7 +11277,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10355,7 +11297,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10379,7 +11321,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10387,7 +11329,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10399,7 +11341,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10411,7 +11353,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10419,7 +11361,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                    
+
 
 
 
@@ -10431,7 +11373,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10443,7 +11385,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10455,7 +11397,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10475,7 +11417,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10487,7 +11429,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10499,7 +11441,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10519,7 +11461,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-                
+
 
 
 
@@ -10531,7 +11473,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10645,7 +11587,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10685,7 +11627,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10693,11 +11635,11 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
 
 
 
-                location.reload();        
+
+                location.reload();
 
 
 
@@ -10705,7 +11647,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10713,7 +11655,7 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 
-        
+
 
 
 
@@ -10762,3 +11704,554 @@ function dashboardFleet(vehicleActions = {}) {
 
 
 @endsection
+
+@push('scripts')
+<script>
+window.renderDashboardVehicleTrendChart = function(container, points, mode = 'fuel') {
+
+    if (!container) return;
+
+    const isKm = mode === 'km';
+    const isEfficiency = mode === 'efficiency';
+
+    const emptyMessage = isKm
+        ? 'Sem leituras suficientes para gerar a evolução de KM.'
+        : 'Sem abastecimentos suficientes para gerar o gráfico.';
+
+    if (!Array.isArray(points) || points.length < 2) {
+
+        container.innerHTML = `
+            <div class="vehicle-modal-chart-empty">
+                <i class="bi bi-graph-up"></i>
+                <span>${emptyMessage}</span>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const width = 700;
+    const height = 210;
+
+    const left = 22;
+    const right = 18;
+    const top = 18;
+    const bottom = 36;
+
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+
+
+    /*
+     * Normaliza os dois tipos de série.
+     *
+     * fuel:
+     *   liters
+     *
+     * km:
+     *   value
+     */
+    const normalized = points.map(point => {
+
+        const distance = Number(
+            point.value ?? point.vehicle_km ?? 0
+        );
+
+        const intervalDays = Math.max(
+            Number(point.interval_days ?? 1),
+            1 / 1440
+        );
+
+        const value = isEfficiency
+            ? Number(point.value ?? 0)
+            : isKm
+                ? distance / intervalDays
+                : Number(point.liters ?? 0);
+
+        return {
+            ...point,
+            chartValue: value,
+            axisLabel: point.label ?? point.date ?? '',
+            tooltipDate:
+                point.datetime
+                ?? point.date
+                ?? point.label
+                ?? ''
+        };
+
+    });
+
+
+    const values = normalized.map(point => point.chartValue);
+
+    /*
+     * Combustível parte do zero.
+     *
+     * KM usa o menor hodômetro da série como base,
+     * para que uma evolução 158.000 -> 159.000 seja visualmente
+     * perceptível, em vez de ficar achatada.
+     */
+    let minValue = (isKm || isEfficiency)
+        ? Math.min(...values)
+        : 0;
+
+    let maxValue = Math.max(...values);
+
+    if (maxValue === minValue) {
+        maxValue = minValue + 1;
+    }
+
+    if (isKm || isEfficiency) {
+
+        const range = maxValue - minValue;
+        const padding = Math.max(range * .10, 1);
+
+        minValue = Math.max(minValue - padding, 0);
+        maxValue += padding;
+
+    }
+
+    const range = Math.max(maxValue - minValue, 1);
+
+    let averageValue = 0;
+
+    if (isEfficiency) {
+
+        const totalDistance = normalized.reduce(
+            (sum, point) =>
+                sum + Number(point.distance ?? 0),
+            0
+        );
+
+        const totalLiters = normalized.reduce(
+            (sum, point) =>
+                sum + Number(point.liters ?? 0),
+            0
+        );
+
+        averageValue =
+            totalDistance
+            / Math.max(totalLiters, 0.001);
+
+    } else if (isKm) {
+
+        const totalDistance = normalized.reduce(
+            (sum, point) =>
+                sum + Number(point.value ?? 0),
+            0
+        );
+
+        const totalDays = normalized.reduce(
+            (sum, point) =>
+                sum + Math.max(
+                    Number(point.interval_days ?? 1),
+                    1 / 1440
+                ),
+            0
+        );
+
+        averageValue =
+            totalDistance
+            / Math.max(totalDays, 1 / 1440);
+
+    } else {
+
+        const dailyTotals = {};
+
+        normalized.forEach(point => {
+
+            const rawDate =
+                point.datetime
+                ?? point.date
+                ?? point.label
+                ?? '';
+
+            const dayKey =
+                String(rawDate).split(' ')[0];
+
+            dailyTotals[dayKey] =
+                (dailyTotals[dayKey] ?? 0)
+                + Number(point.chartValue || 0);
+
+        });
+
+        const dailyValues = Object.values(dailyTotals);
+
+        averageValue =
+            dailyValues.reduce((sum, value) => sum + value, 0)
+            / Math.max(dailyValues.length, 1);
+
+    }
+
+    const averageNormalized =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                (averageValue - minValue) / range
+            )
+        );
+
+    const averageY =
+        top
+        + plotHeight
+        - (averageNormalized * plotHeight);
+
+    const averageFormatted = isEfficiency
+        ? averageValue.toLocaleString(
+            'pt-BR',
+            {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }
+        ) + ' km/L'
+        : isKm
+            ? Math.round(averageValue).toLocaleString('pt-BR') + ' km/dia'
+            : averageValue.toLocaleString(
+                'pt-BR',
+                {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1
+                }
+            ) + ' L/dia';
+
+
+    const coords = normalized.map((point, index) => {
+
+        const x = left + (
+            index / Math.max(normalized.length - 1, 1)
+        ) * plotWidth;
+
+        const normalizedValue =
+            (point.chartValue - minValue) / range;
+
+        const y =
+            top
+            + plotHeight
+            - (normalizedValue * plotHeight);
+
+        return {
+            ...point,
+            x,
+            y
+        };
+
+    });
+
+
+    const polyline = coords
+        .map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
+        .join(' ');
+
+
+    const grid = [0.25, 0.5, 0.75, 1].map(level => {
+
+        const y =
+            top
+            + plotHeight
+            - (plotHeight * level);
+
+        return `
+            <line
+                x1="${left}"
+                y1="${y}"
+                x2="${width - right}"
+                y2="${y}"
+                class="vehicle-modal-chart-grid"
+            />
+        `;
+
+    }).join('');
+
+
+    const stroke =
+        isEfficiency
+            ? '#aeb9c8'
+            : isKm
+                ? '#7faaf2'
+                : '#e0525b';
+
+
+    const circles = coords.map((point, index) => `
+
+        <circle
+            cx="${point.x}"
+            cy="${point.y}"
+            r="4"
+            class="vehicle-modal-chart-point"
+            data-index="${index}"
+            tabindex="0"
+            style="
+                fill:${stroke};
+                stroke:${stroke};
+            "
+        ></circle>
+
+    `).join('');
+
+
+    const labels = coords.map(point => `
+
+        <span>${point.axisLabel || ''}</span>
+
+    `).join('');
+
+
+    container.innerHTML = `
+
+        <div class="vehicle-modal-chart-stage">
+
+            <svg
+                viewBox="0 0 ${width} ${height}"
+                preserveAspectRatio="none"
+            >
+
+                ${grid}
+
+                <line
+                    x1="${left}"
+                    y1="${averageY}"
+                    x2="${width - right}"
+                    y2="${averageY}"
+                    class="vehicle-modal-chart-average-line"
+                />
+
+                <line
+                    x1="${left}"
+                    y1="${top + plotHeight}"
+                    x2="${width - right}"
+                    y2="${top + plotHeight}"
+                    class="vehicle-modal-chart-axis"
+                />
+
+                <polyline
+                    points="${polyline}"
+                    class="vehicle-modal-chart-line"
+                    style="stroke:${stroke};"
+                />
+
+                ${circles}
+
+            </svg>
+
+
+            <div
+                class="vehicle-modal-chart-average-label"
+                style="top:${(averageY / height) * 100}%"
+            >
+                <span>${
+                    isEfficiency
+                        ? 'Média ponderada'
+                        : 'Média por dia'
+                }</span>
+                <strong>${averageFormatted}</strong>
+            </div>
+
+            <div class="vehicle-modal-chart-tooltip">
+                <small></small>
+                <strong></strong>
+            </div>
+
+        </div>
+
+
+        <div class="vehicle-modal-chart-labels">
+
+            ${labels}
+
+        </div>
+
+    `;
+
+
+    const tooltip =
+        container.querySelector(
+            '.vehicle-modal-chart-tooltip'
+        );
+
+    const dateElement =
+        tooltip.querySelector('small');
+
+    const valueElement =
+        tooltip.querySelector('strong');
+
+
+    container
+        .querySelectorAll('.vehicle-modal-chart-point')
+        .forEach(pointEl => {
+
+            const index =
+                Number(pointEl.dataset.index);
+
+            const point =
+                coords[index];
+
+
+            function show() {
+
+                container
+                    .querySelectorAll(
+                        '.vehicle-modal-chart-point'
+                    )
+                    .forEach(el =>
+                        el.classList.remove('is-active')
+                    );
+
+                pointEl.classList.add('is-active');
+
+
+                dateElement.textContent =
+                    point.tooltipDate;
+
+
+                if (isEfficiency) {
+
+                    valueElement.textContent =
+                        Number(point.chartValue)
+                            .toLocaleString(
+                                'pt-BR',
+                                {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                }
+                            )
+                        + ' km/L';
+
+                    const distance =
+                        Number(point.distance ?? 0);
+
+                    const liters =
+                        Number(point.liters ?? 0);
+
+                    dateElement.textContent =
+                        point.tooltipDate
+                        + ' · '
+                        + distance.toLocaleString(
+                            'pt-BR',
+                            {
+                                maximumFractionDigits: 0
+                            }
+                        )
+                        + ' km · '
+                        + liters.toLocaleString(
+                            'pt-BR',
+                            {
+                                minimumFractionDigits: 3,
+                                maximumFractionDigits: 3
+                            }
+                        )
+                        + ' L';
+
+                } else if (isKm) {
+
+                    const distanceText =
+                        point.formatted_value
+                        ?? (
+                            Number(point.chartValue)
+                                .toLocaleString(
+                                    'pt-BR',
+                                    {
+                                        maximumFractionDigits: 0
+                                    }
+                                )
+                            + ' km'
+                        );
+
+                    const previousKm =
+                        Number(point.previous_km ?? 0);
+
+                    const currentKm =
+                        Number(point.current_km ?? 0);
+
+                    dateElement.textContent =
+                        point.tooltipDate
+                        + (
+                            previousKm > 0 && currentKm > 0
+                                ? ' · '
+                                  + previousKm.toLocaleString('pt-BR')
+                                  + ' → '
+                                  + currentKm.toLocaleString('pt-BR')
+                                  + ' km'
+                                : ''
+                        );
+
+                    valueElement.textContent =
+                        Number(point.chartValue)
+                            .toLocaleString(
+                                'pt-BR',
+                                {
+                                    maximumFractionDigits: 1
+                                }
+                            )
+                        + ' km/dia';
+
+                } else {
+
+                    valueElement.textContent =
+                        Number(point.chartValue)
+                            .toLocaleString(
+                                'pt-BR',
+                                {
+                                    minimumFractionDigits: 3,
+                                    maximumFractionDigits: 3
+                                }
+                            )
+                        + ' L';
+
+                }
+
+
+                tooltip.style.left =
+                    ((point.x / width) * 100)
+                    + '%';
+
+                tooltip.style.top =
+                    ((point.y / height) * 100)
+                    + '%';
+
+                tooltip.classList.add(
+                    'is-visible'
+                );
+
+            }
+
+
+            function hide() {
+
+                pointEl.classList.remove(
+                    'is-active'
+                );
+
+                tooltip.classList.remove(
+                    'is-visible'
+                );
+
+            }
+
+
+            pointEl.addEventListener(
+                'mouseenter',
+                show
+            );
+
+            pointEl.addEventListener(
+                'mouseleave',
+                hide
+            );
+
+            pointEl.addEventListener(
+                'focus',
+                show
+            );
+
+            pointEl.addEventListener(
+                'blur',
+                hide
+            );
+
+        });
+
+};
+</script>
+@endpush

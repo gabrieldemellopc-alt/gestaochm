@@ -79,6 +79,8 @@ class FuelService
             'supplier_id' => ['nullable', 'integer'],
             'supplier_document' => ['nullable', 'string', 'max:20'],
             'invoice_number' => ['nullable', 'string', 'max:255'],
+            'invoice_date' => ['nullable', 'date'],
+            'invoice_pending' => ['nullable', 'boolean'],
             'responsible_user_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string'],
         ])->validate();
@@ -136,6 +138,9 @@ class FuelService
                 'supplier_id' => $validated['supplier_id'] ?? null,
                 'supplier_document' => $validated['supplier_document'] ?? null,
                 'invoice_number' => $validated['invoice_number'] ?? null,
+                'invoice_date' => $validated['invoice_date'] ?? null,
+                'invoice_pending' => ! empty($validated['invoice_pending'])
+                    && empty($validated['invoice_number']),
                 'responsible_user_id' => $responsibleUserId,
                 'notes' => $validated['notes'] ?? null,
             ]);
@@ -234,6 +239,7 @@ class FuelService
             'km_reading_confirmed' => ['nullable', 'boolean'],
             'hours_reading_confirmed' => ['nullable', 'boolean'],
             'confirm_duplicate' => ['nullable', 'boolean'],
+            'skip_vehicle_counter_update' => ['nullable', 'boolean'],
         ])->validate();
 
         $source = $validated['source'] ?? FuelFilling::SOURCE_INTERNAL_TANK;
@@ -340,7 +346,23 @@ class FuelService
                     $this->vehicleReadingService->registerHistoricalHoursReading($vehicle, $validated['vehicle_hours'], $context['user'], $filling->filled_at, 'fuel_filling_import', "Importação histórica de combustível – Imperatriz – lote {$this->operationContext->importBatchId}", $filling);
                 }
             } else {
-                $this->updateVehicleCountersFromFilling($vehicle, $validated, $context, $filling);
+                /*
+                 * Alguns lançamentos complementares, como ARLA importado
+                 * junto com o Diesel, podem guardar o KM apenas como
+                 * referência histórica sem atualizar novamente o veículo.
+                 */
+                if (
+                    empty(
+                        $validated['skip_vehicle_counter_update']
+                    )
+                ) {
+                    $this->updateVehicleCountersFromFilling(
+                        $vehicle,
+                        $validated,
+                        $context,
+                        $filling
+                    );
+                }
             }
 
             if ($source === FuelFilling::SOURCE_INTERNAL_TANK && $tank) {
@@ -397,6 +419,62 @@ class FuelService
         });
     }
 
+    /**
+     * Registra uma ficha manual inteira de forma atômica.
+     *
+     * Se qualquer lançamento falhar, nenhum abastecimento
+     * da ficha permanece gravado.
+     */
+    public function registerFillingBatch(
+        array $fillings
+    ): array {
+        if ($fillings === []) {
+            throw ValidationException::withMessages([
+                'rows' =>
+                    'Nenhum abastecimento foi informado.',
+            ]);
+        }
+
+        return DB::transaction(
+            function () use ($fillings) {
+                $created = [];
+
+                foreach (
+                    $fillings
+                    as $index => $data
+                ) {
+                    try {
+                        $created[] =
+                            $this->registerFilling(
+                                $data
+                            );
+
+                    } catch (
+                        ValidationException $exception
+                    ) {
+                        $messages =
+                            collect(
+                                $exception->errors()
+                            )
+                            ->flatten()
+                            ->implode(' ');
+
+                        throw ValidationException::withMessages([
+                            'rows' =>
+                                'Linha '
+                                .($index + 1)
+                                .': '
+                                .$messages,
+                        ]);
+                    }
+                }
+
+                return $created;
+            }
+        );
+    }
+
+
     private function updateVehicleCountersFromFilling(
         Vehicle $vehicle,
         array $validated,
@@ -438,6 +516,108 @@ class FuelService
         }
     }
 
+    public function replaceFilling(FuelFilling $original, array $data): FuelFilling
+    {
+        $context = $this->resolveContext();
+        $this->ensureRecordInContext($original, $context);
+
+        return DB::transaction(function () use ($original, $data, $context) {
+            $original = FuelFilling::query()
+                ->lockForUpdate()
+                ->findOrFail($original->id);
+
+            if ($original->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'filling' => 'Este abastecimento já foi cancelado e não pode ser editado.',
+                ]);
+            }
+
+            if ($original->replaced_by_filling_id) {
+                throw ValidationException::withMessages([
+                    'filling' => 'Este abastecimento já possui um lançamento substituto.',
+                ]);
+            }
+
+            $user = $context['user'];
+            $performedAt = now();
+
+            /*
+             * Primeiro cancelamos o lançamento original utilizando a rotina
+             * oficial. Isso estorna tanque/valor, invalida as leituras e
+             * reconcilia o contador atual do veículo.
+             *
+             * Como estamos dentro desta transação externa, qualquer falha
+             * posterior no novo abastecimento desfaz toda a substituição.
+             */
+            $this->cancelFilling(
+                $original,
+                'Substituição por edição iniciada por '
+                    .$user->name
+                    .' em '
+                    .$performedAt->format('d/m/Y H:i')
+                    .'.'
+            );
+
+            $auditNote = 'Correção do abastecimento #'.$original->id
+                .' realizada em '
+                .$performedAt->format('d/m/Y H:i')
+                .' por '
+                .$user->name
+                .'.';
+
+            $existingNotes = trim((string) ($data['notes'] ?? ''));
+
+            $data['notes'] = $existingNotes !== ''
+                ? $existingNotes.' | '.$auditNote
+                : $auditNote;
+
+            /*
+             * Quem executa a correção passa a ser o responsável pelo novo
+             * lançamento. O responsável original continua registrado no
+             * lançamento cancelado.
+             */
+            $data['responsible_user_id'] = $user->id;
+
+            /*
+             * O original já está cancelado neste ponto, portanto não participa
+             * da busca de duplicidades.
+             */
+            $replacement = $this->registerFilling($data);
+
+            $original->forceFill([
+                'replaced_by_filling_id' => $replacement->id,
+                'cancel_reason' => 'Substituído pelo abastecimento #'
+                    .$replacement->id
+                    .' em '
+                    .$performedAt->format('d/m/Y H:i')
+                    .' por '
+                    .$user->name
+                    .'.',
+            ])->save();
+
+            $replacement->forceFill([
+                'replaces_filling_id' => $original->id,
+            ])->save();
+
+            $this->auditLog->updated($original, [
+                'tenant_id' => $context['tenant_id'],
+                'division_id' => $context['division_id'],
+                'location_id' => $context['location_id'],
+                'module' => 'fuel',
+                'summary' => 'Abastecimento #'.$original->id
+                    .' substituído pelo abastecimento #'.$replacement->id.'.',
+                'after_data' => $original->fresh()->toArray(),
+                'metadata' => [
+                    'replacement_filling_id' => $replacement->id,
+                    'performed_by' => $user->id,
+                    'performed_at' => $performedAt->toDateTimeString(),
+                ],
+            ]);
+
+            return $replacement->fresh();
+        });
+    }
+
     public function cancelFilling(FuelFilling $filling, string $reason): void
     {
         $context = $this->resolveContext();
@@ -474,6 +654,363 @@ class FuelService
             $this->auditLog->updated($filling, ['tenant_id' => $context['tenant_id'], 'division_id' => $context['division_id'], 'location_id' => $context['location_id'], 'module' => 'fuel', 'summary' => 'Abastecimento #'.$filling->id.' cancelado.', 'after_data' => $filling->fresh()->toArray()]);
         });
     }
+
+    public function replaceReceipt(
+        FuelReceipt $receipt,
+        array $data,
+        string $reason
+    ): FuelReceipt {
+        $context = $this->resolveContext();
+
+        $this->ensureRecordInContext(
+            $receipt,
+            $context
+        );
+
+        $validated = Validator::make($data, [
+            'received_at' => ['required', 'date'],
+            'quantity_liters' => ['required', 'numeric', 'gt:0'],
+            'total_cost' => ['nullable', 'numeric', 'min:0'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
+
+            'supplier_name' => ['nullable', 'string', 'max:255'],
+            'supplier_id' => ['nullable', 'integer'],
+            'supplier_document' => ['nullable', 'string', 'max:20'],
+
+            'invoice_number' => ['nullable', 'string', 'max:255'],
+            'invoice_date' => ['nullable', 'date'],
+            'invoice_pending' => ['nullable', 'boolean'],
+
+            'notes' => ['nullable', 'string'],
+        ])->validate();
+
+        if (mb_strlen(trim($reason)) < 5) {
+            throw ValidationException::withMessages([
+                'reason' => 'Informe o motivo da correção.',
+            ]);
+        }
+
+        return DB::transaction(function () use (
+            $receipt,
+            $validated,
+            $reason,
+            $context
+        ) {
+
+            $receipt = FuelReceipt::query()
+                ->lockForUpdate()
+                ->findOrFail($receipt->id);
+
+            if ($receipt->cancelled_at) {
+                throw ValidationException::withMessages([
+                    'receipt' => 'Este recebimento já foi cancelado ou substituído.',
+                ]);
+            }
+
+            if ($receipt->replaced_by_receipt_id) {
+                throw ValidationException::withMessages([
+                    'receipt' => 'Este recebimento já possui uma correção posterior.',
+                ]);
+            }
+
+            $tank = $this->lockTankForContext(
+                (int) $receipt->fuel_tank_id,
+                $context
+            );
+
+            $supplier = app(
+                SupplierResolverService::class
+            )->resolve(
+                $context['tenant_id'],
+                $validated['supplier_id'] ?? null,
+                $validated['supplier_name'] ?? null,
+                $validated['supplier_document'] ?? null
+            );
+
+            $validated = array_merge(
+                $validated,
+                app(SupplierSnapshotService::class)
+                    ->fromResolvedSupplier(
+                        $supplier,
+                        $validated['supplier_name'] ?? null
+                    )
+            );
+
+            $oldQuantity = $this->decimal(
+                $receipt->quantity_liters,
+                3
+            );
+
+            $newQuantity = $this->decimal(
+                $validated['quantity_liters'],
+                3
+            );
+
+            $oldTotal = $this->decimal(
+                $receipt->total_cost ?? 0,
+                2
+            );
+
+            $newTotal = $this->nullableDecimal(
+                $validated['total_cost'] ?? null,
+                2
+            ) ?? 0;
+
+            $newUnit = $this->resolveUnitCostFromTotal(
+                $newQuantity,
+                $newTotal,
+                $validated['unit_cost'] ?? null
+            );
+
+            $balanceBefore = $this->decimal(
+                $tank->current_balance_liters,
+                3
+            );
+
+            $balanceAfter = $this->decimal(
+                $balanceBefore
+                - $oldQuantity
+                + $newQuantity,
+                3
+            );
+
+            if ($balanceAfter < 0) {
+                throw ValidationException::withMessages([
+                    'quantity_liters' =>
+                        'A correção deixaria o saldo do tanque negativo.',
+                ]);
+            }
+
+            if (
+                $balanceAfter
+                > (float) $tank->capacity_liters
+            ) {
+                throw ValidationException::withMessages([
+                    'quantity_liters' =>
+                        'A correção ultrapassaria a capacidade do tanque.',
+                ]);
+            }
+
+            $stockBefore = $this->decimal(
+                $tank->estimated_stock_value ?? 0,
+                2
+            );
+
+            $stockAfter = $this->decimal(
+                $stockBefore
+                - $oldTotal
+                + $newTotal,
+                2
+            );
+
+            if ($stockAfter < 0) {
+                throw ValidationException::withMessages([
+                    'total_cost' =>
+                        'A correção deixaria o valor do estoque negativo.',
+                ]);
+            }
+
+            /*
+             * Novo recebimento.
+             */
+            $newReceipt = FuelReceipt::query()->create([
+                'tenant_id' => $context['tenant_id'],
+                'division_id' => $context['division_id'],
+                'location_id' => $context['location_id'],
+
+                'fuel_tank_id' => $receipt->fuel_tank_id,
+                'fuel_product_id' => $receipt->fuel_product_id,
+
+                'received_at' => Carbon::parse(
+                    $validated['received_at']
+                ),
+
+                'quantity_liters' => $newQuantity,
+                'unit_cost' => $newUnit,
+                'total_cost' => $newTotal,
+
+                'supplier_name' =>
+                    $validated['supplier_name'] ?? null,
+
+                'supplier_id' =>
+                    $validated['supplier_id'] ?? null,
+
+                'supplier_document' =>
+                    $validated['supplier_document'] ?? null,
+
+                'invoice_number' =>
+                    $validated['invoice_number'] ?? null,
+
+                'invoice_date' =>
+                    $validated['invoice_date'] ?? null,
+
+                'invoice_pending' =>
+                    ! empty($validated['invoice_pending'])
+                    && empty($validated['invoice_number']),
+
+                'responsible_user_id' =>
+                    $context['user']->id,
+
+                'notes' =>
+                    $validated['notes'] ?? null,
+
+                'replaces_receipt_id' =>
+                    $receipt->id,
+            ]);
+
+            /*
+             * Registra os dois eventos contábeis/operacionais.
+             *
+             * Escolhemos a ordem que não produza saldo
+             * intermediário inválido.
+             */
+            if ($balanceBefore >= $oldQuantity) {
+
+                $afterReversal = $this->decimal(
+                    $balanceBefore - $oldQuantity,
+                    3
+                );
+
+                $this->createMovement(
+                    $context,
+                    $tank,
+                    FuelMovement::TYPE_REVERSAL,
+                    $oldQuantity,
+                    $balanceBefore,
+                    $afterReversal,
+                    $receipt,
+                    $context['user']->id,
+                    'Estorno por substituição do recebimento #'
+                    .$receipt->id
+                );
+
+                $this->createMovement(
+                    $context,
+                    $tank,
+                    FuelMovement::TYPE_RECEIPT,
+                    $newQuantity,
+                    $afterReversal,
+                    $balanceAfter,
+                    $newReceipt,
+                    $context['user']->id,
+                    'Recebimento substituto do #'
+                    .$receipt->id
+                );
+
+            } elseif (
+                $balanceBefore + $newQuantity
+                <= (float) $tank->capacity_liters
+            ) {
+
+                $afterNew = $this->decimal(
+                    $balanceBefore + $newQuantity,
+                    3
+                );
+
+                $this->createMovement(
+                    $context,
+                    $tank,
+                    FuelMovement::TYPE_RECEIPT,
+                    $newQuantity,
+                    $balanceBefore,
+                    $afterNew,
+                    $newReceipt,
+                    $context['user']->id,
+                    'Recebimento substituto do #'
+                    .$receipt->id
+                );
+
+                $this->createMovement(
+                    $context,
+                    $tank,
+                    FuelMovement::TYPE_REVERSAL,
+                    $oldQuantity,
+                    $afterNew,
+                    $balanceAfter,
+                    $receipt,
+                    $context['user']->id,
+                    'Estorno por substituição do recebimento #'
+                    .$receipt->id
+                );
+
+            } else {
+                throw ValidationException::withMessages([
+                    'receipt' =>
+                        'Não foi possível construir a substituição '
+                        .'sem gerar saldo intermediário inválido. '
+                        .'Faça uma conciliação do tanque antes da correção.',
+                ]);
+            }
+
+            $averageAfter =
+                $balanceAfter > 0
+                    ? $this->decimal(
+                        $stockAfter / $balanceAfter,
+                        4
+                    )
+                    : 0;
+
+            $tank->forceFill([
+                'current_balance_liters' => $balanceAfter,
+                'estimated_stock_value' => $stockAfter,
+                'average_unit_cost' => $averageAfter,
+            ])->save();
+
+            $receipt->forceFill([
+                'cancelled_at' => now(),
+                'cancelled_by' => $context['user']->id,
+                'cancel_reason' =>
+                    'Substituído: '.$reason,
+                'replaced_by_receipt_id' =>
+                    $newReceipt->id,
+            ])->save();
+
+            $this->auditLog->updated(
+                $receipt,
+                [
+                    'tenant_id' => $context['tenant_id'],
+                    'division_id' => $context['division_id'],
+                    'location_id' => $context['location_id'],
+                    'module' => 'fuel',
+                    'summary' =>
+                        'Recebimento #'.$receipt->id
+                        .' substituído pelo #'
+                        .$newReceipt->id.'.',
+                    'after_data' =>
+                        $receipt->fresh()->toArray(),
+                    'metadata' => [
+                        'replacement_receipt_id' =>
+                            $newReceipt->id,
+                        'reason' => $reason,
+                        'balance_before' =>
+                            $balanceBefore,
+                        'balance_after' =>
+                            $balanceAfter,
+                    ],
+                ]
+            );
+
+            $this->auditLog->created(
+                $newReceipt,
+                [
+                    'tenant_id' => $context['tenant_id'],
+                    'division_id' => $context['division_id'],
+                    'location_id' => $context['location_id'],
+                    'module' => 'fuel',
+                    'summary' =>
+                        'Recebimento corretivo #'
+                        .$newReceipt->id
+                        .' criado em substituição ao #'
+                        .$receipt->id.'.',
+                    'after_data' =>
+                        $newReceipt->toArray(),
+                ]
+            );
+
+            return $newReceipt;
+        });
+    }
+
 
     public function cancelReceipt(FuelReceipt $receipt, string $reason): void
     {
@@ -600,11 +1137,56 @@ class FuelService
     public function findProbableDuplicate(array $context, array $data): ?FuelFilling
     {
         $query = FuelFilling::query()
-            ->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])
-            ->where('vehicle_id', $data['vehicle_id'])->whereDate('filled_at', Carbon::parse($data['filled_at'])->toDateString())
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->where('vehicle_id', $data['vehicle_id'])
+            ->whereDate(
+                'filled_at',
+                Carbon::parse(
+                    $data['filled_at']
+                )->toDateString()
+            )
             ->whereNull('cancelled_at')
-            ->whereBetween('quantity_liters', [(float) $data['quantity_liters'] - .01, (float) $data['quantity_liters'] + .01]);
-        if (($data['total_cost'] ?? null) !== null) $query->whereBetween('total_cost', [(float) $data['total_cost'] - .02, (float) $data['total_cost'] + .02]);
+            ->whereBetween(
+                'quantity_liters',
+                [
+                    (float) $data['quantity_liters'] - .01,
+                    (float) $data['quantity_liters'] + .01,
+                ]
+            );
+
+        if (! empty($data['fuel_product_id'])) {
+            $query->where(
+                'fuel_product_id',
+                (int) $data['fuel_product_id']
+            );
+        }
+
+        if (! empty($data['fuel_tank_id'])) {
+            $query->where(
+                'fuel_tank_id',
+                (int) $data['fuel_tank_id']
+            );
+        }
+
+        if (! empty($data['source'])) {
+            $query->where(
+                'source',
+                $data['source']
+            );
+        }
+
+        if (($data['total_cost'] ?? null) !== null) {
+            $query->whereBetween(
+                'total_cost',
+                [
+                    (float) $data['total_cost'] - .02,
+                    (float) $data['total_cost'] + .02,
+                ]
+            );
+        }
+
         return $query->first();
     }
 

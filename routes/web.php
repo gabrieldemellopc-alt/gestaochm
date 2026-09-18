@@ -1105,9 +1105,13 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
             )->name('fillings.store');
 
             Route::get('/fillings/history', 'fillingsHistory')->name('fillings.history');
+            Route::get('/fillings/history/pdf', 'fillingsHistoryPdf')->name('fillings.history.pdf');
+            Route::post('/fillings/manual-sheet/pdf', 'manualFuelSheetPdf')->name('fillings.manual-sheet.pdf');
+            Route::post('/fillings/{filling}/replace', 'replaceFilling')->name('fillings.replace');
             Route::post('/fillings/{filling}/cancel', 'cancelFilling')->name('fillings.cancel');
             Route::get('/receipts/history', 'receiptsHistory')->name('receipts.history');
             Route::post('/receipts/{receipt}/cancel', 'cancelReceipt')->name('receipts.cancel');
+            Route::post('/receipts/{receipt}/replace', 'replaceReceipt')->name('receipts.replace');
 
 
 
@@ -1126,6 +1130,60 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
 
 
 
+
+
+    Route::post(
+        '/fuel/photo-import/analyze',
+        [\App\Http\Controllers\FuelPhotoImportController::class, 'analyze']
+    )
+        ->middleware('permission:navigation.fuel')
+        ->name('fuel.photo-import.analyze');
+
+
+    Route::post(
+        '/fuel/photo-import/duplicates',
+        [\App\Http\Controllers\FuelPhotoImportController::class, 'duplicates']
+    )
+        ->middleware('permission:navigation.fuel')
+        ->name('fuel.photo-import.duplicates');
+
+
+    Route::post(
+        '/fuel/photo-import/store',
+        [\App\Http\Controllers\FuelPhotoImportController::class, 'store']
+    )
+        ->middleware('permission:navigation.fuel')
+        ->name('fuel.photo-import.store');
+
+
+    Route::prefix('fuel/daily-check')
+        ->name('fuel.daily-check.')
+        ->middleware('permission:navigation.fuel')
+        ->controller(\App\Http\Controllers\FuelDailyCheckController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+
+            Route::post(
+                '/{check}/upload-token',
+                'createUploadToken'
+            )->name('upload-token');
+
+            Route::get(
+                '/{check}/files/status',
+                'filesStatus'
+            )->name('files.status');
+
+            Route::delete(
+                '/{check}/files/{file}',
+                'deleteFile'
+            )->name('files.delete');
+
+            Route::get(
+                '/{check}/files/{file}',
+                'showFile'
+            )->name('files.show');
+        });
 
     /*
 
@@ -1620,3 +1678,20 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
 
 
 require __DIR__ . '/auth.php';
+
+
+/*
+|--------------------------------------------------------------------------
+| FUEL DAILY CHECK - MOBILE UPLOAD
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/fuel-daily-check-upload/{token}',
+    [\App\Http\Controllers\PublicFuelDailyCheckUploadController::class, 'show']
+)->name('public.fuel-daily-check.upload');
+
+Route::post(
+    '/fuel-daily-check-upload/{token}',
+    [\App\Http\Controllers\PublicFuelDailyCheckUploadController::class, 'store']
+)->name('public.fuel-daily-check.store');

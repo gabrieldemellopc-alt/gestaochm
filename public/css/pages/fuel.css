@@ -1522,3 +1522,5448 @@ html[data-chm-theme="corporate-light"] .fuel-history-action {
         width: 100%;
     }
 }
+
+/* Histórico de abastecimentos - busca textual de veículo */
+.fuel-vehicle-search {
+    position: relative;
+    min-width: 280px;
+}
+
+.fuel-vehicle-search-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.fuel-vehicle-search-input > i {
+    position: absolute;
+    left: 14px;
+    pointer-events: none;
+    opacity: .75;
+}
+
+.fuel-vehicle-search-input input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 42px 0 40px;
+}
+
+.fuel-vehicle-search-clear {
+    position: absolute;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.fuel-vehicle-search-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 10px;
+    background: #202a40;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, .25);
+}
+
+.fuel-vehicle-search-option {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 11px 14px;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    background: transparent;
+    color: #f1f5f9;
+    text-align: left;
+    cursor: pointer;
+}
+
+.fuel-vehicle-search-option:hover {
+    background: rgba(255, 255, 255, .06);
+}
+
+.fuel-vehicle-search-option small {
+    opacity: .65;
+}
+
+.fuel-vehicle-search-empty {
+    padding: 14px;
+    color: #f1f5f9;
+    opacity: .7;
+}
+
+/* Histórico de abastecimentos - organização dos filtros */
+.fuel-history-filters {
+    display: grid;
+    grid-template-columns:
+        minmax(300px, 1fr)
+        136px
+        136px
+        150px
+        150px
+        155px
+        135px
+        auto;
+    gap: 10px;
+    align-items: end;
+    width: 100%;
+}
+
+.fuel-history-filter,
+.fuel-history-filter-actions {
+    min-width: 0;
+}
+
+.fuel-history-filter > label,
+.fuel-history-filter-actions > label {
+    display: block;
+    margin: 0 0 7px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #aebbd0;
+}
+
+.fuel-history-filter input,
+.fuel-history-filter select {
+    width: 100%;
+    min-width: 0;
+}
+
+.fuel-history-filter-vehicle .fuel-vehicle-search {
+    width: 100%;
+    min-width: 0;
+}
+
+.fuel-history-filter-vehicle .fuel-vehicle-search-input,
+.fuel-history-filter-vehicle .fuel-vehicle-search-input input {
+    width: 100%;
+}
+
+.fuel-history-filter-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.fuel-history-filter-actions .fuel-primary-action,
+.fuel-history-filter-actions .fuel-secondary-action {
+    min-height: 42px;
+}
+
+@media (max-width: 1500px) {
+    .fuel-history-filters {
+        grid-template-columns:
+            minmax(320px, 1fr)
+            repeat(2, 136px)
+            repeat(3, 145px)
+            125px
+            auto;
+    }
+}
+
+@media (max-width: 1200px) {
+    .fuel-history-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .fuel-history-filter-vehicle {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 760px) {
+    .fuel-history-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-history-filter-vehicle {
+        grid-column: auto;
+    }
+
+    .fuel-history-filter-buttons {
+        width: 100%;
+    }
+}
+
+/* Histórico de abastecimentos - Data, veículo e ações */
+.fuel-history-table .fuel-history-date,
+.fuel-history-table .fuel-history-vehicle {
+    white-space: nowrap;
+}
+
+.fuel-history-date strong,
+.fuel-history-vehicle strong {
+    display: block;
+    font-size: .86rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.fuel-history-date small,
+.fuel-history-vehicle small {
+    display: block;
+    margin-top: 4px;
+    font-size: .74rem;
+    opacity: .68;
+}
+
+.fuel-history-actions-head {
+    text-align: right;
+}
+
+.fuel-history-actions {
+    min-width: 176px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.fuel-row-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgba(100, 116, 139, .28);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font-size: .76rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.fuel-row-action + .fuel-row-action {
+    margin-left: 5px;
+}
+
+.fuel-row-action:hover {
+    background: rgba(148, 163, 184, .09);
+}
+
+.fuel-row-action.is-danger {
+    color: #e0525b;
+    border-color: rgba(224, 82, 91, .30);
+}
+
+.fuel-row-action.is-danger:hover {
+    background: rgba(224, 82, 91, .08);
+}
+
+.fuel-history-replacement-note {
+    display: block;
+    margin-top: 5px;
+    font-size: .72rem;
+    opacity: .78;
+}
+
+.fuel-history-replacement-note i {
+    margin-right: 3px;
+}
+
+.fuel-edit-warning {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border: 1px solid rgba(148, 163, 184, .20);
+    border-radius: 10px;
+    background: rgba(148, 163, 184, .06);
+}
+
+.fuel-edit-warning > i {
+    margin-top: 2px;
+}
+
+.fuel-edit-warning strong,
+.fuel-edit-warning span {
+    display: block;
+}
+
+.fuel-edit-warning span {
+    margin-top: 3px;
+    font-size: .78rem;
+    opacity: .72;
+}
+
+@media (max-width: 900px) {
+    .fuel-history-actions {
+        min-width: 110px;
+    }
+
+    .fuel-row-action span {
+        display: none;
+    }
+
+    .fuel-row-action {
+        width: 34px;
+        padding: 0;
+    }
+}
+
+/* Modal de edição de abastecimento - layout compacto */
+.fuel-edit-filling-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px 16px;
+    align-items: end;
+}
+
+.fuel-edit-filling-grid .fuel-span-12 {
+    grid-column: span 12;
+}
+
+.fuel-edit-filling-grid .fuel-span-8 {
+    grid-column: span 8;
+}
+
+.fuel-edit-filling-grid .fuel-span-6 {
+    grid-column: span 6;
+}
+
+.fuel-edit-filling-grid .fuel-span-4 {
+    grid-column: span 4;
+}
+
+.fuel-edit-filling-grid label {
+    min-width: 0;
+}
+
+.fuel-edit-filling-grid label > input,
+.fuel-edit-filling-grid label > select,
+.fuel-edit-filling-grid label > textarea {
+    width: 100%;
+}
+
+.fuel-edit-filling-grid textarea {
+    min-height: 78px;
+    resize: vertical;
+}
+
+.fuel-modal-card.wide {
+    width: min(980px, calc(100vw - 48px));
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+}
+
+.fuel-modal-card.wide .fuel-modal-header {
+    margin-bottom: 18px;
+}
+
+.fuel-edit-warning {
+    margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+    .fuel-edit-filling-grid .fuel-span-8,
+    .fuel-edit-filling-grid .fuel-span-6,
+    .fuel-edit-filling-grid .fuel-span-4 {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 640px) {
+    .fuel-edit-filling-grid .fuel-span-8,
+    .fuel-edit-filling-grid .fuel-span-6,
+    .fuel-edit-filling-grid .fuel-span-4,
+    .fuel-edit-filling-grid .fuel-span-12 {
+        grid-column: span 12;
+    }
+
+    .fuel-modal-card.wide {
+        width: calc(100vw - 24px);
+    }
+}
+
+/* Histórico de abastecimentos - atalho do dia */
+.fuel-history-header {
+    align-items: center;
+}
+
+.fuel-history-header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.fuel-history-today-shortcut {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 320px;
+    padding: 10px 14px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 9px;
+    background: rgba(148, 163, 184, .045);
+    color: inherit;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.fuel-history-today-shortcut:hover {
+    background: rgba(148, 163, 184, .09);
+    border-color: rgba(148, 163, 184, .34);
+}
+
+.fuel-history-today-shortcut > i {
+    flex: 0 0 auto;
+    font-size: 1rem;
+    opacity: .82;
+}
+
+.fuel-history-today-shortcut > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.15;
+}
+
+.fuel-history-today-shortcut small {
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    opacity: .58;
+}
+
+.fuel-history-today-shortcut span {
+    font-size: .79rem;
+    font-weight: 700;
+}
+
+@media (max-width: 760px) {
+    .fuel-history-header {
+        align-items: stretch;
+    }
+
+    .fuel-history-header-actions {
+        align-items: stretch;
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .fuel-history-today-shortcut {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+/* Histórico de abastecimentos - exportação PDF */
+.fuel-history-panel-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin: -2px 0 12px;
+}
+
+.fuel-history-pdf-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 13px;
+    border: 1px solid rgba(148, 163, 184, .24);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    text-decoration: none;
+    font-size: .76rem;
+    font-weight: 700;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.fuel-history-pdf-action:hover {
+    background: rgba(148, 163, 184, .08);
+    border-color: rgba(148, 163, 184, .38);
+}
+
+.fuel-history-pdf-action i {
+    color: #e0525b;
+    font-size: .9rem;
+}
+
+/* Histórico - contagem dos resultados e limite PDF */
+.fuel-history-panel-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: -2px 0 12px;
+}
+
+.fuel-history-result-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    color: #aebbd0;
+    font-size: .78rem;
+}
+
+.fuel-history-result-count i {
+    opacity: .72;
+}
+
+.fuel-history-result-count strong {
+    color: #f1f5f9;
+    font-weight: 800;
+}
+
+.fuel-history-pdf-action.is-disabled {
+    opacity: .46;
+    cursor: not-allowed;
+}
+
+.fuel-history-pdf-action.is-disabled:hover {
+    background: transparent;
+    border-color: rgba(148, 163, 184, .24);
+}
+
+.fuel-history-pdf-limit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    padding: 9px 12px;
+    border: 1px solid rgba(224, 82, 91, .22);
+    border-radius: 8px;
+    background: rgba(224, 82, 91, .055);
+    color: #cbd5e1;
+    font-size: .76rem;
+}
+
+.fuel-history-pdf-limit i {
+    color: #e0525b;
+}
+
+@media (max-width: 700px) {
+    .fuel-history-panel-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fuel-history-pdf-action {
+        width: 100%;
+    }
+}
+
+/* Fuel home - seções recolhíveis */
+.fuel-collapsible-panel {
+    overflow: hidden;
+}
+
+.fuel-collapsible-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+.fuel-collapsible-header:hover {
+    background: rgba(148, 163, 184, .025);
+}
+
+.fuel-collapsible-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fuel-collapse-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 7px;
+    color: #aebbd0;
+    transition: transform .18s ease, background .18s ease;
+}
+
+.fuel-collapse-icon.is-open {
+    transform: rotate(90deg);
+}
+
+.fuel-collapsible-content {
+    margin-top: 14px;
+}
+
+.fuel-collapsible-header .fuel-history-action,
+.fuel-collapsible-header button,
+.fuel-collapsible-header a {
+    position: relative;
+    z-index: 2;
+}
+
+@media (max-width: 760px) {
+    .fuel-collapsible-header {
+        align-items: flex-start;
+    }
+
+    .fuel-collapsible-header .fuel-panel-actions {
+        align-items: flex-end;
+    }
+}
+
+/* Histórico de abastecimentos - filtro por vínculo */
+.fuel-history-filters {
+    grid-template-columns:
+        minmax(260px, 1fr)
+        118px
+        136px
+        136px
+        135px
+        135px
+        145px
+        125px
+        auto;
+}
+
+.fuel-history-filter-relation {
+    min-width: 0;
+}
+
+@media (max-width: 1500px) {
+    .fuel-history-filters {
+        grid-template-columns:
+            minmax(260px, 1fr)
+            112px
+            132px
+            132px
+            130px
+            130px
+            138px
+            118px
+            auto;
+    }
+}
+
+@media (max-width: 1250px) {
+    .fuel-history-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .fuel-history-filter-vehicle {
+        grid-column: span 2;
+    }
+}
+
+/* =========================================================
+   Registrar abastecimento - diferença KM / HR
+   ========================================================= */
+
+.fuel-reading-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    width: max-content;
+    max-width: 100%;
+
+    margin-top: 6px;
+    padding: 4px 7px;
+
+    border-radius: 5px;
+
+    font-size: .68rem;
+    line-height: 1.2;
+    font-weight: 650;
+}
+
+.fuel-reading-delta[hidden] {
+    display: none !important;
+}
+
+.fuel-reading-delta i {
+    font-size: .68rem;
+}
+
+.fuel-reading-delta strong {
+    font-weight: 850;
+}
+
+
+/* Leitura avançou normalmente */
+.fuel-reading-delta.is-positive {
+    color: #afc1da;
+
+    background: rgba(127, 170, 242, .07);
+    border: 1px solid rgba(127, 170, 242, .14);
+}
+
+.fuel-reading-delta.is-positive strong {
+    color: #e0e9f5;
+}
+
+
+/* Nova leitura menor que a anterior */
+.fuel-reading-delta.is-negative {
+    color: #ddc27a;
+
+    background: rgba(202, 164, 67, .08);
+    border: 1px solid rgba(202, 164, 67, .18);
+}
+
+.fuel-reading-delta.is-negative strong {
+    color: #f0d894;
+}
+
+/* ==========================================================
+   Ficha manual de abastecimento
+   ========================================================== */
+
+[x-cloak] {
+    display: none !important;
+}
+
+.fuel-manual-sheet-trigger {
+    cursor: pointer;
+}
+
+.fuel-manual-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 26px;
+
+    background: rgba(7, 13, 24, .74);
+    backdrop-filter: blur(4px);
+}
+
+.fuel-manual-sheet-modal {
+    width: min(900px, 96vw);
+    max-height: 92vh;
+
+    overflow-y: auto;
+
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 18px;
+
+    background: var(--surface, #2f405f);
+    color: inherit;
+
+    box-shadow: 0 24px 65px rgba(0, 0, 0, .30);
+}
+
+.fuel-manual-sheet-modal-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+
+    padding: 24px 26px 20px;
+
+    border-bottom: 1px solid rgba(148, 163, 184, .15);
+}
+
+.fuel-manual-sheet-modal-header > div > span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+
+    color: #ff7076;
+}
+
+.fuel-manual-sheet-modal-header h2 {
+    margin: 0;
+
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.fuel-manual-sheet-modal-header p {
+    margin: 6px 0 0;
+
+    font-size: .82rem;
+    color: rgba(226, 232, 240, .70);
+}
+
+.fuel-manual-sheet-close {
+    flex: 0 0 42px;
+
+    width: 42px;
+    height: 42px;
+
+    border: 1px solid rgba(148, 163, 184, .20);
+    border-radius: 10px;
+
+    background: transparent;
+    color: inherit;
+
+    cursor: pointer;
+}
+
+.fuel-manual-sheet-body {
+    display: grid;
+    gap: 15px;
+
+    padding: 20px 26px;
+}
+
+.fuel-manual-sheet-block {
+    padding: 17px;
+
+    border: 1px solid rgba(148, 163, 184, .15);
+    border-radius: 13px;
+
+    background: rgba(15, 23, 42, .09);
+}
+
+.fuel-manual-sheet-block-title {
+    margin-bottom: 11px;
+
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+
+    color: rgba(226, 232, 240, .75);
+}
+
+.fuel-manual-sheet-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.fuel-manual-sheet-mode {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 14px;
+
+    border: 1px solid rgba(148, 163, 184, .17);
+    border-radius: 11px;
+
+    cursor: pointer;
+
+    transition: border-color .15s ease, background .15s ease;
+}
+
+.fuel-manual-sheet-mode input {
+    display: none;
+}
+
+.fuel-manual-sheet-mode > i {
+    font-size: 1.15rem;
+    opacity: .72;
+}
+
+.fuel-manual-sheet-mode span {
+    display: grid;
+    gap: 3px;
+}
+
+.fuel-manual-sheet-mode strong {
+    font-size: .85rem;
+}
+
+.fuel-manual-sheet-mode small {
+    font-size: .7rem;
+    color: rgba(226, 232, 240, .60);
+}
+
+.fuel-manual-sheet-mode.is-active {
+    border-color: rgba(255, 86, 96, .48);
+    background: rgba(255, 86, 96, .07);
+}
+
+.fuel-manual-sheet-block-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+
+    margin-bottom: 10px;
+}
+
+.fuel-manual-sheet-block-head
+.fuel-manual-sheet-block-title {
+    margin-bottom: 2px;
+}
+
+.fuel-manual-sheet-block-head small {
+    font-size: .68rem;
+    color: rgba(226, 232, 240, .58);
+}
+
+.fuel-manual-sheet-mini-actions {
+    display: flex;
+    gap: 7px;
+}
+
+.fuel-manual-sheet-mini-actions button {
+    padding: 6px 9px;
+
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 7px;
+
+    background: transparent;
+    color: inherit;
+
+    font-size: .68rem;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.fuel-manual-sheet-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 10px;
+    padding: 0 11px;
+
+    min-height: 39px;
+
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 9px;
+}
+
+.fuel-manual-sheet-search input {
+    flex: 1;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+    color: inherit;
+
+    font-size: .78rem;
+}
+
+.fuel-manual-sheet-vehicles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+
+    max-height: 230px;
+    overflow-y: auto;
+
+    padding-right: 3px;
+}
+
+.fuel-manual-sheet-vehicle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    min-width: 0;
+
+    padding: 9px 10px;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 9px;
+
+    cursor: pointer;
+}
+
+.fuel-manual-sheet-vehicle input {
+    display: none;
+}
+
+.fuel-manual-sheet-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 18px;
+
+    width: 18px;
+    height: 18px;
+
+    border: 1px solid rgba(148, 163, 184, .32);
+    border-radius: 5px;
+
+    font-size: .65rem;
+}
+
+.fuel-manual-sheet-vehicle
+input:checked + .fuel-manual-sheet-check {
+    background: #b62f38;
+    border-color: #b62f38;
+    color: #fff;
+}
+
+.fuel-manual-sheet-vehicle-info {
+    display: grid;
+    min-width: 0;
+}
+
+.fuel-manual-sheet-vehicle-info strong {
+    overflow: hidden;
+
+    font-size: .74rem;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.fuel-manual-sheet-vehicle-info small {
+    overflow: hidden;
+
+    font-size: .63rem;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    color: rgba(226, 232, 240, .55);
+}
+
+.fuel-manual-sheet-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.fuel-manual-sheet-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 8px;
+
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.fuel-manual-sheet-help {
+    margin: 11px 0 0;
+
+    font-size: .68rem;
+    line-height: 1.5;
+
+    color: rgba(226, 232, 240, .56);
+}
+
+.fuel-manual-sheet-row-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.fuel-manual-sheet-row-setting > div {
+    display: grid;
+    gap: 3px;
+}
+
+.fuel-manual-sheet-row-setting strong {
+    font-size: .78rem;
+}
+
+.fuel-manual-sheet-row-setting small {
+    font-size: .66rem;
+
+    color: rgba(226, 232, 240, .55);
+}
+
+.fuel-manual-sheet-row-setting input {
+    width: 82px;
+
+    padding: 9px 10px;
+
+    border: 1px solid rgba(148, 163, 184, .20);
+    border-radius: 8px;
+
+    background: rgba(15, 23, 42, .13);
+    color: inherit;
+
+    text-align: center;
+    font-weight: 800;
+}
+
+.fuel-manual-sheet-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    padding: 17px 26px 22px;
+
+    border-top: 1px solid rgba(148, 163, 184, .13);
+}
+
+.fuel-manual-sheet-generate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 39px;
+
+    padding: 0 15px;
+
+    border: 1px solid #bd3540;
+    border-radius: 9px;
+
+    background: #b62f38;
+    color: #fff;
+
+    font-size: .76rem;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+@media (max-width: 860px) {
+
+    .fuel-manual-sheet-vehicles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fuel-manual-sheet-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* ==========================================================
+   Ficha manual - seleção de veículos por vínculo
+   ========================================================== */
+
+.fuel-manual-sheet-groups {
+    display: grid;
+    gap: 9px;
+}
+
+.fuel-manual-sheet-group {
+    overflow: hidden;
+
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 11px;
+
+    background: rgba(15, 23, 42, .08);
+}
+
+.fuel-manual-sheet-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    width: 100%;
+    min-height: 52px;
+
+    padding: 0 15px;
+
+    border: 0;
+
+    background: transparent;
+    color: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.fuel-manual-sheet-group-header:hover {
+    background: rgba(148, 163, 184, .045);
+}
+
+.fuel-manual-sheet-group-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    min-width: 0;
+}
+
+.fuel-manual-sheet-group-title strong {
+    font-size: .83rem;
+    font-weight: 800;
+}
+
+.fuel-manual-sheet-group-chevron {
+    display: inline-flex;
+
+    font-size: .68rem;
+
+    color: rgba(226, 232, 240, .55);
+
+    transition: transform .16s ease;
+}
+
+.fuel-manual-sheet-group-chevron.is-open {
+    transform: rotate(90deg);
+}
+
+.fuel-manual-sheet-group-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 22px;
+    height: 22px;
+
+    padding: 0 6px;
+
+    border-radius: 6px;
+
+    background: rgba(148, 163, 184, .10);
+
+    font-size: .64rem;
+    font-weight: 800;
+
+    color: rgba(226, 232, 240, .68);
+}
+
+.fuel-manual-sheet-group-selected {
+    font-size: .65rem;
+    font-weight: 700;
+
+    color: #aebcd2;
+}
+
+.fuel-manual-sheet-group-body {
+    padding: 0 14px 14px;
+
+    border-top: 1px solid rgba(148, 163, 184, .11);
+}
+
+.fuel-manual-sheet-group-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 7px;
+
+    padding: 10px 0;
+}
+
+.fuel-manual-sheet-group-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 6px 9px;
+
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 7px;
+
+    background: transparent;
+    color: inherit;
+
+    font-size: .66rem;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.fuel-manual-sheet-group-actions button:hover {
+    border-color: rgba(148, 163, 184, .34);
+    background: rgba(148, 163, 184, .05);
+}
+
+.fuel-manual-sheet-group-vehicles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+
+    max-height: 245px;
+    overflow-y: auto;
+}
+
+.fuel-manual-sheet-generate:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+
+    .fuel-manual-sheet-group-vehicles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* ==========================================================
+   Ficha manual - camada global acima da navegação
+   ========================================================== */
+
+.fuel-manual-sheet-overlay {
+    z-index: 999999 !important;
+}
+
+.fuel-manual-sheet-modal {
+    position: relative;
+    z-index: 1000000 !important;
+}
+
+
+/* Recebimentos - documento pendente / correções */
+
+.fuel-history-status.is-pending {
+    margin-top: 5px;
+
+    color: #e0bd62;
+    background: rgba(224, 189, 98, .10);
+    border: 1px solid rgba(224, 189, 98, .23);
+}
+
+.fuel-receipt-document-missing {
+    color: #d8bd78;
+    font-weight: 700;
+}
+
+.fuel-receipt-edit-modal {
+    width: min(850px, 94vw);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.fuel-receipt-edit-modal .fuel-modal-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.fuel-receipts-history-table td small {
+    display: block;
+    margin-top: 3px;
+}
+
+/* Histórico de abastecimentos - ações do relatório */
+
+.fuel-history-report-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.fuel-history-new-filling {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    min-height: 36px;
+    padding: 0 11px;
+
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 9px;
+
+    background: transparent;
+    color: rgba(226, 232, 240, .72);
+
+    font-size: .70rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.fuel-history-new-filling:hover {
+    border-color: rgba(148, 163, 184, .28);
+    background: rgba(148, 163, 184, .045);
+    color: inherit;
+}
+
+.fuel-history-new-filling i {
+    font-size: .78rem;
+    opacity: .75;
+}
+
+.fuel-history-panel-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
+}
+
+/* Histórico de abastecimentos - alinhar ações à direita */
+.fuel-history-panel-toolbar {
+    justify-content: flex-start !important;
+    gap: 8px !important;
+}
+
+.fuel-history-panel-toolbar .fuel-history-result-count {
+    margin-right: auto !important;
+}
+
+.fuel-history-panel-toolbar .fuel-history-new-filling,
+.fuel-history-panel-toolbar .fuel-history-pdf-action {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* ==========================================================
+   Recebimento de combustível - organização do formulário
+   ========================================================== */
+
+.receipt-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px 18px;
+}
+
+.receipt-grid > label {
+    min-width: 0;
+    margin: 0;
+}
+
+.receipt-grid > label > input,
+.receipt-grid > label > select,
+.receipt-grid > label > textarea {
+    width: 100%;
+}
+
+.receipt-grid .receipt-supplier-field {
+    grid-column: auto;
+}
+
+.receipt-grid .fuel-form-wide {
+    grid-column: 1 / -1;
+}
+
+.receipt-field-hint {
+    margin-left: 5px;
+
+    font-size: .65rem;
+    font-weight: 600;
+
+    color: rgba(226, 232, 240, .55);
+}
+
+.receipt-grid .fuel-form-help {
+    display: block;
+
+    margin-top: 6px;
+
+    font-size: .65rem;
+    line-height: 1.35;
+
+    color: rgba(226, 232, 240, .52);
+}
+
+.receipt-unit-cost-preview {
+    margin-top: 2px;
+}
+
+@media (max-width: 760px) {
+    .receipt-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .receipt-grid .fuel-form-wide {
+        grid-column: auto;
+    }
+}
+
+/* ==========================================================
+   Recebimento - grid definitivo
+   Linha 1: Data | Litros | Custo
+   Linha 2: Fornecedor 66% | CNPJ 33%
+   Linha 3: NF | Data NF
+   ========================================================== */
+
+.receipt-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 16px 18px !important;
+    align-items: start !important;
+}
+
+.receipt-grid .receipt-span-2 {
+    grid-column: span 2 !important;
+}
+
+.receipt-grid .receipt-span-3 {
+    grid-column: span 3 !important;
+}
+
+.receipt-grid .receipt-span-6 {
+    grid-column: 1 / -1 !important;
+}
+
+.receipt-grid > label {
+    min-width: 0;
+    margin: 0;
+}
+
+.receipt-grid > label > input,
+.receipt-grid > label > select,
+.receipt-grid > label > textarea {
+    width: 100%;
+}
+
+/* O componente de fornecedor mantém internamente
+   Nome ~66% e CPF/CNPJ ~33% */
+.receipt-grid .receipt-supplier-field {
+    grid-column: 1 / -1 !important;
+}
+
+.receipt-unit-cost-preview {
+    grid-column: 1 / -1 !important;
+    margin-top: 2px;
+}
+
+@media (max-width: 760px) {
+    .receipt-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .receipt-grid .receipt-span-2,
+    .receipt-grid .receipt-span-3,
+    .receipt-grid .receipt-span-6,
+    .receipt-grid .receipt-supplier-field,
+    .receipt-grid .receipt-unit-cost-preview {
+        grid-column: auto !important;
+    }
+}
+
+
+/* Histórico de recebimentos - filtros padronizados */
+
+.fuel-history-filters {
+    display: grid;
+    grid-template-columns:
+        minmax(260px, 2.2fr)
+        minmax(150px, 1fr)
+        minmax(150px, 1fr)
+        minmax(150px, 1fr)
+        minmax(150px, 1fr)
+        minmax(140px, .9fr)
+        auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.fuel-history-filter-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.fuel-history-filter-field > span {
+    font-size: .67rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(191, 207, 231, .82);
+}
+
+.fuel-history-filter-field input,
+.fuel-history-filter-field select {
+    width: 100%;
+}
+
+.fuel-history-search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    min-height: 45px;
+    padding: 0 12px;
+
+    border: 1px solid rgba(148, 163, 184, .20);
+    border-radius: 10px;
+
+    background: rgba(79, 102, 140, .72);
+}
+
+.fuel-history-search-box i {
+    flex: 0 0 auto;
+    opacity: .72;
+}
+
+.fuel-history-search-box input {
+    min-width: 0;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.fuel-history-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 1300px) {
+    .fuel-history-filters {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .fuel-history-filter-search {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 760px) {
+    .fuel-history-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-history-filter-search {
+        grid-column: auto;
+    }
+}
+
+/* ==========================================================
+   Conferência diária de abastecimento
+   ========================================================== */
+
+.fuel-daily-check-page {
+    display: grid;
+    gap: 18px;
+}
+
+.fuel-daily-alert {
+    display: grid;
+    gap: 4px;
+    padding: 13px 16px;
+    border-radius: 10px;
+}
+
+.fuel-daily-alert.is-success {
+    background: rgba(54, 156, 108, .12);
+    border: 1px solid rgba(54, 156, 108, .30);
+}
+
+.fuel-daily-alert.is-warning {
+    background: rgba(218, 169, 67, .10);
+    border: 1px solid rgba(218, 169, 67, .30);
+}
+
+.fuel-daily-date-panel {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.fuel-daily-date-panel label {
+    display: grid;
+    gap: 6px;
+}
+
+.fuel-daily-date-panel label > span,
+.fuel-daily-notes > span {
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(191,207,231,.8);
+}
+
+.fuel-daily-date-panel input {
+    min-width: 210px;
+}
+
+.fuel-daily-last-check {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
+}
+
+.fuel-daily-last-check span,
+.fuel-daily-last-check small {
+    font-size: .68rem;
+    color: rgba(226,232,240,.55);
+}
+
+.fuel-daily-section-title span {
+    font-size: .67rem;
+    font-weight: 800;
+    color: #ff747a;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.fuel-daily-section-title h2 {
+    margin: 4px 0 14px;
+    font-size: 1.05rem;
+}
+
+.fuel-daily-summary-list {
+    display: grid;
+    gap: 9px;
+}
+
+.fuel-daily-summary-card {
+    display: grid;
+    grid-template-columns: minmax(230px, 1.4fr) 220px 280px;
+    align-items: center;
+    gap: 18px;
+    padding: 14px 16px;
+    border: 1px solid rgba(148,163,184,.14);
+    border-radius: 11px;
+}
+
+.fuel-daily-summary-main,
+.fuel-daily-system-total {
+    display: grid;
+    gap: 3px;
+}
+
+.fuel-daily-summary-main > span {
+    font-size: .65rem;
+    text-transform: uppercase;
+    color: rgba(226,232,240,.55);
+}
+
+.fuel-daily-summary-main strong {
+    font-size: .88rem;
+}
+
+.fuel-daily-summary-main small {
+    color: rgba(226,232,240,.5);
+}
+
+.fuel-daily-system-total span {
+    font-size: .65rem;
+    font-weight: 800;
+    color: rgba(226,232,240,.55);
+}
+
+.fuel-daily-system-total strong {
+    font-size: 1.15rem;
+}
+
+.fuel-daily-manual-total {
+    display: grid;
+    gap: 5px;
+}
+
+.fuel-daily-manual-total > span {
+    font-size: .67rem;
+    font-weight: 800;
+}
+
+.fuel-daily-manual-total > div {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.fuel-daily-manual-total input {
+    width: 100%;
+}
+
+.fuel-daily-manual-total small {
+    color: rgba(226,232,240,.55);
+}
+
+.fuel-daily-manual-total small.has-divergence {
+    color: #e7bd63;
+}
+
+.fuel-daily-upload-grid {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 12px;
+}
+
+.fuel-daily-upload-card {
+    display: grid;
+    justify-items: start;
+    gap: 7px;
+    padding: 17px;
+    border: 1px solid rgba(148,163,184,.14);
+    border-radius: 11px;
+}
+
+.fuel-daily-upload-card > i {
+    font-size: 1.3rem;
+}
+
+.fuel-daily-upload-card p {
+    margin: 0 0 5px;
+    color: rgba(226,232,240,.55);
+    font-size: .74rem;
+}
+
+.fuel-daily-file-picker {
+    display: inline-flex;
+    padding: 9px 12px;
+    border: 1px dashed rgba(148,163,184,.4);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.fuel-daily-file-picker input {
+    display: none;
+}
+
+.fuel-daily-qr-box {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+    align-items: center;
+    margin-top: 15px;
+    padding: 16px;
+    border: 1px solid rgba(148,163,184,.16);
+    border-radius: 12px;
+}
+
+.fuel-daily-qr-box img {
+    width: 180px;
+    background:#fff;
+    padding:8px;
+    border-radius:8px;
+}
+
+.fuel-daily-qr-box > div {
+    display:grid;
+    gap:8px;
+}
+
+.fuel-daily-qr-box input {
+    width:100%;
+}
+
+.fuel-daily-files {
+    display:grid;
+    gap:7px;
+    margin-top:14px;
+}
+
+.fuel-daily-files a {
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:8px;
+    align-items:center;
+    padding:9px 11px;
+    border:1px solid rgba(148,163,184,.13);
+    border-radius:8px;
+    color:inherit;
+    text-decoration:none;
+}
+
+.fuel-daily-files small {
+    color:rgba(226,232,240,.5);
+}
+
+.fuel-daily-notes {
+    display:grid;
+    gap:7px;
+}
+
+.fuel-daily-notes textarea {
+    width:100%;
+}
+
+.fuel-daily-submit {
+    display:flex;
+    justify-content:flex-end;
+    margin-top:14px;
+}
+
+.fuel-daily-history {
+    display:grid;
+}
+
+.fuel-daily-history > a {
+    display:grid;
+    grid-template-columns:130px 160px 130px 1fr;
+    gap:15px;
+    padding:11px 5px;
+    border-bottom:1px solid rgba(148,163,184,.10);
+    color:inherit;
+    text-decoration:none;
+}
+
+.fuel-daily-history .is-checked {
+    color:#7fd6a6;
+}
+
+.fuel-daily-history .is-divergent {
+    color:#e5bc64;
+}
+
+.fuel-daily-empty {
+    padding:18px;
+    text-align:center;
+    color:rgba(226,232,240,.55);
+}
+
+@media(max-width:900px) {
+    .fuel-daily-summary-card {
+        grid-template-columns:1fr;
+    }
+
+    .fuel-daily-upload-grid {
+        grid-template-columns:1fr;
+    }
+
+    .fuel-daily-qr-box {
+        grid-template-columns:1fr;
+    }
+
+    .fuel-daily-history > a {
+        grid-template-columns:1fr 1fr;
+    }
+}
+
+/* ==========================================================
+   CONFERÊNCIA DIÁRIA - refinamento visual
+   ========================================================== */
+
+.fuel-daily-check-page {
+    gap: 14px !important;
+}
+
+
+/* ----------------------------------------------------------
+   Cabeçalho
+   ---------------------------------------------------------- */
+
+.fuel-daily-check-page > .fuel-header {
+    padding: 24px 26px !important;
+    min-height: auto !important;
+}
+
+.fuel-daily-check-page > .fuel-header h1 {
+    margin: 5px 0 4px !important;
+    font-size: clamp(1.65rem, 2vw, 2rem) !important;
+    line-height: 1.08 !important;
+}
+
+.fuel-daily-check-page > .fuel-header p {
+    margin: 0 !important;
+    font-size: .86rem !important;
+    color: rgba(226, 232, 240, .68) !important;
+}
+
+
+/* ----------------------------------------------------------
+   Painéis gerais
+   ---------------------------------------------------------- */
+
+.fuel-daily-check-page .fuel-panel {
+    padding: 18px 20px !important;
+    border-radius: 14px !important;
+}
+
+.fuel-daily-section-title {
+    margin-bottom: 10px !important;
+}
+
+.fuel-daily-section-title h2 {
+    margin: 3px 0 0 !important;
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+}
+
+.fuel-daily-section-title span {
+    font-size: .61rem !important;
+    letter-spacing: .09em !important;
+}
+
+
+/* ----------------------------------------------------------
+   Data da operação
+   ---------------------------------------------------------- */
+
+.fuel-daily-date-panel {
+    padding: 15px 18px !important;
+    min-height: auto !important;
+}
+
+.fuel-daily-date-panel form {
+    margin: 0 !important;
+}
+
+.fuel-daily-date-panel label {
+    gap: 5px !important;
+}
+
+.fuel-daily-date-panel label > span {
+    font-size: .62rem !important;
+}
+
+.fuel-daily-date-panel input[type="date"] {
+    width: 205px !important;
+    min-width: 205px !important;
+    height: 40px !important;
+    padding: 0 11px !important;
+}
+
+.fuel-daily-last-check {
+    gap: 1px !important;
+}
+
+
+/* ----------------------------------------------------------
+   Resumo automático
+   ---------------------------------------------------------- */
+
+.fuel-daily-summary-list {
+    gap: 8px !important;
+}
+
+.fuel-daily-summary-card {
+    grid-template-columns:
+        minmax(220px, 1.3fr)
+        180px
+        minmax(230px, 280px) !important;
+
+    gap: 14px !important;
+
+    padding: 12px 14px !important;
+
+    border-radius: 10px !important;
+}
+
+.fuel-daily-summary-main {
+    gap: 2px !important;
+}
+
+.fuel-daily-summary-main strong {
+    font-size: .84rem !important;
+}
+
+.fuel-daily-summary-main small {
+    font-size: .68rem !important;
+}
+
+.fuel-daily-system-total {
+    gap: 2px !important;
+}
+
+.fuel-daily-system-total strong {
+    font-size: 1.05rem !important;
+}
+
+.fuel-daily-manual-total {
+    gap: 4px !important;
+}
+
+.fuel-daily-manual-total > div {
+    gap: 6px !important;
+}
+
+.fuel-daily-manual-total input {
+    height: 40px !important;
+    padding: 0 10px !important;
+}
+
+.fuel-daily-manual-total small {
+    font-size: .66rem !important;
+}
+
+
+/* ----------------------------------------------------------
+   Estado vazio
+   ---------------------------------------------------------- */
+
+.fuel-daily-empty {
+    min-height: 72px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 14px !important;
+
+    font-size: .78rem !important;
+
+    border: 1px dashed rgba(148, 163, 184, .12);
+    border-radius: 9px;
+
+    background: rgba(15, 23, 42, .06);
+}
+
+
+/* ----------------------------------------------------------
+   Upload da folha
+   ---------------------------------------------------------- */
+
+.fuel-daily-upload-grid {
+    gap: 10px !important;
+}
+
+.fuel-daily-upload-card {
+    min-height: 145px !important;
+
+    padding: 14px 16px !important;
+
+    gap: 5px !important;
+
+    border-radius: 10px !important;
+}
+
+.fuel-daily-upload-card > i {
+    font-size: 1.1rem !important;
+    margin-bottom: 2px !important;
+}
+
+.fuel-daily-upload-card > strong {
+    font-size: .84rem !important;
+}
+
+.fuel-daily-upload-card p {
+    margin: 0 0 7px !important;
+
+    font-size: .69rem !important;
+    line-height: 1.4 !important;
+}
+
+.fuel-daily-file-picker {
+    min-height: 38px !important;
+
+    display: inline-flex !important;
+    align-items: center !important;
+
+    padding: 8px 11px !important;
+
+    font-size: .72rem !important;
+
+    border-radius: 7px !important;
+}
+
+#dailySelectedFiles {
+    margin-top: 3px !important;
+
+    font-size: .65rem !important;
+    color: rgba(226, 232, 240, .52) !important;
+}
+
+.fuel-daily-upload-card .fuel-secondary-action {
+    min-height: 38px !important;
+
+    padding: 0 12px !important;
+
+    font-size: .72rem !important;
+}
+
+
+/* ----------------------------------------------------------
+   QR Code
+   ---------------------------------------------------------- */
+
+.fuel-daily-qr-box {
+    grid-template-columns: 145px 1fr !important;
+
+    gap: 16px !important;
+
+    margin-top: 12px !important;
+    padding: 14px !important;
+}
+
+.fuel-daily-qr-box img {
+    width: 145px !important;
+}
+
+.fuel-daily-qr-box > div {
+    gap: 6px !important;
+}
+
+.fuel-daily-qr-box p {
+    margin: 0 !important;
+
+    font-size: .7rem !important;
+}
+
+.fuel-daily-qr-box input {
+    height: 38px !important;
+}
+
+
+/* ----------------------------------------------------------
+   Arquivos recebidos
+   ---------------------------------------------------------- */
+
+.fuel-daily-files {
+    margin-top: 10px !important;
+    gap: 5px !important;
+}
+
+.fuel-daily-files a {
+    padding: 8px 10px !important;
+
+    font-size: .72rem !important;
+}
+
+
+/* ----------------------------------------------------------
+   Observação
+   ---------------------------------------------------------- */
+
+.fuel-daily-notes {
+    gap: 5px !important;
+}
+
+.fuel-daily-notes > span {
+    font-size: .62rem !important;
+}
+
+.fuel-daily-notes textarea {
+    min-height: 76px !important;
+    height: 76px !important;
+
+    padding: 10px 12px !important;
+
+    resize: vertical !important;
+}
+
+.fuel-daily-submit {
+    margin-top: 10px !important;
+}
+
+
+/* ----------------------------------------------------------
+   Histórico
+   ---------------------------------------------------------- */
+
+.fuel-daily-history {
+    margin-top: 3px !important;
+}
+
+.fuel-daily-history > a {
+    grid-template-columns:
+        115px
+        145px
+        120px
+        1fr !important;
+
+    gap: 12px !important;
+
+    padding: 9px 4px !important;
+
+    font-size: .73rem !important;
+}
+
+.fuel-daily-history > a strong {
+    font-size: .76rem !important;
+}
+
+
+/* ----------------------------------------------------------
+   Desktop largo
+   ---------------------------------------------------------- */
+
+@media (min-width: 1400px) {
+
+    .fuel-daily-check-page {
+        gap: 13px !important;
+    }
+
+    .fuel-daily-check-page .fuel-panel {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+
+}
+
+
+/* ----------------------------------------------------------
+   Tablet
+   ---------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+
+    .fuel-daily-summary-card {
+        grid-template-columns: 1fr 160px !important;
+    }
+
+    .fuel-daily-manual-total {
+        grid-column: 1 / -1 !important;
+    }
+
+}
+
+
+/* ----------------------------------------------------------
+   Mobile
+   ---------------------------------------------------------- */
+
+@media (max-width: 760px) {
+
+    .fuel-daily-check-page > .fuel-header {
+        padding: 18px !important;
+    }
+
+    .fuel-daily-check-page .fuel-panel {
+        padding: 14px !important;
+    }
+
+    .fuel-daily-date-panel {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .fuel-daily-date-panel input[type="date"] {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .fuel-daily-summary-card {
+        grid-template-columns: 1fr !important;
+    }
+
+    .fuel-daily-upload-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .fuel-daily-history > a {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+}
+
+/* =========================================================
+   CONFERÊNCIA DIÁRIA DE ABASTECIMENTO
+   Layout aprovado
+   ========================================================= */
+
+.fuel-daily-check-page {
+    display: grid;
+    gap: 18px;
+}
+
+/* ---------- header ---------- */
+
+.fuel-daily-check-page .fuel-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: start;
+
+    padding: 22px 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.fuel-daily-check-page .fuel-header > div:first-child {
+    min-width: 0;
+}
+
+.fuel-daily-check-page .fuel-header h1 {
+    margin: 6px 0 4px;
+    font-size: clamp(1.8rem, 2.6vw, 2.6rem);
+    line-height: 1.08;
+}
+
+.fuel-daily-check-page .fuel-header p {
+    margin: 0;
+    max-width: 760px;
+    color: rgba(255, 255, 255, 0.74);
+}
+
+.fuel-daily-check-page .fuel-kicker {
+    display: inline-block;
+    margin-bottom: 2px;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #ff7c7c;
+}
+
+.fuel-daily-check-page .fuel-header .fuel-secondary-action,
+.fuel-daily-check-page .fuel-header .fuel-primary-action {
+    align-self: start;
+    white-space: nowrap;
+}
+
+/* ---------- cards / panels ---------- */
+
+.fuel-daily-check-page .fuel-panel,
+.fuel-daily-check-page .fuel-card,
+.fuel-daily-check-page .fuel-summary-card,
+.fuel-daily-check-page .fuel-upload-card,
+.fuel-daily-check-page .fuel-history-card {
+    padding: 18px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.fuel-daily-check-page .fuel-section-title,
+.fuel-daily-check-page h2 {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    line-height: 1.2;
+}
+
+.fuel-daily-check-page .fuel-section-subtitle,
+.fuel-daily-check-page .fuel-muted {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+/* ---------- row: data / ações ---------- */
+
+.fuel-daily-check-toolbar {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) 1fr;
+    gap: 18px;
+    align-items: end;
+}
+
+.fuel-daily-check-date-card {
+    padding: 18px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.fuel-daily-check-date-card label {
+    display: grid;
+    gap: 10px;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.fuel-daily-check-date-card input,
+.fuel-daily-check-date-card select {
+    width: 100%;
+}
+
+.fuel-daily-check-toolbar-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ---------- resumo automático ---------- */
+
+.fuel-daily-check-summary {
+    display: grid;
+    gap: 14px;
+}
+
+.fuel-daily-check-summary-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fuel-daily-check-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.fuel-daily-check-stat {
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.fuel-daily-check-stat-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.fuel-daily-check-stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
+}
+
+.fuel-daily-check-stat-meta {
+    display: block;
+    margin-top: 8px;
+    font-size: .9rem;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.fuel-daily-check-empty {
+    padding: 20px;
+    text-align: center;
+    border-radius: 16px;
+    border: 1px dashed rgba(255, 255, 255, 0.10);
+    color: rgba(255, 255, 255, 0.62);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---------- upload / documento ---------- */
+
+.fuel-daily-check-upload-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+    gap: 16px;
+    align-items: stretch;
+}
+
+.fuel-daily-check-upload-card {
+    display: grid;
+    gap: 12px;
+    min-height: 190px;
+}
+
+.fuel-daily-check-upload-card .fuel-upload-icon,
+.fuel-daily-check-upload-card .fuel-qr-icon {
+    width: 42px;
+    height: 42px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 1.1rem;
+}
+
+.fuel-daily-check-upload-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.fuel-daily-check-upload-card p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.70);
+}
+
+.fuel-daily-check-upload-card .fuel-upload-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+.fuel-daily-check-upload-card .fuel-upload-file-name {
+    font-size: .92rem;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.fuel-daily-check-upload-card input[type="file"] {
+    max-width: 100%;
+}
+
+/* ---------- observação ---------- */
+
+.fuel-daily-check-observation {
+    display: grid;
+    gap: 10px;
+}
+
+.fuel-daily-check-observation label {
+    display: grid;
+    gap: 10px;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.fuel-daily-check-observation textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ---------- footer / ações principais ---------- */
+
+.fuel-daily-check-submitbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.fuel-daily-check-submitbar .fuel-submit-hint {
+    color: rgba(255, 255, 255, 0.66);
+    font-size: .92rem;
+}
+
+.fuel-daily-check-submitbar .fuel-submit-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ---------- histórico ---------- */
+
+.fuel-daily-check-history {
+    display: grid;
+    gap: 14px;
+}
+
+.fuel-daily-check-history-list {
+    display: grid;
+    gap: 12px;
+}
+
+.fuel-daily-check-history-item {
+    display: grid;
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.fuel-daily-check-history-date {
+    font-weight: 800;
+    color: #fff;
+}
+
+.fuel-daily-check-history-info {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.fuel-daily-check-history-item .fuel-badge,
+.fuel-daily-check-history-item .status-badge {
+    justify-self: end;
+}
+
+/* ---------- qr modal / preview ---------- */
+
+.fuel-daily-check-qr-box {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.fuel-daily-check-qr-box canvas,
+.fuel-daily-check-qr-box img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.fuel-daily-check-upload-preview {
+    display: grid;
+    gap: 12px;
+}
+
+.fuel-daily-check-upload-preview img,
+.fuel-daily-check-upload-preview embed,
+.fuel-daily-check-upload-preview iframe {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---------- responsividade ---------- */
+
+@media (max-width: 1200px) {
+    .fuel-daily-check-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fuel-daily-check-upload-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-check-history-item {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .fuel-daily-check-history-item .fuel-badge,
+    .fuel-daily-check-history-item .status-badge {
+        justify-self: start;
+    }
+}
+
+@media (max-width: 860px) {
+    .fuel-daily-check-page .fuel-header {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-check-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-check-toolbar-actions {
+        justify-content: flex-start;
+    }
+
+    .fuel-daily-check-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-check-submitbar {
+        align-items: stretch;
+    }
+
+    .fuel-daily-check-submitbar .fuel-submit-actions {
+        width: 100%;
+    }
+
+    .fuel-daily-check-submitbar .fuel-submit-actions > * {
+        flex: 1 1 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .fuel-daily-check-page .fuel-header,
+    .fuel-daily-check-page .fuel-panel,
+    .fuel-daily-check-page .fuel-card,
+    .fuel-daily-check-page .fuel-summary-card,
+    .fuel-daily-check-page .fuel-upload-card,
+    .fuel-daily-check-page .fuel-history-card,
+    .fuel-daily-check-date-card {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .fuel-daily-check-page .fuel-header h1 {
+        font-size: 1.8rem;
+    }
+}
+
+
+/* ==========================================================
+   Conferência diária - anexos
+   ========================================================== */
+
+.fuel-daily-files {
+    display: grid;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.fuel-daily-file-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 7px;
+
+    transition:
+        opacity .18s ease,
+        transform .18s ease;
+}
+
+.fuel-daily-file-row.is-removing {
+    opacity: 0;
+    transform: translateX(8px);
+}
+
+.fuel-daily-file-link {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    align-items: center;
+    gap: 9px;
+
+    min-width: 0;
+    padding: 9px 11px;
+
+    border: 1px solid rgba(148, 163, 184, .13);
+    border-radius: 8px;
+
+    color: inherit;
+    text-decoration: none;
+
+    background: rgba(255, 255, 255, .018);
+}
+
+.fuel-daily-file-link span {
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fuel-daily-file-link small {
+    color: rgba(226, 232, 240, .50);
+    white-space: nowrap;
+}
+
+.fuel-daily-file-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    min-width: 88px;
+    padding: 0 11px;
+
+    border: 1px solid rgba(235, 87, 87, .22);
+    border-radius: 8px;
+
+    background: transparent;
+    color: rgba(255, 151, 151, .82);
+
+    font-size: .68rem;
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+.fuel-daily-file-delete:hover {
+    border-color: rgba(235, 87, 87, .38);
+    background: rgba(235, 87, 87, .07);
+    color: #ff9c9c;
+}
+
+.fuel-daily-file-delete:disabled {
+    cursor: wait;
+    opacity: .65;
+}
+
+.fuel-daily-delete-spinner {
+    width: 12px;
+    height: 12px;
+
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+
+    animation: fuelDailySpin .65s linear infinite;
+}
+
+@keyframes fuelDailySpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 620px) {
+    .fuel-daily-file-delete span {
+        display: none;
+    }
+
+    .fuel-daily-file-delete {
+        min-width: 42px;
+        padding: 0 10px;
+    }
+}
+
+/* QR da conferência só aparece após ser gerado */
+.fuel-daily-qr-box[hidden],
+#fuelDailyQrBox[hidden] {
+    display: none !important;
+}
+
+
+/* ==========================================================
+   CONFERÊNCIA DIÁRIA V2
+   Layout baseado no mockup operacional
+   ========================================================== */
+
+.fuel-daily-v2 {
+    display: grid !important;
+    gap: 12px !important;
+}
+
+
+/* HEADER */
+
+.fuel-daily-v2-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 24px;
+
+    padding: 22px 26px;
+
+    border: 1px solid rgba(148,163,184,.18);
+    border-radius: 18px;
+
+    background: rgba(54,72,103,.62);
+}
+
+.fuel-daily-v2-heading h1 {
+    margin: 5px 0 3px;
+
+    font-size: clamp(1.65rem, 2.15vw, 2.2rem);
+    line-height: 1.08;
+}
+
+.fuel-daily-v2-heading p {
+    margin: 0;
+
+    color: rgba(226,232,240,.67);
+    font-size: .82rem;
+}
+
+.fuel-daily-v2-header-actions {
+    display: flex;
+    align-items: end;
+    gap: 14px;
+}
+
+.fuel-daily-v2-date label {
+    display: grid;
+    gap: 5px;
+}
+
+.fuel-daily-v2-date label > span {
+    font-size: .61rem;
+    font-weight: 850;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+
+    color: rgba(191,207,231,.78);
+}
+
+.fuel-daily-v2-date input {
+    width: 205px;
+    height: 41px;
+
+    padding: 0 11px;
+}
+
+.fuel-daily-v2-back {
+    height: 41px;
+
+    display: inline-flex;
+    align-items: center;
+}
+
+
+/* BASE DOS PAINÉIS */
+
+.fuel-daily-v2-panel {
+    min-width: 0;
+
+    padding: 18px 20px;
+
+    border: 1px solid rgba(148,163,184,.16);
+    border-radius: 16px;
+
+    background: rgba(54,72,103,.54);
+}
+
+.fuel-daily-v2-section-head {
+    margin-bottom: 11px;
+}
+
+.fuel-daily-v2-section-head > span {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #ff747a;
+
+    font-size: .60rem;
+    font-weight: 850;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+}
+
+.fuel-daily-v2-section-head h2 {
+    margin: 0;
+
+    font-size: .98rem;
+    line-height: 1.15;
+}
+
+
+/* GRID PRINCIPAL */
+
+.fuel-daily-v2-main-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(0, 1.04fr);
+
+    gap: 12px;
+    align-items: stretch;
+}
+
+
+/* RESUMO */
+
+.fuel-daily-v2-summary {
+    min-height: 190px;
+}
+
+.fuel-daily-v2-products {
+    display: grid;
+    gap: 7px;
+}
+
+.fuel-daily-v2-product {
+    display: grid;
+
+    grid-template-columns:
+        minmax(170px, 1fr)
+        155px
+        minmax(190px, 260px);
+
+    align-items: center;
+    gap: 14px;
+
+    min-height: 72px;
+
+    padding: 10px 12px;
+
+    border: 1px solid rgba(148,163,184,.10);
+    border-radius: 9px;
+
+    background: rgba(15,23,42,.055);
+}
+
+.fuel-daily-v2-product > div:first-child {
+    display: grid;
+    gap: 1px;
+}
+
+.fuel-daily-v2-product > div:first-child > span {
+    color: rgba(191,207,231,.60);
+
+    font-size: .58rem;
+    text-transform: uppercase;
+}
+
+.fuel-daily-v2-product > div:first-child strong {
+    font-size: .77rem;
+}
+
+.fuel-daily-v2-product > div:first-child small {
+    color: rgba(226,232,240,.48);
+    font-size: .61rem;
+}
+
+.fuel-daily-v2-chm-total {
+    display: grid;
+    gap: 2px;
+}
+
+.fuel-daily-v2-chm-total span {
+    color: rgba(191,207,231,.66);
+
+    font-size: .59rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.fuel-daily-v2-chm-total strong {
+    font-size: 1.02rem;
+}
+
+.fuel-daily-v2-manual {
+    display: grid;
+    gap: 4px;
+}
+
+.fuel-daily-v2-manual > span {
+    font-size: .62rem;
+    font-weight: 800;
+}
+
+.fuel-daily-v2-manual > div {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.fuel-daily-v2-manual input {
+    min-width: 0;
+    width: 100%;
+    height: 39px;
+}
+
+.fuel-daily-v2-manual b {
+    font-size: .78rem;
+}
+
+.fuel-daily-v2-manual small {
+    color: rgba(226,232,240,.48);
+
+    font-size: .60rem;
+}
+
+.fuel-daily-v2-manual small.has-divergence {
+    color: #e5bd68;
+}
+
+
+/* DOCUMENTO DE APOIO */
+
+.fuel-daily-v2-document {
+    min-height: 190px;
+}
+
+.fuel-daily-v2-upload-options {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 10px;
+}
+
+.fuel-daily-v2-upload-option {
+    display: grid;
+    justify-items: start;
+    align-content: start;
+    gap: 5px;
+
+    min-height: 116px;
+
+    padding: 11px 13px;
+
+    border: 1px solid rgba(148,163,184,.11);
+    border-radius: 9px;
+
+    background: rgba(15,23,42,.04);
+}
+
+.fuel-daily-v2-upload-option > i {
+    margin-bottom: 2px;
+
+    font-size: .95rem;
+}
+
+.fuel-daily-v2-upload-option > strong {
+    font-size: .76rem;
+}
+
+.fuel-daily-v2-upload-option > p {
+    margin: 0 0 5px;
+
+    color: rgba(226,232,240,.52);
+
+    font-size: .61rem;
+    line-height: 1.4;
+}
+
+.fuel-daily-v2-file-picker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    min-height: 35px;
+
+    padding: 0 10px;
+
+    border: 1px dashed rgba(148,163,184,.35);
+    border-radius: 7px;
+
+    font-size: .66rem;
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+.fuel-daily-v2-file-picker input {
+    display: none;
+}
+
+#dailySelectedFiles {
+    margin-top: 2px;
+
+    color: rgba(226,232,240,.48);
+    font-size: .58rem;
+}
+
+
+/* QR */
+
+.fuel-daily-v2-qr[hidden] {
+    display: none !important;
+}
+
+.fuel-daily-v2-qr {
+    display: grid;
+
+    grid-template-columns: 118px minmax(0,1fr);
+
+    gap: 14px;
+
+    margin-top: 10px;
+    padding: 11px;
+
+    border: 1px solid rgba(148,163,184,.13);
+    border-radius: 9px;
+
+    background: rgba(15,23,42,.045);
+}
+
+.fuel-daily-v2-qr > img {
+    width: 118px;
+    height: 118px;
+
+    object-fit: contain;
+
+    padding: 5px;
+
+    border-radius: 7px;
+
+    background: #fff;
+}
+
+.fuel-daily-v2-qr-content {
+    display: grid;
+    align-content: center;
+    gap: 6px;
+
+    min-width: 0;
+}
+
+.fuel-daily-v2-qr-content strong {
+    font-size: .78rem;
+}
+
+.fuel-daily-v2-qr-content small,
+#fuelDailyQrStatus {
+    color: rgba(226,232,240,.56);
+
+    font-size: .61rem;
+}
+
+.fuel-daily-v2-qr-content input {
+    width: 100%;
+    height: 34px;
+}
+
+.fuel-daily-v2-qr-content .fuel-secondary-action {
+    width: max-content;
+    min-height: 34px;
+}
+
+
+/* ARQUIVOS */
+
+.fuel-daily-v2-files {
+    margin-top: 9px !important;
+}
+
+
+/* OBSERVAÇÃO */
+
+.fuel-daily-v2-observation {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0,1fr)
+        auto;
+
+    align-items: end;
+    gap: 16px;
+}
+
+.fuel-daily-v2-observation > label {
+    display: grid;
+    gap: 5px;
+}
+
+.fuel-daily-v2-observation > label > span {
+    color: rgba(191,207,231,.78);
+
+    font-size: .60rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.fuel-daily-v2-observation textarea {
+    width: 100%;
+    height: 74px;
+    min-height: 74px;
+
+    resize: vertical;
+}
+
+.fuel-daily-v2-save {
+    min-width: 190px;
+
+    display: grid;
+    justify-items: end;
+    gap: 8px;
+}
+
+.fuel-daily-v2-last-check {
+    display: grid;
+    justify-items: end;
+    gap: 1px;
+
+    color: rgba(226,232,240,.52);
+
+    font-size: .59rem;
+}
+
+.fuel-daily-v2-last-check strong {
+    color: rgba(226,232,240,.82);
+}
+
+
+/* HISTÓRICO */
+
+.fuel-daily-v2-history {
+    padding-bottom: 12px;
+}
+
+.fuel-daily-v2-history-table {
+    display: grid;
+}
+
+.fuel-daily-v2-history-head,
+.fuel-daily-v2-history-row {
+    display: grid;
+
+    grid-template-columns:
+        150px
+        180px
+        140px
+        minmax(150px,1fr);
+
+    gap: 12px;
+    align-items: center;
+}
+
+.fuel-daily-v2-history-head {
+    padding: 0 6px 6px;
+
+    color: rgba(191,207,231,.55);
+
+    font-size: .57rem;
+    font-weight: 850;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.fuel-daily-v2-history-row {
+    min-height: 38px;
+
+    padding: 7px 6px;
+
+    border-top: 1px solid rgba(148,163,184,.09);
+
+    color: inherit;
+    text-decoration: none;
+
+    font-size: .68rem;
+}
+
+.fuel-daily-v2-history-row:hover {
+    background: rgba(255,255,255,.018);
+}
+
+.fuel-daily-v2-status {
+    width: max-content;
+}
+
+.fuel-daily-v2-status.is-checked {
+    color: #7bd5a3;
+}
+
+.fuel-daily-v2-status.is-divergent {
+    color: #e6be68;
+}
+
+
+/* VAZIO */
+
+.fuel-daily-v2-empty {
+    min-height: 78px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 14px;
+
+    border: 1px dashed rgba(148,163,184,.11);
+    border-radius: 9px;
+
+    color: rgba(226,232,240,.48);
+
+    font-size: .68rem;
+}
+
+
+/* RESPONSIVO */
+
+@media (max-width: 1180px) {
+
+    .fuel-daily-v2-main-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+
+@media (max-width: 840px) {
+
+    .fuel-daily-v2-header {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-v2-header-actions {
+        justify-content: space-between;
+    }
+
+    .fuel-daily-v2-product {
+        grid-template-columns: 1fr 140px;
+    }
+
+    .fuel-daily-v2-manual {
+        grid-column: 1 / -1;
+    }
+
+    .fuel-daily-v2-observation {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-v2-save {
+        justify-items: stretch;
+    }
+
+}
+
+
+@media (max-width: 620px) {
+
+    .fuel-daily-v2-header {
+        padding: 17px;
+    }
+
+    .fuel-daily-v2-header-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fuel-daily-v2-date input {
+        width: 100%;
+    }
+
+    .fuel-daily-v2-upload-options {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-v2-product {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-v2-chm-total {
+        grid-column: auto;
+    }
+
+    .fuel-daily-v2-manual {
+        grid-column: auto;
+    }
+
+    .fuel-daily-v2-qr {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-daily-v2-history-head {
+        display: none;
+    }
+
+    .fuel-daily-v2-history-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+}
+
+/* ==========================================================
+   CONFERÊNCIA V2 - refinamentos finais do grid
+   ========================================================== */
+
+.fuel-daily-v2-product-main {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.fuel-daily-v2-product-main > span {
+    font-size: .58rem;
+    text-transform: uppercase;
+    color: rgba(191, 207, 231, .60);
+}
+
+.fuel-daily-v2-product-main > strong {
+    font-size: .78rem;
+}
+
+.fuel-daily-v2-product-main > small {
+    font-size: .61rem;
+    color: rgba(226, 232, 240, .48);
+}
+
+/* Documento e resumo têm exatamente a mesma altura mínima */
+.fuel-daily-v2-summary,
+.fuel-daily-v2-document {
+    min-height: 210px;
+}
+
+/* Observação vira a faixa horizontal do mockup */
+.fuel-daily-v2-observation {
+    min-height: 126px;
+}
+
+/* QR só existe visualmente depois do clique */
+#fuelDailyQrBox[hidden],
+.fuel-daily-v2-qr[hidden] {
+    display: none !important;
+}
+
+/* Histórico compacto */
+.fuel-daily-v2-history {
+    min-height: 100px;
+}
+
+
+/* Conferência diária - respiro antes da observação */
+.fuel-daily-v2-observation {
+    margin-top: 14px !important;
+}
+
+
+/* Conferência diária - atalhos do cabeçalho */
+.fuel-daily-v2-header-actions {
+    display: flex;
+    align-items: end;
+    gap: 10px;
+}
+
+.fuel-daily-v2-manual-sheet,
+.fuel-daily-v2-back {
+    height: 41px;
+    white-space: nowrap;
+}
+
+.fuel-daily-v2-manual-sheet {
+    opacity: .88;
+}
+
+/* ==========================================================
+   IMPORTAÇÃO DE ABASTECIMENTO VIA FOTO / GOOGLE VISION
+   ========================================================== */
+
+body.fuel-photo-ai-modal-open {
+    overflow: hidden;
+}
+
+.fuel-photo-ai-overlay[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 28px;
+
+    background: rgba(4, 8, 15, .76);
+    backdrop-filter: blur(4px);
+}
+
+.fuel-photo-ai-modal {
+    width: min(1480px, 96vw);
+    max-height: 94vh;
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 16px;
+
+    background: var(--card-bg, #111827);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .38);
+}
+
+.fuel-photo-ai-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+
+    padding: 20px 22px;
+
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+}
+
+.fuel-photo-ai-header h2 {
+    margin: 3px 0 4px;
+
+    font-size: 1.18rem;
+}
+
+.fuel-photo-ai-header p {
+    margin: 0;
+
+    color: var(--text-muted, #94a3b8);
+    font-size: .76rem;
+}
+
+.fuel-photo-ai-kicker {
+    font-size: .59rem;
+    font-weight: 850;
+    letter-spacing: .10em;
+
+    color: #ff747a;
+}
+
+.fuel-photo-ai-close {
+    width: 35px;
+    height: 35px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 9px;
+
+    background: transparent;
+    color: inherit;
+
+    cursor: pointer;
+}
+
+.fuel-photo-ai-body {
+    overflow-y: auto;
+
+    padding: 20px 22px 22px;
+}
+
+.fuel-photo-ai-upload {
+    display: grid;
+    grid-template-columns:
+        minmax(0, .8fr)
+        minmax(260px, .45fr);
+
+    gap: 16px;
+}
+
+.fuel-photo-ai-upload-left {
+    min-width: 0;
+}
+
+.fuel-photo-ai-drop {
+    min-height: 180px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+
+    padding: 24px;
+
+    border: 1px dashed rgba(148, 163, 184, .26);
+    border-radius: 12px;
+
+    background: rgba(148, 163, 184, .035);
+
+    cursor: pointer;
+}
+
+.fuel-photo-ai-drop > i {
+    font-size: 1.75rem;
+    color: #ff747a;
+}
+
+.fuel-photo-ai-drop span {
+    display: grid;
+    gap: 4px;
+}
+
+.fuel-photo-ai-drop strong {
+    font-size: .84rem;
+}
+
+.fuel-photo-ai-drop small,
+.fuel-photo-ai-file-info span {
+    color: var(--text-muted, #94a3b8);
+    font-size: .68rem;
+}
+
+.fuel-photo-ai-file-info {
+    margin-top: 9px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 9px 11px;
+
+    border: 1px solid rgba(148, 163, 184, .12);
+    border-radius: 8px;
+
+    font-size: .69rem;
+}
+
+.fuel-photo-ai-preview-wrap {
+    min-height: 180px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    border: 1px solid rgba(148, 163, 184, .13);
+    border-radius: 12px;
+
+    background: rgba(0, 0, 0, .08);
+}
+
+.fuel-photo-ai-preview {
+    display: block;
+
+    width: 100%;
+    height: 220px;
+
+    object-fit: contain;
+}
+
+.fuel-photo-ai-preview[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-preview-empty {
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+
+    color: var(--text-muted, #94a3b8);
+    font-size: .68rem;
+}
+
+.fuel-photo-ai-preview-empty i {
+    font-size: 1.7rem;
+}
+
+.fuel-photo-ai-preview-empty[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-analysis-bar {
+    margin-top: 14px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+
+    padding: 12px 14px;
+
+    border: 1px solid rgba(148, 163, 184, .11);
+    border-radius: 10px;
+}
+
+.fuel-photo-ai-analysis-bar > div {
+    display: grid;
+    gap: 2px;
+}
+
+.fuel-photo-ai-analysis-bar strong {
+    font-size: .72rem;
+}
+
+.fuel-photo-ai-analysis-bar span {
+    color: var(--text-muted, #94a3b8);
+    font-size: .64rem;
+}
+
+.fuel-photo-ai-feedback {
+    margin-top: 12px;
+    padding: 11px 13px;
+
+    border-radius: 9px;
+
+    font-size: .70rem;
+}
+
+.fuel-photo-ai-feedback.is-loading {
+    display: grid;
+    gap: 3px;
+
+    border: 1px solid rgba(96, 165, 250, .22);
+    background: rgba(96, 165, 250, .06);
+}
+
+.fuel-photo-ai-feedback.is-error {
+    border: 1px solid rgba(248, 113, 113, .24);
+    background: rgba(248, 113, 113, .06);
+    color: #fda4af;
+}
+
+.fuel-photo-ai-feedback.is-success {
+    border: 1px solid rgba(74, 222, 128, .24);
+    background: rgba(74, 222, 128, .055);
+    color: #86efac;
+}
+
+.fuel-photo-ai-result {
+    margin-top: 16px;
+}
+
+.fuel-photo-ai-result[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 9px;
+}
+
+.fuel-photo-ai-summary > div {
+    display: grid;
+    gap: 3px;
+
+    padding: 11px 12px;
+
+    border: 1px solid rgba(148, 163, 184, .11);
+    border-radius: 9px;
+
+    background: rgba(148, 163, 184, .025);
+}
+
+.fuel-photo-ai-summary span {
+    color: var(--text-muted, #94a3b8);
+    font-size: .56rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.fuel-photo-ai-summary strong {
+    font-size: .87rem;
+}
+
+.fuel-photo-ai-summary .is-ok {
+    color: #86efac;
+}
+
+.fuel-photo-ai-summary .is-warning {
+    color: #facc6b;
+}
+
+.fuel-photo-ai-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+
+    padding: 11px 2px;
+
+    color: var(--text-muted, #94a3b8);
+    font-size: .66rem;
+}
+
+.fuel-photo-ai-meta strong {
+    color: inherit;
+}
+
+.fuel-photo-ai-table-wrap {
+    overflow-x: auto;
+
+    border: 1px solid rgba(148, 163, 184, .12);
+    border-radius: 10px;
+}
+
+.fuel-photo-ai-table {
+    width: 100%;
+    min-width: 1050px;
+
+    border-collapse: collapse;
+}
+
+.fuel-photo-ai-table th {
+    padding: 8px 9px;
+
+    text-align: left;
+
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+
+    color: var(--text-muted, #94a3b8);
+    font-size: .55rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.fuel-photo-ai-table td {
+    padding: 9px;
+
+    vertical-align: top;
+
+    border-bottom: 1px solid rgba(148, 163, 184, .08);
+
+    font-size: .67rem;
+}
+
+.fuel-photo-ai-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.fuel-photo-ai-table tr.has-warning {
+    background: rgba(245, 186, 73, .035);
+}
+
+.fuel-photo-ai-line {
+    width: 35px;
+    font-weight: 850;
+}
+
+.fuel-photo-ai-input {
+    width: 100%;
+    min-height: 35px;
+
+    padding: 7px 8px;
+
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 7px;
+
+    background: rgba(15, 23, 42, .12);
+    color: inherit;
+
+    font: inherit;
+}
+
+.fuel-photo-ai-cell-note {
+    display: block;
+
+    margin-top: 4px;
+
+    color: var(--text-muted, #94a3b8);
+    font-size: .56rem;
+}
+
+.fuel-photo-ai-status-cell {
+    min-width: 190px;
+}
+
+.fuel-photo-ai-status-cell > strong {
+    font-size: .63rem;
+}
+
+.fuel-photo-ai-status-cell > small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-muted, #94a3b8);
+    font-size: .55rem;
+}
+
+.fuel-photo-ai-warnings {
+    margin-top: 4px;
+
+    display: grid;
+    gap: 3px;
+
+    color: #facc6b;
+    font-size: .55rem;
+    line-height: 1.3;
+}
+
+.fuel-photo-ai-footer {
+    margin-top: 13px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.fuel-photo-ai-safe-note {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    color: var(--text-muted, #94a3b8);
+    font-size: .64rem;
+}
+
+.fuel-photo-ai-safe-note i {
+    color: #86efac;
+}
+
+.fuel-photo-ai-footer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.fuel-photo-ai-spinner {
+    width: 13px;
+    height: 13px;
+
+    display: inline-block;
+
+    border: 2px solid rgba(255,255,255,.25);
+    border-top-color: currentColor;
+    border-radius: 50%;
+
+    animation: fuelPhotoAiSpin .7s linear infinite;
+}
+
+@keyframes fuelPhotoAiSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 900px) {
+    .fuel-photo-ai-overlay {
+        padding: 10px;
+    }
+
+    .fuel-photo-ai-modal {
+        width: 100%;
+        max-height: 97vh;
+    }
+
+    .fuel-photo-ai-upload {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-photo-ai-summary {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .fuel-photo-ai-analysis-bar,
+    .fuel-photo-ai-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fuel-photo-ai-footer-actions {
+        justify-content: flex-end;
+    }
+}
+
+/* ==========================================================
+   FOTO IA - REVISÃO OPERACIONAL V2
+   ========================================================== */
+
+.fuel-photo-ai-table tr.has-warning {
+    background: rgba(245, 158, 11, .075);
+    box-shadow: inset 3px 0 0 rgba(245, 158, 11, .85);
+}
+
+.fuel-photo-ai-table tr.has-critical {
+    background: rgba(239, 68, 68, .08);
+    box-shadow: inset 3px 0 0 rgba(239, 68, 68, .9);
+}
+
+.fuel-photo-ai-input.is-warning {
+    border-color: rgba(245, 158, 11, .75) !important;
+    background: rgba(245, 158, 11, .075) !important;
+}
+
+.fuel-photo-ai-input.is-critical {
+    border-color: rgba(239, 68, 68, .82) !important;
+    background: rgba(239, 68, 68, .08) !important;
+}
+
+.fuel-photo-ai-input.is-ok {
+    border-color: rgba(34, 197, 94, .30);
+}
+
+.fuel-photo-ai-distance {
+    min-width: 115px;
+}
+
+.fuel-photo-ai-distance strong {
+    display: block;
+    font-size: .70rem;
+}
+
+.fuel-photo-ai-distance small {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted, #94a3b8);
+    font-size: .54rem;
+    line-height: 1.25;
+}
+
+
+/* ---------- Tema claro oficial CHM ---------- */
+
+[data-theme="corporate-light"] .fuel-photo-ai-overlay {
+    background: rgba(15, 23, 42, .38);
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-modal {
+    background: #ffffff;
+    color: #172033;
+    border-color: #dbe2ea;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .18);
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-header {
+    border-bottom-color: #e5eaf0;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-header p,
+[data-theme="corporate-light"] .fuel-photo-ai-drop small,
+[data-theme="corporate-light"] .fuel-photo-ai-file-info span,
+[data-theme="corporate-light"] .fuel-photo-ai-analysis-bar span,
+[data-theme="corporate-light"] .fuel-photo-ai-meta,
+[data-theme="corporate-light"] .fuel-photo-ai-cell-note,
+[data-theme="corporate-light"] .fuel-photo-ai-status-cell > small,
+[data-theme="corporate-light"] .fuel-photo-ai-distance small,
+[data-theme="corporate-light"] .fuel-photo-ai-safe-note {
+    color: #64748b;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-close,
+[data-theme="corporate-light"] .fuel-photo-ai-analysis-bar,
+[data-theme="corporate-light"] .fuel-photo-ai-summary > div,
+[data-theme="corporate-light"] .fuel-photo-ai-table-wrap,
+[data-theme="corporate-light"] .fuel-photo-ai-preview-wrap,
+[data-theme="corporate-light"] .fuel-photo-ai-file-info {
+    border-color: #dfe5ec;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-drop {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-preview-wrap {
+    background: #f8fafc;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-summary > div {
+    background: #f8fafc;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-table th {
+    color: #64748b;
+    background: #f8fafc;
+    border-bottom-color: #dfe5ec;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-table td {
+    border-bottom-color: #edf0f4;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-input {
+    color: #172033;
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-input.is-warning {
+    background: #fffbeb !important;
+    border-color: #f59e0b !important;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-input.is-critical {
+    background: #fff1f2 !important;
+    border-color: #ef4444 !important;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-input.is-ok {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-table tr.has-warning {
+    background: #fffbeb;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-table tr.has-critical {
+    background: #fff1f2;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-warnings {
+    color: #a16207;
+}
+
+/* Foto IA - conferência de hodômetro */
+
+.fuel-photo-ai-distance-db {
+    display: block;
+    margin-top: 3px;
+
+    font-size: .61rem;
+    font-weight: 750;
+
+    color: var(--chm-theme-text-muted, #94a3b8);
+}
+
+.fuel-photo-ai-km-chm {
+    font-weight: 700;
+}
+
+[data-theme="corporate-light"] .fuel-photo-ai-distance-db {
+    color: #64748b;
+}
+
+.fuel-photo-ai-distance-sheet.is-invalid,
+.fuel-photo-ai-distance-db.is-invalid {
+    color: #fb7185 !important;
+    font-weight: 850;
+}
+
+[data-theme="corporate-light"]
+.fuel-photo-ai-distance-sheet.is-invalid,
+[data-theme="corporate-light"]
+.fuel-photo-ai-distance-db.is-invalid {
+    color: #dc2626 !important;
+}
+
+.fuel-photo-ai-km-reference {
+    display: block;
+    margin-top: 4px;
+
+    font-size: .54rem;
+    line-height: 1.3;
+}
+
+.fuel-photo-ai-km-reference.is-info {
+    color: #60a5fa;
+}
+
+.fuel-photo-ai-km-reference.is-warning {
+    color: #fbbf24;
+}
+
+.fuel-photo-ai-km-reference.is-ok {
+    display: none;
+}
+
+[data-theme="corporate-light"]
+.fuel-photo-ai-km-reference.is-info {
+    color: #2563eb;
+}
+
+[data-theme="corporate-light"]
+.fuel-photo-ai-km-reference.is-warning {
+    color: #a16207;
+}
+
+/* ==========================================================
+   IMPORTAÇÃO IA - PADRÃO VISUAL DO CHM
+   ========================================================== */
+
+.fuel-photo-ai-overlay {
+    z-index: 99999 !important;
+
+    background: rgba(8, 15, 28, .52) !important;
+    backdrop-filter: blur(4px);
+}
+
+.fuel-photo-ai-modal {
+    background: #344665 !important;
+    color: #f8fafc !important;
+
+    border: 1px solid rgba(148, 163, 184, .25) !important;
+    border-radius: 16px !important;
+
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, .30) !important;
+}
+
+
+/* Cabeçalho */
+
+.fuel-photo-ai-header {
+    background: #344665 !important;
+
+    border-bottom:
+        1px solid rgba(148, 163, 184, .18) !important;
+}
+
+.fuel-photo-ai-header h2 {
+    color: #ffffff !important;
+}
+
+.fuel-photo-ai-header p {
+    color: #cbd5e1 !important;
+}
+
+.fuel-photo-ai-kicker {
+    color: #ff7278 !important;
+}
+
+.fuel-photo-ai-close {
+    background: rgba(255, 255, 255, .025) !important;
+
+    border:
+        1px solid rgba(148, 163, 184, .24) !important;
+
+    color: #e2e8f0 !important;
+}
+
+.fuel-photo-ai-close:hover {
+    background: rgba(255, 255, 255, .07) !important;
+}
+
+
+/* Upload */
+
+.fuel-photo-ai-drop {
+    background: #30415f !important;
+
+    border:
+        1px dashed rgba(203, 213, 225, .28) !important;
+
+    color: #f8fafc !important;
+}
+
+.fuel-photo-ai-drop:hover {
+    background: #324562 !important;
+
+    border-color:
+        rgba(255, 114, 120, .48) !important;
+}
+
+.fuel-photo-ai-drop > i {
+    color: #ff7278 !important;
+}
+
+.fuel-photo-ai-drop small,
+.fuel-photo-ai-file-info span,
+.fuel-photo-ai-preview-empty,
+.fuel-photo-ai-analysis-bar span,
+.fuel-photo-ai-meta,
+.fuel-photo-ai-cell-note,
+.fuel-photo-ai-status-cell > small,
+.fuel-photo-ai-distance small,
+.fuel-photo-ai-safe-note {
+    color: #b8c4d6 !important;
+}
+
+.fuel-photo-ai-preview-wrap {
+    background: #30415f !important;
+
+    border:
+        1px solid rgba(148, 163, 184, .20) !important;
+}
+
+.fuel-photo-ai-file-info {
+    background: #30415f !important;
+
+    border:
+        1px solid rgba(148, 163, 184, .20) !important;
+
+    color: #f8fafc !important;
+}
+
+
+/* Barra de análise */
+
+.fuel-photo-ai-analysis-bar {
+    background: #30415f !important;
+
+    border:
+        1px solid rgba(148, 163, 184, .20) !important;
+}
+
+.fuel-photo-ai-analysis-bar strong {
+    color: #ffffff !important;
+}
+
+
+/* Cards-resumo */
+
+.fuel-photo-ai-summary > div {
+    background: #30415f !important;
+
+    border:
+        1px solid rgba(148, 163, 184, .20) !important;
+}
+
+.fuel-photo-ai-summary span {
+    color: #aebbd0 !important;
+}
+
+.fuel-photo-ai-summary strong {
+    color: #ffffff !important;
+}
+
+.fuel-photo-ai-summary strong.is-ok {
+    color: #78dfa4 !important;
+}
+
+.fuel-photo-ai-summary strong.is-warning {
+    color: #f8c966 !important;
+}
+
+
+/* Tabela */
+
+.fuel-photo-ai-table-wrap {
+    background: #344665 !important;
+
+    border:
+        1px solid rgba(148, 163, 184, .20) !important;
+}
+
+.fuel-photo-ai-table {
+    background: #344665 !important;
+    color: #f8fafc !important;
+}
+
+.fuel-photo-ai-table th {
+    background: #2f405d !important;
+
+    color: #c0cad9 !important;
+
+    border-bottom:
+        1px solid rgba(148, 163, 184, .20) !important;
+}
+
+.fuel-photo-ai-table td {
+    border-bottom:
+        1px solid rgba(148, 163, 184, .12) !important;
+}
+
+
+/* Inputs */
+
+.fuel-photo-ai-input {
+    background: #536989 !important;
+
+    color: #ffffff !important;
+
+    border:
+        1px solid rgba(177, 192, 216, .32) !important;
+}
+
+.fuel-photo-ai-input:focus {
+    outline: none !important;
+
+    border-color:
+        rgba(255, 255, 255, .75) !important;
+
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, .07) !important;
+}
+
+.fuel-photo-ai-input option {
+    background: #344665;
+    color: #ffffff;
+}
+
+
+/* Revisão */
+
+.fuel-photo-ai-table tr.has-warning {
+    background:
+        rgba(245, 158, 11, .075) !important;
+
+    box-shadow:
+        inset 3px 0 0 #f59e0b !important;
+}
+
+.fuel-photo-ai-table tr.has-critical {
+    background:
+        rgba(239, 68, 68, .09) !important;
+
+    box-shadow:
+        inset 3px 0 0 #ef4444 !important;
+}
+
+.fuel-photo-ai-input.is-warning {
+    background:
+        rgba(123, 94, 30, .30) !important;
+
+    border-color:
+        #f59e0b !important;
+}
+
+.fuel-photo-ai-input.is-critical {
+    background:
+        rgba(127, 29, 29, .28) !important;
+
+    border-color:
+        #ef4444 !important;
+}
+
+.fuel-photo-ai-input.is-ok {
+    background: #536989 !important;
+
+    border-color:
+        rgba(74, 222, 128, .46) !important;
+}
+
+.fuel-photo-ai-warnings {
+    color: #f4c761 !important;
+}
+
+
+/* KM */
+
+.fuel-photo-ai-distance-db,
+.fuel-photo-ai-km-chm {
+    color: #b8c4d6 !important;
+}
+
+.fuel-photo-ai-km-reference.is-info {
+    color: #8ec5ff !important;
+}
+
+.fuel-photo-ai-km-reference.is-warning {
+    color: #f4c761 !important;
+}
+
+.fuel-photo-ai-distance-sheet.is-invalid,
+.fuel-photo-ai-distance-db.is-invalid {
+    color: #ff8c96 !important;
+}
+
+
+/* Feedbacks */
+
+.fuel-photo-ai-feedback.is-loading {
+    background:
+        rgba(59, 130, 246, .08) !important;
+
+    border:
+        1px solid rgba(96, 165, 250, .28) !important;
+
+    color: #dbeafe !important;
+}
+
+.fuel-photo-ai-feedback.is-error {
+    background:
+        rgba(239, 68, 68, .09) !important;
+
+    border:
+        1px solid rgba(248, 113, 113, .28) !important;
+
+    color: #fecaca !important;
+}
+
+.fuel-photo-ai-feedback.is-success {
+    background:
+        rgba(34, 197, 94, .08) !important;
+
+    border:
+        1px solid rgba(74, 222, 128, .25) !important;
+
+    color: #bbf7d0 !important;
+}
+
+/* Foto IA - período operacional */
+
+.fuel-photo-ai-operation-fields {
+    display: grid;
+    grid-template-columns:
+        minmax(180px, 1.5fr)
+        minmax(120px, .75fr)
+        minmax(120px, .75fr);
+
+    gap: 10px;
+
+    margin: 12px 0;
+}
+
+.fuel-photo-ai-operation-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    padding: 10px 12px;
+
+    border:
+        1px solid rgba(148, 163, 184, .20);
+
+    border-radius: 10px;
+
+    background: #30415f;
+}
+
+.fuel-photo-ai-operation-field > span {
+    color: #b8c4d6;
+
+    font-size: .60rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.fuel-photo-ai-meta-input {
+    width: 100%;
+    min-height: 34px;
+
+    padding: 6px 9px;
+
+    border:
+        1px solid rgba(177, 192, 216, .32);
+
+    border-radius: 7px;
+
+    background: #536989;
+    color: #fff;
+
+    font: inherit;
+    font-weight: 700;
+}
+
+.fuel-photo-ai-meta-input:focus {
+    outline: none;
+
+    border-color:
+        rgba(255, 255, 255, .70);
+
+    box-shadow:
+        0 0 0 2px
+        rgba(255, 255, 255, .06);
+}
+
+.fuel-photo-ai-time-cell {
+    min-width: 88px;
+    width: 88px;
+}
+
+.fuel-photo-ai-time-input {
+    min-width: 78px !important;
+    padding-left: 7px !important;
+    padding-right: 5px !important;
+}
+
+@media (max-width: 900px) {
+    .fuel-photo-ai-operation-fields {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .fuel-photo-ai-operation-field:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Foto IA - seleção e saldo dos tanques */
+
+.fuel-photo-ai-tank-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 10px;
+
+    margin: 12px 0;
+}
+
+.fuel-photo-ai-tank-card {
+    padding: 12px;
+
+    border:
+        1px solid rgba(148, 163, 184, .20);
+
+    border-radius: 10px;
+
+    background: #30415f;
+}
+
+.fuel-photo-ai-tank-card[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-tank-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 10px;
+}
+
+.fuel-photo-ai-tank-heading div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fuel-photo-ai-tank-heading span {
+    color: #aebbd0;
+
+    font-size: .58rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.fuel-photo-ai-tank-heading strong {
+    color: #fff;
+
+    font-size: .76rem;
+}
+
+.fuel-photo-ai-tank-heading > i {
+    color: #ff7278;
+
+    font-size: 1rem;
+}
+
+.fuel-photo-ai-stock-summary {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 8px;
+
+    margin-top: 9px;
+
+    padding: 9px;
+
+    border:
+        1px solid rgba(148, 163, 184, .18);
+
+    border-radius: 8px;
+
+    background:
+        rgba(15, 23, 42, .12);
+}
+
+.fuel-photo-ai-stock-summary > span {
+    grid-column: 1 / -1;
+
+    color: #b8c4d6;
+
+    font-size: .63rem;
+}
+
+.fuel-photo-ai-stock-summary div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fuel-photo-ai-stock-summary div span {
+    color: #aebbd0;
+
+    font-size: .54rem;
+    font-weight: 750;
+
+    text-transform: uppercase;
+}
+
+.fuel-photo-ai-stock-summary div strong {
+    color: #fff;
+
+    font-size: .72rem;
+}
+
+.fuel-photo-ai-stock-summary p {
+    grid-column: 1 / -1;
+
+    margin: 2px 0 0;
+
+    font-size: .60rem;
+    font-weight: 750;
+}
+
+.fuel-photo-ai-stock-summary.is-ok {
+    border-color:
+        rgba(74, 222, 128, .28);
+}
+
+.fuel-photo-ai-stock-summary.is-ok p {
+    color: #86efac;
+}
+
+.fuel-photo-ai-stock-summary.is-critical {
+    border-color:
+        rgba(248, 113, 113, .42);
+
+    background:
+        rgba(127, 29, 29, .12);
+}
+
+.fuel-photo-ai-stock-summary.is-critical p,
+.fuel-photo-ai-stock-summary.is-critical strong {
+    color: #fca5a5;
+}
+
+@media (max-width: 900px) {
+    .fuel-photo-ai-tank-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Foto IA - confirmação rápida da placa/código */
+
+.fuel-photo-ai-plate-confirm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fuel-photo-ai-plate-confirm .fuel-photo-ai-input {
+    flex: 1 1 auto;
+}
+
+.fuel-photo-ai-confirm-btn {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, .28);
+
+    background: #30415f;
+    color: #dbe7ff;
+
+    transition:
+        transform .15s ease,
+        border-color .15s ease,
+        background .15s ease,
+        color .15s ease,
+        box-shadow .15s ease;
+
+    cursor: pointer;
+}
+
+.fuel-photo-ai-confirm-btn:hover {
+    border-color: #4ade80;
+    color: #4ade80;
+    background: #385070;
+    transform: translateY(-1px);
+}
+
+.fuel-photo-ai-confirm-btn:active {
+    transform: translateY(0);
+}
+
+.fuel-photo-ai-confirm-btn.is-confirmed {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, .16);
+    color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .12);
+}
+
+/* Foto IA - botão de confirmação mais discreto */
+
+.fuel-photo-ai-plate-confirm {
+    gap: 6px;
+}
+
+.fuel-photo-ai-confirm-btn {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+
+    border-radius: 8px;
+    padding: 0;
+
+    font-size: .82rem;
+}
+
+.fuel-photo-ai-confirm-btn i {
+    font-size: .82rem;
+}
+
+/* Foto IA - confirmação manual do Último KM */
+
+.fuel-photo-ai-km-confirm {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fuel-photo-ai-km-confirm .fuel-photo-ai-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fuel-photo-ai-km-confirm-btn {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+
+    border-radius: 7px;
+    font-size: .75rem;
+}
+
+.fuel-photo-ai-km-reference.is-confirmed {
+    color: #86efac !important;
+}
+
+/* Foto IA - confirmação final de lançamento */
+
+.fuel-photo-ai-launch-confirmation {
+    margin-top: 14px;
+    padding: 14px;
+
+    border:
+        1px solid rgba(74, 222, 128, .28);
+
+    border-radius: 12px;
+
+    background:
+        rgba(34, 197, 94, .06);
+}
+
+.fuel-photo-ai-launch-confirmation[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-launch-confirmation-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 14px;
+
+    margin-bottom: 12px;
+}
+
+.fuel-photo-ai-launch-confirmation-head div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fuel-photo-ai-launch-confirmation-head span {
+    color: #86efac;
+
+    font-size: .58rem;
+    font-weight: 800;
+
+    letter-spacing: .07em;
+}
+
+.fuel-photo-ai-launch-confirmation-head strong {
+    color: #fff;
+    font-size: .82rem;
+}
+
+.fuel-photo-ai-launch-confirmation-head > i {
+    color: #86efac;
+    font-size: 1.15rem;
+}
+
+.fuel-photo-ai-launch-summary {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 9px;
+}
+
+.fuel-photo-ai-launch-summary > div {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+
+    padding: 10px;
+
+    border:
+        1px solid rgba(148, 163, 184, .18);
+
+    border-radius: 9px;
+
+    background:
+        rgba(15, 23, 42, .10);
+}
+
+.fuel-photo-ai-launch-summary span {
+    color: #aebbd0;
+
+    font-size: .54rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+}
+
+.fuel-photo-ai-launch-summary strong {
+    color: #fff;
+    font-size: .82rem;
+}
+
+.fuel-photo-ai-launch-summary small {
+    color: #b8c4d6;
+    font-size: .58rem;
+}
+
+.fuel-photo-ai-launch-warning {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 10px;
+
+    color: #fcd34d;
+
+    font-size: .64rem;
+    font-weight: 650;
+}
+
+.fuel-photo-ai-launch-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+    .fuel-photo-ai-launch-summary {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+}
+
+/* Foto IA - confirmação consciente do Novo KM */
+
+.fuel-photo-ai-new-km-confirm {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.fuel-photo-ai-new-km-confirm .fuel-photo-ai-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fuel-photo-ai-new-km-confirm-btn {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+
+    padding: 0;
+
+    border-radius: 7px;
+    font-size: .72rem;
+}
+
+/* Foto IA - revisão humana obrigatória */
+
+.fuel-photo-ai-human-review {
+    margin: 10px 0;
+
+    padding: 10px 12px;
+
+    border:
+        1px solid rgba(251, 191, 36, .30);
+
+    border-radius: 10px;
+
+    background:
+        rgba(245, 158, 11, .06);
+}
+
+.fuel-photo-ai-human-review.is-complete {
+    border-color:
+        rgba(74, 222, 128, .32);
+
+    background:
+        rgba(34, 197, 94, .06);
+}
+
+.fuel-photo-ai-human-review-head {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+}
+
+.fuel-photo-ai-human-review-head > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fuel-photo-ai-human-review-head span {
+    color: #fcd34d;
+
+    font-size: .55rem;
+    font-weight: 800;
+
+    letter-spacing: .06em;
+}
+
+.fuel-photo-ai-human-review.is-complete
+.fuel-photo-ai-human-review-head span {
+    color: #86efac;
+}
+
+.fuel-photo-ai-human-review-head strong {
+    color: #fff;
+
+    font-size: .72rem;
+}
+
+.fuel-photo-ai-human-review-count {
+    color: #fcd34d;
+
+    font-size: .65rem;
+    font-weight: 800;
+}
+
+.fuel-photo-ai-human-review.is-complete
+.fuel-photo-ai-human-review-count {
+    color: #86efac;
+}
+
+.fuel-photo-ai-human-review-track {
+    height: 5px;
+
+    margin-top: 8px;
+
+    overflow: hidden;
+
+    border-radius: 999px;
+
+    background:
+        rgba(148, 163, 184, .18);
+}
+
+.fuel-photo-ai-human-review-track span {
+    display: block;
+
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #fbbf24;
+
+    transition: width .2s ease;
+}
+
+.fuel-photo-ai-human-review.is-complete
+.fuel-photo-ai-human-review-track span {
+    background: #4ade80;
+}
+
+.fuel-photo-ai-human-review > small {
+    display: block;
+
+    margin-top: 6px;
+
+    color: #b9c4d5;
+
+    font-size: .58rem;
+}
+
+/* ==========================================================
+   FOTO IA - CONFIRMAÇÃO ÚNICA POR LINHA
+   ========================================================== */
+
+/*
+ * As confirmações técnicas continuam no DOM,
+ * mas a interface apresenta apenas uma confirmação
+ * humana final por linha.
+ */
+.fuel-photo-ai-plate-confirm > .fuel-photo-ai-confirm-btn,
+.fuel-photo-ai-km-confirm > .fuel-photo-ai-confirm-btn,
+.fuel-photo-ai-new-km-confirm > .fuel-photo-ai-confirm-btn {
+    display: none !important;
+}
+
+.fuel-photo-ai-plate-confirm,
+.fuel-photo-ai-km-confirm,
+.fuel-photo-ai-new-km-confirm {
+    gap: 0;
+}
+
+.fuel-photo-ai-row-confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    margin-top: 7px;
+
+    min-height: 28px;
+    padding: 5px 9px;
+
+    border:
+        1px solid rgba(148, 163, 184, .28);
+
+    border-radius: 7px;
+
+    background:
+        rgba(15, 23, 42, .10);
+
+    color: #c9d4e5;
+
+    font-size: .58rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        border-color .15s ease,
+        background .15s ease,
+        color .15s ease;
+}
+
+.fuel-photo-ai-row-confirm-btn:hover {
+    border-color:
+        rgba(74, 222, 128, .65);
+
+    color: #86efac;
+
+    background:
+        rgba(34, 197, 94, .07);
+}
+
+.fuel-photo-ai-row-confirm-btn.is-confirmed {
+    border-color:
+        rgba(74, 222, 128, .55);
+
+    background:
+        rgba(34, 197, 94, .10);
+
+    color: #86efac;
+}
+
+.fuel-photo-ai-row-confirm-btn i {
+    font-size: .72rem;
+}
+
+/* Foto IA - alerta de possível duplicidade */
+
+.fuel-photo-ai-duplicate-warning {
+    margin-top: 11px;
+    padding: 11px 12px;
+
+    border:
+        1px solid rgba(251, 191, 36, .38);
+
+    border-radius: 10px;
+
+    background:
+        rgba(245, 158, 11, .08);
+}
+
+.fuel-photo-ai-duplicate-warning[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-duplicate-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    color: #fcd34d;
+}
+
+.fuel-photo-ai-duplicate-title > i {
+    margin-top: 2px;
+}
+
+.fuel-photo-ai-duplicate-title div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fuel-photo-ai-duplicate-title strong {
+    font-size: .7rem;
+}
+
+.fuel-photo-ai-duplicate-title span {
+    font-size: .58rem;
+    color: #d9c88e;
+}
+
+.fuel-photo-ai-duplicate-warning ul {
+    margin: 9px 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.fuel-photo-ai-duplicate-warning li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    padding: 6px 0;
+
+    border-bottom:
+        1px solid rgba(251, 191, 36, .13);
+}
+
+.fuel-photo-ai-duplicate-warning li strong {
+    color: #fff;
+    font-size: .62rem;
+}
+
+.fuel-photo-ai-duplicate-warning li span {
+    color: #cbd5e1;
+    font-size: .58rem;
+}
+
+.fuel-photo-ai-duplicate-confirm {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    cursor: pointer;
+
+    color: #fef3c7;
+    font-size: .62rem;
+    font-weight: 700;
+}
+
+.fuel-photo-ai-duplicate-confirm input {
+    width: 15px;
+    height: 15px;
+
+    accent-color: #f59e0b;
+}
+
+/* Foto IA - ações do rodapé alinhadas à direita */
+
+.fuel-photo-ai-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.fuel-photo-ai-footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+
+    margin-left: auto;
+}
+
+/* Foto IA - duplicidade indicada diretamente na linha */
+
+.fuel-photo-ai-duplicate-row-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+
+    margin-top: 4px;
+
+    color: #fcd34d;
+
+    font-size: .56rem;
+    line-height: 1.25;
+}
+
+.fuel-photo-ai-duplicate-row-warning > i {
+    flex: 0 0 auto;
+    margin-top: 1px;
+
+    color: #fbbf24;
+}
+
+.fuel-photo-ai-duplicate-row-warning span {
+    display: block;
+}
+
+.fuel-photo-ai-duplicate-row-warning strong {
+    color: #fde68a;
+    font-weight: 800;
+}
+
+/* Foto IA - feedback de validação no rodapé */
+
+.fuel-photo-ai-footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 14px;
+
+    width: 100%;
+}
+
+.fuel-photo-ai-footer-feedback {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fuel-photo-ai-footer-feedback .fuel-photo-ai-feedback {
+    margin: 0 !important;
+    width: 100%;
+}
+
+.fuel-photo-ai-footer-actions {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    margin-left: auto;
+}
+
+/* Quando não houver mensagem, não reservar espaço visual */
+.fuel-photo-ai-footer-feedback:has(
+    .fuel-photo-ai-feedback[hidden]
+) {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .fuel-photo-ai-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fuel-photo-ai-footer-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

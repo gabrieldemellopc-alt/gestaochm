@@ -41,6 +41,8 @@ class FuelFilling extends Model
         'cancelled_at',
         'cancelled_by',
         'cancel_reason',
+        'replaces_filling_id',
+        'replaced_by_filling_id',
     ];
 
     protected $casts = [
@@ -109,6 +111,16 @@ class FuelFilling extends Model
     public function vehicleReadingLogs()
     {
         return $this->hasMany(VehicleUpdateLog::class);
+    }
+
+    public function replacesFilling()
+    {
+        return $this->belongsTo(self::class, 'replaces_filling_id');
+    }
+
+    public function replacedByFilling()
+    {
+        return $this->belongsTo(self::class, 'replaced_by_filling_id');
     }
     public function supplier(){return $this->belongsTo(Supplier::class);}
 

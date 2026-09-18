@@ -67,7 +67,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -91,7 +91,7 @@ class DashboardController extends Controller
 
 
 
-    
+
 
 
 
@@ -99,7 +99,7 @@ class DashboardController extends Controller
 
 
 
-    
+
 
 
 
@@ -107,7 +107,7 @@ class DashboardController extends Controller
 
 
 
-    
+
 
 
 
@@ -115,7 +115,7 @@ class DashboardController extends Controller
 
 
 
-    
+
 
 
 
@@ -123,7 +123,7 @@ class DashboardController extends Controller
 
 
 
-    
+
 
 
 
@@ -131,7 +131,7 @@ class DashboardController extends Controller
 
 
 
-    
+
 
 
 
@@ -139,7 +139,7 @@ class DashboardController extends Controller
 
 
 
-    
+
 
 
 
@@ -236,7 +236,7 @@ class DashboardController extends Controller
         }
         $vehicles = Vehicle::with([
 
-        
+
 
 
 
@@ -248,7 +248,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -256,7 +256,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -264,7 +264,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -272,7 +272,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -284,7 +284,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -296,7 +296,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -304,7 +304,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -312,7 +312,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -328,8 +328,279 @@ class DashboardController extends Controller
 
         ->get();
 
-        $vehicles->each(function (Vehicle $vehicle): void {
-            $vehicle->setAttribute('icon_url', asset('images/'.Vehicle::iconForType($vehicle->type)));
+        $canViewDashboardMaintenanceCosts = app(
+            \App\Services\Permissions\ProfilePermissionService::class
+        )->allows(
+            auth()->user(),
+            'maintenance.view_costs',
+            [
+                'division_id' => session('active_division_id'),
+                'location_id' => $activeLocation->id,
+                'module' => 'fleet',
+            ]
+        );
+
+        $vehicles->each(function (Vehicle $vehicle) use ($canViewDashboardMaintenanceCosts): void {
+            $vehicle->setAttribute(
+                'icon_url',
+                asset('images/'.Vehicle::iconForType($vehicle->type))
+            );
+
+            $fuelTrend = \App\Models\FuelFilling::query()
+                ->where('vehicle_id', $vehicle->id)
+                ->whereNull('cancelled_at')
+                ->whereNotNull('quantity_liters')
+                ->orderByDesc('filled_at')
+                ->limit(10)
+                ->get([
+                    'id',
+                    'filled_at',
+                    'quantity_liters',
+                ])
+                ->sortBy('filled_at')
+                ->values()
+                ->map(fn ($filling) => [
+                    'id' => $filling->id,
+                    'date' => $filling->filled_at?->format('d/m'),
+                    'datetime' => $filling->filled_at?->format('d/m/Y H:i'),
+                    'liters' => round((float) $filling->quantity_liters, 3),
+                ])
+                ->values()
+                ->all();
+
+            $kmReadings = \App\Models\FuelFilling::query()
+                ->where('vehicle_id', $vehicle->id)
+                ->whereNull('cancelled_at')
+                ->whereNotNull('vehicle_km')
+                ->orderByDesc('filled_at')
+                ->limit(11)
+                ->get([
+                    'id',
+                    'filled_at',
+                    'vehicle_km',
+                ])
+                ->sortBy('filled_at')
+                ->values();
+
+            $kmTrend = $kmReadings
+                ->map(function ($filling, $index) use ($kmReadings) {
+
+                    if ($index === 0) {
+                        return null;
+                    }
+
+                    $previous = $kmReadings->get($index - 1);
+
+                    $currentKm = (float) $filling->vehicle_km;
+                    $previousKm = (float) $previous->vehicle_km;
+
+                    $distance = $currentKm - $previousKm;
+
+                    /*
+                     * Regressões não entram como "rodagem".
+                     * Elas já são tratadas pela Central de Consistência.
+                     */
+                    if ($distance < 0) {
+                        return null;
+                    }
+
+                    return [
+                        'id' => $filling->id,
+                        'label' => optional($filling->filled_at)->format('d/m'),
+                        'value' => $distance,
+                        'formatted_value' => number_format(
+                            $distance,
+                            0,
+                            ',',
+                            '.'
+                        ) . ' km',
+                        'date' => optional($filling->filled_at)
+                            ->format('d/m/Y H:i'),
+                        'current_km' => $currentKm,
+                        'previous_km' => $previousKm,
+
+                        /*
+                         * Duração real entre as duas leituras.
+                         * Usamos minutos para não perder intervalos
+                         * menores que 24 horas.
+                         */
+                        'interval_days' => max(
+                            $previous->filled_at->diffInMinutes(
+                                $filling->filled_at
+                            ) / 1440,
+                            1 / 1440
+                        ),
+                    ];
+
+                })
+                ->filter()
+                ->values()
+                ->take(-10)
+                ->values();
+            /*
+             * Evolução KM/L
+             *
+             * Cada ponto compara um abastecimento com o anterior:
+             *
+             * (KM atual - KM anterior) / litros do abastecimento atual
+             *
+             * Leituras regressivas, zeradas ou marcadas como suspeitas
+             * não entram no gráfico.
+             */
+            $efficiencyReadings = \App\Models\FuelFilling::query()
+                ->where('vehicle_id', $vehicle->id)
+                ->whereNull('cancelled_at')
+                ->whereNotNull('vehicle_km')
+                ->whereNotNull('quantity_liters')
+                ->where('quantity_liters', '>', 0)
+                ->orderByDesc('filled_at')
+                ->limit(11)
+                ->get([
+                    'id',
+                    'filled_at',
+                    'vehicle_km',
+                    'vehicle_km_status',
+                    'quantity_liters',
+                ])
+                ->sortBy('filled_at')
+                ->values();
+
+            $efficiencyTrend = $efficiencyReadings
+                ->map(function ($filling, $index) use ($efficiencyReadings) {
+
+                    if ($index === 0) {
+                        return null;
+                    }
+
+                    $previous = $efficiencyReadings->get($index - 1);
+
+                    if (
+                        $filling->vehicle_km_status === 'suspect'
+                        || $previous->vehicle_km_status === 'suspect'
+                    ) {
+                        return null;
+                    }
+
+                    $currentKm = (float) $filling->vehicle_km;
+                    $previousKm = (float) $previous->vehicle_km;
+
+                    $distance = $currentKm - $previousKm;
+                    $liters = (float) $filling->quantity_liters;
+
+                    if ($distance <= 0 || $liters <= 0) {
+                        return null;
+                    }
+
+                    $efficiency = $distance / $liters;
+
+                    return [
+                        'id' => $filling->id,
+
+                        'label' => optional($filling->filled_at)
+                            ->format('d/m'),
+
+                        'date' => optional($filling->filled_at)
+                            ->format('d/m/Y H:i'),
+
+                        'value' => round($efficiency, 4),
+
+                        'formatted_value' => number_format(
+                            $efficiency,
+                            2,
+                            ',',
+                            '.'
+                        ) . ' km/L',
+
+                        'distance' => $distance,
+                        'liters' => $liters,
+
+                        'current_km' => $currentKm,
+                        'previous_km' => $previousKm,
+                    ];
+
+                })
+                ->filter()
+                ->values()
+                ->take(-10)
+                ->values();
+
+            $vehicle->setAttribute('fuel_trend', $fuelTrend);
+            $vehicle->setAttribute('km_trend', $kmTrend);
+            $vehicle->setAttribute('efficiency_trend', $efficiencyTrend);
+
+            $vehicle->setAttribute(
+                'recent_maintenances_modal',
+                $vehicle->maintenances
+                    ->filter(fn ($maintenance) =>
+                        $maintenance->cancelled_at === null
+                        && $maintenance->deleted_at === null
+                    )
+                    ->sortByDesc(fn ($maintenance) =>
+                        $maintenance->started_at
+                        ?? $maintenance->created_at
+                    )
+                    ->take(3)
+                    ->map(function ($maintenance) use ($vehicle, $canViewDashboardMaintenanceCosts) {
+
+                        $reasonLabel = match ($maintenance->reason) {
+                            'corrective' => 'Corretiva',
+                            'preventive' => 'Preventiva',
+                            'inspection' => 'Inspeção',
+                            'accident' => 'Sinistro',
+                            default => filled($maintenance->reason)
+                                ? ucfirst(str_replace('_', ' ', $maintenance->reason))
+                                : 'Manutenção',
+                        };
+
+                        $workflowLabel = match ($maintenance->workflow_status) {
+                            'open' => 'Em aberto',
+                            'closed' => 'Encerrada',
+                            'cancelled' => 'Cancelada',
+                            default => ucfirst((string) $maintenance->workflow_status),
+                        };
+
+                        $serviceStatuses = \App\Services\MaintenanceService::serviceStatuses();
+
+                        return [
+                            'id' => $maintenance->id,
+
+                            'name' => $maintenance->procedure?->name
+                                ?: 'Ordem de manutenção #'.$maintenance->id,
+
+                            'reason' => $reasonLabel,
+
+                            'workflow_status' => $maintenance->workflow_status,
+                            'workflow_label' => $workflowLabel,
+
+                            'service_status' => $maintenance->service_status,
+                            'service_status_label' =>
+                                $serviceStatuses[$maintenance->service_status]
+                                ?? null,
+
+                            'started_at' => optional(
+                                $maintenance->started_at
+                                ?? $maintenance->created_at
+                            )->format('d/m/Y H:i'),
+
+                            'finished_at' => optional(
+                                $maintenance->finished_at
+                            )->format('d/m/Y H:i'),
+
+                            'total_cost' => $canViewDashboardMaintenanceCosts
+                                ? (float) ($maintenance->total_cost ?? 0)
+                                : null,
+
+                            'can_view_cost' => $canViewDashboardMaintenanceCosts,
+
+                            'url' => route(
+                                'vehicles.maintenance.show',
+                                [$vehicle->id, $maintenance->id]
+                            ),
+                        ];
+                    })
+                    ->values()
+                    ->all()
+            );
         });
 
 
@@ -528,7 +799,7 @@ class DashboardController extends Controller
 
                 });
 
-            
+
 
             // if ($vehicle->open_maintenance) {
 
@@ -546,7 +817,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -562,7 +833,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -570,7 +841,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -578,7 +849,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -586,7 +857,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -606,7 +877,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -620,7 +891,7 @@ class DashboardController extends Controller
 
                 ->first();
 
-        
+
 
 
 
@@ -644,7 +915,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -668,7 +939,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -680,7 +951,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -810,7 +1081,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -834,7 +1105,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -858,7 +1129,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -870,7 +1141,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -886,7 +1157,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -912,19 +1183,19 @@ class DashboardController extends Controller
 
             ->first();
 
-        
+
 
             $statusChangedDate = $openDowntime?->started_at?->format('d/m/Y')
 
                 ?? $vehicle->status_changed_at?->format('d/m/Y');
 
-            
+
 
             $statusChangedTime = $openDowntime?->started_at?->format('H:i')
 
                 ?? $vehicle->status_changed_at?->format('H:i');
 
-            
+
 
             $currentStatusStartedAt =
 
@@ -976,7 +1247,7 @@ class DashboardController extends Controller
 
             $downTimeSubtext = '';
 
-            
+
 
             if ($currentStatusMinutes > 0) {
 
@@ -986,7 +1257,7 @@ class DashboardController extends Controller
 
                 $minutes = $currentStatusMinutes % 60;
 
-            
+
 
                 $downTimeText = $days > 0
 
@@ -998,41 +1269,115 @@ class DashboardController extends Controller
 
                         : $minutes.' minuto'.($minutes > 1 ? 's' : ''));
 
-            
+
 
                 $downTimeSubtext = $hours.'h '.$minutes.'min';
 
             }
 
-    
 
-            $totalDowntimeMinutes = \App\Models\VehicleDowntimePeriod::query()
 
+            /*
+             * TEMPO PARADO
+             *
+             * Regra operacional:
+             * soma o tempo efetivamente transcorrido em manutenções válidas.
+             *
+             * - manutenção encerrada: started_at -> finished_at
+             * - manutenção aberta: started_at -> agora
+             * - canceladas/apagadas não entram
+             * - períodos anteriores ao início operacional são limitados
+             * - intervalos sobrepostos são fundidos para não contar tempo em dobro
+             */
+            $operationStartedAt = $vehicle->operation_started_at
+                ? $vehicle->operation_started_at->copy()->startOfDay()
+                : null;
+
+            $maintenanceIntervals = \App\Models\MaintenanceRecord::query()
                 ->where('vehicle_id', $vehicle->id)
+                ->whereNull('cancelled_at')
+                ->whereNull('deleted_at')
+                ->whereNotNull('started_at')
+                ->orderBy('started_at')
+                ->get([
+                    'id',
+                    'started_at',
+                    'finished_at',
+                    'workflow_status',
+                ])
+                ->map(function ($maintenance) use ($operationStartedAt) {
 
-                ->get()
+                    $start = $maintenance->started_at?->copy();
 
-                ->sum(function ($period) {
+                    if (! $start) {
+                        return null;
+                    }
 
-                    $end = $period->ended_at ?? now();
+                    $end = $maintenance->finished_at
+                        ? $maintenance->finished_at->copy()
+                        : now();
 
-            
+                    if ($operationStartedAt && $end->lte($operationStartedAt)) {
+                        return null;
+                    }
 
-                    return $period->started_at
+                    if ($operationStartedAt && $start->lt($operationStartedAt)) {
+                        $start = $operationStartedAt->copy();
+                    }
 
-                        ? $period->started_at->diffInMinutes($end)
+                    if ($end->lte($start)) {
+                        return null;
+                    }
 
-                        : 0;
+                    return [
+                        'start' => $start,
+                        'end' => $end,
+                    ];
+                })
+                ->filter()
+                ->values();
 
-                });
+            $mergedMaintenanceIntervals = collect();
 
-            
+            foreach ($maintenanceIntervals as $interval) {
+
+                if ($mergedMaintenanceIntervals->isEmpty()) {
+                    $mergedMaintenanceIntervals->push($interval);
+                    continue;
+                }
+
+                $lastIndex = $mergedMaintenanceIntervals->count() - 1;
+                $last = $mergedMaintenanceIntervals->get($lastIndex);
+
+                if ($interval['start']->lte($last['end'])) {
+
+                    if ($interval['end']->gt($last['end'])) {
+                        $last['end'] = $interval['end'];
+                        $mergedMaintenanceIntervals->put($lastIndex, $last);
+                    }
+
+                    continue;
+                }
+
+                $mergedMaintenanceIntervals->push($interval);
+            }
+
+            $totalDowntimeMinutes = (int) $mergedMaintenanceIntervals
+                ->sum(
+                    fn ($interval) =>
+                        floor(
+                            $interval['start']->diffInMinutes($interval['end'])
+                        )
+                );
+
+
+
 
             $totalDowntimeText = '--';
 
             $totalDowntimeSubtext = '';
 
-            
+
 
             if ($totalDowntimeMinutes > 0) {
 
@@ -1042,7 +1387,7 @@ class DashboardController extends Controller
 
                 $minutes = $totalDowntimeMinutes % 60;
 
-            
+
 
                 $totalDowntimeText = $days > 0
 
@@ -1054,13 +1399,13 @@ class DashboardController extends Controller
 
                         : $minutes.' minuto'.($minutes > 1 ? 's' : ''));
 
-            
+
 
                 $totalDowntimeSubtext = $hours.'h '.$minutes.'min acumulados';
 
             }
 
-            
+
 
             $totalOperationalMinutes = $vehicle->operation_started_at
 
@@ -1068,19 +1413,19 @@ class DashboardController extends Controller
 
                 : 0;
 
-            
+
 
             $availabilityText = '--';
 
             $availabilitySubtext = '';
 
-            
+
 
             if ($totalOperationalMinutes > 0) {
 
                 $availableMinutes = max($totalOperationalMinutes - $totalDowntimeMinutes, 0);
 
-            
+
 
                 $availabilityRate = round(
 
@@ -1090,7 +1435,7 @@ class DashboardController extends Controller
 
                 );
 
-            
+
 
                 $availableDays = floor($availableMinutes / 1440);
 
@@ -1098,7 +1443,7 @@ class DashboardController extends Controller
 
                 $availableRemainingMinutes = $availableMinutes % 60;
 
-            
+
 
                 $availabilityText = $availableDays > 0
 
@@ -1110,19 +1455,19 @@ class DashboardController extends Controller
 
                         : $availableRemainingMinutes.' minuto'.($availableRemainingMinutes > 1 ? 's' : ''));
 
-            
+
 
                 $availabilitySubtext = $availableHours.'h '.$availableRemainingMinutes.'min ('.$availabilityRate.'%)';
 
             }
 
-            
+
 
             $vehicle->status_changed_date = $statusChangedDate;
 
             $vehicle->status_changed_time = $statusChangedTime;
 
-            
+
 
             $vehicle->down_time_text = $downTimeText;
 
@@ -1134,19 +1479,19 @@ class DashboardController extends Controller
 
             $vehicle->current_status_started_at = $currentStatusStartedAt;
 
-            
+
 
             $vehicle->total_downtime_text = $totalDowntimeText;
 
             $vehicle->total_downtime_subtext = $totalDowntimeSubtext;
 
-            
+
 
             $vehicle->availability_text = $availabilityText;
 
             $vehicle->availability_subtext = $availabilitySubtext;
 
-            
+
 
             $vehicle->open_downtime_reason = $openDowntime?->reason;
 
@@ -1226,7 +1571,7 @@ class DashboardController extends Controller
 
             ->get();
 
-        
+
 
 
 
@@ -1544,7 +1889,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1604,7 +1949,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1620,7 +1965,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1628,7 +1973,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1636,7 +1981,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1664,7 +2009,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1696,7 +2041,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1728,7 +2073,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1748,7 +2093,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1756,7 +2101,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1764,7 +2109,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1796,7 +2141,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
 
 
@@ -1832,7 +2177,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1848,7 +2193,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1856,7 +2201,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1864,7 +2209,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1892,7 +2237,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1900,7 +2245,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1912,7 +2257,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 
@@ -1967,7 +2312,7 @@ class DashboardController extends Controller
 
 
 
-        
+
 
         /*
 
@@ -2070,7 +2415,7 @@ class DashboardController extends Controller
 
 
 
-            
+
 
 
 

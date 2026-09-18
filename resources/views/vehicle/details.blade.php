@@ -35,7 +35,17 @@
 
 
 
-<div class="vehicle-details-page">
+<div
+    class="vehicle-details-page"
+    x-data="{
+        readingQuickOpen: false,
+        readingTab: 'update',
+        statusQuickOpen: false,
+        kmHistoryOpen: false,
+        currentStatus: @js($vehicle->operational_status),
+        selectedStatus: @js($vehicle->operational_status)
+    }"
+>
 
 
     {{-- HERO --}}
@@ -240,23 +250,14 @@
                 <span>Editar</span>
 
             </a>
-            @if($canCorrectReadings)
-                <button type="button" class="vehicle-center-action" onclick="openReadingCorrectionModal()">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                    <span>Corrigir KM/HR</span>
-                </button>
-            @endif
-            <button
-                id="vehicleReportModalButton"
-                type="button"
+
+            <a
+                href="{{ route('vehicles.history', $vehicle) }}"
                 class="vehicle-center-action"
-                aria-haspopup="dialog"
-                aria-expanded="false"
-                onclick="openVehicleReportModal()"
             >
-                <i class="bi bi-file-earmark-text"></i>
-                <span>Relat&oacute;rio</span>
-            </button>
+                <i class="bi bi-clock-history"></i>
+                <span>Histórico</span>
+            </a>
 
 
 
@@ -267,482 +268,383 @@
     </div>
 
     {{-- KPI BAR --}}
-    <section class="vehicle-kpi-strip">
 
-        <div class="vehicle-kpi-card">
+{{-- PAINEL OPERACIONAL COMPACTO --}}
+
+@php
+    $alertsCollection = collect($vehicle->alerts ?? []);
+    $activeAlertsCount = $alertsCollection->count();
+
+    $fuelValues = collect($fuelTrend ?? [])->pluck('liters')->map(fn ($v) => (float) $v);
+    $fuelMax = max((float) ($fuelValues->max() ?? 0), 1);
+
+    $kmValues = collect($kmDeltaTrend ?? [])->pluck('delta')->map(fn ($v) => (float) $v);
+    $kmMax = max((float) ($kmValues->max() ?? 0), 1);
+
+    $makeSvgPoints = function ($items, $field, $maxValue) {
+        $count = count($items);
+
+        if ($count < 2) {
+            return '';
+        }
+
+        return collect($items)->values()->map(function ($item, $index) use ($field, $maxValue, $count) {
+            $x = 18 + (($index / max($count - 1, 1)) * 664);
+            $value = (float) data_get($item, $field, 0);
+            $y = 164 - (($value / max($maxValue, 1)) * 126);
+
+            return round($x, 1).','.round($y, 1);
+        })->implode(' ');
+    };
+
+    $fuelPoints = $makeSvgPoints($fuelTrend ?? collect(), 'liters', $fuelMax);
+    $kmPoints = $makeSvgPoints($kmDeltaTrend ?? collect(), 'delta', $kmMax);
+@endphp
+
+<section class="vehicle-panel-kpi-strip">
+
+    <div class="vehicle-panel-kpi">
+        <span class="vehicle-panel-kpi-icon"><i class="bi bi-speedometer2"></i></span>
+        <div>
             <small>Hodômetro</small>
-            <strong>{{ number_format($vehicle->current_km ?? 0, 0, ',', '.') }} km</strong>
+            <strong>{{ number_format((float) ($vehicle->current_km ?? 0), 0, ',', '.') }} km</strong>
         </div>
+    </div>
 
-        <div class="vehicle-kpi-card">
+    <div class="vehicle-panel-kpi">
+        <span class="vehicle-panel-kpi-icon"><i class="bi bi-clock"></i></span>
+        <div>
             <small>Horímetro</small>
-            <strong>{{ $vehicle->current_hours ?? 0 }} h</strong>
+            <strong>{{ number_format((float) ($vehicle->current_hours ?? 0), 0, ',', '.') }} h</strong>
+        </div>
+    </div>
+
+    <div class="vehicle-panel-kpi vehicle-panel-kpi--status">
+        <span class="vehicle-panel-kpi-icon">
+            <i class="{{ chm_icon($statusConfig['icon']) }}"></i>
+        </span>
+
+        <div class="vehicle-panel-kpi-content">
+            <small>Status operacional</small>
+            <strong>{{ $statusConfig['label'] }}</strong>
         </div>
 
-        <div class="vehicle-kpi-card">
+        @if($vehicle->operational_status === 'maintenance')
+            <span
+                class="vehicle-panel-kpi-action is-disabled"
+                title="Status controlado pela manutenção aberta."
+            >
+                <i class="bi bi-lock"></i>
+            </span>
+        @else
+            <button
+                type="button"
+                class="vehicle-panel-kpi-action"
+                @click="
+                    selectedStatus = currentStatus;
+                    statusQuickOpen = true;
+                "
+            >
+                Alterar
+            </button>
+        @endif
+    </div>
+
+    <div class="vehicle-panel-kpi">
+        <span class="vehicle-panel-kpi-icon"><i class="bi bi-exclamation-triangle"></i></span>
+        <div>
+            <small>Alertas ativos</small>
+            <strong>{{ $activeAlertsCount }}</strong>
+        </div>
+    </div>
+
+    <div class="vehicle-panel-kpi vehicle-panel-kpi--split">
+        <div>
+            <small>Disponibilidade</small>
+            <strong>
+                {{ $availabilityRate !== null
+                    ? number_format((float) $availabilityRate, 1, ',', '.').' %'
+                    : '--' }}
+            </strong>
+        </div>
+
+        <div>
             <small>Tempo parado</small>
             <strong>{{ $totalDowntimeText ?? '--' }}</strong>
-
-            @if($totalDowntimeSubtext)
-                <span>{{ $totalDowntimeSubtext }}</span>
-            @endif
         </div>
-
-        <div class="vehicle-kpi-card">
-            <small>Disponível</small>
-            <strong>{{ $availabilityText ?? '--' }}</strong>
-
-            @if($availabilitySubtext)
-                <span>{{ $availabilitySubtext }}</span>
-            @endif
-        </div>
-
-        <div class="vehicle-kpi-card {{
-            $vehicle->alert_status === 'danger'
-                ? 'danger'
-                : ($vehicle->alert_status === 'warning' ? 'warning' : 'success')
-        }}">
-            <small>Alertas</small>
-
-            <strong>
-                @if($vehicle->alert_status === 'danger')
-                    Crítico
-                @elseif($vehicle->alert_status === 'warning')
-                    Atenção
-                @else
-                    OK
-                @endif
-            </strong>
-
-            <span>
-                {{ count($vehicle->alerts ?? []) }}
-                {{ count($vehicle->alerts ?? []) === 1 ? 'alerta ativo' : 'alertas ativos' }}
-            </span>
-        </div>
-
-    </section>
-
-    {{-- BODY --}}
-{{-- DASHBOARD BODY --}}
-<div class="vehicle-dash-layout">
-
-    {{-- LINHA 1: CENTRAL + KM + STATUS --}}
-    <div class="vehicle-dash-top-row">
-
-        {{-- CENTRAL --}}
-        <section class="vehicle-center-card vehicle-dash-actions-card">
-            <div class="vehicle-center-card-header">
-                <div>
-                    <small>Ações rápidas</small>
-                    <h3>Central do veículo</h3>
-                </div>
-                <i class="bi bi-lightning-charge"></i>
-            </div>
-
-            <div class="vehicle-dash-actions-grid">
-                @if($maintenanceRestrictionReason)
-                    <button type="button" class="vehicle-dash-action is-disabled" disabled aria-disabled="true" title="Manutenção não permitida para veículos agregados nesta unidade.">
-                        <i class="bi bi-lock"></i>
-                        <span>Manutenção indisponível</span>
-                    </button>
-                @else
-                    <a href="{{ route('vehicle.maintenance.index', $vehicle) }}" class="vehicle-dash-action">
-                        <i class="bi bi-wrench-adjustable"></i>
-                        <span>Manutenções</span>
-                    </a>
-                @endif
-
-                <a href="{{ route('vehicles.tires.index', $vehicle) }}" class="vehicle-dash-action">
-                    <i class="bi bi-circle"></i>
-                    <span>Pneus</span>
-                </a>
-
-                @if($fuelEnabled)
-                    <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}" class="vehicle-dash-action">
-                        <i class="bi bi-fuel-pump"></i>
-                        <span>Combustível</span>
-                    </a>
-                @endif
-
-                <a href="{{ route('vehicles.history', $vehicle) }}" class="vehicle-dash-action">
-                    <i class="bi bi-clock-history"></i>
-                    <span>Histórico</span>
-                </a>
-            </div>
-        </section>
-
-        {{-- KM / HORÍMETRO --}}
-        <section class="vehicle-center-card vehicle-dash-km-card">
-            <div class="vehicle-center-card-header">
-                <div>
-                    <small>Atualização rápida</small>
-                    <h3>KM e Horímetro</h3>
-                </div>
-                <i class="bi bi-speedometer2"></i>
-            </div>
-
-            <div class="vehicle-center-fields">
-                <form
-                    method="POST"
-                    action="{{ route('vehicles.update-km', $vehicle) }}"
-                    class="vehicle-center-field"
-                    onsubmit="return confirmLargeKmUpdate(this, {{ (float) ($vehicle->current_km ?? 0) }});"
-                >
-                    @csrf
-                    <input type="hidden" name="km_reading_confirmed" value="0">
-
-                    <label>Hodômetro atual</label>
-
-                    <div class="vehicle-center-input-row">
-                        <input
-                            type="number"
-                            name="km"
-                            value="{{ $vehicle->current_km ?? 0 }}"
-                            min="0"
-                            step="1"
-                        >
-
-                        <span>KM</span>
-
-                        <button type="submit">
-                            Atualizar
-                        </button>
-                    </div>
-                </form>
-
-                <form
-                    method="POST"
-                    action="{{ route('vehicles.update-hours', $vehicle) }}"
-                    class="vehicle-center-field"
-                    onsubmit="return confirmLargeHoursUpdate(this, {{ (float) ($vehicle->current_hours ?? 0) }});"
-                >
-                    @csrf
-                    <input type="hidden" name="hours_reading_confirmed" value="0">
-
-                    <label>Horímetro atual</label>
-
-                    <div class="vehicle-center-input-row">
-                        <input
-                            type="number"
-                            name="hours"
-                            value="{{ $vehicle->current_hours ?? 0 }}"
-                            min="0"
-                            step="1"
-                        >
-
-                        <span>H</span>
-
-                        <button type="submit">
-                            Atualizar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        {{-- STATUS --}}
-        <section
-            class="vehicle-center-card vehicle-dash-status-card"
-            x-data="{
-                editing: false,
-                currentStatus: @js($vehicle->operational_status),
-                selectedStatus: @js($vehicle->operational_status)
-            }"
-        >           
-            <div class="vehicle-center-card-header">
-                <div>
-                    <small>Situação do veículo</small>
-                    <h3>Status operacional</h3>
-                </div>
-
-                <div class="vehicle-dash-status-badge status-{{ $vehicle->operational_status }}">
-                    <i class="{{ chm_icon($statusConfig['icon']) }}"></i>
-                    {{ $statusConfig['label'] }}
-                </div>
-            </div>
-
-
-           <div class="vehicle-dash-status-metrics is-two">
-                <div>
-                    <small>Desde</small>
-
-                    <strong>
-                        {{ $vehicle->status_changed_at?->format('d/m/Y') ?? '--' }}
-                    </strong>
-
-                    @if($vehicle->status_changed_at)
-                        <span>{{ $vehicle->status_changed_at->format('H:i') }}</span>
-                    @else
-                        <span>Última alteração de status</span>
-                    @endif
-                </div>
-
-                <div>
-                    <small>Tempo neste status</small>
-
-                    <strong>{{ $downTimeText ?? '--' }}</strong>
-
-                    @if($downTimeSubtext)
-                        <span>{{ $downTimeSubtext }}</span>
-                    @else
-                        <span>Desde a última alteração</span>
-                    @endif
-                </div>
-            </div>
-            @if($openDowntime?->reason)
-                <div class="vehicle-dash-status-reason">
-                    {{ $openDowntime->reason }}
-                </div>
-            @endif
-            @if($vehicle->operational_status === 'maintenance')
-            
-                <div class="vehicle-dash-maintenance-lock">
-            
-                    <div class="vehicle-dash-maintenance-lock-text">
-            
-                        <i class="bi bi-lock"></i>
-            
-                        <div>
-                            <strong>
-                                Status controlado pela manutenção
-                            </strong>
-            
-                            <p>
-                                Para alterar o status deste veículo, encerre primeiro
-                                a ordem de manutenção aberta.
-                            </p>
-                        </div>
-            
-                    </div>
-            
-                    <a
-                        href="{{ route('vehicle.maintenance.index', $vehicle) }}"
-                        class="vehicle-dash-maintenance-link"
-                    >
-                        <i class="bi bi-wrench-adjustable"></i>
-            
-                        Ir para manutenção
-                    </a>
-            
-                </div>
-            
-            @else
-            
-                <button
-                    type="button"
-                    class="vehicle-dash-status-action-btn"
-                    @click="
-                        selectedStatus = currentStatus;
-                        editing = true;
-                    "
-                >
-                    <i class="bi bi-pencil"></i>
-            
-                    Alterar status
-                </button>
-            
-            @endif
-
-            
-            @if($vehicle->operational_status !== 'maintenance')
-        
-            <div
-                x-show="editing"
-                x-cloak
-                class="vehicle-status-modal-backdrop"
-                @click.self="editing = false"
-            >
-                <div class="vehicle-status-modal">
-                    <div class="vehicle-status-modal-header">
-                        <div>
-                            <small>Situação do veículo</small>
-                            <h3>Alterar status operacional</h3>
-                        </div>
-
-                        <button type="button" @click="editing = false">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </div>
-
-                    <form
-                        method="POST"
-                        action="{{ route('vehicles.operational-status.update', $vehicle) }}"
-                        class="vehicle-status-modal-form"
-                    >
-                        @csrf
-
-                        <div class="form-group">
-                            <label>Status</label>
-
-                            <select
-                                name="operational_status"
-                                class="form-input"
-                                x-model="selectedStatus"
-                            >
-                                <option value="operational">Operacional</option>
-                                <option value="inactive">Inativo</option>
-                                <option value="inoperant">Inoperante</option>
-                                <option value="accident">Sinistro</option>
-                                <option value="support">Socorro</option>
-                                <option value="testing">Testes</option>
-                                <option value="transfer">Transferência</option>
-                                <option value="transferred">Transferido</option>
-                            </select>
-                        </div>
-
-                        <div
-                            class="form-group"
-                            x-show="selectedStatus !== currentStatus"
-                            x-cloak
-                        >
-                            <label>
-                                Motivo / observação
-                            </label>
-                        
-                            <textarea
-                                name="status_reason"
-                                rows="4"
-                                class="form-input"
-                                :required="selectedStatus !== currentStatus"
-                                placeholder="Informe o motivo da alteração de status..."
-                            ></textarea>
-                        </div>
-
-                        <div class="vehicle-status-modal-actions">
-                            <button type="button" @click="editing = false">
-                                Cancelar
-                            </button>
-
-                            <button
-                                type="submit"
-                                :disabled="selectedStatus === currentStatus"
-                            >
-                                Salvar status
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            @endif
-
-        </section>
-
     </div>
 
-    {{-- LINHA 2: ALERTAS + MANUTENÇÕES --}}
-    <div class="vehicle-dash-mid-row">
+</section>
 
-        {{-- ALERTAS --}}
-        <section class="vehicle-center-card vehicle-dash-alerts-card">
-            <div class="vehicle-center-card-header">
-                <div>
-                    <small>Monitoramento</small>
-                    <h3>Alertas do veículo</h3>
-                </div>
-                <i class="bi bi-exclamation-triangle"></i>
-            </div>
+{{-- AÇÕES RÁPIDAS --}}
+<nav class="vehicle-panel-actions">
 
-            @if(empty($vehicle->alerts))
-                <div class="vehicle-center-empty">
-                    <i class="bi bi-check-circle"></i>
-                    <strong>Nenhum alerta ativo</strong>
-                    <p>Este veículo não possui pendências no momento.</p>
-                </div>
-            @else
-                <div class="vehicle-center-alert-list">
-                    @foreach($vehicle->alerts as $alert)
-                        <div class="vehicle-center-alert {{ $alert['status'] ?? 'warning' }}">
-                            <i class="bi bi-exclamation-triangle"></i>
+    <button type="button" @click="readingTab = 'update'; readingQuickOpen = true" >
+        <i class="bi bi-speedometer2"></i>
+        <span>Atualizar KM/HR</span>
+    </button>
 
-                            <div>
-                                <strong>{{ $alert['message'] ?? 'Alerta operacional' }}</strong>
+    @if($fuelEnabled)
+        <a href="{{ route('fuel.tanks.index', ['fuel_modal' => 'filling', 'fuel_vehicle_id' => $vehicle->id]) }}">
+            <i class="bi bi-fuel-pump"></i>
+            <span>Lançar abastecimento</span>
+        </a>
+    @endif
 
-                                @if(!empty($alert['procedure']))
-                                    <small>{{ $alert['procedure'] }}</small>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </section>
+    <a href="{{ route('vehicles.tires.index', $vehicle) }}">
+        <i class="bi bi-record-circle"></i>
+        <span>Pneus</span>
+    </a>
 
-        {{-- MANUTENÇÕES --}}
-        <section class="vehicle-center-card vehicle-dash-maintenance-card">
-            <div class="vehicle-center-card-header">
-                <div>
-                    <small>Manutenção</small>
-                    <h3>Últimos registros</h3>
-                </div>
-                <i class="bi bi-wrench-adjustable"></i>
-            </div>
+    @if($maintenanceRestrictionReason)
+        <span
+            class="is-disabled"
+            title="{{ $maintenanceRestrictionReason }}"
+        >
+            <i class="bi bi-lock"></i>
+            <span>Manutenções</span>
+        </span>
+    @else
+        <a href="{{ route('vehicle.maintenance.index', $vehicle) }}">
+            <i class="bi bi-wrench-adjustable"></i>
+            <span>Manutenções</span>
+        </a>
 
-            @if($maintenanceRestrictionReason)
-                <div class="vehicle-dash-maintenance-unavailable">
-                    <strong><i class="bi bi-lock"></i> Indisponível</strong>
-                    <p>{{ $maintenanceRestrictionReason }}</p>
-                </div>
-            @endif
+    <button
+        id="vehicleReportModalButton"
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        onclick="openVehicleReportModal()"
+    >
+        <i class="bi bi-file-earmark-text"></i>
+        <span>Relatório</span>
+    </button>
 
-            @if($vehicle->maintenances->isEmpty())
-                <div class="vehicle-center-empty">
-                    <i class="bi bi-clipboard-x"></i>
-                    <strong>Nenhuma manutenção registrada</strong>
-                    <p>Os lançamentos de manutenção aparecerão aqui.</p>
-                </div>
-            @else
-                <div class="vehicle-center-maintenance-list">
-                    @foreach($vehicle->maintenances->take(6) as $maintenance)
-                        <div class="vehicle-center-maintenance">
-                            <div>
-                                <strong>{{ $maintenance->procedure?->name ?? 'Procedimento' }}</strong>
-                                <small>{{ $maintenance->reason ?? 'Preventiva' }}</small>
-                            </div>
+    @endif
 
-                            <span>{{ optional($maintenance->performed_at)->format('d/m/Y') ?? '--' }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </section>
+</nav>
 
-    </div>
+{{-- GRÁFICOS --}}
+<div class="vehicle-panel-charts">
 
-    {{-- LINHA 3: HISTÓRICO --}}
-    <section class="vehicle-center-card vehicle-dash-timeline-card">
-        <div class="vehicle-center-card-header">
+    <section class="vehicle-center-card vehicle-panel-chart-card">
+        <header class="vehicle-panel-section-head">
             <div>
-                <small>Histórico recente</small>
-                <h3>Atualizações operacionais</h3>
+                <small>Combustível</small>
+                <h3>Últimos abastecimentos</h3>
+                <span>Volume em litros</span>
             </div>
-            <i class="bi bi-clock"></i>
-        </div>
 
-        @if($vehicle->updateLogs->isEmpty())
-            <div class="vehicle-center-empty">
-                <i class="bi bi-inbox"></i>
-                <strong>Nenhuma atualização registrada</strong>
-                <p>Alterações de KM, HR e status aparecerão aqui.</p>
+            <a href="{{ route('fuel.fillings.history', ['vehicle_id' => $vehicle->id]) }}">
+                Ver todos <i class="bi bi-arrow-right"></i>
+            </a>
+        </header>
+
+        @if(($fuelTrend ?? collect())->count() >= 2)
+            <div class="vehicle-native-chart">
+                <svg viewBox="0 0 700 190" preserveAspectRatio="none" aria-label="Volume dos últimos abastecimentos">
+                    <line x1="18" y1="164" x2="682" y2="164" class="vehicle-chart-axis"/>
+                    <line x1="18" y1="122" x2="682" y2="122" class="vehicle-chart-grid"/>
+                    <line x1="18" y1="80" x2="682" y2="80" class="vehicle-chart-grid"/>
+                    <line x1="18" y1="38" x2="682" y2="38" class="vehicle-chart-grid"/>
+
+                    <polyline
+                        points="{{ $fuelPoints }}"
+                        class="vehicle-chart-line vehicle-chart-line--fuel"
+                    />
+
+                    @foreach($fuelTrend as $index => $point)
+                        @php
+                            $x = 18 + (($index / max($fuelTrend->count() - 1, 1)) * 664);
+                            $y = 164 - (((float) $point['liters'] / $fuelMax) * 126);
+                        @endphp
+
+                        <circle
+                            cx="{{ round($x, 1) }}"
+                            cy="{{ round($y, 1) }}"
+                            r="4"
+                            class="vehicle-chart-dot vehicle-chart-dot--fuel"
+                            data-chart-point
+                            data-chart-kind="fuel"
+                            data-chart-date="{{ $point['datetime'] }}"
+                            data-chart-value="{{ number_format($point['liters'], 3, ',', '.') }} L"
+                            tabindex="0"
+                        ></circle>
+                    @endforeach
+                </svg>
+
+                <div class="vehicle-chart-tooltip" data-chart-tooltip>
+                    <small data-tooltip-date></small>
+                    <strong data-tooltip-value></strong>
+                </div>
+
+                <div class="vehicle-chart-labels">
+                    @foreach($fuelTrend as $point)
+                        <span>{{ $point['date'] }}</span>
+                    @endforeach
+                </div>
             </div>
         @else
-            <div class="vehicle-dash-timeline-line">
-                @foreach($vehicle->updateLogs->take(6) as $log)
-                    <div class="vehicle-dash-timeline-item">
-                        <div class="vehicle-dash-timeline-dot"></div>
+            <div class="vehicle-panel-chart-empty">
+                <i class="bi bi-graph-up"></i>
+                <span>Dados insuficientes para gerar a tendência de abastecimentos.</span>
+            </div>
+        @endif
+    </section>
 
-                        <strong>
-                            @if($log->type === 'km')
-                                Hodômetro
-                            @elseif($log->type === 'hours')
-                                Horímetro
-                            @else
-                                Status
+    <section class="vehicle-center-card vehicle-panel-chart-card">
+        <header class="vehicle-panel-section-head">
+            <div>
+                <small>Rodagem</small>
+                <h3>Rodagem entre leituras</h3>
+                <span>Diferença de KM entre hodômetros válidos</span>
+            </div>
+
+            <button type="button" @click="kmHistoryOpen = true">
+                Ver todos <i class="bi bi-arrow-right"></i>
+            </button>
+        </header>
+
+        @if(($kmDeltaTrend ?? collect())->count() >= 2)
+            <div class="vehicle-native-chart">
+                <svg viewBox="0 0 700 190" preserveAspectRatio="none" aria-label="Rodagem entre leituras válidas">
+                    <line x1="18" y1="164" x2="682" y2="164" class="vehicle-chart-axis"/>
+                    <line x1="18" y1="122" x2="682" y2="122" class="vehicle-chart-grid"/>
+                    <line x1="18" y1="80" x2="682" y2="80" class="vehicle-chart-grid"/>
+                    <line x1="18" y1="38" x2="682" y2="38" class="vehicle-chart-grid"/>
+
+                    <polyline
+                        points="{{ $kmPoints }}"
+                        class="vehicle-chart-line vehicle-chart-line--km"
+                    />
+
+                    @foreach($kmDeltaTrend as $index => $point)
+                        @php
+                            $x = 18 + (($index / max($kmDeltaTrend->count() - 1, 1)) * 664);
+                            $y = 164 - (((float) $point['delta'] / $kmMax) * 126);
+                        @endphp
+
+                        <circle
+                            cx="{{ round($x, 1) }}"
+                            cy="{{ round($y, 1) }}"
+                            r="4"
+                            class="vehicle-chart-dot vehicle-chart-dot--km"
+                            data-chart-point
+                            data-chart-kind="km"
+                            data-chart-date="{{ $point['datetime'] }}"
+                            data-chart-value="{{ number_format($point['delta'], 1, ',', '.') }} km"
+                            data-chart-reading="{{ number_format($point['reading'], 0, ',', '.') }} km"
+                            tabindex="0"
+                        ></circle>
+                    @endforeach
+                </svg>
+
+                <div class="vehicle-chart-tooltip" data-chart-tooltip>
+                    <small data-tooltip-date></small>
+                    <strong data-tooltip-value></strong>
+                    <span data-tooltip-extra></span>
+                </div>
+
+                <div class="vehicle-chart-labels">
+                    @foreach($kmDeltaTrend as $point)
+                        <span>{{ $point['date'] }}</span>
+                    @endforeach
+                </div>
+            </div>
+        @else
+            <div class="vehicle-panel-chart-empty">
+                <i class="bi bi-graph-up"></i>
+                <span>Dados insuficientes para calcular a rodagem entre leituras.</span>
+            </div>
+        @endif
+    </section>
+
+</div>
+
+{{-- MONITORAMENTO + MANUTENÇÕES --}}
+<div class="vehicle-panel-secondary-grid">
+
+    <section class="vehicle-center-card vehicle-panel-compact-card">
+        <header class="vehicle-panel-section-head">
+            <div>
+                <small>Monitoramento</small>
+                <h3>Alertas do veículo</h3>
+            </div>
+
+            @if($activeAlertsCount > 3)
+                <span class="vehicle-panel-more-count">
+                    +{{ $activeAlertsCount - 3 }}
+                </span>
+            @endif
+        </header>
+
+        @if($activeAlertsCount === 0)
+            <div class="vehicle-panel-empty-compact">
+                <i class="bi bi-check-circle"></i>
+                <span>Nenhum alerta ativo.</span>
+            </div>
+        @else
+            <div class="vehicle-panel-alert-list">
+                @foreach($alertsCollection->take(3) as $alert)
+                    <div class="vehicle-panel-alert-row {{ $alert['status'] ?? 'warning' }}">
+                        <span class="vehicle-panel-alert-dot"></span>
+
+                        <div>
+                            <strong>{{ $alert['message'] ?? 'Alerta operacional' }}</strong>
+
+                            @if(!empty($alert['procedure']))
+                                <small>{{ $alert['procedure'] }}</small>
                             @endif
-                        </strong>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
 
-                        <span>{{ $log->old_value ?? '--' }} ➔ {{ $log->new_value }}</span>
+    <section class="vehicle-center-card vehicle-panel-compact-card">
+        <header class="vehicle-panel-section-head">
+            <div>
+                <small>Manutenção</small>
+                <h3>Manutenções recentes</h3>
+            </div>
 
-                        <small>{{ optional($log->created_at)->format('d/m/Y H:i') }}</small>
+            @unless($maintenanceRestrictionReason)
+                <a href="{{ route('vehicle.maintenance.index', $vehicle) }}">
+                    Ver todas <i class="bi bi-arrow-right"></i>
+                </a>
+            @endunless
+        </header>
+
+        @if($maintenanceRestrictionReason)
+            <div class="vehicle-panel-restriction">
+                <i class="bi bi-lock"></i>
+                <span>{{ $maintenanceRestrictionReason }}</span>
+            </div>
+        @elseif(($recentMaintenances ?? collect())->isEmpty())
+            <div class="vehicle-panel-empty-compact">
+                <i class="bi bi-clipboard"></i>
+                <span>Nenhuma manutenção registrada.</span>
+            </div>
+        @else
+            <div class="vehicle-panel-maintenance-list">
+                @foreach($recentMaintenances as $maintenance)
+                    <div class="vehicle-panel-maintenance-row">
+                        <div>
+                            <strong>{{ $maintenance->procedure?->name ?? 'Procedimento' }}</strong>
+                            <small>{{ $maintenance->reason ?? 'Manutenção' }}</small>
+                        </div>
+
+                        <span>
+                            {{
+                                optional(
+                                    $maintenance->performed_at
+                                    ?? $maintenance->started_at
+                                    ?? $maintenance->created_at
+                                )->format('d/m/Y') ?? '--'
+                            }}
+                        </span>
                     </div>
                 @endforeach
             </div>
@@ -751,22 +653,255 @@
 
 </div>
 
-</div>
-
-
-@if($canCorrectReadings)
-<div id="readingCorrectionModal" class="reading-correction-overlay" style="display:none;" onclick="if(event.target === this) closeReadingCorrectionModal()">
-    <div class="reading-correction-modal" role="dialog" aria-modal="true" aria-labelledby="readingCorrectionTitle">
-        <div class="reading-correction-header">
+{{-- MODAL HISTÓRICO DE RODAGEM --}}
+<div
+    class="vehicle-panel-modal-overlay"
+    x-show="kmHistoryOpen"
+    x-cloak
+    @click.self="kmHistoryOpen = false"
+>
+    <div class="vehicle-panel-modal vehicle-panel-modal--km-history">
+        <header>
             <div>
-                <small>Ação administrativa</small>
-                <h3 id="readingCorrectionTitle">Corrigir KM/horímetro</h3>
-                <p>Use somente para corrigir uma leitura lançada incorretamente.</p>
+                <small>Histórico operacional</small>
+                <h3>Rodagem entre leituras</h3>
             </div>
-            <button type="button" onclick="closeReadingCorrectionModal()"><i class="bi bi-x-lg"></i></button>
+
+            <button type="button" @click="kmHistoryOpen = false">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </header>
+
+        <div class="vehicle-km-history-filters">
+            <label>
+                Data inicial
+                <input
+                    type="date"
+                    id="vehicleKmHistoryStart"
+                    onchange="filterVehicleKmHistory()"
+                >
+            </label>
+
+            <label>
+                Data final
+                <input
+                    type="date"
+                    id="vehicleKmHistoryEnd"
+                    onchange="filterVehicleKmHistory()"
+                >
+            </label>
+
+            <button type="button" onclick="clearVehicleKmHistoryFilters()">
+                <i class="bi bi-x-circle"></i>
+                Limpar
+            </button>
+
+            <span id="vehicleKmHistoryCount">
+                {{ $kmReadingHistory->count() }}
+                {{ $kmReadingHistory->count() === 1 ? 'leitura' : 'leituras' }}
+            </span>
         </div>
 
-        <form method="POST" enctype="multipart/form-data" action="{{ route('vehicles.reading-correction.store', $vehicle) }}" class="reading-correction-form" id="readingCorrectionForm">
+        <div class="vehicle-km-history-table-wrap">
+            <table class="vehicle-km-history-table">
+                <thead>
+                    <tr>
+                        <th>Data / hora</th>
+                        <th>Leitura</th>
+                        <th>Rodagem</th>
+                        <th>Origem</th>
+                        <th>Responsável</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @forelse($kmReadingHistory as $reading)
+                        <tr
+                            data-km-reading-row
+                            data-date="{{ $reading['date'] }}"
+                        >
+                            <td>{{ $reading['datetime'] }}</td>
+
+                            <td>
+                                <strong>
+                                    {{ number_format($reading['reading'], 0, ',', '.') }} km
+                                </strong>
+                            </td>
+
+                            <td>
+                                @if($reading['delta'] !== null)
+                                    +{{ number_format($reading['delta'], 0, ',', '.') }} km
+                                @else
+                                    —
+                                @endif
+                            </td>
+
+                            <td>
+                                <strong>{{ $reading['source'] }}</strong>
+
+                                @if($reading['observation'])
+                                    <small>{{ $reading['observation'] }}</small>
+                                @endif
+                            </td>
+
+                            <td>{{ $reading['user'] ?: '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="vehicle-km-history-empty">
+                                Nenhuma leitura válida registrada.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <div
+                id="vehicleKmHistoryEmptyFilter"
+                class="vehicle-km-history-empty"
+                hidden
+            >
+                Nenhuma leitura encontrada no período selecionado.
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL KM / HR --}}
+<div
+    class="vehicle-panel-modal-overlay"
+    x-show="readingQuickOpen"
+    x-cloak
+    @click.self="readingQuickOpen = false; readingTab = 'update'"
+>
+    <div class="vehicle-panel-modal vehicle-panel-modal--reading">
+        <header>
+            <div>
+                <small>Leituras do veículo</small>
+                <h3>KM e Horímetro</h3>
+            </div>
+
+            <button
+                type="button"
+                @click="readingQuickOpen = false; readingTab = 'update'"
+            >
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </header>
+
+        <div class="vehicle-reading-tabs">
+            <button
+                type="button"
+                :class="{ 'is-active': readingTab === 'update' }"
+                @click="readingTab = 'update'"
+            >
+                <i class="bi bi-speedometer2"></i>
+                Atualizar
+            </button>
+
+            @if($canCorrectReadings)
+                <button
+                    type="button"
+                    :class="{ 'is-active': readingTab === 'correct' }"
+                    @click="readingTab = 'correct'"
+                >
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Corrigir
+                </button>
+            @endif
+        </div>
+
+        <div
+            x-show="readingTab === 'update'"
+            class="vehicle-reading-update-tab"
+        >
+            <div class="vehicle-reading-current-summary">
+                <div>
+                    <small>Hodômetro atual</small>
+                    <strong>{{ number_format((float) ($vehicle->current_km ?? 0), 0, ',', '.') }} km</strong>
+                </div>
+
+                <div>
+                    <small>Horímetro atual</small>
+                    <strong>{{ number_format((float) ($vehicle->current_hours ?? 0), 1, ',', '.') }} h</strong>
+                </div>
+            </div>
+
+            <div class="vehicle-panel-reading-grid">
+                <form
+                    method="POST"
+                    action="{{ route('vehicles.update-km', $vehicle) }}"
+                    onsubmit="return confirmLargeKmUpdate(this, {{ (float) ($vehicle->current_km ?? 0) }});"
+                >
+                    @csrf
+                    <input type="hidden" name="km_reading_confirmed" value="0">
+
+                    <label>Hodômetro atual</label>
+
+                    <div class="vehicle-panel-input-unit">
+                        <input
+                            type="number"
+                            name="km"
+                            value="{{ $vehicle->current_km ?? 0 }}"
+                            min="0"
+                            step="1"
+                            required
+                        >
+                        <span>KM</span>
+                    </div>
+
+                    <button type="submit">
+                        Atualizar hodômetro
+                    </button>
+                </form>
+
+                <form
+                    method="POST"
+                    action="{{ route('vehicles.update-hours', $vehicle) }}"
+                    onsubmit="return confirmLargeHoursUpdate(this, {{ (float) ($vehicle->current_hours ?? 0) }});"
+                >
+                    @csrf
+                    <input type="hidden" name="hours_reading_confirmed" value="0">
+
+                    <label>Horímetro atual</label>
+
+                    <div class="vehicle-panel-input-unit">
+                        <input
+                            type="number"
+                            name="hours"
+                            value="{{ $vehicle->current_hours ?? 0 }}"
+                            min="0"
+                            step="1"
+                            required
+                        >
+                        <span>H</span>
+                    </div>
+
+                    <button type="submit">
+                        Atualizar horímetro
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        @if($canCorrectReadings)
+            <div
+                x-show="readingTab === 'correct'"
+                x-cloak
+                class="vehicle-reading-correction-tab"
+            >
+                <div class="vehicle-reading-correction-intro">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <div>
+                        <strong>Correção administrativa</strong>
+                        <span>
+                            Utilize somente para substituir uma leitura lançada incorretamente.
+                            A operação permanece registrada para auditoria.
+                        </span>
+                    </div>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" action="{{ route('vehicles.reading-correction.store', $vehicle) }}" class="reading-correction-form" id="readingCorrectionForm">
             @csrf
             <div class="reading-correction-body">
             <div class="reading-correction-current">
@@ -832,13 +967,96 @@
             </div>
 
             <div class="reading-correction-actions">
-                <button type="button" onclick="closeReadingCorrectionModal()">Cancelar</button>
+                <button
+                    type="button"
+                    @click="readingQuickOpen = false; readingTab = 'update'"
+                >
+                    Cancelar
+                </button>
                 <button type="button" id="readingCorrectionSubmit" disabled onclick="previewReadingCorrection()">Revisar impactos</button>
             </div>
+        </form>
+            </div>
+        @endif
+    </div>
+</div>
+
+{{-- MODAL STATUS --}}
+@if($vehicle->operational_status !== 'maintenance')
+<div
+    class="vehicle-panel-modal-overlay"
+    x-show="statusQuickOpen"
+    x-cloak
+    @click.self="statusQuickOpen = false"
+>
+    <div class="vehicle-panel-modal vehicle-panel-modal--small">
+        <header>
+            <div>
+                <small>Situação do veículo</small>
+                <h3>Alterar status operacional</h3>
+            </div>
+
+            <button type="button" @click="statusQuickOpen = false">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </header>
+
+        <form
+            method="POST"
+            action="{{ route('vehicles.operational-status.update', $vehicle) }}"
+            class="vehicle-panel-status-form"
+        >
+            @csrf
+
+            <label>Status</label>
+
+            <select
+                name="operational_status"
+                x-model="selectedStatus"
+                required
+            >
+                <option value="operational">Operacional</option>
+                <option value="inactive">Inativo</option>
+                <option value="inoperant">Inoperante</option>
+                <option value="accident">Sinistro</option>
+                <option value="support">Socorro</option>
+                <option value="testing">Testes</option>
+                <option value="transfer">Transferência</option>
+                <option value="transferred">Transferido</option>
+            </select>
+
+            <label x-show="selectedStatus !== currentStatus">
+                Motivo / observação
+            </label>
+
+            <textarea
+                x-show="selectedStatus !== currentStatus"
+                x-cloak
+                name="status_reason"
+                rows="3"
+                :required="selectedStatus !== currentStatus"
+                placeholder="Informe o motivo da alteração..."
+            ></textarea>
+
+            <footer>
+                <button type="button" @click="statusQuickOpen = false">
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="primary"
+                    :disabled="selectedStatus === currentStatus"
+                >
+                    Salvar status
+                </button>
+            </footer>
         </form>
     </div>
 </div>
 @endif
+
+
 
 <div
     id="vehicleReportModal"
@@ -998,7 +1216,7 @@
             ? impacts.map(item => `<article class="reading-correction-impact-item"><div><strong>${escapeReadingCorrectionHtml(item.type)}</strong><small>${escapeReadingCorrectionHtml(item.date)}</small></div><b>${escapeReadingCorrectionHtml(item.value)}</b><span>${escapeReadingCorrectionHtml(item.reference)}</span></article>`).join('')
             : '<div class="reading-correction-impact-state is-success"><i class="bi bi-check-circle"></i><div><strong>Nenhum lançamento potencialmente afetado</strong><p>Nenhum lançamento acima da nova leitura foi encontrado.</p></div></div>';
         target.innerHTML = `<label id="readingCorrectionConfirmation" class="reading-correction-impact-header"><input type="checkbox" name="impact_confirmed" value="1" required><span class="reading-correction-impact-copy"><strong>Lançamentos potencialmente afetados</strong><p>Esses registros não serão alterados automaticamente, mas podem precisar de conferência.</p><span class="reading-correction-warning-copy"><strong>Estou ciente dos impactos desta correção.</strong><small>Registros relacionados poderão ter seus indicadores recalculados, sem exclusão do histórico original.</small></span></span><span class="reading-correction-impact-badge">${impacts.length} registro${impacts.length === 1 ? '' : 's'}</span></label><div class="reading-correction-impact-list">${impactItems}</div>`;
-        
+
         const confirmation = document.querySelector('#readingCorrectionConfirmation input');
         if (confirmation) confirmation.addEventListener('change', updateReadingSubmit);
         readingImpactState = 'reviewed';
@@ -1157,3 +1375,132 @@
 </script>
 
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.vehicle-native-chart').forEach(function (chart) {
+        const tooltip = chart.querySelector('[data-chart-tooltip]');
+        const points = chart.querySelectorAll('[data-chart-point]');
+
+        if (!tooltip || !points.length) {
+            return;
+        }
+
+        const tooltipDate = tooltip.querySelector('[data-tooltip-date]');
+        const tooltipValue = tooltip.querySelector('[data-tooltip-value]');
+        const tooltipExtra = tooltip.querySelector('[data-tooltip-extra]');
+
+        function showTooltip(point) {
+            points.forEach(function (item) {
+                item.classList.remove('is-active');
+            });
+
+            point.classList.add('is-active');
+
+            const chartRect = chart.getBoundingClientRect();
+            const pointRect = point.getBoundingClientRect();
+
+            const centerX =
+                pointRect.left - chartRect.left + (pointRect.width / 2);
+
+            const centerY =
+                pointRect.top - chartRect.top + (pointRect.height / 2);
+
+            if (tooltipDate) {
+                tooltipDate.textContent = point.dataset.chartDate || '';
+            }
+
+            if (tooltipValue) {
+                tooltipValue.textContent = point.dataset.chartValue || '';
+            }
+
+            if (tooltipExtra) {
+                const reading = point.dataset.chartReading || '';
+
+                tooltipExtra.textContent = reading
+                    ? 'Hodômetro: ' + reading
+                    : '';
+
+                tooltipExtra.style.display = reading ? 'block' : 'none';
+            }
+
+            tooltip.style.left = centerX + 'px';
+            tooltip.style.top = centerY + 'px';
+
+            tooltip.classList.add('is-visible');
+        }
+
+        function hideTooltip(point) {
+            point.classList.remove('is-active');
+            tooltip.classList.remove('is-visible');
+        }
+
+        points.forEach(function (point) {
+            point.addEventListener('mouseenter', function () {
+                showTooltip(point);
+            });
+
+            point.addEventListener('mouseleave', function () {
+                hideTooltip(point);
+            });
+
+            point.addEventListener('focus', function () {
+                showTooltip(point);
+            });
+
+            point.addEventListener('blur', function () {
+                hideTooltip(point);
+            });
+        });
+    });
+});
+</script>
+@endpush
+
+@push('scripts')
+<script>
+function filterVehicleKmHistory() {
+    const start = document.getElementById('vehicleKmHistoryStart')?.value || '';
+    const end = document.getElementById('vehicleKmHistoryEnd')?.value || '';
+    const rows = Array.from(document.querySelectorAll('[data-km-reading-row]'));
+    const empty = document.getElementById('vehicleKmHistoryEmptyFilter');
+    const count = document.getElementById('vehicleKmHistoryCount');
+
+    let visible = 0;
+
+    rows.forEach(function (row) {
+        const date = row.dataset.date || '';
+
+        const matchesStart = !start || date >= start;
+        const matchesEnd = !end || date <= end;
+        const show = matchesStart && matchesEnd;
+
+        row.style.display = show ? '' : 'none';
+
+        if (show) {
+            visible++;
+        }
+    });
+
+    if (empty) {
+        empty.hidden = visible !== 0 || rows.length === 0;
+    }
+
+    if (count) {
+        count.textContent =
+            visible + (visible === 1 ? ' leitura' : ' leituras');
+    }
+}
+
+function clearVehicleKmHistoryFilters() {
+    const start = document.getElementById('vehicleKmHistoryStart');
+    const end = document.getElementById('vehicleKmHistoryEnd');
+
+    if (start) start.value = '';
+    if (end) end.value = '';
+
+    filterVehicleKmHistory();
+}
+</script>
+@endpush
