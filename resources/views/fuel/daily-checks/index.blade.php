@@ -1,56 +1,38 @@
 @extends('layouts.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/pages/fuel.css') }}?v=8">
+<link rel="stylesheet" href="{{ asset('css/pages/fuel.css') }}?v=9">
 @endpush
 
 @section('content')
 
-<main class="fuel-page fuel-daily-check-page fuel-daily-v2">
+<main class="fuel-page fuel-archive-page">
 
-<header class="fuel-daily-v2-header">
+<header class="fuel-archive-header">
 
-    <div class="fuel-daily-v2-heading">
-
+    <div>
         <span class="fuel-kicker">
-            Conferência operacional
+            Arquivo operacional
         </span>
 
         <h1>
-            Conferência diária de abastecimento
+            Arquivo diário de abastecimentos
         </h1>
 
         <p>
-            Compare os lançamentos do CHM com a folha manual do operador.
+            Consulte os lançamentos e preserve as fichas
+            e documentos de cada dia.
         </p>
-
     </div>
 
-
-    <div class="fuel-daily-v2-header-actions">
-
-        <form
-            method="GET"
-            action="{{ route('fuel.daily-check.index') }}"
-            class="fuel-daily-v2-date"
-        >
-            <label>
-                <span>Data da operação</span>
-
-                <input
-                    type="date"
-                    name="date"
-                    value="{{ $date->format('Y-m-d') }}"
-                    onchange="this.form.submit()"
-                >
-            </label>
-        </form>
-
+    <div class="fuel-archive-header-actions">
 
         <a
-            href="{{ route('fuel.tanks.index', ['manual_sheet' => 1]) }}"
-            class="fuel-secondary-action fuel-daily-v2-manual-sheet"
-            title="Abrir ficha manual de abastecimento"
+            href="{{ route(
+                'fuel.tanks.index',
+                ['manual_sheet' => 1]
+            ) }}"
+            class="fuel-secondary-action"
         >
             <i class="bi bi-printer"></i>
             Ficha manual
@@ -58,7 +40,7 @@
 
         <a
             href="{{ route('fuel.tanks.index') }}"
-            class="fuel-secondary-action fuel-daily-v2-back"
+            class="fuel-secondary-action"
         >
             <i class="bi bi-arrow-left"></i>
             Voltar
@@ -76,203 +58,470 @@
 @endif
 
 
-@if($changedAfterCheck)
+@if($errors->any())
     <div class="fuel-daily-alert is-warning">
-        <strong>
-            <i class="bi bi-exclamation-triangle"></i>
-            Lançamentos alterados após a conferência
-        </strong>
-
-        <span>
-            Houve inclusão, edição ou cancelamento de abastecimento
-            depois da última conferência desta data.
-        </span>
+        @foreach($errors->all() as $error)
+            <div>{{ $error }}</div>
+        @endforeach
     </div>
 @endif
 
 
-<form
-    method="POST"
-    action="{{ route('fuel.daily-check.store') }}"
-    enctype="multipart/form-data"
-    class="fuel-daily-check-form"
->
-@csrf
+<section class="fuel-archive-calendar-panel">
 
-<input
-    type="hidden"
-    name="operation_date"
-    value="{{ $date->format('Y-m-d') }}"
->
+    <div class="fuel-archive-calendar-head">
 
+        <a
+            href="{{ route(
+                'fuel.daily-check.index',
+                [
+                    'month' =>
+                        $month->copy()
+                            ->subMonth()
+                            ->format('Y-m'),
+                    'date' =>
+                        $month->copy()
+                            ->subMonth()
+                            ->startOfMonth()
+                            ->format('Y-m-d'),
+                ]
+            ) }}"
+            class="fuel-archive-month-nav"
+            title="Mês anterior"
+        >
+            <i class="bi bi-chevron-left"></i>
+        </a>
 
-<section class="fuel-daily-v2-main-grid">
-
-<section class="fuel-daily-v2-panel fuel-daily-v2-summary">
-
-    <div class="fuel-daily-v2-section-head">
         <div>
-            <span>Resumo automático</span>
-            <h2>Abastecimentos registrados no CHM</h2>
+            <span>Calendário operacional</span>
+
+            <h2>
+                {{ ucfirst(
+                    $month
+                        ->locale('pt_BR')
+                        ->translatedFormat('F Y')
+                ) }}
+            </h2>
         </div>
+
+        <a
+            href="{{ route(
+                'fuel.daily-check.index',
+                [
+                    'month' =>
+                        $month->copy()
+                            ->addMonth()
+                            ->format('Y-m'),
+                    'date' =>
+                        $month->copy()
+                            ->addMonth()
+                            ->startOfMonth()
+                            ->format('Y-m-d'),
+                ]
+            ) }}"
+            class="fuel-archive-month-nav"
+            title="Próximo mês"
+        >
+            <i class="bi bi-chevron-right"></i>
+        </a>
+
     </div>
 
 
-    @if($summary->isEmpty())
+    <div class="fuel-archive-weekdays">
+        @foreach(
+            ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+            as $weekday
+        )
+            <span>{{ $weekday }}</span>
+        @endforeach
+    </div>
 
-        <div class="fuel-daily-v2-empty">
-            Nenhum abastecimento válido encontrado em
-            {{ $date->format('d/m/Y') }}.
-        </div>
 
-    @else
+    <div class="fuel-archive-calendar">
 
-        <div class="fuel-daily-v2-products">
+        @foreach($calendarWeeks as $week)
 
-            @foreach($summary as $row)
+            @foreach($week as $day)
 
-                @php
-                    $key =
-                        $row['source'].'|'.$row['fuel_product_id'];
+                <a
+                    href="{{ route(
+                        'fuel.daily-check.index',
+                        [
+                            'date' =>
+                                $day['date']
+                                    ->format('Y-m-d'),
+                            'month' =>
+                                $month->format('Y-m'),
+                        ]
+                    ) }}"
+                    class="
+                        fuel-archive-day
+                        {{ $day['in_month']
+                            ? ''
+                            : 'is-outside' }}
+                        {{ $day['selected']
+                            ? 'is-selected'
+                            : '' }}
+                        {{ $day['fillings_count'] > 0
+                            ? 'has-fillings'
+                            : '' }}
+                        {{ $day['files_count'] > 0
+                            ? 'has-files'
+                            : '' }}
+                    "
+                >
 
-                    $saved =
-                        $savedItems->get($key);
+                    <strong>
+                        {{ $day['date']->day }}
+                    </strong>
 
-                    $manualValue =
-                        old(
-                            'manual.'.$key,
-                            $saved?->manual_liters
-                        );
-                @endphp
-
-                <article class="fuel-daily-v2-product">
-
-                    <div class="fuel-daily-v2-product-main">
-
-                        <span>
-                            {{ $row['source_label'] }}
-                        </span>
-
-                        <strong>
-                            {{ $row['product_name'] }}
-                        </strong>
-
+                    @if($day['fillings_count'] > 0)
                         <small>
-                            {{ $row['fillings_count'] }}
-                            abastecimento(s)
+                            {{ $day['fillings_count'] }}
+                            lançamento(s)
                         </small>
+                    @endif
 
-                    </div>
+                    <span class="fuel-archive-day-status">
 
+                        @if($day['files_count'] > 0)
 
-                    <div class="fuel-daily-v2-chm-total">
-                        <span>CHM</span>
+                            <i
+                                class="bi bi-paperclip"
+                                title="Documento arquivado"
+                            ></i>
 
-                        <strong>
-                            {{ number_format(
-                                $row['system_liters'],
-                                3,
-                                ',',
-                                '.'
-                            ) }} L
-                        </strong>
-                    </div>
+                        @elseif($day['fillings_count'] > 0)
 
+                            <i
+                                class="bi bi-circle-fill"
+                                title="Sem documento arquivado"
+                            ></i>
 
-                    <label class="fuel-daily-v2-manual">
-                        <span>Total na folha</span>
+                        @endif
 
-                        <div>
-                            <input
-                                type="number"
-                                min="0"
-                                step="0.001"
-                                name="manual[{{ $key }}]"
-                                value="{{ $manualValue }}"
-                                data-system-liters="{{ $row['system_liters'] }}"
-                                oninput="updateDailyDifference(this)"
-                                required
-                            >
+                    </span>
 
-                            <b>L</b>
-                        </div>
-
-                        <small data-difference>
-                            @if($saved?->difference_liters !== null)
-                                Diferença:
-                                {{ number_format(
-                                    (float) $saved->difference_liters,
-                                    3,
-                                    ',',
-                                    '.'
-                                ) }} L
-                            @else
-                                Informe o total anotado.
-                            @endif
-                        </small>
-                    </label>
-
-                </article>
+                </a>
 
             @endforeach
 
-        </div>
+        @endforeach
 
-    @endif
+    </div>
+
+
+    <div class="fuel-archive-calendar-legend">
+
+        <span>
+            <i class="bi bi-paperclip"></i>
+            Documento arquivado
+        </span>
+
+        <span>
+            <i class="bi bi-circle-fill"></i>
+            Abastecimentos sem documento
+        </span>
+
+    </div>
 
 </section>
 
 
-<section class="fuel-daily-v2-panel fuel-daily-v2-document">
+<section class="fuel-archive-day-header">
 
-    <div class="fuel-daily-v2-section-head">
-        <div>
-            <span>Documento de apoio</span>
-            <h2>Folha manual preenchida</h2>
-        </div>
+    <div>
+        <span>Dia selecionado</span>
+
+        <h2>
+            {{ $date->format('d/m/Y') }}
+        </h2>
     </div>
 
+    <form
+        method="GET"
+        action="{{ route('fuel.daily-check.index') }}"
+        class="fuel-archive-date-jump"
+    >
+        <input
+            type="date"
+            name="date"
+            value="{{ $date->format('Y-m-d') }}"
+            onchange="this.form.submit()"
+        >
+    </form>
 
-    <div class="fuel-daily-v2-upload-options">
+</section>
 
-        <div class="fuel-daily-v2-upload-option">
 
-            <i class="bi bi-cloud-arrow-up"></i>
+<section class="fuel-archive-kpis">
 
-            <strong>Selecionar arquivo</strong>
+    <article>
+        <span>Abastecimentos</span>
+        <strong>{{ $fillings->count() }}</strong>
+    </article>
 
-            <p>
-                Foto, imagem digitalizada ou PDF da folha preenchida.
-            </p>
+    <article>
+        <span>Veículos</span>
+        <strong>{{ $vehicleCount }}</strong>
+    </article>
 
-            <label class="fuel-daily-v2-file-picker">
-                <span>Selecionar arquivo</span>
+    @foreach($summary as $row)
+        <article>
+            <span>
+                {{ $row['product_name'] }}
+            </span>
+
+            <strong>
+                {{ number_format(
+                    $row['system_liters'],
+                    3,
+                    ',',
+                    '.'
+                ) }} L
+            </strong>
+
+            <small>
+                {{ $row['fillings_count'] }}
+                lançamento(s)
+            </small>
+        </article>
+    @endforeach
+
+</section>
+
+
+<section class="fuel-archive-grid">
+
+    <section class="fuel-archive-panel">
+
+        <div class="fuel-archive-section-head">
+            <div>
+                <span>Documentos do dia</span>
+                <h2>Fichas e comprovantes</h2>
+            </div>
+
+            <span class="fuel-archive-count">
+                {{ $check->files->count() }}
+            </span>
+        </div>
+
+
+        @if($check->files->isNotEmpty())
+
+            <div
+                class="fuel-archive-documents"
+                id="fuelDailyFiles"
+            >
+
+                @foreach($check->files as $file)
+
+                    @php
+                        $isImage =
+                            str_starts_with(
+                                (string) $file->mime_type,
+                                'image/'
+                            );
+
+                        $sourceLabel = match(
+                            $file->source
+                        ) {
+                            'photo_import' =>
+                                'Importação via foto (IA)',
+
+                            'qr_mobile' =>
+                                'Enviado pelo celular',
+
+                            'manual_upload' =>
+                                'Anexo manual',
+
+                            'web' =>
+                                'Anexo manual',
+
+                            default =>
+                                $file->source
+                                ?: 'Documento',
+                        };
+                    @endphp
+
+                    <article
+                        class="fuel-archive-document"
+                        data-file-id="{{ $file->id }}"
+                    >
+
+                        <a
+                            href="{{ route(
+                                'fuel.daily-check.files.show',
+                                [$check, $file]
+                            ) }}"
+                            target="_blank"
+                            rel="noopener"
+                            class="fuel-archive-document-preview"
+                        >
+
+                            @if($isImage)
+
+                                <img
+                                    src="{{ route(
+                                        'fuel.daily-check.files.show',
+                                        [$check, $file]
+                                    ) }}"
+                                    alt="{{ $file->original_name }}"
+                                >
+
+                            @else
+
+                                <div>
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    <span>PDF</span>
+                                </div>
+
+                            @endif
+
+                        </a>
+
+
+                        <div class="fuel-archive-document-body">
+
+                            <strong>
+                                {{ $file->original_name }}
+                            </strong>
+
+                            <span>
+                                {{ $sourceLabel }}
+                            </span>
+
+                            <small>
+                                {{ $file->created_at
+                                    ?->format('d/m/Y H:i') }}
+                            </small>
+
+                            <div>
+                                <a
+                                    href="{{ route(
+                                        'fuel.daily-check.files.show',
+                                        [$check, $file]
+                                    ) }}"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="fuel-secondary-action"
+                                >
+                                    <i class="bi bi-eye"></i>
+                                    Visualizar
+                                </a>
+
+                                <button
+                                    type="button"
+                                    class="fuel-daily-file-delete"
+                                    data-delete-url="{{ route(
+                                        'fuel.daily-check.files.delete',
+                                        [$check, $file]
+                                    ) }}"
+                                >
+                                    <i class="bi bi-trash3"></i>
+                                    Excluir
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                @endforeach
+
+            </div>
+
+        @else
+
+            <div class="fuel-archive-empty-document">
+
+                <i class="bi bi-file-earmark-image"></i>
+
+                <strong>
+                    Nenhum documento arquivado
+                </strong>
+
+                <span>
+                    Você pode anexar a ficha pelo computador
+                    ou fotografá-la pelo celular.
+                </span>
+
+            </div>
+
+        @endif
+
+
+        <form
+            method="POST"
+            action="{{ route(
+                'fuel.daily-check.files.store'
+            ) }}"
+            enctype="multipart/form-data"
+            class="fuel-archive-upload-form"
+        >
+            @csrf
+
+            <input
+                type="hidden"
+                name="operation_date"
+                value="{{ $date->format('Y-m-d') }}"
+            >
+
+            <label
+                class="fuel-archive-file-picker"
+                id="fuelArchiveFilePicker"
+            >
+
+                <i class="bi bi-cloud-arrow-up"></i>
+
+                <span>
+                    <strong>Selecionar arquivo</strong>
+                    <small>
+                        JPG, PNG, WEBP ou PDF · até 12 MB
+                    </small>
+                </span>
 
                 <input
                     type="file"
                     name="files[]"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     multiple
-                    onchange="showDailySelectedFiles(this)"
+                    onchange="showArchiveSelectedFiles(this)"
                 >
+
             </label>
 
             <small id="dailySelectedFiles">
                 Nenhum arquivo selecionado.
             </small>
 
-        </div>
+            <button
+                type="submit"
+                id="fuelArchiveSubmit"
+                class="fuel-primary-action"
+                disabled
+            >
+                <i class="bi bi-archive"></i>
+                Arquivar documento
+            </button>
+
+        </form>
 
 
-        <div class="fuel-daily-v2-upload-option">
+        <div class="fuel-archive-mobile-upload">
 
-            <i class="bi bi-qr-code"></i>
+            <div>
+                <i class="bi bi-phone"></i>
 
-            <strong>Enviar pelo celular</strong>
+                <span>
+                    <strong>Enviar pelo celular</strong>
 
-            <p>
-                Gere um QR Code e fotografe a folha diretamente pelo celular.
-            </p>
+                    <small>
+                        Gere um QR Code e fotografe a ficha.
+                    </small>
+                </span>
+            </div>
 
             <button
                 type="button"
@@ -289,300 +538,270 @@
 
         </div>
 
-    </div>
-
-
-    <div
-        id="fuelDailyQrBox"
-        class="fuel-daily-qr-box fuel-daily-v2-qr"
-        data-files-status-url="{{ route(
-            'fuel.daily-check.files.status',
-            $check
-        ) }}"
-        data-files-count="{{ $check->files->count() }}"
-        hidden
-    >
-
-        <img
-            id="fuelDailyQrImage"
-            alt="QR Code para envio da folha"
-        >
-
-        <div class="fuel-daily-v2-qr-content">
-            <strong>Escaneie com o celular</strong>
-
-            <p id="fuelDailyQrExpiry"></p>
-
-            <input
-                id="fuelDailyUploadUrl"
-                readonly
-            >
-
-            <button
-                type="button"
-                id="fuelDailyCopyUrl"
-                class="fuel-secondary-action"
-            >
-                <i class="bi bi-copy"></i>
-                Copiar link
-            </button>
-
-            <span id="fuelDailyQrStatus">
-                Aguardando arquivo do celular...
-            </span>
-        </div>
-
-    </div>
-
-
-    @if($check->files->isNotEmpty())
 
         <div
-            class="fuel-daily-files fuel-daily-v2-files"
-            id="fuelDailyFiles"
+            id="fuelDailyQrBox"
+            class="fuel-daily-qr-box fuel-daily-v2-qr"
+            data-files-status-url="{{ route(
+                'fuel.daily-check.files.status',
+                $check
+            ) }}"
+            data-files-count="{{ $check->files->count() }}"
+            hidden
         >
 
-            @foreach($check->files as $file)
-
-                <div
-                    class="fuel-daily-file-row"
-                    data-file-id="{{ $file->id }}"
-                >
-
-                    <a
-                        href="{{ route(
-                            'fuel.daily-check.files.show',
-                            [$check, $file]
-                        ) }}"
-                        target="_blank"
-                        rel="noopener"
-                        class="fuel-daily-file-link"
-                    >
-                        <i class="bi bi-paperclip"></i>
-
-                        <span>
-                            {{ $file->original_name }}
-                        </span>
-
-                        <small>
-                            {{ $file->source === 'qr_mobile'
-                                ? 'Celular'
-                                : 'Computador' }}
-                        </small>
-                    </a>
-
-                    <button
-                        type="button"
-                        class="fuel-daily-file-delete"
-                        data-delete-url="{{ route(
-                            'fuel.daily-check.files.delete',
-                            [$check, $file]
-                        ) }}"
-                        title="Excluir arquivo"
-                    >
-                        <i class="bi bi-trash3"></i>
-                        <span>Excluir</span>
-                    </button>
-
-                </div>
-
-            @endforeach
-
-        </div>
-
-    @endif
-
-</section>
-
-
-</section>
-
-<section class="fuel-daily-v2-panel fuel-daily-v2-observation">
-
-    <label class="fuel-daily-v2-notes">
-        <span>Observação</span>
-
-        <textarea
-            name="notes"
-            rows="3"
-            placeholder="Ex.: folha entregue pelo operador após encerramento dos abastecimentos."
-        >{{ old('notes', $check->notes) }}</textarea>
-    </label>
-
-
-    @if($summary->isNotEmpty())
-
-        <div class="fuel-daily-v2-save">
-
-            @if($check->checked_at)
-
-                <div class="fuel-daily-v2-last-check">
-                    <span>Última conferência</span>
-
-                    <strong>
-                        {{ $check->checked_at->format('d/m/Y H:i') }}
-                    </strong>
-
-                    <small>
-                        {{ $check->checker?->name ?? 'Usuário' }}
-                    </small>
-                </div>
-
-            @endif
-
-            <button class="fuel-primary-action">
-                <i class="bi bi-check2-circle"></i>
-
-                {{ $check->checked_at
-                    ? 'Atualizar conferência'
-                    : 'Salvar conferência' }}
-            </button>
-
-        </div>
-
-    @endif
-
-</section>
-
-</form>
-
-
-
-
-
-<section class="fuel-daily-v2-panel fuel-daily-v2-history">
-
-    <div class="fuel-daily-v2-section-head">
-        <div>
-            <span>Histórico</span>
-            <h2>Últimas conferências</h2>
-        </div>
-    </div>
-
-    <div class="fuel-daily-history">
-
-        @forelse($history as $item)
-
-            <a
-                href="{{ route(
-                    'fuel.daily-check.index',
-                    ['date' => $item->operation_date->format('Y-m-d')]
-                ) }}"
+            <img
+                id="fuelDailyQrImage"
+                alt="QR Code para envio da ficha"
             >
 
+            <div class="fuel-daily-v2-qr-content">
+
                 <strong>
-                    {{ $item->operation_date->format('d/m/Y') }}
+                    Escaneie com o celular
                 </strong>
 
-                <span class="is-{{ $item->status }}">
-                    {{ $item->status === 'checked'
-                        ? 'Conferido'
-                        : 'Com divergência' }}
+                <p id="fuelDailyQrExpiry"></p>
+
+                <input
+                    id="fuelDailyUploadUrl"
+                    readonly
+                >
+
+                <button
+                    type="button"
+                    id="fuelDailyCopyUrl"
+                    class="fuel-secondary-action"
+                >
+                    <i class="bi bi-copy"></i>
+                    Copiar link
+                </button>
+
+                <span id="fuelDailyQrStatus">
+                    Aguardando arquivo do celular...
                 </span>
 
-                <span>
-                    {{ number_format(
-                        (float) $item->difference_liters,
-                        3,
-                        ',',
-                        '.'
-                    ) }} L
-                </span>
-
-                <small>
-                    {{ $item->checker?->name }}
-                </small>
-
-            </a>
-
-        @empty
-
-            <div class="fuel-daily-v2-empty">
-                Nenhuma conferência concluída ainda.
             </div>
 
-        @endforelse
+        </div>
 
-    </div>
+    </section>
+
+
+    <section class="fuel-archive-panel">
+
+        <div class="fuel-archive-section-head">
+            <div>
+                <span>Lançamentos do dia</span>
+                <h2>Abastecimentos registrados</h2>
+            </div>
+        </div>
+
+
+        @if($fillings->isEmpty())
+
+            <div class="fuel-archive-empty-document">
+
+                <i class="bi bi-fuel-pump"></i>
+
+                <strong>
+                    Nenhum abastecimento registrado
+                </strong>
+
+                <span>
+                    Não há lançamentos válidos nesta data.
+                </span>
+
+            </div>
+
+        @else
+
+            <div class="fuel-archive-fillings">
+
+                @foreach($fillings as $filling)
+
+                    <article>
+
+                        <time>
+                            {{ $filling->filled_at
+                                ->format('H:i') }}
+                        </time>
+
+                        <div class="fuel-archive-filling-vehicle">
+
+                            <strong>
+                                {{ $filling->vehicle?->name
+                                    ?? 'Veículo' }}
+                            </strong>
+
+                            <small>
+                                {{ $filling->vehicle?->plate
+                                    ?? '—' }}
+                            </small>
+
+                        </div>
+
+                        <div>
+                            <strong>
+                                {{ $filling->product?->name
+                                    ?? 'Produto' }}
+                            </strong>
+
+                            <small>
+                                {{ $filling->source === 'internal_tank'
+                                    ? 'Tanque da unidade'
+                                    : 'Posto externo' }}
+                            </small>
+                        </div>
+
+                        <strong class="fuel-archive-filling-liters">
+                            {{ number_format(
+                                (float) $filling->quantity_liters,
+                                3,
+                                ',',
+                                '.'
+                            ) }} L
+                        </strong>
+
+                        <span class="fuel-archive-filling-km">
+                            @if($filling->vehicle_km !== null)
+
+                                {{ number_format(
+                                    (float) $filling->vehicle_km,
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }} km
+
+                            @else
+                                —
+                            @endif
+                        </span>
+
+                    </article>
+
+                @endforeach
+
+            </div>
+
+        @endif
+
+    </section>
 
 </section>
+
+
+@if(filled($check->notes))
+
+<section class="fuel-archive-panel fuel-archive-notes">
+
+    <div class="fuel-archive-section-head">
+        <div>
+            <span>Observação arquivada</span>
+            <h2>Informações adicionais</h2>
+        </div>
+    </div>
+
+    <p>
+        {{ $check->notes }}
+    </p>
+
+</section>
+
+@endif
 
 </main>
 
 
 <script>
-function updateDailyDifference(input) {
-    const system = Number(input.dataset.systemLiters || 0);
-    const manual = Number(input.value);
+function showArchiveSelectedFiles(input) {
+    const target =
+        document.getElementById(
+            'dailySelectedFiles'
+        );
 
-    const target = input
-        .closest('.fuel-daily-v2-manual')
-        .querySelector('[data-difference]');
+    const submit =
+        document.getElementById(
+            'fuelArchiveSubmit'
+        );
 
-    if (input.value === '' || Number.isNaN(manual)) {
-        target.textContent = 'Informe o total anotado.';
-        return;
+    const picker =
+        document.getElementById(
+            'fuelArchiveFilePicker'
+        );
+
+    const count =
+        input.files?.length || 0;
+
+    if (target) {
+        target.textContent =
+            count === 0
+                ? 'Nenhum arquivo selecionado.'
+                : count === 1
+                    ? input.files[0].name
+                    : count + ' arquivos selecionados.';
     }
 
-    const diff = manual - system;
+    if (submit) {
+        submit.disabled =
+            count === 0;
+    }
 
-    target.textContent =
-        'Diferença: '
-        + diff.toLocaleString('pt-BR', {
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3
-        })
-        + ' L';
-
-    target.classList.toggle(
-        'has-divergence',
-        Math.abs(diff) > 0.001
-    );
+    if (picker) {
+        picker.classList.toggle(
+            'has-file',
+            count > 0
+        );
+    }
 }
 
-function showDailySelectedFiles(input) {
-    const target =
-        document.getElementById('dailySelectedFiles');
-
-    const count = input.files.length;
-
-    target.textContent =
-        count === 0
-            ? 'Nenhum arquivo selecionado.'
-            : count === 1
-                ? input.files[0].name
-                : count + ' arquivos selecionados.';
-}
 
 (() => {
     const generate =
-        document.getElementById('fuelDailyGenerateQr');
+        document.getElementById(
+            'fuelDailyGenerateQr'
+        );
 
     const box =
-        document.getElementById('fuelDailyQrBox');
+        document.getElementById(
+            'fuelDailyQrBox'
+        );
 
     const image =
-        document.getElementById('fuelDailyQrImage');
+        document.getElementById(
+            'fuelDailyQrImage'
+        );
 
     const expiry =
-        document.getElementById('fuelDailyQrExpiry');
+        document.getElementById(
+            'fuelDailyQrExpiry'
+        );
 
     const urlInput =
-        document.getElementById('fuelDailyUploadUrl');
+        document.getElementById(
+            'fuelDailyUploadUrl'
+        );
 
     const copy =
-        document.getElementById('fuelDailyCopyUrl');
+        document.getElementById(
+            'fuelDailyCopyUrl'
+        );
 
     const status =
-        document.getElementById('fuelDailyQrStatus');
+        document.getElementById(
+            'fuelDailyQrStatus'
+        );
 
     if (!generate || !box) {
         return;
     }
 
     let pollTimer = null;
+
     let previousCount =
-        Number(box.dataset.filesCount || 0);
+        Number(
+            box.dataset.filesCount || 0
+        );
 
 
     function startPolling() {
@@ -590,222 +809,239 @@ function showDailySelectedFiles(input) {
             clearInterval(pollTimer);
         }
 
-        pollTimer = setInterval(async () => {
-            try {
-                const response = await fetch(
-                    box.dataset.filesStatusUrl,
-                    {
-                        headers: {
-                            'Accept': 'application/json'
+        pollTimer =
+            setInterval(
+                async () => {
+                    try {
+                        const response =
+                            await fetch(
+                                box.dataset.filesStatusUrl,
+                                {
+                                    headers: {
+                                        'Accept':
+                                            'application/json'
+                                    }
+                                }
+                            );
+
+                        if (!response.ok) {
+                            return;
                         }
-                    }
-                );
 
-                if (!response.ok) return;
+                        const data =
+                            await response.json();
 
-                const data = await response.json();
+                        if (
+                            data.count
+                            > previousCount
+                        ) {
+                            previousCount =
+                                data.count;
 
-                if (data.count > previousCount) {
-                    previousCount = data.count;
+                            clearInterval(
+                                pollTimer
+                            );
 
-                    clearInterval(pollTimer);
+                            status.innerHTML =
+                                '<strong>'
+                                + '✓ Arquivo recebido pelo celular.'
+                                + '</strong>';
 
-                    status.innerHTML =
-                        '<strong>✓ Arquivo recebido pelo celular.</strong>';
+                            setTimeout(
+                                () =>
+                                    window.location.reload(),
+                                850
+                            );
+                        }
 
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }
-
-            } catch (_) {}
-        }, 2500);
+                    } catch (_) {}
+                },
+                2500
+            );
     }
 
 
-    generate.addEventListener('click', async () => {
-        if (generate.disabled) return;
+    generate.addEventListener(
+        'click',
+        async () => {
+            if (generate.disabled) {
+                return;
+            }
 
-        const original = generate.innerHTML;
+            const original =
+                generate.innerHTML;
 
-        generate.disabled = true;
+            generate.disabled = true;
 
-        generate.innerHTML =
-            '<span>Gerando QR Code...</span>';
+            generate.innerHTML =
+                'Gerando QR Code...';
 
-        try {
-            const response = await fetch(
-                generate.dataset.url,
+            try {
+                const response =
+                    await fetch(
+                        generate.dataset.url,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Accept':
+                                    'application/json',
+                                'X-CSRF-TOKEN':
+                                    @json(csrf_token())
+                            }
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.message
+                        || 'Não foi possível gerar o QR Code.'
+                    );
+                }
+
+                image.src = data.qr;
+
+                expiry.textContent =
+                    'Link válido até '
+                    + data.expires_at
+                    + '.';
+
+                urlInput.value =
+                    data.url;
+
+                box.hidden = false;
+
+                status.textContent =
+                    'Aguardando arquivo do celular...';
+
+                previousCount =
+                    Number(
+                        data.files_count || 0
+                    );
+
+                startPolling();
+
+            } catch (error) {
+                alert(
+                    error.message
+                    || 'Não foi possível gerar o QR Code.'
+                );
+
+            } finally {
+                generate.disabled = false;
+                generate.innerHTML = original;
+            }
+        }
+    );
+
+
+    if (copy) {
+        copy.addEventListener(
+            'click',
+            async () => {
+                if (!urlInput.value) {
+                    return;
+                }
+
+                await navigator.clipboard
+                    .writeText(
+                        urlInput.value
+                    );
+
+                const old =
+                    copy.innerHTML;
+
+                copy.innerHTML =
+                    '<i class="bi bi-check2"></i> Copiado';
+
+                setTimeout(
+                    () =>
+                        copy.innerHTML = old,
+                    1400
+                );
+            }
+        );
+    }
+})();
+
+
+async function deleteArchiveFile(button) {
+    if (
+        !confirm(
+            'Excluir este documento do arquivo diário?'
+        )
+    ) {
+        return;
+    }
+
+    const card =
+        button.closest(
+            '.fuel-archive-document'
+        );
+
+    const original =
+        button.innerHTML;
+
+    button.disabled = true;
+    button.innerHTML =
+        'Excluindo...';
+
+    try {
+        const response =
+            await fetch(
+                button.dataset.deleteUrl,
                 {
-                    method: 'POST',
-
+                    method: 'DELETE',
                     headers: {
-                        'Accept': 'application/json',
+                        'Accept':
+                            'application/json',
                         'X-CSRF-TOKEN':
                             @json(csrf_token())
                     }
                 }
             );
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    data.message
-                    || 'Não foi possível gerar o QR Code.'
-                );
-            }
-
-            image.src = data.qr;
-
-            expiry.textContent =
-                'Link válido até '
-                + data.expires_at
-                + '.';
-
-            urlInput.value = data.url;
-
-            box.hidden = false;
-
-            status.textContent =
-                'Aguardando arquivo do celular...';
-
-            previousCount =
-                Number(data.files_count || 0);
-
-            box.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
-
-            startPolling();
-
-        } catch (error) {
-            alert(
-                error.message
-                || 'Não foi possível gerar o QR Code.'
-            );
-
-        } finally {
-            generate.disabled = false;
-            generate.innerHTML = original;
-        }
-    });
-
-
-    copy.addEventListener('click', async () => {
-        if (!urlInput.value) return;
-
-        await navigator.clipboard.writeText(
-            urlInput.value
-        );
-
-        const old = copy.innerHTML;
-
-        copy.innerHTML =
-            '<i class="bi bi-check2"></i> Copiado';
-
-        setTimeout(() => {
-            copy.innerHTML = old;
-        }, 1400);
-    });
-})();
-
-async function deleteDailyCheckFile(button) {
-    if (
-        !confirm(
-            'Excluir este arquivo da conferência? Esta ação não poderá ser desfeita.'
-        )
-    ) {
-        return;
-    }
-
-    const row = button.closest('.fuel-daily-file-row');
-
-    const originalHtml = button.innerHTML;
-
-    button.disabled = true;
-    button.classList.add('is-loading');
-
-    button.innerHTML =
-        '<span class="fuel-daily-delete-spinner"></span>'
-        + '<span>Excluindo...</span>';
-
-    try {
-        const response = await fetch(
-            button.dataset.deleteUrl,
-            {
-                method: 'DELETE',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': @json(csrf_token())
-                }
-            }
-        );
-
-        const data = await response.json();
+        const data =
+            await response.json();
 
         if (!response.ok) {
             throw new Error(
                 data.message
-                || 'Não foi possível excluir o arquivo.'
+                || 'Não foi possível excluir.'
             );
         }
 
-        if (row) {
-            row.classList.add('is-removing');
-
-            setTimeout(() => {
-                row.remove();
-
-                const list =
-                    document.getElementById('fuelDailyFiles');
-
-                if (
-                    list
-                    && !list.querySelector(
-                        '.fuel-daily-file-row'
-                    )
-                ) {
-                    list.remove();
-                }
-            }, 180);
-        }
-
-        const qrBox =
-            document.getElementById('fuelDailyQrBox');
-
-        if (qrBox) {
-            qrBox.dataset.filesCount =
-                String(data.files_count ?? 0);
-        }
+        card?.remove();
 
     } catch (error) {
         button.disabled = false;
-        button.classList.remove('is-loading');
-        button.innerHTML = originalHtml;
+        button.innerHTML = original;
 
         alert(
             error.message
-            || 'Não foi possível excluir o arquivo.'
+            || 'Não foi possível excluir.'
         );
     }
 }
 
 
-document.addEventListener('click', event => {
-    const button = event.target.closest(
-        '.fuel-daily-file-delete'
-    );
+document.addEventListener(
+    'click',
+    event => {
+        const button =
+            event.target.closest(
+                '.fuel-daily-file-delete'
+            );
 
-    if (!button) {
-        return;
+        if (button) {
+            deleteArchiveFile(
+                button
+            );
+        }
     }
-
-    deleteDailyCheckFile(button);
-});
-
-
+);
 </script>
 
 @endsection

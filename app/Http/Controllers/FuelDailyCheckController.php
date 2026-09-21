@@ -24,10 +24,21 @@ class FuelDailyCheckController extends Controller
         $context = $this->context();
         $this->authorizeFuel($context);
 
-        $date = $request->date('date')
+        $date = $request->filled('date')
             ? Carbon::parse($request->input('date'))->startOfDay()
             : today();
 
+        $month = $request->filled('month')
+            ? Carbon::createFromFormat(
+                'Y-m',
+                $request->input('month')
+            )->startOfMonth()
+            : $date->copy()->startOfMonth();
+
+        /*
+         * Mantemos um registro diário único por contexto/data.
+         * Ele agora funciona como o "dossiê" documental daquele dia.
+         */
         $check = FuelDailyCheck::query()->firstOrCreate(
             [
                 'tenant_id' => $context['tenant_id'],
@@ -35,12 +46,14 @@ class FuelDailyCheckController extends Controller
                 'location_id' => $context['location_id'],
                 'operation_date' => $date->toDateString(),
             ],
-            ['status' => 'pending']
+            [
+                'status' => 'pending',
+            ]
         );
 
         $check->load([
-            'items',
-            'files',
+            'files' => fn ($query) =>
+                $query->latest(),
             'checker',
         ]);
 
@@ -49,47 +62,141 @@ class FuelDailyCheckController extends Controller
             $date->toDateString()
         );
 
-        $signature = $this->signature(
-            $context,
-            $date->toDateString()
-        );
-
-        $changedAfterCheck =
-            $check->checked_at
-            && filled($check->system_signature)
-            && ! hash_equals(
-                (string) $check->system_signature,
-                $signature
-            );
-
-        $savedItems = $check->items
-            ->keyBy(
-                fn ($item) =>
-                    $item->source.'|'.$item->fuel_product_id
-            );
-
-        $history = FuelDailyCheck::query()
+        $fillings = FuelFilling::query()
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division_id'])
             ->where('location_id', $context['location_id'])
-            ->whereNotNull('checked_at')
-            ->with('checker:id,name')
-            ->latest('operation_date')
-            ->limit(20)
+            ->whereDate('filled_at', $date->toDateString())
+            ->whereNull('cancelled_at')
+            ->with([
+                'vehicle',
+                'product',
+            ])
+            ->orderBy('filled_at')
+            ->orderBy('id')
             ->get();
+
+        $vehicleCount = $fillings
+            ->pluck('vehicle_id')
+            ->filter()
+            ->unique()
+            ->count();
+
+        /*
+         * Resumo dos lançamentos do mês para pintar o calendário.
+         */
+        $monthStart = $month->copy()->startOfMonth();
+        $monthEnd = $month->copy()->endOfMonth();
+
+        $monthFillings = FuelFilling::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->whereBetween(
+                'filled_at',
+                [
+                    $monthStart->copy()->startOfDay(),
+                    $monthEnd->copy()->endOfDay(),
+                ]
+            )
+            ->whereNull('cancelled_at')
+            ->selectRaw(
+                'DATE(filled_at) as operation_day, '
+                .'COUNT(*) as fillings_count, '
+                .'SUM(quantity_liters) as liters'
+            )
+            ->groupByRaw('DATE(filled_at)')
+            ->get()
+            ->keyBy('operation_day');
+
+        $monthChecks = FuelDailyCheck::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->whereBetween(
+                'operation_date',
+                [
+                    $monthStart->toDateString(),
+                    $monthEnd->toDateString(),
+                ]
+            )
+            ->withCount('files')
+            ->get()
+            ->keyBy(
+                fn ($item) =>
+                    $item->operation_date->format('Y-m-d')
+            );
+
+        /*
+         * Grade completa domingo -> sábado.
+         */
+        $calendarStart = $monthStart
+            ->copy()
+            ->startOfWeek(Carbon::SUNDAY);
+
+        $calendarEnd = $monthEnd
+            ->copy()
+            ->endOfWeek(Carbon::SATURDAY);
+
+        $calendarDays = collect();
+
+        for (
+            $cursor = $calendarStart->copy();
+            $cursor->lte($calendarEnd);
+            $cursor->addDay()
+        ) {
+            $key = $cursor->format('Y-m-d');
+
+            $dayFillings =
+                $monthFillings->get($key);
+
+            $dayCheck =
+                $monthChecks->get($key);
+
+            $calendarDays->push([
+                'date' => $cursor->copy(),
+                'in_month' =>
+                    $cursor->month === $month->month,
+                'selected' =>
+                    $cursor->isSameDay($date),
+                'fillings_count' =>
+                    (int) (
+                        $dayFillings?->fillings_count
+                        ?? 0
+                    ),
+                'liters' =>
+                    round(
+                        (float) (
+                            $dayFillings?->liters
+                            ?? 0
+                        ),
+                        3
+                    ),
+                'files_count' =>
+                    (int) (
+                        $dayCheck?->files_count
+                        ?? 0
+                    ),
+            ]);
+        }
+
+        $calendarWeeks =
+            $calendarDays->chunk(7);
 
         return view(
             'fuel.daily-checks.index',
             compact(
                 'check',
                 'summary',
-                'savedItems',
+                'fillings',
+                'vehicleCount',
                 'date',
-                'changedAfterCheck',
-                'history'
+                'month',
+                'calendarWeeks'
             )
         );
     }
+
 
     public function store(Request $request)
     {
@@ -246,6 +353,103 @@ class FuelDailyCheckController extends Controller
                     : 'Conferência concluída.'
             );
     }
+
+    public function uploadFiles(Request $request)
+    {
+        $context = $this->context();
+        $this->authorizeFuel($context);
+
+        $data = $request->validate([
+            'operation_date' => [
+                'required',
+                'date',
+            ],
+            'files' => [
+                'required',
+                'array',
+                'min:1',
+                'max:5',
+            ],
+            'files.*' => [
+                'file',
+                'mimes:jpg,jpeg,png,webp,pdf',
+                'max:12288',
+            ],
+            'notes' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
+        ]);
+
+        $date = Carbon::parse(
+            $data['operation_date']
+        )->toDateString();
+
+        $check = FuelDailyCheck::query()->firstOrCreate(
+            [
+                'tenant_id' =>
+                    $context['tenant_id'],
+                'division_id' =>
+                    $context['division_id'],
+                'location_id' =>
+                    $context['location_id'],
+                'operation_date' =>
+                    $date,
+            ],
+            [
+                'status' =>
+                    'pending',
+            ]
+        );
+
+        DB::transaction(function () use (
+            $request,
+            $data,
+            $context,
+            $check
+        ) {
+            foreach (
+                $request->file('files', [])
+                as $file
+            ) {
+                $this->storeFile(
+                    $check,
+                    $file,
+                    'manual_upload',
+                    $context['user']->id
+                );
+            }
+
+            if (
+                array_key_exists(
+                    'notes',
+                    $data
+                )
+            ) {
+                $check->update([
+                    'notes' =>
+                        $data['notes'],
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route(
+                'fuel.daily-check.index',
+                [
+                    'date' => $date,
+                    'month' =>
+                        Carbon::parse($date)
+                            ->format('Y-m'),
+                ]
+            )
+            ->with(
+                'success',
+                'Documento arquivado com sucesso.'
+            );
+    }
+
 
     public function createUploadToken(
         FuelDailyCheck $check

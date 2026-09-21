@@ -158,6 +158,12 @@ class Vehicle extends Model
     {
         return $this->hasMany(TireMeasurement::class);
     }   
+    public function statusPeriods()
+    {
+        return $this->hasMany(\App\Models\VehicleStatusPeriod::class)
+            ->latest('started_at');
+    }
+
     public function operations()
     {
         return $this->hasMany(\App\Models\VehicleOperation::class);

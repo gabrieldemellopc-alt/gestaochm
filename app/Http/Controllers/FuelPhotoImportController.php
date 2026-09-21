@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\FuelFilling;
+use App\Models\FuelDailyCheck;
 use App\Models\FuelTank;
 use App\Services\ActiveContextService;
 use App\Services\FuelService;
+use App\Services\Permissions\ProfilePermissionService;
 use App\Services\Fuel\GoogleVisionFuelSheetService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
 class FuelPhotoImportController extends Controller
@@ -16,16 +21,14 @@ class FuelPhotoImportController extends Controller
         Request $request,
         GoogleVisionFuelSheetService $vision
     ) {
-        abort_unless(
-            (int) $request->user()?->id === 1
-            || userHasProfile('admin'),
-            403
-        );
-
         $context =
             $this->activeContext(
                 $request
             );
+
+        $this->authorizePhotoImport(
+            $context
+        );
 
         $data = $request->validate([
             'image' => [
@@ -65,16 +68,14 @@ class FuelPhotoImportController extends Controller
         Request $request,
         FuelService $fuelService
     ) {
-        abort_unless(
-            (int) $request->user()?->id === 1
-            || userHasProfile('admin'),
-            403
-        );
-
         $context =
             $this->activeContext(
                 $request
             );
+
+        $this->authorizePhotoImport(
+            $context
+        );
 
         $validated =
             $request->validate([
@@ -227,11 +228,6 @@ class FuelPhotoImportController extends Controller
                         $duplicate->vehicle_km !== null
                             ? (float) $duplicate->vehicle_km
                             : null,
-
-                    'vehicle_km' =>
-                        $duplicate->vehicle_km !== null
-                            ? (float) $duplicate->vehicle_km
-                            : null,
                 ];
             }
 
@@ -307,19 +303,48 @@ class FuelPhotoImportController extends Controller
         Request $request,
         FuelService $fuelService
     ) {
-        abort_unless(
-            (int) $request->user()?->id === 1
-            || userHasProfile('admin'),
-            403
-        );
-
         $context =
             $this->activeContext(
                 $request
             );
 
+        $this->authorizePhotoImport(
+            $context
+        );
+
+        /*
+         * O lançamento final chega como multipart/form-data
+         * para que a ficha original possa viajar junto.
+         * O restante do payload permanece JSON.
+         */
+        if ($request->filled('payload')) {
+            $decodedPayload =
+                json_decode(
+                    (string) $request->input('payload'),
+                    true
+                );
+
+            if (! is_array($decodedPayload)) {
+                throw ValidationException::withMessages([
+                    'payload' =>
+                        'Os dados da ficha são inválidos.',
+                ]);
+            }
+
+            $request->merge(
+                $decodedPayload
+            );
+        }
+
         $validated =
             $request->validate([
+                'source_file' => [
+                    'required',
+                    'file',
+                    'mimes:jpg,jpeg,png,pdf',
+                    'max:12288',
+                ],
+
                 'confirm_duplicates' => [
                     'nullable',
                     'boolean',
@@ -628,12 +653,52 @@ class FuelPhotoImportController extends Controller
                         $fillings
                     );
 
+            /*
+             * Só arquivamos a ficha depois que o lote inteiro
+             * tiver sido registrado com sucesso.
+             *
+             * Se o arquivo falhar, não desfazemos abastecimentos
+             * válidos nem induzimos o operador a relançar o lote.
+             */
+            $archiveFileId = null;
+            $archiveWarning = null;
+
+            try {
+                $operationDate =
+                    Carbon::parse(
+                        $validated['rows'][0]['filled_at']
+                    )->toDateString();
+
+                $archiveFileId =
+                    $this->archiveSourceFile(
+                        $request,
+                        $context,
+                        $operationDate
+                    );
+
+            } catch (\Throwable $archiveException) {
+                report(
+                    $archiveException
+                );
+
+                $archiveWarning =
+                    'Os abastecimentos foram lançados, '
+                    .'mas não foi possível arquivar automaticamente '
+                    .'a ficha original. Anexe-a pelo Arquivo diário.';
+            }
+
             return response()->json([
                 'ok' => true,
 
                 'message' =>
                     count($validated['rows'])
                     .' abastecimento(s) da ficha lançado(s) com sucesso.',
+
+                'archive_file_id' =>
+                    $archiveFileId,
+
+                'archive_warning' =>
+                    $archiveWarning,
 
                 'fuel_fillings' =>
                     count(
@@ -674,6 +739,128 @@ class FuelPhotoImportController extends Controller
                     $exception->errors(),
             ], 422);
         }
+    }
+
+
+    private function archiveSourceFile(
+        Request $request,
+        array $context,
+        string $operationDate
+    ): ?int {
+        $file =
+            $request->file(
+                'source_file'
+            );
+
+        if (! $file) {
+            return null;
+        }
+
+        $check =
+            FuelDailyCheck::query()
+                ->firstOrCreate(
+                    [
+                        'tenant_id' =>
+                            $context['tenant_id'],
+
+                        'division_id' =>
+                            $context['division_id'],
+
+                        'location_id' =>
+                            $context['location_id'],
+
+                        'operation_date' =>
+                            $operationDate,
+                    ],
+                    [
+                        'status' =>
+                            'pending',
+                    ]
+                );
+
+        $extension =
+            strtolower(
+                $file->getClientOriginalExtension()
+                ?: $file->extension()
+                ?: 'jpg'
+            );
+
+        $path =
+            'protected/fuel-daily-checks/'
+            .$check->tenant_id.'/'
+            .$check->location_id.'/'
+            .$check->id.'/'
+            .Str::uuid().'.'.$extension;
+
+        Storage::disk('local')
+            ->putFileAs(
+                dirname($path),
+                $file,
+                basename($path)
+            );
+
+        $stored =
+            $check->files()->create([
+                'disk' =>
+                    'local',
+
+                'path' =>
+                    $path,
+
+                'original_name' =>
+                    $file->getClientOriginalName(),
+
+                'mime_type' =>
+                    $file->getMimeType(),
+
+                'size_bytes' =>
+                    Storage::disk('local')
+                        ->size($path),
+
+                'source' =>
+                    'photo_import',
+
+                'uploaded_by' =>
+                    $context['user']->id,
+            ]);
+
+        return $stored->id;
+    }
+
+
+    private function authorizePhotoImport(
+        array $context
+    ): void {
+        $user =
+            $context['user'];
+
+        $allowed =
+            (int) $user->id === 1
+            || userHasProfile('admin')
+            || app(
+                ProfilePermissionService::class
+            )->allows(
+                $user,
+                'fuel.fill_internal',
+                [
+                    'tenant_id' =>
+                        $context['tenant_id'],
+
+                    'division_id' =>
+                        $context['division_id'],
+
+                    'location_id' =>
+                        $context['location_id'],
+
+                    'module' =>
+                        'fleet',
+                ]
+            );
+
+        abort_unless(
+            $allowed,
+            403
+        );
     }
 
 

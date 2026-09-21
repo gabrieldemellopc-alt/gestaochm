@@ -45,6 +45,7 @@
                 'start_date' => now()->toDateString(),
                 'end_date' => now()->toDateString(),
                 'fleet_relation' => $fleetRelation,
+                'status' => 'active',
             ]) }}"
             class="fuel-history-today-shortcut"
             title="Exibir todos os abastecimentos realizados hoje"
@@ -190,25 +191,63 @@
 
 <div class="fuel-history-filter fuel-history-filter-relation">
 <label>Vínculo</label>
-<select name="fleet_relation">
-    <option value="all" @selected($fleetRelation === 'all')>Todos</option>
-    <option value="internal" @selected($fleetRelation === 'internal')>Interno</option>
-    <option value="rented" @selected($fleetRelation === 'rented')>Alugado</option>
-    <option value="aggregated" @selected($fleetRelation === 'aggregated')>Agregado</option>
-</select>
+
+<div class="fuel-history-relation-toggle">
+
+    <label>
+        <input
+            type="radio"
+            name="fleet_relation"
+            value="internal"
+            @checked($fleetRelation === 'internal')
+        >
+        <span>Interno</span>
+    </label>
+
+    <label>
+        <input
+            type="radio"
+            name="fleet_relation"
+            value="aggregated"
+            @checked($fleetRelation === 'aggregated')
+        >
+        <span>Agregado</span>
+    </label>
+
+    <label>
+        <input
+            type="radio"
+            name="fleet_relation"
+            value="rented"
+            @checked($fleetRelation === 'rented')
+        >
+        <span>Alugado</span>
+    </label>
+
+    <label>
+        <input
+            type="radio"
+            name="fleet_relation"
+            value="all"
+            @checked($fleetRelation === 'all')
+        >
+        <span>Todos</span>
+    </label>
+
+</div>
 </div>
 
-<div class="fuel-history-filter fuel-history-filter-date">
+<div class="fuel-history-filter fuel-history-filter-date fuel-history-filter-start">
 <label>Data inicial</label>
 <input type="date" name="start_date" value="{{ request('start_date') }}">
 </div>
 
-<div class="fuel-history-filter fuel-history-filter-date">
+<div class="fuel-history-filter fuel-history-filter-date fuel-history-filter-end">
 <label>Data final</label>
 <input type="date" name="end_date" value="{{ request('end_date') }}">
 </div>
 
-<div class="fuel-history-filter">
+<div class="fuel-history-filter fuel-history-filter-product">
 <label>Produto</label>
 <select name="fuel_product_id">
 <option value="">Todos</option>
@@ -218,7 +257,7 @@
 </select>
 </div>
 
-<div class="fuel-history-filter">
+<div class="fuel-history-filter fuel-history-filter-tank">
 <label>Tanque</label>
 <select name="fuel_tank_id">
 <option value="">Todos</option>
@@ -228,7 +267,7 @@
 </select>
 </div>
 
-<div class="fuel-history-filter">
+<div class="fuel-history-filter fuel-history-filter-source">
 <label>Origem</label>
 <select name="source">
 <option value="">Todas</option>
@@ -237,12 +276,12 @@
 </select>
 </div>
 
-<div class="fuel-history-filter">
+<div class="fuel-history-filter fuel-history-filter-status">
 <label>Status</label>
 <select name="status">
 <option value="">Todos</option>
-<option value="active" @selected(request('status') === 'active')>Realizado</option>
-<option value="cancelled" @selected(request('status') === 'cancelled')>Cancelado</option>
+<option value="active" @selected(request('status', 'active') === 'active')>Realizado</option>
+<option value="cancelled" @selected(request('status', 'active') === 'cancelled')>Cancelado</option>
 </select>
 </div>
 

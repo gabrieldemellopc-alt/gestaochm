@@ -15,13 +15,23 @@ class GoogleVisionFuelSheetService
         UploadedFile $file,
         array $context
     ): array {
+        $startedAt = microtime(true);
+
         $credentials = $this->credentials();
+
+        $tokenStartedAt = microtime(true);
         $token = $this->accessToken($credentials);
+        $tokenSeconds = microtime(true) - $tokenStartedAt;
+
+        $prepareStartedAt = microtime(true);
 
         $preparedImage =
             $this->prepareImage(
                 $file
             );
+
+        $prepareSeconds =
+            microtime(true) - $prepareStartedAt;
 
         $binary =
             file_get_contents(
@@ -33,6 +43,8 @@ class GoogleVisionFuelSheetService
                 'Não foi possível ler a imagem enviada.'
             );
         }
+
+        $visionStartedAt = microtime(true);
 
         $response = Http::withToken($token)
             ->acceptJson()
@@ -58,6 +70,31 @@ class GoogleVisionFuelSheetService
                     ],
                 ]
             );
+
+        $visionSeconds =
+            microtime(true) - $visionStartedAt;
+
+        \Log::info('Fuel photo timing', [
+            'token_seconds' =>
+                round($tokenSeconds, 3),
+
+            'prepare_seconds' =>
+                round($prepareSeconds, 3),
+
+            'vision_seconds' =>
+                round($visionSeconds, 3),
+
+            'prepared_bytes' =>
+                is_file($preparedImage)
+                    ? filesize($preparedImage)
+                    : null,
+
+            'total_until_vision_seconds' =>
+                round(
+                    microtime(true) - $startedAt,
+                    3
+                ),
+        ]);
 
         if (! $response->successful()) {
             throw new RuntimeException(
@@ -235,26 +272,70 @@ class GoogleVisionFuelSheetService
 
         if ($isPdf) {
             /*
-             * Analisa inicialmente apenas a primeira página.
-             * 200 DPI fornece resolução suficiente para OCR
-             * sem criar arquivo excessivamente pesado.
+             * PDF:
+             * 1) Ghostscript rasteriza somente a primeira página.
+             * 2) ImageMagick faz apenas o pós-processamento.
+             *
+             * Isso evita que o convert delegue toda a leitura do PDF
+             * ao Ghostscript dentro de um único pipeline pesado.
              */
-            $input =
-                $source.'[0]';
+            $raster =
+                $temp.'_page1.jpg';
+
+            $gsCommand = sprintf(
+                '/usr/bin/gs '
+                .'-q '
+                .'-dSAFER '
+                .'-dBATCH '
+                .'-dNOPAUSE '
+                .'-dFirstPage=1 '
+                .'-dLastPage=1 '
+                .'-sDEVICE=jpeg '
+                .'-r150 '
+                .'-dJPEGQ=88 '
+                .'-sOutputFile=%s '
+                .'%s 2>&1',
+                escapeshellarg($raster),
+                escapeshellarg($source)
+            );
+
+            $gsStartedAt =
+                microtime(true);
+
+            exec(
+                $gsCommand,
+                $gsMessages,
+                $gsExitCode
+            );
+
+            $gsSeconds =
+                microtime(true)
+                - $gsStartedAt;
+
+            if (
+                $gsExitCode !== 0
+                || ! is_file($raster)
+                || filesize($raster) <= 0
+            ) {
+                @unlink($raster);
+                @unlink($output);
+
+                throw new RuntimeException(
+                    'Não foi possível converter a primeira página do PDF para leitura.'
+                );
+            }
 
             $command = sprintf(
-                '/usr/bin/convert '
-                .'-density 200 %s '
-                .'-background white '
-                .'-alpha remove '
-                .'-alpha off '
+                '/usr/bin/convert %s '
                 .'-auto-orient '
+                .'-resize "3000x3000>" '
                 .'-deskew 40%% '
                 .'-colorspace sRGB '
                 .'-contrast-stretch 0.5%%x0.5%% '
-                .'-quality 92 '
+                .'-strip '
+                .'-quality 88 '
                 .'%s 2>&1',
-                escapeshellarg($input),
+                escapeshellarg($raster),
                 escapeshellarg($output)
             );
         } else {
@@ -271,11 +352,47 @@ class GoogleVisionFuelSheetService
             );
         }
 
+        $postStartedAt =
+            microtime(true);
+
         exec(
             $command,
             $messages,
             $exitCode
         );
+
+        $postSeconds =
+            microtime(true)
+            - $postStartedAt;
+
+        if ($isPdf) {
+            \Log::info('Fuel photo prepare timing', [
+                'ghostscript_seconds' =>
+                    round($gsSeconds ?? 0, 3),
+
+                'imagemagick_seconds' =>
+                    round($postSeconds, 3),
+
+                'raster_bytes' =>
+                    isset($raster)
+                    && is_file($raster)
+                        ? filesize($raster)
+                        : null,
+
+                'output_bytes' =>
+                    is_file($output)
+                        ? filesize($output)
+                        : null,
+            ]);
+        }
+
+        if (
+            $isPdf
+            && isset($raster)
+            && is_file($raster)
+        ) {
+            @unlink($raster);
+        }
 
         if (
             $exitCode !== 0
@@ -666,6 +783,21 @@ class GoogleVisionFuelSheetService
         $pageWidth =
             (float) $columns['page_width'];
 
+        /*
+         * Limites verticais reais da área de dados.
+         *
+         * Dentro dessa faixa, toda palavra é atribuída
+         * à linha fisicamente mais próxima. Não existe
+         * mais uma pequena zona morta entre duas linhas.
+         */
+        $gridTop =
+            min($centers)
+            - ($spacing * .52);
+
+        $gridBottom =
+            max($centers)
+            + ($spacing * .52);
+
         $numberColumnLimit =
             min(
                 (float) $columns['centers']['code'] * .75,
@@ -736,8 +868,8 @@ class GoogleVisionFuelSheetService
 
             if (
                 $nearestRow === null
-                || $nearestDistance
-                    > $spacing * .48
+                || $word['y'] < $gridTop
+                || $word['y'] > $gridBottom
             ) {
                 continue;
             }
@@ -875,6 +1007,7 @@ class GoogleVisionFuelSheetService
 
             if (
                 $vehicle
+                && $vehicle->km_control_enabled
                 && $previousKm !== null
                 && $vehicle->current_km !== null
             ) {
@@ -899,6 +1032,7 @@ class GoogleVisionFuelSheetService
 
             if (
                 $vehicle
+                && $vehicle->km_control_enabled
                 && $newKm !== null
                 && $vehicle->current_km !== null
                 && $newKm < (int) $vehicle->current_km
@@ -1107,6 +1241,10 @@ class GoogleVisionFuelSheetService
                 $pageWidth * .18
             );
 
+        /*
+         * Âncoras são os números impressos da primeira
+         * coluna da ficha.
+         */
         $anchors = [];
 
         foreach ($words as $word) {
@@ -1136,6 +1274,11 @@ class GoogleVisionFuelSheetService
                 continue;
             }
 
+            /*
+             * Se o Vision encontrou o mesmo número
+             * mais de uma vez, preserva o que estiver
+             * mais acima.
+             */
             if (
                 ! isset($anchors[$number])
                 || $word['y']
@@ -1146,85 +1289,304 @@ class GoogleVisionFuelSheetService
             }
         }
 
-        /*
-         * Três linhas numeradas já são suficientes para
-         * estimar com segurança o espaçamento da tabela.
-         *
-         * Isso é importante para fichas curtas, como a
-         * ficha de Barreiras com 8 linhas.
-         */
         if (count($anchors) < 3) {
-            return null;
+            return $this->contentBasedRowGrid(
+                $words,
+                $columns
+            );
         }
 
         ksort($anchors);
 
+
+        /*
+         * -------------------------------------------------
+         * PASSO 1
+         * Estima o espaçamento por MEDIANA das inclinações
+         * entre pares de linhas.
+         *
+         * Isso é muito menos sensível a um número de linha
+         * que o OCR tenha lido incorretamente.
+         * -------------------------------------------------
+         */
+
+        $pairSlopes = [];
+
+        $anchorNumbers =
+            array_keys($anchors);
+
+        $anchorCount =
+            count($anchorNumbers);
+
+        for (
+            $i = 0;
+            $i < $anchorCount;
+            $i++
+        ) {
+            for (
+                $j = $i + 1;
+                $j < $anchorCount;
+                $j++
+            ) {
+                $rowA =
+                    $anchorNumbers[$i];
+
+                $rowB =
+                    $anchorNumbers[$j];
+
+                $rowDelta =
+                    $rowB - $rowA;
+
+                if ($rowDelta <= 0) {
+                    continue;
+                }
+
+                $yDelta =
+                    $anchors[$rowB]
+                    - $anchors[$rowA];
+
+                if ($yDelta <= 0) {
+                    continue;
+                }
+
+                $candidate =
+                    $yDelta
+                    / $rowDelta;
+
+                if (
+                    $candidate >= 8
+                    && $candidate <= 150
+                ) {
+                    $pairSlopes[] =
+                        $candidate;
+                }
+            }
+        }
+
+        if (! $pairSlopes) {
+            return $this->contentBasedRowGrid(
+                $words,
+                $columns
+            );
+        }
+
+        sort($pairSlopes);
+
+        $median = function (
+            array $values
+        ): float {
+            sort($values);
+
+            $count =
+                count($values);
+
+            $middle =
+                intdiv(
+                    $count,
+                    2
+                );
+
+            if ($count % 2) {
+                return (float)
+                    $values[$middle];
+            }
+
+            return (
+                (float) $values[$middle - 1]
+                + (float) $values[$middle]
+            ) / 2;
+        };
+
+        $slope =
+            $median(
+                $pairSlopes
+            );
+
+        if (
+            $slope < 8
+            || $slope > 150
+        ) {
+            return $this->contentBasedRowGrid(
+                $words,
+                $columns
+            );
+        }
+
+
+        /*
+         * -------------------------------------------------
+         * PASSO 2
+         * Calcula vários interceptos:
+         *
+         * Y = intercept + slope * número_da_linha
+         *
+         * e usa novamente a mediana.
+         * -------------------------------------------------
+         */
+
+        $intercepts = [];
+
+        foreach (
+            $anchors
+            as $row => $y
+        ) {
+            $intercepts[] =
+                $y
+                - ($slope * $row);
+        }
+
+        $intercept =
+            $median(
+                $intercepts
+            );
+
+
+        /*
+         * -------------------------------------------------
+         * PASSO 3
+         * Remove âncoras incompatíveis com a grade.
+         *
+         * Um número mal reconhecido pelo OCR deixa de
+         * distorcer toda a ficha.
+         * -------------------------------------------------
+         */
+
+        $residualTolerance =
+            max(
+                5.0,
+                $slope * .38
+            );
+
+        $inliers = [];
+
+        foreach (
+            $anchors
+            as $row => $y
+        ) {
+            $expected =
+                $intercept
+                + ($slope * $row);
+
+            if (
+                abs(
+                    $y - $expected
+                )
+                <= $residualTolerance
+            ) {
+                $inliers[$row] =
+                    $y;
+            }
+        }
+
+        /*
+         * Se houve pelo menos 3 âncoras coerentes,
+         * refina slope/intercept com regressão somente
+         * sobre essas âncoras confiáveis.
+         */
+        if (count($inliers) >= 3) {
+
+            $n =
+                count($inliers);
+
+            $sumX = 0.0;
+            $sumY = 0.0;
+            $sumXY = 0.0;
+            $sumXX = 0.0;
+
+            foreach (
+                $inliers
+                as $row => $y
+            ) {
+                $x =
+                    (float) $row;
+
+                $sumX += $x;
+                $sumY += $y;
+                $sumXY += $x * $y;
+                $sumXX += $x * $x;
+            }
+
+            $denominator =
+                ($n * $sumXX)
+                - ($sumX * $sumX);
+
+            if (
+                abs($denominator)
+                >= .0001
+            ) {
+                $refinedSlope =
+                    (
+                        ($n * $sumXY)
+                        - ($sumX * $sumY)
+                    )
+                    / $denominator;
+
+                $refinedIntercept =
+                    (
+                        $sumY
+                        - (
+                            $refinedSlope
+                            * $sumX
+                        )
+                    )
+                    / $n;
+
+                if (
+                    $refinedSlope >= 8
+                    && $refinedSlope <= 150
+                ) {
+                    $slope =
+                        $refinedSlope;
+
+                    $intercept =
+                        $refinedIntercept;
+                }
+            }
+        } else {
+            /*
+             * Conservador: se a filtragem robusta deixou
+             * poucas âncoras, mantém todas para determinar
+             * até onde a tabela vai.
+             */
+            $inliers =
+                $anchors;
+        }
+
+
+        /*
+         * Não usa um possível número OCR aberrante
+         * para determinar o tamanho da ficha.
+         */
         $rowCount =
             (int) max(
-                array_keys($anchors)
+                array_keys(
+                    $inliers
+                )
             );
 
         if (
             $rowCount < 1
             || $rowCount > 60
         ) {
-            return null;
-        }
-
-        $n = count($anchors);
-
-        $sumX = 0.0;
-        $sumY = 0.0;
-        $sumXY = 0.0;
-        $sumXX = 0.0;
-
-        foreach (
-            $anchors
-            as $row => $y
-        ) {
-            $x = (float) $row;
-
-            $sumX += $x;
-            $sumY += $y;
-            $sumXY += $x * $y;
-            $sumXX += $x * $x;
-        }
-
-        $denominator =
-            ($n * $sumXX)
-            - ($sumX * $sumX);
-
-        if (abs($denominator) < .0001) {
-            return null;
-        }
-
-        $slope =
-            (
-                ($n * $sumXY)
-                - ($sumX * $sumY)
-            )
-            / $denominator;
-
-        $intercept =
-            (
-                $sumY
-                - ($slope * $sumX)
-            )
-            / $n;
-
-        if (
-            $slope < 8
-            || $slope > 150
-        ) {
-            return null;
+            return $this->contentBasedRowGrid(
+                $words,
+                $columns
+            );
         }
 
         $centers = [];
 
-        for ($row = 1; $row <= $rowCount; $row++) {
+        for (
+            $row = 1;
+            $row <= $rowCount;
+            $row++
+        ) {
             $centers[$row] =
                 $intercept
-                + ($slope * $row);
+                + (
+                    $slope
+                    * $row
+                );
         }
 
         return [
@@ -1237,11 +1599,459 @@ class GoogleVisionFuelSheetService
             'anchors_found' =>
                 count($anchors),
 
+            'anchors_inlier' =>
+                count($inliers),
+
             'row_count' =>
                 $rowCount,
 
             'anchor_rows' =>
                 array_keys($anchors),
+
+            'inlier_rows' =>
+                array_keys($inliers),
+        ];
+    }
+
+
+    /*
+     * Fallback para fichas em que o OCR não reconhece
+     * corretamente a coluna impressa Nº.
+     *
+     * Em vez de desistir da análise, usa a geometria
+     * vertical das células preenchidas para reconstruir
+     * as linhas físicas da tabela.
+     */
+    private function contentBasedRowGrid(
+        Collection $words,
+        array $columns
+    ): ?array {
+        $headerY =
+            (float) $columns['header_y'];
+
+        $pageWidth =
+            (float) $columns['page_width'];
+
+        $numberColumnLimit =
+            min(
+                (float) $columns['centers']['code'] * .75,
+                $pageWidth * .18
+            );
+
+        /*
+         * Somente palavras pertencentes à área útil
+         * das colunas da tabela.
+         */
+        $candidates =
+            $words
+                ->filter(
+                    function ($word) use (
+                        $headerY,
+                        $numberColumnLimit,
+                        $pageWidth
+                    ) {
+                        return
+                            $word['y'] > $headerY + 5
+                            && $word['x'] >= $numberColumnLimit
+                            && $word['x'] <= $pageWidth * .97;
+                    }
+                )
+                ->sortBy('y')
+                ->values();
+
+        if ($candidates->count() < 6) {
+            \Log::warning('Fuel photo content grid failed', [
+                'stage' => 'candidates',
+                'candidate_count' => $candidates->count(),
+                'header_y' => $headerY,
+                'page_width' => $pageWidth,
+                'number_column_limit' => $numberColumnLimit,
+                'words_total' => $words->count(),
+            ]);
+
+            return null;
+        }
+
+        /*
+         * Altura típica de uma palavra reconhecida.
+         * Serve somente para agrupar palavras que estão
+         * visualmente na mesma linha.
+         */
+        $heights =
+            $candidates
+                ->pluck('height')
+                ->filter(
+                    fn ($value) =>
+                        is_numeric($value)
+                        && $value > 0
+                )
+                ->map(
+                    fn ($value) =>
+                        (float) $value
+                )
+                ->sort()
+                ->values()
+                ->all();
+
+        if (! $heights) {
+            \Log::warning('Fuel photo content grid failed', [
+                'stage' => 'heights',
+                'candidate_count' => $candidates->count(),
+            ]);
+
+            return null;
+        }
+
+        $median = function (
+            array $values
+        ): float {
+            sort($values);
+
+            $count =
+                count($values);
+
+            $middle =
+                intdiv(
+                    $count,
+                    2
+                );
+
+            if ($count % 2) {
+                return (float)
+                    $values[$middle];
+            }
+
+            return (
+                (float) $values[$middle - 1]
+                + (float) $values[$middle]
+            ) / 2;
+        };
+
+        $medianHeight =
+            $median($heights);
+
+        $clusterTolerance =
+            max(
+                10.0,
+                min(
+                    34.0,
+                    $medianHeight * 1.35
+                )
+            );
+
+        /*
+         * Agrupa palavras pela coordenada Y.
+         */
+        $clusters = [];
+
+        foreach ($candidates as $word) {
+            $y =
+                (float) $word['y'];
+
+            $bestIndex =
+                null;
+
+            $bestDistance =
+                INF;
+
+            foreach (
+                $clusters
+                as $index => $cluster
+            ) {
+                $distance =
+                    abs(
+                        $y
+                        - $cluster['center']
+                    );
+
+                if (
+                    $distance <= $clusterTolerance
+                    && $distance < $bestDistance
+                ) {
+                    $bestIndex =
+                        $index;
+
+                    $bestDistance =
+                        $distance;
+                }
+            }
+
+            if ($bestIndex === null) {
+                $clusters[] = [
+                    'ys' => [$y],
+                    'center' => $y,
+                    'words' => 1,
+                ];
+
+                continue;
+            }
+
+            $clusters[$bestIndex]['ys'][]
+                = $y;
+
+            $clusters[$bestIndex]['words']++;
+
+            $clusters[$bestIndex]['center'] =
+                array_sum(
+                    $clusters[$bestIndex]['ys']
+                )
+                / count(
+                    $clusters[$bestIndex]['ys']
+                );
+        }
+
+        usort(
+            $clusters,
+            fn ($a, $b) =>
+                $a['center']
+                <=> $b['center']
+        );
+
+        /*
+         * Não elimina clusters de uma única palavra.
+         *
+         * Em fichas manuscritas o Vision pode reconhecer
+         * somente um valor de determinada linha. Excluir
+         * esses grupos cria grandes buracos artificiais
+         * na grade.
+         */
+
+        if (count($clusters) < 3) {
+            \Log::warning('Fuel photo content grid failed', [
+                'stage' => 'clusters',
+                'cluster_count' => count($clusters),
+                'median_height' => $medianHeight,
+                'cluster_tolerance' => $clusterTolerance,
+                'cluster_centers' => array_map(
+                    fn ($cluster) => [
+                        'y' => round($cluster['center'], 2),
+                        'words' => $cluster['words'],
+                    ],
+                    $clusters
+                ),
+            ]);
+
+            return null;
+        }
+
+
+        /*
+         * Distâncias entre grupos consecutivos.
+         *
+         * A maioria delas corresponde a uma única
+         * altura de linha. Uma linha vazia produz
+         * aproximadamente 2x o espaçamento, o que
+         * não prejudica a mediana.
+         */
+        $differences = [];
+
+        for (
+            $i = 1;
+            $i < count($clusters);
+            $i++
+        ) {
+            $difference =
+                $clusters[$i]['center']
+                - $clusters[$i - 1]['center'];
+
+            if (
+                $difference >= 8
+                && $difference <= 600
+            ) {
+                $differences[] =
+                    $difference;
+            }
+        }
+
+        if (count($differences) < 2) {
+            \Log::warning('Fuel photo content grid failed', [
+                'stage' => 'differences',
+                'cluster_count' => count($clusters),
+                'cluster_centers' => array_map(
+                    fn ($cluster) => round($cluster['center'], 2),
+                    $clusters
+                ),
+                'differences' => $differences,
+            ]);
+
+            return null;
+        }
+
+        /*
+         * Usa a metade inferior das diferenças.
+         * Isso evita que uma linha vazia (2x spacing)
+         * aumente artificialmente o espaçamento.
+         */
+        sort($differences);
+
+        $baseCount =
+            max(
+                2,
+                (int) ceil(
+                    count($differences) * .65
+                )
+            );
+
+        $baseDifferences =
+            array_slice(
+                $differences,
+                0,
+                $baseCount
+            );
+
+        $spacing =
+            $median(
+                $baseDifferences
+            );
+
+        if (
+            $spacing < 8
+            || $spacing > 600
+        ) {
+            \Log::warning('Fuel photo content grid failed', [
+                'stage' => 'spacing',
+                'spacing' => $spacing,
+                'differences' => $differences,
+                'base_differences' => $baseDifferences,
+            ]);
+
+            return null;
+        }
+
+
+        /*
+         * Primeiro centro preenchido = primeira linha
+         * física da ficha. Em fichas CHM a tabela sempre
+         * começa na linha 1; lacunas posteriores são
+         * preservadas pelo cálculo abaixo.
+         */
+        $firstCenter =
+            (float) $clusters[0]['center'];
+
+        $mappedRows = [];
+
+        foreach ($clusters as $cluster) {
+            $row =
+                1
+                + (int) round(
+                    (
+                        $cluster['center']
+                        - $firstCenter
+                    )
+                    / $spacing
+                );
+
+            if (
+                $row < 1
+                || $row > 60
+            ) {
+                continue;
+            }
+
+            $mappedRows[$row] =
+                (float) $cluster['center'];
+        }
+
+        if (count($mappedRows) < 3) {
+            \Log::warning('Fuel photo content grid failed', [
+                'stage' => 'mapped_rows',
+                'spacing' => $spacing,
+                'first_center' => $firstCenter,
+                'mapped_rows' => $mappedRows,
+            ]);
+
+            return null;
+        }
+
+
+        /*
+         * Remove clusters muito distantes após o final
+         * da tabela (rodapé, assinatura etc.).
+         */
+        ksort($mappedRows);
+
+        $cleanRows = [];
+        $previousRow = null;
+
+        foreach (
+            $mappedRows
+            as $row => $center
+        ) {
+            if (
+                $previousRow !== null
+                && ($row - $previousRow) > 3
+            ) {
+                break;
+            }
+
+            $cleanRows[$row] =
+                $center;
+
+            $previousRow =
+                $row;
+        }
+
+        if (count($cleanRows) < 3) {
+            \Log::warning('Fuel photo content grid failed', [
+                'stage' => 'clean_rows',
+                'spacing' => $spacing,
+                'mapped_rows' => $mappedRows,
+                'clean_rows' => $cleanRows,
+            ]);
+
+            return null;
+        }
+
+        $rowCount =
+            (int) max(
+                array_keys(
+                    $cleanRows
+                )
+            );
+
+
+        /*
+         * Grade regular final.
+         */
+        $centers = [];
+
+        for (
+            $row = 1;
+            $row <= $rowCount;
+            $row++
+        ) {
+            $centers[$row] =
+                $firstCenter
+                + (
+                    ($row - 1)
+                    * $spacing
+                );
+        }
+
+        return [
+            'centers' =>
+                $centers,
+
+            'spacing' =>
+                $spacing,
+
+            'anchors_found' =>
+                0,
+
+            'anchors_inlier' =>
+                0,
+
+            'row_count' =>
+                $rowCount,
+
+            'anchor_rows' =>
+                [],
+
+            'inlier_rows' =>
+                [],
+
+            'grid_source' =>
+                'content_geometry',
         ];
     }
 

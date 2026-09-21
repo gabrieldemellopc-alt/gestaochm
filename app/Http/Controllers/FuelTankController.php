@@ -112,6 +112,96 @@ class FuelTankController extends Controller
         $vehicles->load('fuelProducts');
         $policy = app(VehicleFuelPolicy::class);
         $fuelCompatibility = $vehicles->mapWithKeys(fn (Vehicle $vehicle) => [$vehicle->id => $policy->compatibilityForVehicle($vehicle, $products)]);
+
+        /*
+         * Últimos abastecimentos válidos por veículo.
+         * Usado somente como apoio visual no modal de abastecimento.
+         */
+        $vehicleFillingHistory =
+            FuelFilling::query()
+                ->with([
+                    'tank:id,name',
+                    'product:id,name',
+                    'responsible:id,name',
+                ])
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('division_id', $context['division_id'])
+                ->where('location_id', $context['location_id'])
+                ->whereNull('cancelled_at')
+                ->whereNotNull('vehicle_id')
+                ->whereIn('vehicle_id', $vehicles->pluck('id'))
+                ->orderBy('vehicle_id')
+                ->orderByDesc('filled_at')
+                ->orderByDesc('id')
+                ->get();
+
+        $lastFillingByVehicle =
+            $vehicleFillingHistory
+                ->groupBy('vehicle_id')
+                ->mapWithKeys(function ($items, $vehicleId) {
+
+                    $last = $items->first();
+
+                    $previousWithKm =
+                        $items
+                            ->skip(1)
+                            ->first(
+                                fn ($item) =>
+                                    $item->vehicle_km !== null
+                            );
+
+                    return [
+                        (string) $vehicleId => [
+                            'filled_at' =>
+                                $last->filled_at?->format('d/m/Y H:i'),
+
+                            'quantity_liters' =>
+                                $last->quantity_liters !== null
+                                    ? number_format(
+                                        (float) $last->quantity_liters,
+                                        3,
+                                        ',',
+                                        '.'
+                                    )
+                                    : null,
+
+                            'product' =>
+                                $last->product?->name,
+
+                            'tank' =>
+                                $last->tank?->name,
+
+                            'vehicle_km' =>
+                                $last->vehicle_km !== null
+                                    ? number_format(
+                                        (float) $last->vehicle_km,
+                                        0,
+                                        ',',
+                                        '.'
+                                    )
+                                    : null,
+
+                            'previous_km' =>
+                                $previousWithKm?->vehicle_km !== null
+                                    ? number_format(
+                                        (float) $previousWithKm->vehicle_km,
+                                        0,
+                                        ',',
+                                        '.'
+                                    )
+                                    : null,
+
+                            'source_label' =>
+                                $last->source === FuelFilling::SOURCE_EXTERNAL_STATION
+                                    ? 'Posto externo'
+                                    : 'Tanque da unidade',
+
+                            'responsible' =>
+                                $last->responsible?->name,
+                        ],
+                    ];
+                })
+                ->all();
         return view('fuel.tanks.index', [
             'activeDivision' => $context['division'],
             'activeLocation' => $context['location'],
@@ -123,6 +213,7 @@ class FuelTankController extends Controller
 
             'vehicles' => $vehicles,
             'fuelCompatibility' => $fuelCompatibility,
+            'lastFillingByVehicle' => $lastFillingByVehicle,
             'latestReceipts' => $this->latestReceipts($context),
             'latestFillings' => $this->latestFillings($context),
             'openFuelModal' => request('fuel_modal') ?: session('fuel_modal'),
@@ -466,8 +557,16 @@ class FuelTankController extends Controller
                 ? $query->where(fn ($q) => $q->where('source', FuelFilling::SOURCE_INTERNAL_TANK)->orWhereNull('source'))
                 : $query->where('source', $request->input('source'));
         }
-        if ($request->input('status') === 'active') $query->whereNull('cancelled_at');
-        if ($request->input('status') === 'cancelled') $query->whereNotNull('cancelled_at');
+        $historyStatus = $request->input('status', 'active');
+
+        if ($historyStatus === 'active') {
+            $query->whereNull('cancelled_at');
+        }
+
+        if ($historyStatus === 'cancelled') {
+            $query->whereNotNull('cancelled_at');
+        }
+
         $filteredCount = (clone $query)->count();
 
         $historyVehicles = $this->vehiclesForContext($context);
@@ -639,11 +738,13 @@ class FuelTankController extends Controller
                 : $query->where('source', $request->input('source'));
         }
 
-        if ($request->input('status') === 'active') {
+        $historyStatus = $request->input('status', 'active');
+
+        if ($historyStatus === 'active') {
             $query->whereNull('cancelled_at');
         }
 
-        if ($request->input('status') === 'cancelled') {
+        if ($historyStatus === 'cancelled') {
             $query->whereNotNull('cancelled_at');
         }
 
@@ -760,8 +861,17 @@ class FuelTankController extends Controller
         }
         foreach (['fuel_product_id', 'fuel_tank_id'] as $field) if ($request->filled($field)) $query->where($field, $request->integer($field));
         if ($request->filled('supplier_name')) $query->where('supplier_name', 'like', '%'.$request->input('supplier_name').'%');
-        if ($request->input('status') === 'active') $query->whereNull('cancelled_at');
-        if ($request->input('status') === 'cancelled') $query->whereNotNull('cancelled_at');
+        $receiptHistoryStatus =
+            $request->input('status', 'active');
+
+        if ($receiptHistoryStatus === 'active') {
+            $query->whereNull('cancelled_at');
+        }
+
+        if ($receiptHistoryStatus === 'cancelled') {
+            $query->whereNotNull('cancelled_at');
+        }
+
         return view('fuel.tanks.receipts-history', ['receipts' => $query->latest('received_at')->paginate(25)->withQueryString(), 'products' => FuelProduct::where('tenant_id', $context['tenant_id'])->orderBy('name')->get(), 'tanks' => FuelTank::where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->orderBy('name')->get(), 'fuelPermissions' => $this->fuelPermissions($context)]);
     }
 
@@ -1044,8 +1154,13 @@ class FuelTankController extends Controller
                 'id',
                 'name',
                 'plate',
+                'type',
                 'current_km',
                 'current_hours',
+                'km_control_enabled',
+                'hours_control_enabled',
+                'km_meter_status',
+                'hours_meter_status',
                 'fleet_relation',
             ]);
     }

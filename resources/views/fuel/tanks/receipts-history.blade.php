@@ -59,11 +59,11 @@
 
 
 <form
-    class="fuel-history-filters"
+    class="fuel-history-filters fuel-receipts-history-filters"
     method="GET"
 >
 
-    <label class="fuel-history-filter-field fuel-history-filter-search">
+    <label class="fuel-history-filter-field fuel-history-filter-search fuel-receipts-filter-search">
         <span>Buscar</span>
 
         <div class="fuel-history-search-box">
@@ -79,7 +79,7 @@
     </label>
 
 
-    <label class="fuel-history-filter-field">
+    <label class="fuel-history-filter-field fuel-receipts-filter-start">
         <span>Data inicial</span>
 
         <input
@@ -90,7 +90,7 @@
     </label>
 
 
-    <label class="fuel-history-filter-field">
+    <label class="fuel-history-filter-field fuel-receipts-filter-end">
         <span>Data final</span>
 
         <input
@@ -101,7 +101,7 @@
     </label>
 
 
-    <label class="fuel-history-filter-field">
+    <label class="fuel-history-filter-field fuel-receipts-filter-product">
         <span>Produto</span>
 
         <select name="fuel_product_id">
@@ -124,7 +124,7 @@
     </label>
 
 
-    <label class="fuel-history-filter-field">
+    <label class="fuel-history-filter-field fuel-receipts-filter-tank">
         <span>Tanque</span>
 
         <select name="fuel_tank_id">
@@ -147,7 +147,7 @@
     </label>
 
 
-    <label class="fuel-history-filter-field">
+    <label class="fuel-history-filter-field fuel-receipts-filter-status">
         <span>Status</span>
 
         <select name="status">
@@ -226,14 +226,20 @@
 
 <tr class="{{ $receipt->cancelled_at ? 'is-cancelled' : '' }}">
 
-    <td>
-        {{ $receipt->received_at?->format('d/m/Y H:i') }}
+    <td class="fuel-history-date fuel-receipt-history-date">
 
-        <br>
+        <strong>
+            {{ $receipt->received_at?->format('d/m/Y') }}
+        </strong>
 
         <small>
+            {{ $receipt->received_at?->format('H:i') }}
+        </small>
+
+        <small class="fuel-receipt-history-tank">
             {{ $receipt->tank?->name }}
         </small>
+
     </td>
 
 

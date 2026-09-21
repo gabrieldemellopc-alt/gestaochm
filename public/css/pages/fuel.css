@@ -6967,3 +6967,3946 @@ body.fuel-photo-ai-modal-open {
         justify-content: flex-end;
     }
 }
+
+
+/* =========================================================
+   ARQUIVO DIÁRIO DE ABASTECIMENTOS
+   ========================================================= */
+
+.fuel-archive-page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.fuel-archive-header,
+.fuel-archive-calendar-panel,
+.fuel-archive-day-header,
+.fuel-archive-panel {
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 16px;
+    background: rgba(51, 68, 100, .68);
+}
+
+.fuel-archive-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 26px;
+}
+
+.fuel-archive-header h1 {
+    margin: 5px 0 4px;
+}
+
+.fuel-archive-header p {
+    margin: 0;
+    color: #b6c2d8;
+}
+
+.fuel-archive-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.fuel-archive-calendar-panel {
+    padding: 18px;
+}
+
+.fuel-archive-calendar-head {
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.fuel-archive-calendar-head > div {
+    text-align: center;
+}
+
+.fuel-archive-calendar-head span {
+    display: block;
+    margin-bottom: 3px;
+    color: #91a6c9;
+    font-size: .64rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.fuel-archive-calendar-head h2 {
+    margin: 0;
+    font-size: 1.08rem;
+}
+
+.fuel-archive-month-nav {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 11px;
+    color: #eef4ff;
+    text-decoration: none;
+}
+
+.fuel-archive-month-nav:hover {
+    background: rgba(255,255,255,.06);
+}
+
+.fuel-archive-weekdays,
+.fuel-archive-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.fuel-archive-weekdays {
+    gap: 7px;
+    margin-bottom: 7px;
+}
+
+.fuel-archive-weekdays span {
+    padding: 4px;
+    color: #8ea3c4;
+    font-size: .62rem;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.fuel-archive-calendar {
+    gap: 7px;
+}
+
+.fuel-archive-day {
+    position: relative;
+    min-height: 72px;
+    padding: 9px 10px;
+    border: 1px solid rgba(148, 163, 184, .15);
+    border-radius: 10px;
+    background: rgba(32, 47, 75, .48);
+    color: #f1f5f9;
+    text-decoration: none;
+    transition:
+        border-color .15s ease,
+        background .15s ease,
+        transform .15s ease;
+}
+
+.fuel-archive-day:hover {
+    border-color: rgba(148, 163, 184, .42);
+    background: rgba(67, 87, 123, .64);
+    transform: translateY(-1px);
+}
+
+.fuel-archive-day.is-outside {
+    opacity: .33;
+}
+
+.fuel-archive-day.is-selected {
+    border-color: rgba(248, 113, 113, .8);
+    box-shadow: inset 0 0 0 1px rgba(248, 113, 113, .25);
+}
+
+.fuel-archive-day strong {
+    display: block;
+    font-size: .83rem;
+}
+
+.fuel-archive-day small {
+    display: block;
+    margin-top: 7px;
+    color: #9fb1cd;
+    font-size: .55rem;
+}
+
+.fuel-archive-day-status {
+    position: absolute;
+    right: 8px;
+    bottom: 7px;
+    font-size: .67rem;
+}
+
+.fuel-archive-day.has-files
+.fuel-archive-day-status {
+    color: #65e7a6;
+}
+
+.fuel-archive-day.has-fillings:not(.has-files)
+.fuel-archive-day-status {
+    color: #f6c453;
+}
+
+.fuel-archive-calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 13px;
+    color: #9fb0cb;
+    font-size: .63rem;
+}
+
+.fuel-archive-calendar-legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.fuel-archive-calendar-legend span:first-child i {
+    color: #65e7a6;
+}
+
+.fuel-archive-calendar-legend span:last-child i {
+    color: #f6c453;
+    font-size: .48rem;
+}
+
+
+.fuel-archive-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 18px;
+}
+
+.fuel-archive-day-header span {
+    display: block;
+    color: #91a6c9;
+    font-size: .62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.fuel-archive-day-header h2 {
+    margin: 2px 0 0;
+    font-size: 1.12rem;
+}
+
+.fuel-archive-date-jump input {
+    min-width: 160px;
+}
+
+
+.fuel-archive-kpis {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(160px, 1fr)
+    );
+    gap: 10px;
+}
+
+.fuel-archive-kpis article {
+    padding: 13px 15px;
+    border: 1px solid rgba(148, 163, 184, .17);
+    border-radius: 12px;
+    background: rgba(51, 68, 100, .68);
+}
+
+.fuel-archive-kpis span,
+.fuel-archive-kpis small {
+    display: block;
+    color: #93a7c8;
+    font-size: .58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.fuel-archive-kpis strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 1rem;
+}
+
+
+.fuel-archive-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(0, .9fr)
+        minmax(0, 1.3fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.fuel-archive-panel {
+    padding: 17px;
+}
+
+.fuel-archive-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.fuel-archive-section-head span {
+    color: #91a6c9;
+    font-size: .59rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.fuel-archive-section-head h2 {
+    margin: 2px 0 0;
+    font-size: .94rem;
+}
+
+.fuel-archive-count {
+    display: grid;
+    place-items: center;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(99, 120, 158, .38);
+    color: #fff !important;
+}
+
+
+.fuel-archive-documents {
+    display: grid;
+    gap: 9px;
+    margin-bottom: 14px;
+}
+
+.fuel-archive-document {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 11px;
+    padding: 9px;
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 11px;
+    background: rgba(31, 46, 72, .42);
+}
+
+.fuel-archive-document-preview {
+    display: grid;
+    place-items: center;
+    min-height: 76px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, .44);
+    text-decoration: none;
+}
+
+.fuel-archive-document-preview img {
+    width: 100%;
+    height: 76px;
+    object-fit: cover;
+}
+
+.fuel-archive-document-preview > div {
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    color: #f87171;
+}
+
+.fuel-archive-document-preview i {
+    font-size: 1.4rem;
+}
+
+.fuel-archive-document-body {
+    min-width: 0;
+}
+
+.fuel-archive-document-body > strong,
+.fuel-archive-document-body > span,
+.fuel-archive-document-body > small {
+    display: block;
+}
+
+.fuel-archive-document-body > strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .72rem;
+}
+
+.fuel-archive-document-body > span {
+    margin-top: 4px;
+    color: #65e7a6;
+    font-size: .59rem;
+}
+
+.fuel-archive-document-body > small {
+    margin-top: 3px;
+    color: #8fa2c1;
+    font-size: .55rem;
+}
+
+.fuel-archive-document-body > div {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.fuel-archive-document-body
+.fuel-secondary-action,
+.fuel-archive-document-body
+.fuel-daily-file-delete {
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: .59rem;
+}
+
+
+.fuel-archive-empty-document {
+    display: grid;
+    place-items: center;
+    min-height: 135px;
+    padding: 20px;
+    border: 1px dashed rgba(148, 163, 184, .2);
+    border-radius: 11px;
+    text-align: center;
+}
+
+.fuel-archive-empty-document i {
+    margin-bottom: 7px;
+    color: #8296b7;
+    font-size: 1.35rem;
+}
+
+.fuel-archive-empty-document strong {
+    font-size: .72rem;
+}
+
+.fuel-archive-empty-document span {
+    max-width: 330px;
+    margin-top: 4px;
+    color: #8fa2c1;
+    font-size: .6rem;
+}
+
+
+.fuel-archive-upload-form {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(148, 163, 184, .12);
+}
+
+.fuel-archive-file-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px;
+    border: 1px dashed rgba(148, 163, 184, .25);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.fuel-archive-file-picker > i {
+    color: #9eb1d0;
+    font-size: 1.15rem;
+}
+
+.fuel-archive-file-picker span {
+    display: grid;
+}
+
+.fuel-archive-file-picker strong {
+    font-size: .67rem;
+}
+
+.fuel-archive-file-picker small,
+#dailySelectedFiles {
+    color: #8fa2c1;
+    font-size: .57rem;
+}
+
+.fuel-archive-file-picker input {
+    display: none;
+}
+
+.fuel-archive-upload-form
+.fuel-primary-action {
+    justify-self: end;
+}
+
+
+.fuel-archive-mobile-upload {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 13px;
+    padding-top: 13px;
+    border-top: 1px solid rgba(148, 163, 184, .12);
+}
+
+.fuel-archive-mobile-upload > div {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.fuel-archive-mobile-upload span {
+    display: grid;
+}
+
+.fuel-archive-mobile-upload strong {
+    font-size: .67rem;
+}
+
+.fuel-archive-mobile-upload small {
+    color: #8fa2c1;
+    font-size: .57rem;
+}
+
+
+.fuel-archive-fillings {
+    display: grid;
+}
+
+.fuel-archive-fillings article {
+    display: grid;
+    grid-template-columns:
+        54px
+        minmax(130px, 1.1fr)
+        minmax(120px, .9fr)
+        92px
+        90px;
+    gap: 9px;
+    align-items: center;
+    min-height: 51px;
+    padding: 8px 4px;
+    border-bottom: 1px solid rgba(148, 163, 184, .1);
+}
+
+.fuel-archive-fillings article:last-child {
+    border-bottom: 0;
+}
+
+.fuel-archive-fillings time {
+    color: #90a5c5;
+    font-size: .62rem;
+    font-weight: 800;
+}
+
+.fuel-archive-fillings strong {
+    font-size: .66rem;
+}
+
+.fuel-archive-fillings small {
+    display: block;
+    margin-top: 2px;
+    color: #8498b9;
+    font-size: .55rem;
+}
+
+.fuel-archive-filling-liters {
+    text-align: right;
+}
+
+.fuel-archive-filling-km {
+    color: #b7c5da;
+    font-size: .61rem;
+    text-align: right;
+}
+
+.fuel-archive-notes p {
+    margin: 0;
+    color: #b8c5d8;
+    font-size: .7rem;
+}
+
+
+@media (max-width: 1100px) {
+    .fuel-archive-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .fuel-archive-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .fuel-archive-header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .fuel-archive-day {
+        min-height: 55px;
+        padding: 7px;
+    }
+
+    .fuel-archive-day small {
+        display: none;
+    }
+
+    .fuel-archive-fillings article {
+        grid-template-columns:
+            48px
+            1fr
+            82px;
+    }
+
+    .fuel-archive-fillings article > div:nth-of-type(2) {
+        display: none;
+    }
+
+    .fuel-archive-filling-km {
+        display: none;
+    }
+}
+
+
+/* Destaque do seletor de documento */
+
+.fuel-archive-file-picker {
+    position: relative;
+    min-height: 64px;
+    padding: 14px 16px;
+    border: 1.5px dashed rgba(132, 169, 230, .65);
+    background: rgba(84, 112, 161, .18);
+    transition:
+        background .18s ease,
+        border-color .18s ease,
+        transform .18s ease,
+        box-shadow .18s ease;
+}
+
+.fuel-archive-file-picker:hover {
+    border-color: rgba(143, 183, 249, .95);
+    background: rgba(91, 125, 184, .27);
+    box-shadow:
+        inset 0 0 0 1px rgba(136, 177, 245, .10);
+    transform: translateY(-1px);
+}
+
+.fuel-archive-file-picker > i {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: rgba(93, 133, 205, .22);
+    color: #9fc2ff;
+    font-size: 1.05rem;
+}
+
+.fuel-archive-file-picker strong {
+    color: #f4f7ff;
+    font-size: .72rem;
+}
+
+.fuel-archive-file-picker small {
+    margin-top: 2px;
+    color: #a9b9d4;
+}
+
+.fuel-archive-file-picker.has-file {
+    border-style: solid;
+    border-color: rgba(88, 211, 153, .7);
+    background: rgba(58, 137, 103, .14);
+}
+
+.fuel-archive-file-picker.has-file > i {
+    background: rgba(53, 168, 112, .18);
+    color: #72e3aa;
+}
+
+
+/* Botão só assume aparência ativa após selecionar arquivo */
+
+#fuelArchiveSubmit:disabled {
+    opacity: .38;
+    cursor: not-allowed;
+    filter: saturate(.45);
+    transform: none;
+    box-shadow: none;
+}
+
+#fuelArchiveSubmit:not(:disabled) {
+    opacity: 1;
+}
+
+
+/* =========================================================
+   NOVO TANQUE - AÇÃO ABAIXO DOS CARDS
+   ========================================================= */
+
+.fuel-new-tank-wide-action {
+    width: 100%;
+    height: 1in;
+    min-height: 96px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    border: 1px dashed rgba(148, 163, 184, .38);
+    border-radius: 14px;
+
+    background: rgba(51, 68, 100, .42);
+    color: #f8fafc;
+
+    cursor: pointer;
+
+    transition:
+        background .18s ease,
+        border-color .18s ease,
+        transform .18s ease,
+        box-shadow .18s ease;
+}
+
+.fuel-new-tank-wide-action:hover {
+    background: rgba(69, 89, 126, .58);
+    border-color: rgba(148, 183, 236, .72);
+    transform: translateY(-1px);
+    box-shadow:
+        inset 0 0 0 1px rgba(148, 183, 236, .08);
+}
+
+.fuel-new-tank-wide-action__icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 11px;
+
+    background: rgba(99, 125, 174, .24);
+    color: #a9c7f7;
+
+    font-size: 1.05rem;
+}
+
+.fuel-new-tank-wide-action__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+
+    text-align: left;
+}
+
+.fuel-new-tank-wide-action__content strong {
+    font-size: .85rem;
+    font-weight: 800;
+}
+
+.fuel-new-tank-wide-action__content small {
+    color: #9fb0ca;
+    font-size: .62rem;
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   AÇÕES ABAIXO DOS TANQUES
+   ========================================================= */
+
+.fuel-bottom-create-actions {
+    width: 100%;
+    display: grid;
+    gap: 12px;
+}
+
+.fuel-bottom-create-actions.has-two-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fuel-bottom-create-actions.has-one-action {
+    grid-template-columns: 1fr;
+}
+
+.fuel-bottom-create-action {
+    width: 100%;
+    height: 1in;
+    min-height: 96px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    border: 1px dashed rgba(148, 163, 184, .38);
+    border-radius: 14px;
+
+    background: rgba(51, 68, 100, .42);
+    color: #f8fafc;
+
+    cursor: pointer;
+
+    transition:
+        background .18s ease,
+        border-color .18s ease,
+        transform .18s ease,
+        box-shadow .18s ease;
+}
+
+.fuel-bottom-create-action:hover {
+    background: rgba(69, 89, 126, .58);
+    border-color: rgba(148, 183, 236, .72);
+    transform: translateY(-1px);
+    box-shadow:
+        inset 0 0 0 1px rgba(148, 183, 236, .08);
+}
+
+.fuel-bottom-create-action__icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 11px;
+
+    background: rgba(99, 125, 174, .24);
+    color: #a9c7f7;
+
+    font-size: 1.05rem;
+}
+
+.fuel-bottom-create-action__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+
+    text-align: left;
+}
+
+.fuel-bottom-create-action__content strong {
+    font-size: .85rem;
+    font-weight: 800;
+}
+
+.fuel-bottom-create-action__content small {
+    color: #9fb0ca;
+    font-size: .62rem;
+}
+
+.fuel-bottom-create-action--filling
+.fuel-bottom-create-action__icon {
+    background: rgba(52, 152, 219, .16);
+    color: #83c6f3;
+}
+
+.fuel-bottom-create-action--tank
+.fuel-bottom-create-action__icon {
+    background: rgba(99, 125, 174, .24);
+    color: #a9c7f7;
+}
+
+@media (max-width: 760px) {
+    .fuel-bottom-create-actions.has-two-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* =========================================================
+   AÇÕES DO OPERADOR DE COMBUSTÍVEL
+   ========================================================= */
+
+.fuel-header-actions--operator {
+    display: grid;
+    grid-template-columns:
+        minmax(230px, 1.25fr)
+        minmax(210px, 1fr);
+    grid-template-rows:
+        repeat(2, 52px);
+    gap: 10px;
+
+    width: min(100%, 560px);
+}
+
+
+/* Ficha manual = ação principal */
+
+.fuel-header-actions--operator
+.fuel-operator-manual-action {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+
+    width: 100%;
+    height: 114px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    padding: 16px 20px;
+
+    border: 1px solid rgba(125, 166, 226, .42);
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(71, 98, 147, .38),
+            rgba(46, 66, 103, .32)
+        );
+
+    color: #f8fafc;
+}
+
+.fuel-header-actions--operator
+.fuel-operator-manual-action:hover {
+    border-color: rgba(141, 183, 244, .72);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(80, 111, 167, .5),
+            rgba(52, 75, 116, .42)
+        );
+}
+
+.fuel-operator-manual-icon {
+    display: grid;
+    place-items: center;
+
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    border-radius: 12px;
+
+    background: rgba(114, 157, 222, .16);
+    color: #a7caff;
+
+    font-size: 1.25rem;
+}
+
+.fuel-operator-manual-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+
+    text-align: left;
+}
+
+.fuel-operator-manual-content strong {
+    font-size: .92rem;
+    font-weight: 800;
+}
+
+.fuel-operator-manual-content small {
+    color: #a9b9d2;
+    font-size: .61rem;
+    font-weight: 500;
+}
+
+
+/* Botões menores à direita */
+
+.fuel-header-actions--operator
+.fuel-operator-consumption-action {
+    grid-column: 2;
+    grid-row: 1;
+
+    width: 100%;
+    height: 52px;
+
+    justify-content: flex-start;
+    padding-inline: 18px;
+}
+
+.fuel-header-actions--operator
+.fuel-operator-archive-action {
+    grid-column: 2;
+    grid-row: 2;
+
+    width: 100%;
+    height: 52px;
+
+    justify-content: flex-start;
+    padding-inline: 18px;
+}
+
+
+/* Esconde o conteúdo expandido da ficha fora da visão do operador */
+
+.fuel-header-actions:not(.fuel-header-actions--operator)
+.fuel-operator-manual-content small {
+    display: none;
+}
+
+.fuel-header-actions:not(.fuel-header-actions--operator)
+.fuel-operator-manual-icon {
+    display: contents;
+}
+
+.fuel-header-actions:not(.fuel-header-actions--operator)
+.fuel-operator-manual-content {
+    display: contents;
+}
+
+
+/* Responsivo */
+
+@media (max-width: 760px) {
+
+    .fuel-header-actions--operator {
+        width: 100%;
+
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .fuel-header-actions--operator
+    .fuel-operator-manual-action,
+    .fuel-header-actions--operator
+    .fuel-operator-consumption-action,
+    .fuel-header-actions--operator
+    .fuel-operator-archive-action {
+        grid-column: 1;
+        grid-row: auto;
+        width: 100%;
+    }
+
+    .fuel-header-actions--operator
+    .fuel-operator-manual-action {
+        min-height: 86px;
+        height: auto;
+    }
+}
+
+
+/* =========================================================
+   AÇÕES - PERFIL COM GESTÃO DE COMBUSTÍVEL
+   ========================================================= */
+
+.fuel-header-actions--manager {
+    display: grid;
+
+    grid-template-columns:
+        minmax(270px, 1.35fr)
+        minmax(170px, 1fr)
+        minmax(190px, 1fr);
+
+    grid-template-rows:
+        repeat(2, 52px);
+
+    gap: 10px;
+
+    width: min(100%, 790px);
+}
+
+
+/* IMPORTAÇÃO IA - DESTAQUE PRINCIPAL */
+
+.fuel-header-actions--manager
+.fuel-photo-import-trigger {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+
+    width: 100%;
+    height: 114px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    padding: 16px 20px;
+
+    border: 1px solid rgba(125, 166, 226, .42);
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(71, 98, 147, .38),
+            rgba(46, 66, 103, .32)
+        );
+
+    color: #f8fafc;
+}
+
+.fuel-header-actions--manager
+.fuel-photo-import-trigger:hover {
+    border-color: rgba(141, 183, 244, .72);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(80, 111, 167, .50),
+            rgba(52, 75, 116, .42)
+        );
+}
+
+
+.fuel-manager-photo-icon {
+    display: grid;
+    place-items: center;
+
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    border-radius: 12px;
+
+    background: rgba(114, 157, 222, .16);
+    color: #a7caff;
+
+    font-size: 1.25rem;
+}
+
+
+.fuel-manager-photo-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+
+    text-align: left;
+}
+
+.fuel-manager-photo-content strong {
+    font-size: .9rem;
+    font-weight: 800;
+}
+
+.fuel-manager-photo-content small {
+    color: #a9b9d2;
+    font-size: .6rem;
+    font-weight: 500;
+}
+
+
+/* QUATRO ATALHOS À DIREITA */
+
+.fuel-header-actions--manager
+.fuel-manager-report-action {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.fuel-header-actions--manager
+.fuel-operator-consumption-action {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.fuel-header-actions--manager
+.fuel-operator-archive-action {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.fuel-header-actions--manager
+.fuel-operator-manual-action {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.fuel-header-actions--manager
+.fuel-manager-report-action,
+.fuel-header-actions--manager
+.fuel-operator-consumption-action,
+.fuel-header-actions--manager
+.fuel-operator-archive-action,
+.fuel-header-actions--manager
+.fuel-operator-manual-action {
+    width: 100%;
+    height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    padding-inline: 16px;
+}
+
+
+/* Na visão administrativa, Ficha manual volta ao formato compacto */
+
+.fuel-header-actions--manager
+.fuel-operator-manual-icon {
+    display: contents;
+}
+
+.fuel-header-actions--manager
+.fuel-operator-manual-content {
+    display: contents;
+}
+
+.fuel-header-actions--manager
+.fuel-operator-manual-content small {
+    display: none;
+}
+
+
+/* Na visão de operador, conteúdo especial da IA não interfere */
+
+.fuel-header-actions--operator
+.fuel-manager-photo-content {
+    display: contents;
+}
+
+.fuel-header-actions--operator
+.fuel-manager-photo-content small {
+    display: none;
+}
+
+.fuel-header-actions--operator
+.fuel-manager-photo-icon {
+    display: contents;
+}
+
+
+/* RESPONSIVO */
+
+@media (max-width: 980px) {
+
+    .fuel-header-actions--manager {
+        width: 100%;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-rows: auto;
+    }
+
+    .fuel-header-actions--manager
+    .fuel-photo-import-trigger {
+        grid-column: 1 / -1;
+        grid-row: auto;
+
+        min-height: 86px;
+        height: auto;
+    }
+
+    .fuel-header-actions--manager
+    .fuel-manager-report-action,
+    .fuel-header-actions--manager
+    .fuel-operator-consumption-action,
+    .fuel-header-actions--manager
+    .fuel-operator-archive-action,
+    .fuel-header-actions--manager
+    .fuel-operator-manual-action {
+        grid-column: auto;
+        grid-row: auto;
+    }
+}
+
+
+@media (max-width: 620px) {
+
+    .fuel-header-actions--manager {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-header-actions--manager
+    .fuel-photo-import-trigger {
+        grid-column: 1;
+    }
+}
+
+
+/* =========================================================
+   OPERADOR COM IMPORTAÇÃO VIA FOTO
+   ========================================================= */
+
+.fuel-header-actions--operator-photo {
+    grid-template-columns:
+        minmax(250px, 1.25fr)
+        minmax(230px, 1fr);
+
+    grid-template-rows:
+        repeat(3, 52px);
+
+    width: min(100%, 590px);
+}
+
+
+/* Ficha manual continua sendo o bloco alto */
+
+.fuel-header-actions--operator-photo
+.fuel-operator-manual-action {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+
+    height: 176px;
+}
+
+
+/* Importação IA no topo da coluna direita */
+
+.fuel-header-actions--operator-photo
+.fuel-photo-import-trigger {
+    grid-column: 2;
+    grid-row: 1;
+
+    width: 100%;
+    height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    padding-inline: 18px;
+}
+
+
+/* Como o HTML da IA possui conteúdo expandido,
+   no operador deixamos formato compacto. */
+
+.fuel-header-actions--operator-photo
+.fuel-manager-photo-icon {
+    display: contents;
+}
+
+.fuel-header-actions--operator-photo
+.fuel-manager-photo-content {
+    display: contents;
+}
+
+.fuel-header-actions--operator-photo
+.fuel-manager-photo-content small {
+    display: none;
+}
+
+
+/* Demais atalhos descem uma posição */
+
+.fuel-header-actions--operator-photo
+.fuel-operator-consumption-action {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.fuel-header-actions--operator-photo
+.fuel-operator-archive-action {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+
+@media (max-width: 760px) {
+
+    .fuel-header-actions--operator-photo {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger,
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action,
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action {
+        grid-column: 1;
+        grid-row: auto;
+
+        width: 100%;
+        height: auto;
+        min-height: 52px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action {
+        min-height: 86px;
+    }
+}
+
+
+/* =========================================================
+   OPERADOR + IA
+   Ficha manual e Importação IA em destaque lado a lado
+   ========================================================= */
+
+.fuel-header-actions--operator-photo {
+    display: grid;
+
+    grid-template-columns:
+        minmax(185px, .9fr)
+        minmax(220px, 1.05fr)
+        minmax(245px, 1.15fr);
+
+    grid-template-rows:
+        repeat(2, 54px);
+
+    gap: 10px;
+
+    width: min(100%, 700px);
+}
+
+
+/* ---------------------------------------------------------
+   FICHA MANUAL - BLOCO ALTO À ESQUERDA
+   --------------------------------------------------------- */
+
+.fuel-header-actions--operator-photo
+.fuel-operator-manual-action {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+
+    width: 100%;
+    height: 118px;
+    min-height: 118px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 13px;
+
+    padding: 16px;
+
+    border-radius: 13px;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-operator-manual-icon {
+    display: grid;
+    place-items: center;
+
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    border-radius: 12px;
+
+    background: rgba(104, 149, 220, .17);
+    color: #a9caff;
+
+    font-size: 1.2rem;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-operator-manual-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 3px;
+
+    text-align: left;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-operator-manual-content strong {
+    font-size: .87rem;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-operator-manual-content small {
+    display: block;
+
+    color: #9eb0cd;
+    font-size: .57rem;
+}
+
+
+/* ---------------------------------------------------------
+   IMPORTAR VIA FOTO - BLOCO ALTO CENTRAL
+   --------------------------------------------------------- */
+
+.fuel-header-actions--operator-photo
+.fuel-photo-import-trigger {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+
+    width: 100%;
+    height: 118px;
+    min-height: 118px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 13px;
+
+    padding: 16px;
+
+    border: 1px solid rgba(125, 166, 226, .42);
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(71, 98, 147, .38),
+            rgba(46, 66, 103, .32)
+        );
+
+    color: #f8fafc;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-photo-import-trigger:hover {
+    border-color: rgba(141, 183, 244, .72);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(80, 111, 167, .50),
+            rgba(52, 75, 116, .42)
+        );
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-manager-photo-icon {
+    display: grid;
+    place-items: center;
+
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    border-radius: 12px;
+
+    background: rgba(104, 149, 220, .17);
+    color: #a9caff;
+
+    font-size: 1.18rem;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-manager-photo-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 3px;
+
+    text-align: left;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-manager-photo-content strong {
+    font-size: .84rem;
+    line-height: 1.2;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-manager-photo-content small {
+    display: block;
+
+    color: #9eb0cd;
+    font-size: .55rem;
+    line-height: 1.25;
+}
+
+
+/* ---------------------------------------------------------
+   COLUNA DIREITA
+   --------------------------------------------------------- */
+
+.fuel-header-actions--operator-photo
+.fuel-operator-consumption-action {
+    grid-column: 3;
+    grid-row: 1;
+
+    width: 100%;
+    height: 54px;
+
+    justify-content: flex-start;
+
+    padding-inline: 18px;
+}
+
+
+.fuel-header-actions--operator-photo
+.fuel-operator-archive-action {
+    grid-column: 3;
+    grid-row: 2;
+
+    width: 100%;
+    height: 54px;
+
+    justify-content: flex-start;
+
+    padding-inline: 18px;
+}
+
+
+/* ---------------------------------------------------------
+   RESPONSIVO
+   --------------------------------------------------------- */
+
+@media (max-width: 900px) {
+
+    .fuel-header-actions--operator-photo {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-rows: auto;
+
+        width: 100%;
+    }
+
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action {
+        grid-column: 1;
+        grid-row: 1;
+
+        height: 92px;
+        min-height: 92px;
+    }
+
+
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger {
+        grid-column: 2;
+        grid-row: 1;
+
+        height: 92px;
+        min-height: 92px;
+    }
+
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+
+
+@media (max-width: 620px) {
+
+    .fuel-header-actions--operator-photo {
+        grid-template-columns: 1fr;
+    }
+
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger,
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action,
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action {
+        grid-column: 1;
+        grid-row: auto;
+
+        width: 100%;
+    }
+
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger {
+        min-height: 82px;
+        height: auto;
+    }
+}
+
+
+/* =========================================================
+   HEADER DE COMBUSTÍVEL - RESPONSIVIDADE
+   Evita colisão entre título e painel de atalhos
+   ========================================================= */
+
+@media (max-width: 1280px) {
+
+    .fuel-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .fuel-header > div:first-child {
+        width: 100%;
+        max-width: none;
+    }
+
+    .fuel-header-actions {
+        width: 100%;
+        max-width: none;
+    }
+
+
+    /*
+     * Operador com IA:
+     *
+     * [ Ficha ] [ Importar IA ] [ Painel ]
+     *                          [ Arquivo ]
+     */
+
+    .fuel-header-actions--operator-photo {
+        width: 100%;
+
+        grid-template-columns:
+            minmax(180px, .9fr)
+            minmax(220px, 1.05fr)
+            minmax(220px, 1.15fr);
+    }
+
+
+    /*
+     * Administrador também usa toda a largura
+     * disponível quando o cabeçalho quebra.
+     */
+
+    .fuel-header-actions--manager {
+        width: 100%;
+    }
+}
+
+
+/*
+ * Em largura intermediária reduzimos de 3 colunas
+ * para 2 sem sobrepor nenhum conteúdo.
+ */
+
+@media (max-width: 900px) {
+
+    .fuel-header-actions--operator-photo {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-rows:
+            auto auto;
+
+        gap: 10px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action {
+        grid-column: 1;
+        grid-row: 1;
+
+        width: 100%;
+        height: 96px;
+        min-height: 96px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger {
+        grid-column: 2;
+        grid-row: 1;
+
+        width: 100%;
+        height: 96px;
+        min-height: 96px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action {
+        grid-column: 1;
+        grid-row: 2;
+
+        width: 100%;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action {
+        grid-column: 2;
+        grid-row: 2;
+
+        width: 100%;
+    }
+}
+
+
+/*
+ * Celular: tudo em uma única coluna.
+ */
+
+@media (max-width: 620px) {
+
+    .fuel-header-actions--operator-photo {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger,
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action,
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action {
+        grid-column: 1;
+        grid-row: auto;
+
+        width: 100%;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger {
+        min-height: 78px;
+        height: auto;
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE GERAL - PÁGINA DE COMBUSTÍVEL
+   ========================================================= */
+
+/*
+ * Monitores/notebooks em que a sidebar reduz muito
+ * a área útil do conteúdo.
+ */
+@media (max-width: 1500px) {
+
+    .fuel-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 20px;
+    }
+
+    .fuel-header > div:first-child {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .fuel-header h1 {
+        font-size: clamp(1.75rem, 3vw, 2.35rem);
+        line-height: 1.05;
+    }
+
+    .fuel-header > div:first-child p {
+        max-width: 720px;
+    }
+
+    .fuel-header-actions,
+    .fuel-header-actions--manager,
+    .fuel-header-actions--operator,
+    .fuel-header-actions--operator-photo {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+
+/* =========================================================
+   OPERADOR COM IA
+   ========================================================= */
+
+@media (min-width: 1151px) and (max-width: 1500px) {
+
+    .fuel-header-actions--operator-photo {
+        display: grid;
+
+        grid-template-columns:
+            minmax(180px, .92fr)
+            minmax(215px, 1.08fr)
+            minmax(220px, 1.1fr);
+
+        grid-template-rows:
+            repeat(2, 54px);
+
+        gap: 10px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger {
+        height: 118px;
+        min-height: 118px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-content strong,
+    .fuel-header-actions--operator-photo
+    .fuel-manager-photo-content strong {
+        white-space: normal;
+        line-height: 1.2;
+    }
+}
+
+
+/*
+ * Notebook / conteúdo mais estreito:
+ *
+ * [ Ficha manual ] [ Importar IA ]
+ * [ Painel       ] [ Arquivo      ]
+ */
+@media (max-width: 1150px) {
+
+    .fuel-header-actions--operator-photo {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-rows:
+            auto auto;
+
+        gap: 10px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action {
+        grid-column: 1;
+        grid-row: 1;
+
+        width: 100%;
+        height: 92px;
+        min-height: 92px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger {
+        grid-column: 2;
+        grid-row: 1;
+
+        width: 100%;
+        height: 92px;
+        min-height: 92px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action {
+        grid-column: 1;
+        grid-row: 2;
+
+        width: 100%;
+        height: 52px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action {
+        grid-column: 2;
+        grid-row: 2;
+
+        width: 100%;
+        height: 52px;
+    }
+}
+
+
+/* =========================================================
+   ADMIN / PERFIL COM MAIS ACESSOS
+   ========================================================= */
+
+@media (max-width: 1250px) {
+
+    .fuel-header-actions--manager {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-rows: auto;
+
+        gap: 10px;
+    }
+
+    .fuel-header-actions--manager
+    .fuel-photo-import-trigger {
+        grid-column: 1 / -1;
+        grid-row: auto;
+
+        height: 84px;
+        min-height: 84px;
+    }
+
+    .fuel-header-actions--manager
+    .fuel-manager-report-action,
+    .fuel-header-actions--manager
+    .fuel-operator-consumption-action,
+    .fuel-header-actions--manager
+    .fuel-operator-archive-action,
+    .fuel-header-actions--manager
+    .fuel-operator-manual-action {
+        grid-column: auto;
+        grid-row: auto;
+
+        width: 100%;
+        height: 52px;
+    }
+}
+
+
+/* =========================================================
+   CARDS DE TANQUES
+   ========================================================= */
+
+@media (max-width: 1050px) {
+
+    .fuel-tanks-grid,
+    .fuel-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
+/* =========================================================
+   BOTÕES ABAIXO DOS TANQUES
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+    .fuel-bottom-create-actions,
+    .fuel-bottom-create-actions.has-two-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-bottom-create-action {
+        min-height: 78px;
+        height: auto;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 680px) {
+
+    .fuel-page {
+        min-width: 0;
+    }
+
+    .fuel-header {
+        gap: 15px;
+    }
+
+    .fuel-header h1 {
+        font-size: 1.7rem;
+    }
+
+    .fuel-header > div:first-child p {
+        font-size: .86rem;
+        line-height: 1.4;
+    }
+
+    .fuel-header-actions--operator,
+    .fuel-header-actions--operator-photo,
+    .fuel-header-actions--manager {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        gap: 9px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger,
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action,
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action,
+
+    .fuel-header-actions--manager
+    .fuel-photo-import-trigger,
+
+    .fuel-header-actions--manager
+    .fuel-manager-report-action,
+
+    .fuel-header-actions--manager
+    .fuel-operator-consumption-action,
+
+    .fuel-header-actions--manager
+    .fuel-operator-archive-action,
+
+    .fuel-header-actions--manager
+    .fuel-operator-manual-action {
+        grid-column: 1;
+        grid-row: auto;
+
+        width: 100%;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-manual-action,
+
+    .fuel-header-actions--operator-photo
+    .fuel-photo-import-trigger,
+
+    .fuel-header-actions--manager
+    .fuel-photo-import-trigger {
+        height: auto;
+        min-height: 78px;
+    }
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-consumption-action,
+
+    .fuel-header-actions--operator-photo
+    .fuel-operator-archive-action,
+
+    .fuel-header-actions--manager
+    .fuel-manager-report-action,
+
+    .fuel-header-actions--manager
+    .fuel-operator-consumption-action,
+
+    .fuel-header-actions--manager
+    .fuel-operator-archive-action,
+
+    .fuel-header-actions--manager
+    .fuel-operator-manual-action {
+        min-height: 50px;
+    }
+}
+
+
+/* =========================================================
+   PROTEÇÃO CONTRA OVERFLOW
+   ========================================================= */
+
+.fuel-header,
+.fuel-header-actions,
+.fuel-header-actions > *,
+.fuel-card,
+.fuel-panel {
+    min-width: 0;
+}
+
+.fuel-header-actions button,
+.fuel-header-actions a {
+    max-width: 100%;
+}
+
+.fuel-manager-photo-content,
+.fuel-operator-manual-content {
+    min-width: 0;
+}
+
+.fuel-manager-photo-content strong,
+.fuel-manager-photo-content small,
+.fuel-operator-manual-content strong,
+.fuel-operator-manual-content small {
+    overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   HISTÓRICO DE ABASTECIMENTOS - FILTROS V2
+   ========================================================= */
+
+.fuel-history-page .fuel-history-filters {
+    display: grid;
+
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr))
+        142px;
+
+    grid-template-areas:
+        "vehicle vehicle vehicle relation relation relation actions"
+        "start   end     product tank     source   status   actions";
+
+    gap: 12px;
+
+    align-items: stretch;
+
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+
+/* ÁREAS */
+
+.fuel-history-page .fuel-history-filter-vehicle {
+    grid-area: vehicle;
+}
+
+.fuel-history-page .fuel-history-filter-relation {
+    grid-area: relation;
+}
+
+.fuel-history-page .fuel-history-filter-start {
+    grid-area: start;
+}
+
+.fuel-history-page .fuel-history-filter-end {
+    grid-area: end;
+}
+
+.fuel-history-page .fuel-history-filter-product {
+    grid-area: product;
+}
+
+.fuel-history-page .fuel-history-filter-tank {
+    grid-area: tank;
+}
+
+.fuel-history-page .fuel-history-filter-source {
+    grid-area: source;
+}
+
+.fuel-history-page .fuel-history-filter-status {
+    grid-area: status;
+}
+
+.fuel-history-page .fuel-history-filter-actions {
+    grid-area: actions;
+
+    display: flex;
+    min-width: 0;
+}
+
+
+/* CAMPOS */
+
+.fuel-history-page .fuel-history-filter {
+    min-width: 0;
+}
+
+.fuel-history-page .fuel-history-filter > label {
+    display: block;
+
+    min-height: 12px;
+    margin: 0 0 7px;
+
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.fuel-history-page .fuel-history-filter input,
+.fuel-history-page .fuel-history-filter select,
+.fuel-history-page .fuel-vehicle-search-input {
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* VÍNCULO - SEGMENTADO */
+
+.fuel-history-page .fuel-history-relation-toggle {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    min-height: 46px;
+
+    overflow: hidden;
+
+    border:
+        1px solid var(
+            --chm-theme-border-strong,
+            rgba(148, 163, 184, .28)
+        );
+
+    border-radius: 10px;
+
+    background:
+        var(
+            --chm-theme-input,
+            #536789
+        );
+}
+
+.fuel-history-page
+.fuel-history-relation-toggle label {
+    position: relative;
+
+    display: flex;
+    align-items: stretch;
+
+    min-width: 0;
+
+    cursor: pointer;
+}
+
+.fuel-history-page
+.fuel-history-relation-toggle label + label {
+    border-left:
+        1px solid rgba(255, 255, 255, .10);
+}
+
+.fuel-history-page
+.fuel-history-relation-toggle input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fuel-history-page
+.fuel-history-relation-toggle span {
+    display: flex;
+
+    width: 100%;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 10px;
+
+    color:
+        var(
+            --chm-theme-muted,
+            #c4cfdf
+        );
+
+    font-size: .76rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    transition:
+        background .15s ease,
+        color .15s ease;
+}
+
+.fuel-history-page
+.fuel-history-relation-toggle
+input:checked + span {
+    color: #fff;
+
+    background:
+        rgba(224, 82, 91, .76);
+
+    box-shadow:
+        inset 0 0 0 1px
+        rgba(255, 255, 255, .08);
+}
+
+.fuel-history-page
+.fuel-history-relation-toggle
+label:hover span {
+    background:
+        rgba(255, 255, 255, .07);
+}
+
+.fuel-history-page
+.fuel-history-relation-toggle
+input:checked + span:hover {
+    background:
+        rgba(224, 82, 91, .82);
+}
+
+
+/* BOTÃO FILTRAR - DUAS LINHAS */
+
+.fuel-history-page
+.fuel-history-filter-actions {
+    align-self: stretch;
+}
+
+.fuel-history-page
+.fuel-history-filter-actions
+.fuel-history-filter-buttons {
+    display: flex;
+
+    width: 100%;
+    height: 100%;
+
+    align-items: stretch;
+}
+
+.fuel-history-page
+.fuel-history-filter-actions
+.fuel-primary-action {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    font-size: .84rem;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 1450px) {
+
+    .fuel-history-page .fuel-history-filters {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr))
+            130px;
+
+        grid-template-areas:
+            "vehicle vehicle relation actions"
+            "start   end     product  actions"
+            "tank    source  status   actions";
+    }
+
+    .fuel-history-page
+    .fuel-history-relation-toggle span {
+        padding-inline: 7px;
+        font-size: .7rem;
+    }
+}
+
+
+@media (max-width: 1050px) {
+
+    .fuel-history-page .fuel-history-filters {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-areas:
+            "vehicle vehicle"
+            "relation relation"
+            "start end"
+            "product tank"
+            "source status"
+            "actions actions";
+    }
+
+    .fuel-history-page
+    .fuel-history-filter-actions
+    .fuel-primary-action {
+        min-height: 46px;
+    }
+}
+
+
+@media (max-width: 680px) {
+
+    .fuel-history-page .fuel-history-filters {
+        grid-template-columns:
+            minmax(0, 1fr);
+
+        grid-template-areas:
+            "vehicle"
+            "relation"
+            "start"
+            "end"
+            "product"
+            "tank"
+            "source"
+            "status"
+            "actions";
+    }
+
+    .fuel-history-page
+    .fuel-history-relation-toggle {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .fuel-history-page
+    .fuel-history-relation-toggle
+    label:nth-child(3),
+    .fuel-history-page
+    .fuel-history-relation-toggle
+    label:nth-child(4) {
+        border-top:
+            1px solid rgba(255, 255, 255, .10);
+    }
+}
+
+
+
+/* =========================================================
+   HISTÓRICO DE RECEBIMENTOS - FILTROS SIMÉTRICOS
+   ========================================================= */
+
+.fuel-history-page
+.fuel-receipts-history-filters {
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, minmax(0, 1fr))
+        142px;
+
+    grid-template-areas:
+        "search search search search search actions"
+        "start  end    product tank   status actions";
+
+    gap: 12px;
+
+    align-items: stretch;
+
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+
+/* ÁREAS */
+
+.fuel-receipts-history-filters
+.fuel-receipts-filter-search {
+    grid-area: search;
+}
+
+.fuel-receipts-history-filters
+.fuel-receipts-filter-start {
+    grid-area: start;
+}
+
+.fuel-receipts-history-filters
+.fuel-receipts-filter-end {
+    grid-area: end;
+}
+
+.fuel-receipts-history-filters
+.fuel-receipts-filter-product {
+    grid-area: product;
+}
+
+.fuel-receipts-history-filters
+.fuel-receipts-filter-tank {
+    grid-area: tank;
+}
+
+.fuel-receipts-history-filters
+.fuel-receipts-filter-status {
+    grid-area: status;
+}
+
+.fuel-receipts-history-filters
+.fuel-history-filter-actions {
+    grid-area: actions;
+}
+
+
+/* CAMPOS */
+
+.fuel-receipts-history-filters
+.fuel-history-filter-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.fuel-receipts-history-filters
+.fuel-history-filter-field > span {
+    display: block;
+
+    margin: 0 0 7px;
+
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+
+    color: #aebbd0;
+}
+
+.fuel-receipts-history-filters
+.fuel-history-filter-field > input,
+.fuel-receipts-history-filters
+.fuel-history-filter-field > select,
+.fuel-receipts-history-filters
+.fuel-history-search-box {
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* BOTÃO VERTICAL */
+
+.fuel-receipts-history-filters
+.fuel-history-filter-actions {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.fuel-receipts-history-filters
+.fuel-history-filter-actions
+.fuel-primary-action {
+    flex: 1 1 auto;
+
+    display: flex;
+    width: 100%;
+    min-height: 100px;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    font-size: .84rem;
+    font-weight: 800;
+}
+
+.fuel-receipts-history-filters
+.fuel-history-filter-actions
+.fuel-secondary-action {
+    flex: 0 0 auto;
+    width: 100%;
+}
+
+
+/* DATA / HORA / TANQUE */
+
+.fuel-receipts-history-table
+.fuel-receipt-history-date {
+    white-space: nowrap;
+}
+
+.fuel-receipts-history-table
+.fuel-receipt-history-date strong {
+    display: block;
+
+    color: var(--chm-theme-text, #fff);
+
+    font-size: .86rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.fuel-receipts-history-table
+.fuel-receipt-history-date small {
+    display: block;
+
+    margin-top: 4px;
+
+    color: var(--chm-theme-muted, #aeb9dc);
+
+    font-size: .74rem;
+    line-height: 1.15;
+}
+
+.fuel-receipts-history-table
+.fuel-receipt-history-date
+.fuel-receipt-history-tank {
+    margin-top: 5px;
+
+    font-size: .70rem;
+    opacity: .86;
+}
+
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 1350px) {
+
+    .fuel-history-page
+    .fuel-receipts-history-filters {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr))
+            130px;
+
+        grid-template-areas:
+            "search search search actions"
+            "start  end    product actions"
+            "tank   status status  actions";
+    }
+}
+
+
+@media (max-width: 900px) {
+
+    .fuel-history-page
+    .fuel-receipts-history-filters {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-areas:
+            "search search"
+            "start end"
+            "product tank"
+            "status status"
+            "actions actions";
+    }
+
+    .fuel-receipts-history-filters
+    .fuel-history-filter-actions
+    .fuel-primary-action {
+        min-height: 46px;
+    }
+}
+
+
+@media (max-width: 620px) {
+
+    .fuel-history-page
+    .fuel-receipts-history-filters {
+        grid-template-columns:
+            minmax(0, 1fr);
+
+        grid-template-areas:
+            "search"
+            "start"
+            "end"
+            "product"
+            "tank"
+            "status"
+            "actions";
+    }
+}
+
+
+
+/* =========================================================
+   MODAL DE ABASTECIMENTO - TOPO COM CARD LATERAL
+   ========================================================= */
+
+.fuel-filling-top-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    gap: 16px;
+    align-items: stretch;
+    margin-bottom: 18px;
+}
+
+.fuel-form-switcher-block--half {
+    margin-bottom: 0;
+}
+
+.fuel-last-filling-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 16px 18px;
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 16px;
+
+    background: rgba(42, 56, 84, .46);
+}
+
+.fuel-last-filling-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.fuel-last-filling-card__header span {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #aebbd0;
+}
+
+.fuel-last-filling-card__header strong {
+    font-size: .92rem;
+    color: #f8fafc;
+}
+
+.fuel-last-filling-card__empty {
+    display: flex;
+    min-height: 88px;
+    align-items: center;
+
+    color: #9fb0cb;
+    font-size: .88rem;
+    line-height: 1.45;
+}
+
+.fuel-last-filling-card__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 14px;
+}
+
+.fuel-last-filling-card__grid > div {
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(84, 112, 161, .12);
+    border: 1px solid rgba(148, 163, 184, .10);
+}
+
+.fuel-last-filling-card__grid small {
+    display: block;
+    margin-bottom: 5px;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #9fb0cb;
+}
+
+.fuel-last-filling-card__grid strong {
+    display: block;
+    font-size: .9rem;
+    line-height: 1.2;
+    color: #fff;
+    word-break: break-word;
+}
+
+@media (max-width: 1100px) {
+    .fuel-filling-top-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-last-filling-card__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .fuel-last-filling-card__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+/* =========================================================
+   MODAL ABASTECIMENTO - AJUSTE FINAL DO TOPO 50 / 50
+   ========================================================= */
+
+.fuel-filling-form .fuel-filling-top-grid {
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+    align-items: stretch;
+}
+
+.fuel-filling-source-panel {
+    display: flex;
+    min-width: 0;
+}
+
+.fuel-filling-source-panel
+.fuel-source-toggle {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.fuel-source-toggle--single {
+    display: flex;
+    flex-direction: column;
+}
+
+.fuel-source-single-value {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 46px;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 12px;
+
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 10px;
+
+    background: rgba(84, 103, 137, .42);
+
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 800;
+}
+
+
+/* Card compacto */
+
+.fuel-filling-form
+.fuel-last-filling-card {
+    min-width: 0;
+    height: 100%;
+
+    padding: 14px 16px;
+}
+
+.fuel-last-filling-card__header small {
+    display: block;
+    margin-top: 3px;
+
+    color: #9fb0cb;
+    font-size: .68rem;
+}
+
+.fuel-last-filling-card__header > strong {
+    flex: 0 0 auto;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    background: rgba(83, 105, 141, .38);
+
+    color: #cbd8eb;
+
+    font-size: .65rem;
+    font-weight: 800;
+}
+
+.fuel-last-filling-card__content[hidden],
+.fuel-last-filling-card__empty[hidden] {
+    display: none !important;
+}
+
+.fuel-last-filling-card__grid {
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 8px;
+}
+
+.fuel-last-filling-card__grid > div {
+    padding: 8px 9px;
+}
+
+.fuel-last-filling-card__grid small {
+    margin-bottom: 3px;
+    font-size: .62rem;
+}
+
+.fuel-last-filling-card__grid strong {
+    font-size: .78rem;
+}
+
+.fuel-last-filling-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-top: 10px;
+    padding-top: 9px;
+
+    border-top: 1px solid rgba(148, 163, 184, .12);
+}
+
+.fuel-last-filling-card__footer span {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+
+    color: #9fb0cb;
+    font-size: .68rem;
+}
+
+.fuel-last-filling-card__footer strong {
+    overflow: hidden;
+
+    color: #dce6f5;
+    font-size: .7rem;
+    font-weight: 700;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+@media (max-width: 1050px) {
+
+    .fuel-filling-form
+    .fuel-filling-top-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-last-filling-card__grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+}
+
+
+@media (max-width: 680px) {
+
+    .fuel-last-filling-card__grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .fuel-last-filling-card__footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+
+/* =========================================================
+   MODAL ABASTECIMENTO - ALERTAS / INFORMES
+   ========================================================= */
+
+#fuel-modal-filling .fuel-alert {
+    width: 100%;
+    margin: 16px 0 0;
+    padding: 15px 16px;
+
+    border: 1px solid rgba(224, 82, 91, .34);
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(140, 39, 48, .18),
+            rgba(97, 36, 47, .10)
+        );
+
+    color: #f8fafc;
+}
+
+
+/* DUPLICIDADE */
+
+#fuel-modal-filling
+.fuel-filling-duplicate-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 18px;
+}
+
+#fuel-modal-filling
+.fuel-filling-alert__content {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+
+    align-items: flex-start;
+    gap: 12px;
+}
+
+#fuel-modal-filling
+.fuel-filling-alert__icon {
+    display: flex;
+    flex: 0 0 38px;
+
+    width: 38px;
+    height: 38px;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(248, 113, 113, .28);
+    border-radius: 10px;
+
+    background: rgba(224, 82, 91, .12);
+
+    color: #ff9da4;
+    font-size: 1rem;
+}
+
+#fuel-modal-filling
+.fuel-filling-alert__text {
+    min-width: 0;
+}
+
+#fuel-modal-filling
+.fuel-filling-alert__text strong {
+    display: block;
+
+    margin: 0 0 4px;
+
+    color: #fff;
+    font-size: .88rem;
+    font-weight: 850;
+    line-height: 1.2;
+}
+
+#fuel-modal-filling
+.fuel-filling-alert__text p {
+    margin: 0;
+
+    color: #e6edf8;
+    font-size: .79rem;
+    line-height: 1.4;
+}
+
+#fuel-modal-filling
+.fuel-filling-alert__text small {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #b9c5d8;
+    font-size: .70rem;
+    line-height: 1.3;
+}
+
+
+/* AÇÕES */
+
+#fuel-modal-filling
+.fuel-filling-alert__actions {
+    display: flex;
+    flex: 0 0 auto;
+
+    align-items: center;
+    gap: 8px;
+}
+
+#fuel-modal-filling
+.fuel-action-btn {
+    appearance: none;
+
+    display: inline-flex;
+    min-height: 38px;
+
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    padding: 0 13px;
+
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: .74rem;
+    font-weight: 800;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
+}
+
+#fuel-modal-filling
+.fuel-action-btn:hover {
+    transform: translateY(-1px);
+}
+
+#fuel-modal-filling
+.fuel-action-btn--secondary {
+    border: 1px solid rgba(203, 213, 225, .20);
+
+    background: rgba(71, 85, 105, .22);
+
+    color: #e5edf8;
+}
+
+#fuel-modal-filling
+.fuel-action-btn--secondary:hover {
+    border-color: rgba(203, 213, 225, .34);
+
+    background: rgba(71, 85, 105, .34);
+}
+
+#fuel-modal-filling
+.fuel-action-btn--danger {
+    border: 1px solid rgba(224, 82, 91, .58);
+
+    background: rgba(181, 48, 57, .72);
+
+    color: #fff;
+}
+
+#fuel-modal-filling
+.fuel-action-btn--danger:hover {
+    border-color: rgba(240, 90, 100, .76);
+
+    background: rgba(195, 51, 61, .88);
+}
+
+
+/* =========================================================
+   ERROS DE VALIDAÇÃO DO MESMO MODAL
+   ========================================================= */
+
+#fuel-modal-filling
+.fuel-form-error {
+    position: relative;
+
+    margin: 16px 0 0;
+    padding: 13px 15px 13px 44px;
+
+    gap: 5px;
+
+    border: 1px solid rgba(224, 82, 91, .30);
+    border-radius: 12px;
+
+    background: rgba(127, 29, 29, .14);
+
+    color: #ffd1d4;
+
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+#fuel-modal-filling
+.fuel-form-error::before {
+    content: "\F33A";
+
+    position: absolute;
+    top: 13px;
+    left: 15px;
+
+    font-family: "bootstrap-icons";
+
+    color: #ff929a;
+    font-size: 1rem;
+}
+
+#fuel-modal-filling
+.fuel-form-error span {
+    display: block;
+}
+
+
+/* RESPONSIVO */
+
+@media (max-width: 900px) {
+
+    #fuel-modal-filling
+    .fuel-filling-duplicate-alert {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    #fuel-modal-filling
+    .fuel-filling-alert__actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+
+@media (max-width: 620px) {
+
+    #fuel-modal-filling
+    .fuel-filling-alert__actions {
+        flex-direction: column;
+    }
+
+    #fuel-modal-filling
+    .fuel-action-btn {
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   FOTO IA - USAR KM DO CHM
+   ========================================================= */
+
+.fuel-photo-ai-km-chm {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.fuel-photo-ai-km-chm > span {
+    min-width: 0;
+}
+
+.fuel-photo-ai-use-chm-km {
+    appearance: none;
+
+    display: inline-flex;
+    align-items: center;
+
+    padding: 0;
+
+    border: 0;
+    background: transparent;
+
+    color: #8fc4ff;
+
+    font: inherit;
+    font-size: .66rem;
+    font-weight: 800;
+    line-height: 1.2;
+
+    text-decoration: underline;
+    text-decoration-color: rgba(143, 196, 255, .42);
+    text-underline-offset: 2px;
+
+    cursor: pointer;
+
+    transition:
+        color .15s ease,
+        opacity .15s ease;
+}
+
+.fuel-photo-ai-use-chm-km:hover {
+    color: #c3ddff;
+}
+
+.fuel-photo-ai-use-chm-km.is-used {
+    color: #86efac;
+
+    text-decoration-color:
+        rgba(134, 239, 172, .42);
+}
+
+/* Foto IA - referência do medidor */
+
+.fuel-photo-ai-use-chm-km {
+    appearance: none;
+
+    display: inline-flex;
+    align-items: center;
+
+    padding: 2px 7px;
+
+    border: 1px solid rgba(203, 213, 225, .16);
+    border-radius: 6px;
+
+    background: rgba(203, 213, 225, .06);
+
+    color: #d6deea;
+
+    font: inherit;
+    font-size: .66rem;
+    font-weight: 800;
+    line-height: 1.2;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        color .15s ease,
+        background .15s ease,
+        border-color .15s ease;
+}
+
+.fuel-photo-ai-use-chm-km:hover {
+    color: #ffffff;
+
+    border-color: rgba(203, 213, 225, .30);
+    background: rgba(203, 213, 225, .11);
+}
+
+.fuel-photo-ai-use-chm-km.is-used {
+    color: #9de4b4;
+
+    border-color: rgba(104, 201, 138, .24);
+    background: rgba(104, 201, 138, .08);
+}
+
+.fuel-photo-ai-meter-hours {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    color: #c6d0df;
+}
+
+.fuel-photo-ai-meter-hours i {
+    font-size: .68rem;
+}
+
+.fuel-photo-ai-meter-disabled {
+    color: #909db0;
+    font-style: italic;
+}
+
+
+/* =========================================================
+   FOTO IA - EDIÇÃO ESTRUTURAL DAS LINHAS
+   ========================================================= */
+
+.fuel-photo-ai-table
+tbody tr {
+    position: relative;
+}
+
+
+/* espaço para os controles laterais */
+
+.fuel-photo-ai-table
+.fuel-photo-ai-line-cell {
+    position: relative;
+
+    padding-left: 38px !important;
+}
+
+
+/* + acima / + abaixo */
+
+.fuel-photo-ai-structure-actions {
+    position: absolute;
+
+    left: 6px;
+    top: 50%;
+
+    z-index: 8;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    transform:
+        translateY(-50%);
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+        opacity .15s ease;
+}
+
+.fuel-photo-ai-table
+tbody tr:hover
+.fuel-photo-ai-structure-actions,
+.fuel-photo-ai-table
+tbody tr:focus-within
+.fuel-photo-ai-structure-actions {
+    opacity: 1;
+
+    pointer-events: auto;
+}
+
+
+.fuel-photo-ai-structure-btn {
+    appearance: none;
+
+    display: inline-flex;
+
+    width: 25px;
+    height: 25px;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(203, 213, 225, .22);
+
+    border-radius: 999px;
+
+    background:
+        rgba(42, 56, 84, .94);
+
+    color: #dce5f2;
+
+    font-size: .68rem;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 14px
+        rgba(15, 23, 42, .26);
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
+}
+
+.fuel-photo-ai-structure-btn:hover {
+    border-color:
+        rgba(203, 213, 225, .42);
+
+    background:
+        rgba(73, 91, 124, .98);
+
+    color: #fff;
+
+    transform:
+        scale(1.06);
+}
+
+
+/* excluir */
+
+.fuel-photo-ai-row-delete-btn {
+    appearance: none;
+
+    display: inline-flex;
+
+    width: 31px;
+    height: 31px;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 7px;
+    margin-left: 7px;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(239, 100, 108, .20);
+
+    border-radius: 8px;
+
+    background:
+        rgba(171, 51, 60, .06);
+
+    color: #d9a4a9;
+
+    font-size: .72rem;
+
+    cursor: pointer;
+
+    opacity: .55;
+
+    transition:
+        opacity .15s ease,
+        color .15s ease,
+        background .15s ease,
+        border-color .15s ease;
+}
+
+.fuel-photo-ai-table
+tbody tr:hover
+.fuel-photo-ai-row-delete-btn,
+.fuel-photo-ai-row-delete-btn:focus {
+    opacity: 1;
+}
+
+.fuel-photo-ai-row-delete-btn:hover {
+    color: #ffd4d7;
+
+    border-color:
+        rgba(239, 100, 108, .42);
+
+    background:
+        rgba(171, 51, 60, .16);
+}
+
+
+/* linha inserida manualmente */
+
+.fuel-photo-ai-manual-row-note,
+.fuel-photo-ai-merge-note {
+    display: block;
+
+    margin: 5px 0;
+
+    color: #c7d2e3;
+
+    font-size: .66rem;
+    line-height: 1.3;
+}
+
+.fuel-photo-ai-merge-note {
+    color: #a7d5b5;
+}
+
+.fuel-photo-ai-merge-note i {
+    margin-right: 3px;
+}
+
+
+/* touch: deixar ações disponíveis */
+
+@media (hover: none) {
+
+    .fuel-photo-ai-structure-actions {
+        opacity: .78;
+
+        pointer-events: auto;
+    }
+
+    .fuel-photo-ai-row-delete-btn {
+        opacity: .78;
+    }
+}
+
+
+
+/* =========================================================
+   FOTO IA - EDIÇÃO ESTRUTURAL DAS LINHAS
+   ========================================================= */
+
+.fuel-photo-ai-table
+tbody tr {
+    position: relative;
+}
+
+
+/* espaço para os controles laterais */
+
+.fuel-photo-ai-table
+.fuel-photo-ai-line-cell {
+    position: relative;
+
+    padding-left: 38px !important;
+}
+
+
+/* + acima / + abaixo */
+
+.fuel-photo-ai-structure-actions {
+    position: absolute;
+
+    left: 6px;
+    top: 50%;
+
+    z-index: 8;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    transform:
+        translateY(-50%);
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+        opacity .15s ease;
+}
+
+.fuel-photo-ai-table
+tbody tr:hover
+.fuel-photo-ai-structure-actions,
+.fuel-photo-ai-table
+tbody tr:focus-within
+.fuel-photo-ai-structure-actions {
+    opacity: 1;
+
+    pointer-events: auto;
+}
+
+
+.fuel-photo-ai-structure-btn {
+    appearance: none;
+
+    display: inline-flex;
+
+    width: 25px;
+    height: 25px;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(203, 213, 225, .22);
+
+    border-radius: 999px;
+
+    background:
+        rgba(42, 56, 84, .94);
+
+    color: #dce5f2;
+
+    font-size: .68rem;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 14px
+        rgba(15, 23, 42, .26);
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
+}
+
+.fuel-photo-ai-structure-btn:hover {
+    border-color:
+        rgba(203, 213, 225, .42);
+
+    background:
+        rgba(73, 91, 124, .98);
+
+    color: #fff;
+
+    transform:
+        scale(1.06);
+}
+
+
+/* excluir */
+
+.fuel-photo-ai-row-delete-btn {
+    appearance: none;
+
+    display: inline-flex;
+
+    width: 31px;
+    height: 31px;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 7px;
+    margin-left: 7px;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(239, 100, 108, .20);
+
+    border-radius: 8px;
+
+    background:
+        rgba(171, 51, 60, .06);
+
+    color: #d9a4a9;
+
+    font-size: .72rem;
+
+    cursor: pointer;
+
+    opacity: .55;
+
+    transition:
+        opacity .15s ease,
+        color .15s ease,
+        background .15s ease,
+        border-color .15s ease;
+}
+
+.fuel-photo-ai-table
+tbody tr:hover
+.fuel-photo-ai-row-delete-btn,
+.fuel-photo-ai-row-delete-btn:focus {
+    opacity: 1;
+}
+
+.fuel-photo-ai-row-delete-btn:hover {
+    color: #ffd4d7;
+
+    border-color:
+        rgba(239, 100, 108, .42);
+
+    background:
+        rgba(171, 51, 60, .16);
+}
+
+
+/* linha inserida manualmente */
+
+.fuel-photo-ai-manual-row-note,
+.fuel-photo-ai-merge-note {
+    display: block;
+
+    margin: 5px 0;
+
+    color: #c7d2e3;
+
+    font-size: .66rem;
+    line-height: 1.3;
+}
+
+.fuel-photo-ai-merge-note {
+    color: #a7d5b5;
+}
+
+.fuel-photo-ai-merge-note i {
+    margin-right: 3px;
+}
+
+
+/* touch: deixar ações disponíveis */
+
+@media (hover: none) {
+
+    .fuel-photo-ai-structure-actions {
+        opacity: .78;
+
+        pointer-events: auto;
+    }
+
+    .fuel-photo-ai-row-delete-btn {
+        opacity: .78;
+    }
+}
+
+
+/* Foto IA - ação KM CHM persistente */
+
+.fuel-photo-ai-km-chm {
+    display: flex !important;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.fuel-photo-ai-km-chm
+.fuel-photo-ai-use-chm-km {
+    flex: 0 0 auto;
+}
+
+
+/* =========================================================
+   FOTO IA - LOADING DA ANÁLISE
+   ========================================================= */
+
+.fuel-photo-ai-loading {
+    margin-top: 12px;
+    padding: 16px 18px;
+    border: 1px solid rgba(125, 151, 194, .20);
+    border-radius: 12px;
+    background: rgba(31, 48, 76, .55);
+    overflow: hidden;
+}
+
+.fuel-photo-ai-loading[hidden] {
+    display: none !important;
+}
+
+.fuel-photo-ai-loading-head {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.fuel-photo-ai-loading-head > div:nth-child(2) {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fuel-photo-ai-loading-head strong {
+    color: #f8fafc;
+    font-size: .88rem;
+    font-weight: 700;
+}
+
+.fuel-photo-ai-loading-head span {
+    color: #c8d3e4;
+    font-size: .73rem;
+}
+
+.fuel-photo-ai-loading-icon {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+}
+
+.fuel-photo-ai-loading-icon::before,
+.fuel-photo-ai-loading-icon::after,
+.fuel-photo-ai-loading-icon span {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+}
+
+.fuel-photo-ai-loading-icon::before {
+    border-top-color: #ff6671;
+    animation: fuelPhotoSpin .9s linear infinite;
+}
+
+.fuel-photo-ai-loading-icon::after {
+    inset: 5px;
+    border-right-color: rgba(255, 255, 255, .72);
+    animation: fuelPhotoSpin .7s linear infinite reverse;
+}
+
+.fuel-photo-ai-loading-time {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 7px;
+    background: rgba(15, 23, 42, .28);
+    color: #dce6f5;
+    font-size: .72rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.fuel-photo-ai-loading-track {
+    position: relative;
+    height: 5px;
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .08);
+}
+
+.fuel-photo-ai-loading-progress {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 38%;
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 102, 113, .20),
+        rgba(255, 102, 113, .95),
+        rgba(255, 255, 255, .75)
+    );
+    animation: fuelPhotoLoadingMove 1.45s ease-in-out infinite;
+}
+
+.fuel-photo-ai-loading-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.fuel-photo-ai-loading-foot span,
+.fuel-photo-ai-loading-foot small {
+    color: #9eacc2;
+    font-size: .67rem;
+}
+
+.fuel-photo-ai-loading-foot i {
+    margin-right: 4px;
+    color: #ff7b84;
+}
+
+@keyframes fuelPhotoSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fuelPhotoLoadingMove {
+    0% {
+        left: -40%;
+    }
+
+    50% {
+        left: 45%;
+    }
+
+    100% {
+        left: 105%;
+    }
+}
+
+@media (max-width: 760px) {
+    .fuel-photo-ai-loading-foot {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+}

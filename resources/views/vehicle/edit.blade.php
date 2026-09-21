@@ -136,14 +136,23 @@
     </div>
 </div>
 <div class="vehicle-edit-dual-grid">
-    <div class="edit-card vehicle-full-card">
-            <h3>
-                Operação
-            </h3>
+
+    <div class="edit-card vehicle-operation-card">
+
+        <div class="card-header">
+            <div>
+                <h3>Operação</h3>
+                <p class="card-description">
+                    Leituras, situação cadastral e histórico de atividade.
+                </p>
+            </div>
+        </div>
+
+        <div class="vehicle-operation-grid">
+
             <div class="form-group">
-                <label>
-                    Hodômetro atual
-                </label>
+                <label>Hodômetro atual</label>
+
                 <input
                     type="number"
                     name="current_km"
@@ -152,10 +161,10 @@
                     min="{{ $vehicle->current_km ?? 0 }}"
                 >
             </div>
+
             <div class="form-group">
-                <label>
-                    Horímetro atual
-                </label>
+                <label>Horímetro atual</label>
+
                 <input
                     type="number"
                     name="current_hours"
@@ -165,34 +174,222 @@
                     step="1"
                 >
             </div>
+
             <div class="form-group">
                 <label>
-                    Status <span class="required-mark">*</span>
+                    Situação do cadastro
+                    <span class="required-mark">*</span>
                 </label>
+
                 <select
-                    name="operational_status"
+                    name="status"
+                    id="vehicleRegistrationStatus"
                     class="form-input"
                     required
                 >
                     <option
-                        value="operational"
+                        value="active"
                         @selected(
-                            $vehicle->operational_status == 'operational'
+                            old('status', $vehicle->status) === 'active'
                         )
                     >
-                        Operacional
+                        Ativo
                     </option>
+
                     <option
-                        value="maintenance"
+                        value="inactive"
                         @selected(
-                            $vehicle->operational_status == 'maintenance'
+                            old('status', $vehicle->status) === 'inactive'
                         )
                     >
-                        Em manutenção
+                        Inativo
                     </option>
                 </select>
+
+                @if($openMaintenance)
+                    <small class="vehicle-status-maintenance-warning">
+                        <i class="bi bi-tools"></i>
+                        Há uma manutenção em andamento. O veículo não poderá ser inativado até o encerramento da manutenção.
+                    </small>
+                @endif
             </div>
+
+            <div class="form-group">
+                <label>Início de operação</label>
+
+                <input
+                    type="date"
+                    name="operation_started_at"
+                    class="form-input"
+                    value="{{
+                        old(
+                            'operation_started_at',
+                            optional(
+                                $vehicle->operation_started_at
+                            )->format('Y-m-d')
+                        )
+                    }}"
+                >
+            </div>
+
         </div>
+
+
+        <div class="vehicle-operation-history">
+
+            <div class="vehicle-operation-history__title">
+                <span>Histórico de atividade</span>
+
+                @if($vehicle->status === 'inactive')
+                    <span class="vehicle-operation-history__badge is-inactive">
+                        Inativo
+                    </span>
+                @else
+                    <span class="vehicle-operation-history__badge is-active">
+                        Ativo
+                    </span>
+                @endif
+            </div>
+
+
+            <div class="vehicle-operation-history__timeline">
+
+                @if($statusHistory->isEmpty() && $vehicle->operation_started_at)
+                    <div class="vehicle-operation-history__item is-active">
+                        <span class="vehicle-operation-history__dot"></span>
+
+                        <div>
+                            <strong>Ativo</strong>
+                            <small>
+                                Desde o início da operação:
+                                {{ $vehicle->operation_started_at->format('d/m/Y') }}
+                            </small>
+
+                            @if($period->changer)
+                                <small class="vehicle-operation-history__user">
+                                    <i class="bi bi-person"></i>
+                                    Alterado por {{ $period->changer->name }}
+                                </small>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+
+                @forelse($statusHistory->take(6) as $period)
+
+                    @php
+                        $periodLabel = match($period->status) {
+                            'inactive' => 'Inativo',
+                            'active' => 'Ativo',
+                            default => ucfirst((string) $period->status),
+                        };
+
+                        $periodDuration = null;
+
+                        if ($period->started_at) {
+                            $durationEnd =
+                                $period->ended_at ?? now();
+
+                            $totalMinutes = max(
+                                0,
+                                (int) floor(
+                                    $period->started_at->diffInMinutes(
+                                        $durationEnd
+                                    )
+                                )
+                            );
+
+                            $days = intdiv($totalMinutes, 1440);
+                            $hours = intdiv(
+                                $totalMinutes % 1440,
+                                60
+                            );
+                            $minutes = $totalMinutes % 60;
+
+                            $parts = [];
+
+                            if ($days > 0) {
+                                $parts[] =
+                                    $days
+                                    . ' dia'
+                                    . ($days !== 1 ? 's' : '');
+                            }
+
+                            if ($hours > 0) {
+                                $parts[] =
+                                    $hours . ' h';
+                            }
+
+                            if (
+                                $days === 0
+                                && $minutes > 0
+                            ) {
+                                $parts[] =
+                                    $minutes . ' min';
+                            }
+
+                            $periodDuration =
+                                count($parts)
+                                    ? implode(' ', $parts)
+                                    : 'menos de 1 min';
+                        }
+                    @endphp
+
+                    <div class="vehicle-operation-history__item {{ $period->status === 'active' ? 'is-active' : 'is-inactive' }}">
+                        <span class="vehicle-operation-history__dot"></span>
+
+                        <div>
+                            <strong>{{ $periodLabel }}</strong>
+
+                            <small>
+                                @if($period->ended_at)
+
+                                    {{ $period->started_at?->format('d/m/Y H:i') }}
+                                    →
+                                    {{ $period->ended_at->format('d/m/Y H:i') }}
+
+                                    @if($periodDuration)
+                                        · {{ $periodDuration }}
+                                    @endif
+
+                                @else
+
+                                    Desde
+                                    {{ $period->started_at?->format('d/m/Y H:i') }}
+
+                                    @if($periodDuration)
+                                        · há {{ $periodDuration }}
+                                    @endif
+
+                                @endif
+                            </small>
+
+                            @if($period->changer)
+                                <small class="vehicle-operation-history__user">
+                                    <i class="bi bi-person"></i>
+                                    Alterado por {{ $period->changer->name }}
+                                </small>
+                            @endif
+                        </div>
+                    </div>
+
+
+                @empty
+
+                    @unless($vehicle->operation_started_at)
+                        <div class="vehicle-operation-history__empty">
+                            Nenhuma alteração operacional registrada.
+                        </div>
+                    @endunless
+
+                @endforelse
+
+            </div>
+
+        </div>
+
+    </div>
     {{-- CONTEÚDO --}}
         {{-- DADOS GERAIS --}}
         <div class="edit-card">
@@ -311,62 +508,8 @@
                     </h3>
         
                     <p class="card-description">
-                        Defina a operação, situação e formação de pneus do veículo.
+                        Defina a formação e o controle preventivo de pneus do veículo.
                     </p>
-                </div>
-        
-            </div>
-        
-            <div class="form-grid">
-        
-                <div class="form-group">
-        
-                    <label>
-                        Início de operação
-                    </label>
-        
-                    <input
-                        type="date"
-                        name="operation_started_at"
-                        class="form-input"
-                        value="{{
-                            old(
-                                'operation_started_at',
-                                optional($vehicle->operation_started_at)->format('Y-m-d')
-                            )
-                        }}"
-                    >
-        
-                </div>
-        
-                <div class="form-group">
-        
-                    <label>
-                        Situação <span class="required-mark">*</span>
-                    </label>
-        
-                    <select
-                        name="status"
-                        class="form-input"
-                        required
-                    >
-        
-                        <option
-                            value="active"
-                            @selected(old('status', $vehicle->status) == 'active')
-                        >
-                            Ativo
-                        </option>
-        
-                        <option
-                            value="inactive"
-                            @selected(old('status', $vehicle->status) == 'inactive')
-                        >
-                            Inativo
-                        </option>
-        
-                    </select>
-        
                 </div>
         
             </div>
@@ -784,4 +927,5 @@ document.addEventListener('DOMContentLoaded', function () {
     filterLocations();
 });
 </script>
+
 @endsection

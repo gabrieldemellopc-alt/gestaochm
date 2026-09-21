@@ -4688,3 +4688,248 @@ input:checked
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+
+/* =========================================================
+   EDIÇÃO DE VEÍCULO - OPERAÇÃO / DADOS
+   ========================================================= */
+
+.vehicle-edit-page .vehicle-edit-dual-grid {
+    align-items: stretch;
+    grid-template-columns:
+        minmax(420px, .92fr)
+        minmax(0, 1.55fr);
+}
+
+.vehicle-edit-page
+.vehicle-edit-dual-grid > .edit-card {
+    height: 100%;
+    min-width: 0;
+}
+
+.vehicle-edit-page .vehicle-operation-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.vehicle-edit-page .vehicle-operation-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 18px 16px;
+}
+
+.vehicle-edit-page .vehicle-data-grid {
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+}
+
+
+/* STATUS BLOQUEADO POR MANUTENÇÃO */
+
+.vehicle-operation-locked-status {
+    min-height: 48px;
+    padding: 10px 13px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+
+    border: 1px solid rgba(224, 170, 73, .38);
+    border-radius: 9px;
+
+    background: rgba(224, 170, 73, .08);
+}
+
+.vehicle-operation-locked-status span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    color: #f2ca7a;
+    font-weight: 800;
+}
+
+.vehicle-operation-locked-status small {
+    color: var(--vehicles-muted);
+    font-size: .7rem;
+}
+
+
+/* HISTÓRICO */
+
+.vehicle-operation-history {
+    margin-top: 22px;
+    padding-top: 18px;
+
+    border-top:
+        1px solid var(--vehicles-border);
+}
+
+.vehicle-operation-history__title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 14px;
+}
+
+.vehicle-operation-history__title > span:first-child {
+    color: var(--vehicles-muted);
+    font-size: .69rem;
+    font-weight: 800;
+    letter-spacing: .075em;
+    text-transform: uppercase;
+}
+
+.vehicle-operation-history__badge {
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    font-size: .62rem;
+    font-weight: 800;
+}
+
+.vehicle-operation-history__badge.is-active {
+    color: #9de4b4;
+    background: rgba(64, 166, 100, .12);
+}
+
+.vehicle-operation-history__badge.is-inactive {
+    color: #f3a5a5;
+    background: rgba(204, 75, 75, .12);
+}
+
+.vehicle-operation-history__badge.is-maintenance {
+    color: #f4d17f;
+    background: rgba(214, 160, 49, .12);
+}
+
+
+.vehicle-operation-history__timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vehicle-operation-history__item {
+    position: relative;
+
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr);
+    gap: 10px;
+
+    padding: 8px 10px;
+
+    border-radius: 8px;
+
+    background: rgba(30, 42, 67, .23);
+}
+
+.vehicle-operation-history__dot {
+    width: 8px;
+    height: 8px;
+
+    margin-top: 5px;
+
+    border-radius: 50%;
+
+    background: #7f90aa;
+}
+
+.vehicle-operation-history__item.is-active
+.vehicle-operation-history__dot,
+.vehicle-operation-history__item.is-reactivated
+.vehicle-operation-history__dot {
+    background: #68c98a;
+}
+
+.vehicle-operation-history__item.is-inactive
+.vehicle-operation-history__dot {
+    background: #d66b6b;
+}
+
+.vehicle-operation-history__item strong {
+    display: block;
+
+    color: var(--vehicles-text);
+    font-size: .75rem;
+}
+
+.vehicle-operation-history__item small {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--vehicles-muted);
+    font-size: .67rem;
+    line-height: 1.35;
+}
+
+.vehicle-operation-history__empty {
+    padding: 12px;
+
+    border: 1px dashed var(--vehicles-border);
+    border-radius: 8px;
+
+    color: var(--vehicles-muted);
+    font-size: .72rem;
+    text-align: center;
+}
+
+
+/* RESPONSIVO */
+
+@media (max-width: 1200px) {
+
+    .vehicle-edit-page .vehicle-edit-dual-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-edit-page .vehicle-operation-grid,
+    .vehicle-edit-page .vehicle-data-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+
+    .vehicle-edit-page .vehicle-operation-grid,
+    .vehicle-edit-page .vehicle-data-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-operation-history__title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+.vehicle-status-maintenance-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+
+    margin-top: 7px;
+
+    color: #e6bd70;
+    font-size: .67rem;
+    line-height: 1.35;
+}
+
+.vehicle-status-maintenance-warning i {
+    margin-top: 1px;
+    flex: 0 0 auto;
+}
+
+.vehicle-operation-history__user {
+    display: flex !important;
+    align-items: center;
+    gap: 5px;
+    margin-top: 4px;
+    opacity: .82;
+}

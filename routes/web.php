@@ -1165,6 +1165,11 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
             Route::post('/', 'store')->name('store');
 
             Route::post(
+                '/files',
+                'uploadFiles'
+            )->name('files.store');
+
+            Route::post(
                 '/{check}/upload-token',
                 'createUploadToken'
             )->name('upload-token');

@@ -993,6 +993,23 @@ class VehicleController extends Controller
         $locations = $context->availableLocationsAcrossDivisions(auth()->user());
 
         $fuelProducts = app(VehicleFuelPolicy::class)->products($vehicle->tenant_id);
+
+        $openMaintenance =
+            $vehicle->maintenances()
+                ->where('workflow_status', 'open')
+                ->whereNull('cancelled_at')
+                ->whereNull('deleted_at')
+                ->latest('started_at')
+                ->first();
+
+        $statusHistory =
+            \App\Models\VehicleStatusPeriod::query()
+                ->with('changer')
+                ->where('vehicle_id', $vehicle->id)
+                ->latest('started_at')
+                ->limit(8)
+                ->get();
+
         return view(
 
 
@@ -1009,7 +1026,10 @@ class VehicleController extends Controller
 
                 'divisions',
 
-                'locations', 'fuelProducts'
+                'locations',
+                'fuelProducts',
+                'openMaintenance',
+                'statusHistory'
 
             )
 
@@ -1229,16 +1249,6 @@ class VehicleController extends Controller
 
 
 
-            'operational_status' => [
-
-                'required',
-
-                'in:operational,maintenance',
-
-            ],
-
-
-
             'operation_started_at' => [
 
                 'nullable',
@@ -1418,7 +1428,7 @@ class VehicleController extends Controller
 
 
 
-        $procedureIds = $this->procedureIdsInContext(
+                $procedureIds = $this->procedureIdsInContext(
             $validated['procedures'] ?? [],
             (int) $vehicle->tenant_id,
             (int) $validated['location_id']
@@ -1478,7 +1488,37 @@ class VehicleController extends Controller
 
 
 
-        $vehicle->update([
+                /*
+        |--------------------------------------------------------------------------
+        | STATUS CADASTRAL - ATIVO / INATIVO
+        |--------------------------------------------------------------------------
+        |
+        | Este campo define se o veículo permanece ativo no cadastro da frota.
+        | Não confundir com operational_status.
+        |
+        */
+
+        if (
+            $vehicle->status !== 'inactive'
+            && $validated['status'] === 'inactive'
+        ) {
+            $hasOpenMaintenance =
+                $vehicle->maintenances()
+                    ->where('workflow_status', 'open')
+                    ->whereNull('cancelled_at')
+                    ->whereNull('deleted_at')
+                    ->exists();
+
+            if ($hasOpenMaintenance) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'status' =>
+                        'Este veículo possui uma manutenção em andamento. Encerre a manutenção antes de inativá-lo.',
+                ]);
+            }
+        }
+
+
+$vehicle->update([
 
 
 
@@ -1535,12 +1575,6 @@ class VehicleController extends Controller
 
 
 
-            'operational_status' =>
-
-                $validated['operational_status'],
-
-
-
             'operation_started_at' =>
 
                 $validated['operation_started_at'] ?? null,
@@ -1580,6 +1614,62 @@ class VehicleController extends Controller
 
 
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | HISTÓRICO CADASTRAL - ATIVO / INATIVO
+        |--------------------------------------------------------------------------
+        */
+
+        if ($oldData->status !== $vehicle->status) {
+
+            $now = now();
+
+            $openStatusPeriod =
+                \App\Models\VehicleStatusPeriod::query()
+                    ->where('vehicle_id', $vehicle->id)
+                    ->whereNull('ended_at')
+                    ->latest('started_at')
+                    ->first();
+
+            if ($openStatusPeriod) {
+                $openStatusPeriod->update([
+                    'ended_at' => $now,
+                ]);
+            } else {
+                /*
+                 * Compatibilidade com veículos existentes antes
+                 * da implantação do histórico cadastral.
+                 */
+                $fallbackStart =
+                    $oldData->operation_started_at
+                    ?? $oldData->created_at
+                    ?? $now;
+
+                \App\Models\VehicleStatusPeriod::create([
+                    'vehicle_id' => $vehicle->id,
+                    'status' => $oldData->status ?: 'active',
+                    'started_at' => $fallbackStart,
+                    'ended_at' => $now,
+                    'changed_by' => $request->user()->id,
+                    'reason' => 'Período anterior reconstruído na primeira alteração de situação cadastral.',
+                ]);
+            }
+
+            \App\Models\VehicleStatusPeriod::create([
+                'vehicle_id' => $vehicle->id,
+                'status' => $vehicle->status,
+                'started_at' => $now,
+                'ended_at' => null,
+                'changed_by' => $request->user()->id,
+                'reason' =>
+                    $vehicle->status === 'inactive'
+                        ? 'Veículo inativado.'
+                        : 'Veículo reativado.',
+            ]);
+
+        }
+
 
         $meterBefore = $oldData->only(['km_meter_status', 'hours_meter_status']);
         $meterAfter = $vehicle->only(['km_meter_status', 'hours_meter_status']);
@@ -1628,12 +1718,6 @@ class VehicleController extends Controller
 
 
             'status' => 'status',
-
-
-
-            'operational_status' =>
-
-                'operational_status',
 
 
 

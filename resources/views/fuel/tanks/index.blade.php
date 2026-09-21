@@ -23,6 +23,7 @@
         $canRegisterFilling = $canFillInternal || $canFillExternal;
         $canViewFuelCosts = (bool) $fuelPermissions['view_costs'];
         $canManageFuelTanks = (int) auth()->id() === 1 || userHasProfile('admin');
+        $canUseFuelPhotoImport = $canManageFuelTanks || $canFillInternal;
         $defaultFuelFillingSource = old('source', $canFillInternal ? 'internal_tank' : 'external_station');
 
         if ($defaultFuelFillingSource === 'internal_tank' && ! $canFillInternal) {
@@ -48,61 +49,73 @@
                 </p>
             </div>
 
-            <div class="fuel-header-actions">
+            <div
+                class="fuel-header-actions
+                    {{ ! $canManageFuelTanks
+                        ? 'fuel-header-actions--operator'
+                            .($canUseFuelPhotoImport
+                                ? ' fuel-header-actions--operator-photo'
+                                : '')
+                        : 'fuel-header-actions--manager' }}"
+            >
 
                 @if($canViewFuelReport)
                     <a
                         href="{{ route('reports.fuel.index') }}"
-                        class="fuel-secondary-action"
+                        class="fuel-secondary-action fuel-manager-report-action"
                     >
                         <i class="bi bi-bar-chart"></i>
                         Relatório
                     </a>
                 @endif
-                <button type="button" class="fuel-secondary-action" onclick="openFuelConsumptionDashboard()"><i class="bi bi-bar-chart-line"></i>Painel de consumo</button>                <a
+                <button
+                    type="button"
+                    class="fuel-secondary-action fuel-operator-consumption-action"
+                    onclick="openFuelConsumptionDashboard()"
+                ><i class="bi bi-bar-chart-line"></i>Painel de consumo</button>                <a
                     href="{{ route('fuel.daily-check.index') }}"
-                    class="fuel-secondary-action"
-                    title="Conferir abastecimentos do dia"
+                    class="fuel-secondary-action fuel-operator-archive-action"
+                    title="Consultar o arquivo diário de abastecimentos"
                 >
-                    <i class="bi bi-clipboard2-check"></i>
-                    Conferência diária
+                    <i class="bi bi-calendar3"></i>
+                    Arquivo diário
                 </a>
 
                 <button
                     type="button"
-                    class="fuel-secondary-action fuel-manual-sheet-trigger"
+                    class="fuel-secondary-action fuel-manual-sheet-trigger fuel-operator-manual-action"
                     x-on:click="manualSheetOpen = true"
                     title="Gerar ficha manual de abastecimento"
                 >
-                    <i class="bi bi-printer"></i>
-                    Ficha manual
+                    <span class="fuel-operator-manual-icon">
+                        <i class="bi bi-printer"></i>
+                    </span>
+
+                    <span class="fuel-operator-manual-content">
+                        <strong>Ficha manual</strong>
+                        <small>Emitir ficha operacional</small>
+                    </span>
                 </button>
 
-                @if($canManageFuelTanks)
+                @if($canUseFuelPhotoImport)
                     <button
                         type="button"
                         class="fuel-secondary-action fuel-photo-import-trigger"
                         onclick="openFuelPhotoImport()"
                         title="Importar abastecimentos a partir de uma foto"
                     >
-                        <i class="bi bi-stars"></i>
-                        Importar via foto (IA)
+                        <span class="fuel-manager-photo-icon">
+                            <i class="bi bi-stars"></i>
+                        </span>
+
+                        <span class="fuel-manager-photo-content">
+                            <strong>Importar via foto (IA)</strong>
+                            <small>Ler, revisar e lançar uma ficha</small>
+                        </span>
                     </button>
                 @endif
 
-                @if($canRegisterFilling)
-                    <button type="button" class="fuel-secondary-action" onclick="openFuelModal('filling')">
-                        <i class="bi bi-truck"></i>
-                        Registrar abastecimento
-                    </button>
-                @endif
 
-                @if($canManageFuelTanks)
-                    <button type="button" class="fuel-primary-action" onclick="openFuelModal('tank')">
-                        <i class="bi bi-plus-lg"></i>
-                        Novo tanque
-                    </button>
-                @endif
             </div>
         </header>
 
@@ -777,6 +790,55 @@
             @endforelse
         </section>
 
+        @if($canRegisterFilling || $canManageFuelTanks)
+            <div
+                class="fuel-bottom-create-actions
+                    {{ $canRegisterFilling && $canManageFuelTanks
+                        ? 'has-two-actions'
+                        : 'has-one-action' }}"
+            >
+
+                @if($canRegisterFilling)
+                    <button
+                        type="button"
+                        class="fuel-bottom-create-action fuel-bottom-create-action--filling"
+                        onclick="openFuelModal('filling')"
+                    >
+                        <span class="fuel-bottom-create-action__icon">
+                            <i class="bi bi-fuel-pump"></i>
+                        </span>
+
+                        <span class="fuel-bottom-create-action__content">
+                            <strong>Novo abastecimento</strong>
+                            <small>
+                                Registrar abastecimento de veículo
+                            </small>
+                        </span>
+                    </button>
+                @endif
+
+                @if($canManageFuelTanks)
+                    <button
+                        type="button"
+                        class="fuel-bottom-create-action fuel-bottom-create-action--tank"
+                        onclick="openFuelModal('tank')"
+                    >
+                        <span class="fuel-bottom-create-action__icon">
+                            <i class="bi bi-plus-lg"></i>
+                        </span>
+
+                        <span class="fuel-bottom-create-action__content">
+                            <strong>Novo tanque</strong>
+                            <small>
+                                Cadastrar outro tanque nesta unidade
+                            </small>
+                        </span>
+                    </button>
+                @endif
+
+            </div>
+        @endif
+
         <section
             class="fuel-panel fuel-collapsible-panel"
             x-data="{ open: false }"
@@ -1161,47 +1223,226 @@
                     <input type="hidden" name="return_to" value="{{ $fuelReturnTo }}">
                     <input type="hidden" name="confirm_duplicate" value="{{ old('confirm_duplicate', 0) }}">
                     @if($errors->fuelFilling->has('duplicate'))
-                        <div class="fuel-span-12 fuel-alert danger" role="alert">
-                            <strong><i class="bi bi-exclamation-triangle"></i> Possível abastecimento duplicado</strong>
-                            <p>{{ $errors->fuelFilling->first('duplicate') }}</p>
-                            <p>Confira os dados antes de continuar.</p>
-                            <div class="fuel-form-actions"><button type="button" class="fuel-action-btn" onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='0'; this.closest('form').querySelector('[name=vehicle_km]').focus();">Voltar e revisar</button><button type="button" class="fuel-action-btn" onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='1'; this.closest('form').submit();">Registrar mesmo assim</button></div>
+                        <div
+                            class="fuel-span-12 fuel-alert danger fuel-filling-duplicate-alert"
+                            role="alert"
+                        >
+                            <div class="fuel-filling-alert__content">
+
+                                <div class="fuel-filling-alert__icon">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+
+                                <div class="fuel-filling-alert__text">
+                                    <strong>
+                                        Possível abastecimento duplicado
+                                    </strong>
+
+                                    <p>
+                                        {{ $errors->fuelFilling->first('duplicate') }}
+                                    </p>
+
+                                    <small>
+                                        Confira os dados antes de continuar.
+                                    </small>
+                                </div>
+
+                            </div>
+
+                            <div class="fuel-filling-alert__actions">
+
+                                <button
+                                    type="button"
+                                    class="fuel-action-btn fuel-action-btn--secondary"
+                                    onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='0'; this.closest('form').querySelector('[name=vehicle_km]').focus();"
+                                >
+                                    <i class="bi bi-arrow-left"></i>
+                                    Voltar e revisar
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="fuel-action-btn fuel-action-btn--danger"
+                                    onclick="this.closest('form').querySelector('[name=confirm_duplicate]').value='1'; this.closest('form').submit();"
+                                >
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Registrar mesmo assim
+                                </button>
+
+                            </div>
                         </div>
                     @endif
                     <div class="fuel-form-grid fuel-filling-layout">
                     <input type="hidden" name="km_reading_confirmed" value="0">
                     <input type="hidden" name="hours_reading_confirmed" value="0">
-                        @if($canFillInternal && $canFillExternal)
-                        <div class="fuel-span-12 fuel-source-toggle" data-fuel-source-toggle>
-                            <div class="fuel-source-head">
-                                <span>Tipo de abastecimento</span>
-                                <small data-fuel-source-help>Baixa o saldo do tanque selecionado e registra movimentação interna.</small>
-                            </div>
+                        <div class="fuel-span-12 fuel-filling-top-grid">
 
-                            <div class="fuel-source-segment" role="radiogroup" aria-label="Tipo de abastecimento">
-                                @if($canFillInternal)
-                                    <label class="fuel-source-option">
-                                        <input type="radio" name="source" value="internal_tank" @checked($defaultFuelFillingSource === 'internal_tank')>
-                                        <span>Tanque da unidade</span>
-                                    </label>
+                            <div class="fuel-filling-source-panel">
+
+                                @if($canFillInternal && $canFillExternal)
+
+                                    <div class="fuel-source-toggle" data-fuel-source-toggle>
+
+                                        <div class="fuel-source-head">
+                                            <span>Tipo de abastecimento</span>
+
+                                            <small data-fuel-source-help>
+                                                Baixa o saldo do tanque selecionado e registra movimentação interna.
+                                            </small>
+                                        </div>
+
+                                        <div
+                                            class="fuel-source-segment"
+                                            role="radiogroup"
+                                            aria-label="Tipo de abastecimento"
+                                        >
+                                            @if($canFillInternal)
+                                                <label class="fuel-source-option">
+                                                    <input
+                                                        type="radio"
+                                                        name="source"
+                                                        value="internal_tank"
+                                                        @checked($defaultFuelFillingSource === 'internal_tank')
+                                                    >
+                                                    <span>Tanque da unidade</span>
+                                                </label>
+                                            @endif
+
+                                            @if($canFillExternal)
+                                                <label class="fuel-source-option">
+                                                    <input
+                                                        type="radio"
+                                                        name="source"
+                                                        value="external_station"
+                                                        @checked($defaultFuelFillingSource === 'external_station')
+                                                    >
+                                                    <span>Posto externo</span>
+                                                </label>
+                                            @endif
+                                        </div>
+
+                                    </div>
+
+                                @else
+
+                                    <div class="fuel-source-toggle fuel-source-toggle--single">
+                                        <div class="fuel-source-head">
+                                            <span>Tipo de abastecimento</span>
+
+                                            <small data-fuel-source-help>
+                                                {{ $defaultFuelFillingSource === 'external_station'
+                                                    ? 'Registra custo e consumo do veículo sem movimentar o saldo dos tanques.'
+                                                    : 'Baixa o saldo do tanque selecionado e registra movimentação interna.' }}
+                                            </small>
+                                        </div>
+
+                                        <input
+                                            type="hidden"
+                                            name="source"
+                                            value="{{ $defaultFuelFillingSource }}"
+                                        >
+
+                                        <div class="fuel-source-single-value">
+                                            {{ $defaultFuelFillingSource === 'external_station'
+                                                ? 'Posto externo'
+                                                : 'Tanque da unidade' }}
+                                        </div>
+                                    </div>
+
                                 @endif
 
-                                @if($canFillExternal)
-                                    <label class="fuel-source-option">
-                                        <input type="radio" name="source" value="external_station" @checked($defaultFuelFillingSource === 'external_station')>
-                                        <span>Posto externo</span>
-                                    </label>
-                                @endif
                             </div>
+
+
+                            <aside
+                                class="fuel-last-filling-card"
+                                id="fuelLastFillingCard"
+                            >
+
+                                <div class="fuel-last-filling-card__header">
+
+                                    <div>
+                                        <span>Último abastecimento</span>
+                                        <small>do veículo selecionado</small>
+                                    </div>
+
+                                    <strong id="fuelLastFillingStatus">
+                                        Sem histórico
+                                    </strong>
+
+                                </div>
+
+
+                                <div
+                                    class="fuel-last-filling-card__empty"
+                                    id="fuelLastFillingEmpty"
+                                >
+                                    Selecione um veículo para consultar
+                                    o último abastecimento registrado.
+                                </div>
+
+
+                                <div
+                                    class="fuel-last-filling-card__content"
+                                    id="fuelLastFillingContent"
+                                    hidden
+                                >
+
+                                    <div class="fuel-last-filling-card__grid">
+
+                                        <div>
+                                            <small>Data</small>
+                                            <strong id="fuelLastFillingDate">—</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>Litros</small>
+                                            <strong id="fuelLastFillingLiters">—</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>Produto</small>
+                                            <strong id="fuelLastFillingProduct">—</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>Origem</small>
+                                            <strong id="fuelLastFillingSource">—</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>KM anterior</small>
+                                            <strong id="fuelLastFillingPreviousKm">—</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>KM lançado</small>
+                                            <strong id="fuelLastFillingVehicleKm">—</strong>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="fuel-last-filling-card__footer">
+
+                                        <span>
+                                            <i class="bi bi-person"></i>
+                                            <strong id="fuelLastFillingResponsible">—</strong>
+                                        </span>
+
+                                        <span
+                                            id="fuelLastFillingTankWrap"
+                                        >
+                                            <i class="bi bi-fuel-pump"></i>
+                                            <strong id="fuelLastFillingTank">—</strong>
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </aside>
+
                         </div>
-                        @else
-                            <input type="hidden" name="source" value="{{ $defaultFuelFillingSource }}">
-                            <p class="fuel-source-single-note fuel-span-12" data-fuel-source-help>
-                                {{ $defaultFuelFillingSource === 'external_station'
-                                    ? 'Registra custo e consumo do veículo sem movimentar o saldo dos tanques.'
-                                    : 'Baixa o saldo do tanque selecionado e registra movimentação interna.' }}
-                            </p>
-                        @endif
 
                         <label class="fuel-span-4">
                             Veículo
@@ -1557,7 +1798,7 @@
         @endforeach
     </div>
 
-@if($canManageFuelTanks)
+@if($canUseFuelPhotoImport)
 
 <div
     id="fuelPhotoImportModal"
@@ -1689,6 +1930,51 @@
 
 
 
+
+
+            <div
+                id="fuelPhotoAiLoading"
+                class="fuel-photo-ai-loading"
+                hidden
+            >
+                <div class="fuel-photo-ai-loading-head">
+                    <div class="fuel-photo-ai-loading-icon">
+                        <span></span>
+                    </div>
+
+                    <div>
+                        <strong id="fuelPhotoAiLoadingTitle">
+                            Analisando ficha...
+                        </strong>
+
+                        <span id="fuelPhotoAiLoadingMessage">
+                            Preparando o arquivo para leitura.
+                        </span>
+                    </div>
+
+                    <div
+                        id="fuelPhotoAiLoadingTime"
+                        class="fuel-photo-ai-loading-time"
+                    >
+                        00:00
+                    </div>
+                </div>
+
+                <div class="fuel-photo-ai-loading-track">
+                    <div class="fuel-photo-ai-loading-progress"></div>
+                </div>
+
+                <div class="fuel-photo-ai-loading-foot">
+                    <span>
+                        <i class="bi bi-stars"></i>
+                        Leitura assistida em andamento
+                    </span>
+
+                    <small id="fuelPhotoAiLoadingHint">
+                        Não feche esta janela enquanto a ficha estiver sendo analisada.
+                    </small>
+                </div>
+            </div>
 
 
             <section
@@ -2025,7 +2311,7 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
 </script>@endsection
 
 
-@if($canManageFuelTanks)
+@if($canUseFuelPhotoImport)
 
 <script>
 
@@ -2038,6 +2324,8 @@ window.closeFuelConsumptionDashboard = function(){document.getElementById('fuelC
                 'plate' => $vehicle->plate,
                 'current_km' => $vehicle->current_km,
                 'current_hours' => $vehicle->current_hours,
+                'km_control_enabled' => (bool) $vehicle->km_control_enabled,
+                'hours_control_enabled' => (bool) $vehicle->hours_control_enabled,
             ];
         })
         ->values()
@@ -2080,6 +2368,160 @@ const fuelPhotoDuplicateCheckUrl =
 let fuelPhotoDetectedDuplicates = [];
 
 let fuelPhotoAnalysis = null;
+
+
+
+let fuelPhotoLoadingTimer = null;
+let fuelPhotoLoadingStartedAt = null;
+
+
+function fuelPhotoLoadingText(seconds) {
+    if (seconds < 8) {
+        return {
+            message: 'Preparando o arquivo para leitura.',
+            hint: 'Aguarde enquanto a imagem é preparada.'
+        };
+    }
+
+    if (seconds < 25) {
+        return {
+            message: 'Realizando a leitura assistida da ficha.',
+            hint: 'O Google Vision está interpretando os dados da imagem.'
+        };
+    }
+
+    if (seconds < 55) {
+        return {
+            message: 'Identificando linhas, veículos e valores.',
+            hint: 'Estamos reconstruindo os registros encontrados na ficha.'
+        };
+    }
+
+    if (seconds < 90) {
+        return {
+            message: 'Conferindo a estrutura e organizando os dados.',
+            hint: 'Fichas maiores ou PDFs podem levar um pouco mais de tempo.'
+        };
+    }
+
+    return {
+        message: 'A leitura continua em andamento.',
+        hint: 'PDFs podem levar cerca de 1 a 2 minutos.'
+    };
+}
+
+
+function updateFuelPhotoLoading() {
+    if (! fuelPhotoLoadingStartedAt) {
+        return;
+    }
+
+    const elapsed =
+        Math.max(
+            0,
+            Math.floor(
+                (Date.now() - fuelPhotoLoadingStartedAt) / 1000
+            )
+        );
+
+    const minutes =
+        String(
+            Math.floor(elapsed / 60)
+        ).padStart(2, '0');
+
+    const seconds =
+        String(
+            elapsed % 60
+        ).padStart(2, '0');
+
+    const time =
+        document.getElementById(
+            'fuelPhotoAiLoadingTime'
+        );
+
+    const message =
+        document.getElementById(
+            'fuelPhotoAiLoadingMessage'
+        );
+
+    const hint =
+        document.getElementById(
+            'fuelPhotoAiLoadingHint'
+        );
+
+    const copy =
+        fuelPhotoLoadingText(elapsed);
+
+    if (time) {
+        time.textContent =
+            `${minutes}:${seconds}`;
+    }
+
+    if (message) {
+        message.textContent =
+            copy.message;
+    }
+
+    if (hint) {
+        hint.textContent =
+            copy.hint;
+    }
+}
+
+
+function startFuelPhotoLoading() {
+    const box =
+        document.getElementById(
+            'fuelPhotoAiLoading'
+        );
+
+    if (! box) {
+        return;
+    }
+
+    fuelPhotoLoadingStartedAt =
+        Date.now();
+
+    box.hidden = false;
+
+    updateFuelPhotoLoading();
+
+    if (fuelPhotoLoadingTimer) {
+        clearInterval(
+            fuelPhotoLoadingTimer
+        );
+    }
+
+    fuelPhotoLoadingTimer =
+        setInterval(
+            updateFuelPhotoLoading,
+            1000
+        );
+}
+
+
+function stopFuelPhotoLoading() {
+    const box =
+        document.getElementById(
+            'fuelPhotoAiLoading'
+        );
+
+    if (fuelPhotoLoadingTimer) {
+        clearInterval(
+            fuelPhotoLoadingTimer
+        );
+
+        fuelPhotoLoadingTimer =
+            null;
+    }
+
+    fuelPhotoLoadingStartedAt =
+        null;
+
+    if (box) {
+        box.hidden = true;
+    }
+}
 
 
 function openFuelPhotoImport() {
@@ -2253,6 +2695,8 @@ async function analyzeFuelPhoto() {
         '<span class="fuel-photo-ai-spinner"></span>'
         + ' Analisando ficha...';
 
+    startFuelPhotoLoading();
+
     feedback.hidden = false;
     feedback.className =
         'fuel-photo-ai-feedback is-loading';
@@ -2308,6 +2752,8 @@ async function analyzeFuelPhoto() {
         );
 
     } finally {
+        stopFuelPhotoLoading();
+
         button.disabled = false;
         button.innerHTML = original;
     }
@@ -2462,6 +2908,67 @@ function buildFuelPhotoRow(
         row.matched_vehicle?.current_km
         ?? null;
 
+
+    /*
+     * Configuração operacional real do veículo.
+     * Não presume que toda máquina utilize hodômetro.
+     */
+    const vehicleMeterConfig =
+        fuelPhotoVehicles.find(
+            vehicle =>
+                Number(vehicle.id)
+                === Number(
+                    row.suggested_vehicle_id
+                    ?? row.matched_vehicle?.id
+                )
+        )
+        || null;
+
+    const kmControlEnabled =
+        vehicleMeterConfig
+            ? Boolean(
+                vehicleMeterConfig.km_control_enabled
+            )
+            : true;
+
+    const hoursControlEnabled =
+        vehicleMeterConfig
+            ? Boolean(
+                vehicleMeterConfig.hours_control_enabled
+            )
+            : false;
+
+    const currentHoursDb =
+        vehicleMeterConfig?.current_hours
+        ?? null;
+
+    /*
+     * Comparação numérica.
+     * 80032 e "80.032" exibido pelo locale representam
+     * a mesma leitura e NÃO geram ação de correção.
+     */
+    const sheetPreviousKm =
+        row.previous_km_printed === null
+        || row.previous_km_printed === undefined
+        || row.previous_km_printed === ''
+            ? null
+            : Number(
+                row.previous_km_printed
+            );
+
+    const hasDifferentChmKm =
+        kmControlEnabled
+        && currentKmDb !== null
+        && sheetPreviousKm !== null
+        && Number.isFinite(
+            Number(currentKmDb)
+        )
+        && Number.isFinite(
+            Number(sheetPreviousKm)
+        )
+        && Number(currentKmDb)
+            !== Number(sheetPreviousKm);
+
     tr.innerHTML = `
         <td class="fuel-photo-ai-line">
             ${row.line ?? index + 1}
@@ -2602,19 +3109,73 @@ function buildFuelPhotoRow(
             </div>
 
             <small class="fuel-photo-ai-cell-note fuel-photo-ai-km-chm">
-                CHM:
+
                 ${
-                    currentKmDb == null
-                        ? '—'
-                        : Number(
-                            currentKmDb
-                        ).toLocaleString('pt-BR')
-                            + ' km'
+                    kmControlEnabled
+                        ? `
+                            <span>
+                                CHM:
+                                ${
+                                    currentKmDb == null
+                                        ? '—'
+                                        : Number(
+                                            currentKmDb
+                                        ).toLocaleString(
+                                            'pt-BR'
+                                        ) + ' km'
+                                }
+                            </span>
+
+                            ${
+                                hasDifferentChmKm
+                                    ? `
+                                        <button
+                                            type="button"
+                                            class="fuel-photo-ai-use-chm-km"
+                                            onclick="useFuelPhotoChmKm(
+                                                this,
+                                                ${Number(currentKmDb)}
+                                            )"
+                                            title="Substituir pela leitura atual registrada no CHM"
+                                        >
+                                            Usar este
+                                        </button>
+                                    `
+                                    : ''
+                            }
+                        `
+                        : (
+                            hoursControlEnabled
+                                ? `
+                                    <span class="fuel-photo-ai-meter-hours">
+                                        <i class="bi bi-clock"></i>
+                                        Controle por horímetro
+                                        ${
+                                            currentHoursDb != null
+                                                ? ' · CHM: '
+                                                    + Number(
+                                                        currentHoursDb
+                                                    ).toLocaleString(
+                                                        'pt-BR'
+                                                    )
+                                                    + ' h'
+                                                : ''
+                                        }
+                                    </span>
+                                `
+                                : `
+                                    <span class="fuel-photo-ai-meter-disabled">
+                                        Controle de hodômetro desabilitado
+                                    </span>
+                                `
+                        )
                 }
+
             </small>
 
             ${
-                row.km_reference?.message
+                kmControlEnabled
+                && row.km_reference?.message
                     ? `
                         <small
                             class="fuel-photo-ai-km-reference is-${escapeFuelPhoto(
@@ -2945,6 +3506,650 @@ function confirmFuelPhotoNewKm(
     );
 
     invalidateFuelPhotoLaunchConfirmation();
+}
+
+
+function syncFuelPhotoRowMeterControl(
+    tr
+) {
+    if (!tr) {
+        return;
+    }
+
+    const vehicleSelect =
+        tr.querySelector(
+            '[data-field="vehicle_id"]'
+        );
+
+    const vehicle =
+        fuelPhotoVehicles.find(
+            item =>
+                Number(item.id)
+                === Number(
+                    vehicleSelect?.value
+                )
+        )
+        || null;
+
+    const previousKmInput =
+        tr.querySelector(
+            '[data-field="previous_km"]'
+        );
+
+    if (!previousKmInput) {
+        return;
+    }
+
+    /*
+     * Algumas linhas nasceram sem veículo associado.
+     * Nesses casos o bloco de referência CHM pode não ter
+     * sido criado originalmente. Criamos sob demanda.
+     */
+    let reference =
+        tr.querySelector(
+            '.fuel-photo-ai-km-chm'
+        );
+
+    if (!reference) {
+
+        reference =
+            document.createElement(
+                'small'
+            );
+
+        reference.className =
+            'fuel-photo-ai-cell-note fuel-photo-ai-km-chm';
+
+        previousKmInput.insertAdjacentElement(
+            'afterend',
+            reference
+        );
+    }
+
+
+    /*
+     * Nenhum veículo selecionado.
+     */
+    if (!vehicle) {
+
+        reference.innerHTML =
+            '<span>CHM: —</span>';
+
+        tr.querySelectorAll(
+            '.fuel-photo-ai-km-reference'
+        ).forEach(
+            element =>
+                element.remove()
+        );
+
+        return;
+    }
+
+
+    const kmEnabled =
+        Boolean(
+            vehicle.km_control_enabled
+        );
+
+    const hoursEnabled =
+        Boolean(
+            vehicle.hours_control_enabled
+        );
+
+    const currentKm =
+        fuelPhotoMeterNumber(
+            vehicle.current_km
+        );
+
+    const currentHours =
+        fuelPhotoMeterNumber(
+            vehicle.current_hours
+        );
+
+    const sheetPreviousKm =
+        fuelPhotoMeterNumber(
+            previousKmInput.value
+        );
+
+
+    /*
+     * =====================================================
+     * CONTROLE POR HORÍMETRO
+     * =====================================================
+     */
+    if (
+        !kmEnabled
+        && hoursEnabled
+    ) {
+
+        reference.innerHTML =
+            `
+                <span class="fuel-photo-ai-meter-hours">
+                    <i class="bi bi-clock"></i>
+                    Controle por horímetro
+                    ${
+                        currentHours !== null
+                            ? ' · CHM: '
+                                + Number(
+                                    currentHours
+                                ).toLocaleString(
+                                    'pt-BR'
+                                )
+                                + ' h'
+                            : ''
+                    }
+                </span>
+            `;
+
+        tr.querySelectorAll(
+            '.fuel-photo-ai-km-reference'
+        ).forEach(
+            element =>
+                element.remove()
+        );
+
+        previousKmInput.classList.remove(
+            'is-warning',
+            'is-critical'
+        );
+
+        return;
+    }
+
+
+    /*
+     * =====================================================
+     * CONTROLE POR KM
+     * =====================================================
+     */
+    if (kmEnabled) {
+
+        const different =
+            currentKm !== null
+            && sheetPreviousKm !== null
+            && Number(currentKm)
+                !== Number(sheetPreviousKm);
+
+        reference.innerHTML =
+            `
+                <span>
+                    CHM:
+                    ${
+                        currentKm === null
+                            ? '—'
+                            : Number(
+                                currentKm
+                            ).toLocaleString(
+                                'pt-BR'
+                            )
+                                + ' km'
+                    }
+                </span>
+
+                ${
+                    different
+                        ? `
+                            <button
+                                type="button"
+                                class="fuel-photo-ai-use-chm-km"
+                                onclick="useFuelPhotoChmKm(
+                                    this,
+                                    ${Number(currentKm)}
+                                )"
+                                title="Substituir pela leitura atual registrada no CHM"
+                            >
+                                Usar este
+                            </button>
+                        `
+                        : ''
+                }
+            `;
+
+        return;
+    }
+
+
+    /*
+     * Nenhum controle habilitado.
+     */
+    reference.innerHTML =
+        `
+            <span class="fuel-photo-ai-meter-disabled">
+                Medidor não controlado
+            </span>
+        `;
+
+    tr.querySelectorAll(
+        '.fuel-photo-ai-km-reference'
+    ).forEach(
+        element =>
+            element.remove()
+    );
+}
+
+
+
+/*
+|--------------------------------------------------------------------------
+| FOTO IA - GARANTIR AÇÃO "USAR ESTE" DO KM DO CHM
+|--------------------------------------------------------------------------
+|
+| Algumas rotinas reconstruem a referência CHM depois da seleção
+| manual do veículo. Esta função reaplica a ação no estado final
+| da linha, sem alterar o valor OCR automaticamente.
+|
+*/
+
+function ensureFuelPhotoUseChmAction(
+    tr
+) {
+    if (!tr) {
+        return;
+    }
+
+    const vehicleSelect =
+        tr.querySelector(
+            '[data-field="vehicle_id"]'
+        );
+
+    const previousInput =
+        tr.querySelector(
+            '[data-field="previous_km"]'
+        );
+
+    if (
+        !vehicleSelect
+        || !previousInput
+    ) {
+        return;
+    }
+
+    const vehicle =
+        fuelPhotoVehicles.find(
+            item =>
+                Number(item.id)
+                === Number(
+                    vehicleSelect.value
+                )
+        )
+        || null;
+
+    if (!vehicle) {
+        return;
+    }
+
+    /*
+     * Para veículos controlados exclusivamente por horas,
+     * não existe ação "Usar KM do CHM".
+     */
+    if (
+        !Boolean(vehicle.km_control_enabled)
+    ) {
+        tr.querySelectorAll(
+            '.fuel-photo-ai-use-chm-km'
+        ).forEach(
+            button =>
+                button.remove()
+        );
+
+        return;
+    }
+
+    const currentKm =
+        fuelPhotoMeterNumber(
+            vehicle.current_km
+        );
+
+    const sheetKm =
+        fuelPhotoMeterNumber(
+            previousInput.value
+        );
+
+    /*
+     * Localiza a referência CHM criada pela renderização
+     * original ou pela sincronização posterior.
+     */
+    let reference =
+        tr.querySelector(
+            '.fuel-photo-ai-km-chm'
+        );
+
+    if (!reference) {
+        const cell =
+            previousInput.closest(
+                'td'
+            );
+
+        reference =
+            [
+                ...(
+                    cell?.querySelectorAll(
+                        '.fuel-photo-ai-cell-note'
+                    )
+                    || []
+                )
+            ].find(
+                element =>
+                    element.textContent
+                        ?.includes('CHM:')
+            )
+            || null;
+    }
+
+    if (!reference) {
+        return;
+    }
+
+    const existingButton =
+        reference.querySelector(
+            '.fuel-photo-ai-use-chm-km'
+        );
+
+    /*
+     * Mesmo valor:
+     *
+     * 80032 === 80.032 km
+     *
+     * portanto não deve existir botão.
+     */
+    if (
+        currentKm === null
+        || sheetKm === null
+        || Number(currentKm)
+            === Number(sheetKm)
+    ) {
+        existingButton?.remove();
+
+        return;
+    }
+
+    /*
+     * Já existe e está apontando para o mesmo KM.
+     */
+    if (existingButton) {
+        existingButton.dataset.chmKm =
+            String(currentKm);
+
+        existingButton.onclick =
+            function () {
+                useFuelPhotoChmKm(
+                    this,
+                    currentKm
+                );
+            };
+
+        return;
+    }
+
+    const button =
+        document.createElement(
+            'button'
+        );
+
+    button.type =
+        'button';
+
+    button.className =
+        'fuel-photo-ai-use-chm-km';
+
+    button.dataset.chmKm =
+        String(currentKm);
+
+    button.textContent =
+        'Usar este';
+
+    button.title =
+        'Usar o KM atual registrado no CHM';
+
+    button.onclick =
+        function () {
+            useFuelPhotoChmKm(
+                this,
+                currentKm
+            );
+        };
+
+    reference.appendChild(
+        button
+    );
+}
+
+
+function ensureFuelPhotoUseChmActions() {
+    document
+        .querySelectorAll(
+            '#fuelPhotoAiRows > tr'
+        )
+        .forEach(
+            tr =>
+                ensureFuelPhotoUseChmAction(
+                    tr
+                )
+        );
+}
+
+
+/*
+ * Seleção manual de veículo.
+ */
+document.addEventListener(
+    'change',
+    function (event) {
+
+        if (
+            !event.target.matches(
+                '#fuelPhotoAiRows [data-field="vehicle_id"]'
+            )
+        ) {
+            return;
+        }
+
+        const tr =
+            event.target.closest(
+                'tr'
+            );
+
+        /*
+         * Aguarda as rotinas originais atualizarem placa,
+         * CHM, similaridade e alertas.
+         */
+        requestAnimationFrame(
+            () => {
+                requestAnimationFrame(
+                    () => {
+                        ensureFuelPhotoUseChmAction(
+                            tr
+                        );
+                    }
+                );
+            }
+        );
+    }
+);
+
+
+/*
+ * Se o operador alterar o Último KM manualmente,
+ * também recalcula se "Usar este" deve existir.
+ */
+document.addEventListener(
+    'input',
+    function (event) {
+
+        if (
+            !event.target.matches(
+                '#fuelPhotoAiRows [data-field="previous_km"]'
+            )
+        ) {
+            return;
+        }
+
+        ensureFuelPhotoUseChmAction(
+            event.target.closest('tr')
+        );
+    }
+);
+
+
+/*
+ * Algumas rotinas da Foto IA reescrevem partes da linha
+ * depois do change. O observer garante que a ação continue
+ * presente no estado FINAL do DOM.
+ */
+function setupFuelPhotoUseChmObserver() {
+
+    const tbody =
+        document.getElementById(
+            'fuelPhotoAiRows'
+        );
+
+    if (
+        !tbody
+        || tbody.dataset.useChmObserver
+            === '1'
+    ) {
+        return;
+    }
+
+    tbody.dataset.useChmObserver =
+        '1';
+
+    let scheduled =
+        false;
+
+    const observer =
+        new MutationObserver(
+            () => {
+
+                if (scheduled) {
+                    return;
+                }
+
+                scheduled =
+                    true;
+
+                requestAnimationFrame(
+                    () => {
+                        scheduled =
+                            false;
+
+                        ensureFuelPhotoUseChmActions();
+                    }
+                );
+            }
+        );
+
+    observer.observe(
+        tbody,
+        {
+            childList: true,
+            subtree: true,
+            characterData: true
+        }
+    );
+
+    ensureFuelPhotoUseChmActions();
+}
+
+
+if (
+    document.readyState
+    === 'loading'
+) {
+    document.addEventListener(
+        'DOMContentLoaded',
+        setupFuelPhotoUseChmObserver
+    );
+} else {
+    setupFuelPhotoUseChmObserver();
+}
+
+
+function useFuelPhotoChmKm(
+    button,
+    chmKm
+) {
+    const tr =
+        button.closest('tr');
+
+    if (!tr) {
+        return;
+    }
+
+    const input =
+        tr.querySelector(
+            '[data-field="previous_km"]'
+        );
+
+    if (!input) {
+        return;
+    }
+
+    const value =
+        Number(chmKm);
+
+    if (
+        !Number.isFinite(value)
+        || value < 0
+    ) {
+        showFuelPhotoFeedback(
+            'O KM atual do CHM não é válido para esta linha.',
+            'error'
+        );
+
+        return;
+    }
+
+    /*
+     * O operador escolheu conscientemente
+     * usar a leitura cadastrada no CHM.
+     */
+    input.value =
+        String(
+            Math.round(value)
+        );
+
+    /*
+     * Como houve alteração de referência,
+     * qualquer confirmação final anterior
+     * deixa de ser válida.
+     */
+    invalidateFuelPhotoLaunchConfirmation();
+
+    /*
+     * Recalcula KM rodado, alertas e demais
+     * informações dependentes da leitura.
+     */
+    recalculateFuelPhotoRow(
+        tr
+    );
+
+    /*
+     * Reaproveita a confirmação humana já
+     * existente para o campo Último KM.
+     */
+    const confirmButton =
+        tr.querySelector(
+            '.fuel-photo-ai-km-confirm-btn'
+        );
+
+    if (confirmButton) {
+        confirmFuelPhotoPreviousKm(
+            confirmButton
+        );
+    }
+
+    button.classList.add(
+        'is-used'
+    );
+
+    button.textContent =
+        'Usado';
+
+    button.title =
+        'KM do CHM aplicado nesta linha';
+
+    refreshFuelPhotoHumanReview();
 }
 
 
@@ -4441,6 +5646,1109 @@ function invalidateFuelPhotoLaunchConfirmation() {
 }
 
 
+
+/*
+|--------------------------------------------------------------------------
+| FOTO IA - CORREÇÃO ESTRUTURAL DAS LINHAS
+|--------------------------------------------------------------------------
+|
+| 1. Consolida automaticamente um caso seguro de linha quebrada pelo OCR.
+| 2. Permite inserir linha acima/abaixo.
+| 3. Permite excluir linha durante a revisão.
+|
+*/
+
+let fuelPhotoStructuralToolsBusy = false;
+
+
+function fuelPhotoMeterNumber(
+    value
+) {
+    if (
+        value === null
+        || value === undefined
+        || String(value).trim() === ''
+    ) {
+        return null;
+    }
+
+    let raw =
+        String(value)
+            .trim()
+            .replace(/\s+/g, '');
+
+    /*
+     * Para medidores inteiros:
+     * 51.117  -> 51117
+     * 80.032  -> 80032
+     */
+    if (
+        /^\d{1,3}(?:\.\d{3})+$/.test(raw)
+    ) {
+        raw =
+            raw.replace(/\./g, '');
+    }
+
+    raw =
+        raw.replace(',', '.');
+
+    const number =
+        Number(raw);
+
+    return Number.isFinite(number)
+        ? number
+        : null;
+}
+
+
+function fuelPhotoVehicleForRow(
+    tr
+) {
+    const id =
+        tr.querySelector(
+            '[data-field="vehicle_id"]'
+        )?.value;
+
+    if (!id) {
+        return null;
+    }
+
+    return (
+        fuelPhotoVehicles.find(
+            vehicle =>
+                Number(vehicle.id)
+                === Number(id)
+        )
+        || null
+    );
+}
+
+
+function fuelPhotoRowFieldValue(
+    tr,
+    field
+) {
+    return (
+        tr.querySelector(
+            `[data-field="${field}"]`
+        )?.value
+        ?? ''
+    );
+}
+
+
+function fuelPhotoRowHasValue(
+    tr,
+    field
+) {
+    return (
+        String(
+            fuelPhotoRowFieldValue(
+                tr,
+                field
+            )
+        ).trim() !== ''
+    );
+}
+
+
+function fuelPhotoIsMeterOnlyOrphanRow(
+    tr
+) {
+    const vehicle =
+        fuelPhotoRowFieldValue(
+            tr,
+            'vehicle_id'
+        );
+
+    const plate =
+        fuelPhotoRowFieldValue(
+            tr,
+            'plate_read'
+        );
+
+    const liters =
+        fuelPhotoMeterNumber(
+            fuelPhotoRowFieldValue(
+                tr,
+                'liters'
+            )
+        );
+
+    const previous =
+        fuelPhotoMeterNumber(
+            fuelPhotoRowFieldValue(
+                tr,
+                'previous_km'
+            )
+        );
+
+    const next =
+        fuelPhotoMeterNumber(
+            fuelPhotoRowFieldValue(
+                tr,
+                'new_km'
+            )
+        );
+
+    return (
+        !String(vehicle).trim()
+        && !String(plate).trim()
+        && (
+            liters === null
+            || liters <= 0
+        )
+        && previous !== null
+        && next !== null
+        && previous > 0
+        && next >= previous
+    );
+}
+
+
+function fuelPhotoCanReceiveOrphanKm(
+    tr
+) {
+    const vehicle =
+        fuelPhotoVehicleForRow(
+            tr
+        );
+
+    if (!vehicle) {
+        return false;
+    }
+
+    /*
+     * Esta fusão automática só vale para
+     * veículos controlados por KM.
+     *
+     * Horímetro será tratado separadamente.
+     */
+    if (
+        vehicle.km_control_enabled
+        === false
+    ) {
+        return false;
+    }
+
+    const liters =
+        fuelPhotoMeterNumber(
+            fuelPhotoRowFieldValue(
+                tr,
+                'liters'
+            )
+        );
+
+    return (
+        liters !== null
+        && liters > 0
+        && !fuelPhotoRowHasValue(
+            tr,
+            'previous_km'
+        )
+        && !fuelPhotoRowHasValue(
+            tr,
+            'new_km'
+        )
+    );
+}
+
+
+function fuelPhotoAppendMergeNote(
+    tr,
+    sourceLine
+) {
+    const statusCell =
+        tr.querySelector(
+            '.fuel-photo-ai-status-cell'
+        );
+
+    if (
+        !statusCell
+        || statusCell.querySelector(
+            '.fuel-photo-ai-merge-note'
+        )
+    ) {
+        return;
+    }
+
+    const note =
+        document.createElement(
+            'small'
+        );
+
+    note.className =
+        'fuel-photo-ai-merge-note';
+
+    note.innerHTML =
+        '<i class="bi bi-intersect"></i> '
+        + 'KM recuperado automaticamente'
+        + (
+            sourceLine
+                ? ` da linha ${sourceLine}.`
+                : ' da linha anterior.'
+        );
+
+    statusCell.prepend(
+        note
+    );
+}
+
+
+function fuelPhotoAfterStructureChange() {
+
+    if (
+        typeof recalculateFuelPhotoStocks
+        === 'function'
+    ) {
+        recalculateFuelPhotoStocks();
+    }
+
+    if (
+        typeof refreshFuelPhotoHumanReview
+        === 'function'
+    ) {
+        refreshFuelPhotoHumanReview();
+    }
+
+    if (
+        typeof invalidateFuelPhotoLaunchConfirmation
+        === 'function'
+    ) {
+        invalidateFuelPhotoLaunchConfirmation();
+    }
+
+    clearTimeout(
+        window.fuelPhotoStructuralDuplicateTimer
+    );
+
+    window.fuelPhotoStructuralDuplicateTimer =
+        setTimeout(
+            () => {
+                if (
+                    typeof refreshFuelPhotoDuplicatePreflight
+                    === 'function'
+                ) {
+                    refreshFuelPhotoDuplicatePreflight();
+                }
+            },
+            250
+        );
+}
+
+
+function fuelPhotoAutoMergeSplitRows() {
+
+    if (fuelPhotoStructuralToolsBusy) {
+        return 0;
+    }
+
+    const tbody =
+        document.getElementById(
+            'fuelPhotoAiRows'
+        );
+
+    if (!tbody) {
+        return 0;
+    }
+
+    fuelPhotoStructuralToolsBusy =
+        true;
+
+    let merged =
+        0;
+
+    try {
+
+        /*
+         * Recomeça após cada fusão porque
+         * a coleção de TRs muda.
+         */
+        let changed =
+            true;
+
+        while (changed) {
+
+            changed =
+                false;
+
+            const rows =
+                [
+                    ...tbody.querySelectorAll(
+                        ':scope > tr'
+                    )
+                ];
+
+            for (
+                let index = 0;
+                index < rows.length - 1;
+                index++
+            ) {
+                const orphan =
+                    rows[index];
+
+                const target =
+                    rows[index + 1];
+
+                if (
+                    !fuelPhotoIsMeterOnlyOrphanRow(
+                        orphan
+                    )
+                    || !fuelPhotoCanReceiveOrphanKm(
+                        target
+                    )
+                ) {
+                    continue;
+                }
+
+                const vehicle =
+                    fuelPhotoVehicleForRow(
+                        target
+                    );
+
+                const previous =
+                    fuelPhotoMeterNumber(
+                        fuelPhotoRowFieldValue(
+                            orphan,
+                            'previous_km'
+                        )
+                    );
+
+                const next =
+                    fuelPhotoMeterNumber(
+                        fuelPhotoRowFieldValue(
+                            orphan,
+                            'new_km'
+                        )
+                    );
+
+                const chm =
+                    fuelPhotoMeterNumber(
+                        vehicle?.current_km
+                    );
+
+                /*
+                 * Critério forte:
+                 * Último KM da linha órfã =
+                 * KM atual cadastrado no CHM
+                 * para o veículo da linha seguinte.
+                 */
+                if (
+                    previous === null
+                    || chm === null
+                    || previous !== chm
+                ) {
+                    continue;
+                }
+
+                const targetPrevious =
+                    target.querySelector(
+                        '[data-field="previous_km"]'
+                    );
+
+                const targetNext =
+                    target.querySelector(
+                        '[data-field="new_km"]'
+                    );
+
+                if (
+                    !targetPrevious
+                    || !targetNext
+                ) {
+                    continue;
+                }
+
+                targetPrevious.value =
+                    String(previous);
+
+                targetNext.value =
+                    String(next);
+
+                target.dataset.previousKmConfirmed =
+                    '0';
+
+                target.dataset.newKmConfirmed =
+                    '0';
+
+                target.dataset.rowConfirmed =
+                    '0';
+
+                target.dataset.autoMerged =
+                    '1';
+
+                const sourceLine =
+                    orphan.querySelector(
+                        '.fuel-photo-ai-line'
+                    )?.textContent?.trim();
+
+                fuelPhotoAppendMergeNote(
+                    target,
+                    sourceLine
+                );
+
+                orphan.remove();
+
+                if (
+                    typeof recalculateFuelPhotoRow
+                    === 'function'
+                ) {
+                    recalculateFuelPhotoRow(
+                        target
+                    );
+                }
+
+                merged++;
+                changed = true;
+
+                break;
+            }
+        }
+
+    } finally {
+        fuelPhotoStructuralToolsBusy =
+            false;
+    }
+
+    if (merged > 0) {
+
+        fuelPhotoAfterStructureChange();
+
+        if (
+            typeof showFuelPhotoFeedback
+            === 'function'
+        ) {
+            showFuelPhotoFeedback(
+                merged === 1
+                    ? '1 linha dividida pelo OCR foi consolidada automaticamente.'
+                    : `${merged} linhas divididas pelo OCR foram consolidadas automaticamente.`,
+                'success'
+            );
+        }
+    }
+
+    return merged;
+}
+
+
+function fuelPhotoShiftVisibleLines(
+    startRow,
+    delta
+) {
+    let reached =
+        false;
+
+    document
+        .querySelectorAll(
+            '#fuelPhotoAiRows > tr'
+        )
+        .forEach(
+            tr => {
+                if (tr === startRow) {
+                    reached = true;
+                }
+
+                if (!reached) {
+                    return;
+                }
+
+                const cell =
+                    tr.querySelector(
+                        '.fuel-photo-ai-line'
+                    );
+
+                const number =
+                    Number(
+                        cell?.textContent
+                    );
+
+                if (
+                    cell
+                    && Number.isFinite(
+                        number
+                    )
+                ) {
+                    cell.textContent =
+                        String(
+                            Math.max(
+                                1,
+                                number + delta
+                            )
+                        );
+                }
+            }
+        );
+}
+
+
+function fuelPhotoResetInsertedRow(
+    tr
+) {
+    /*
+     * cloneNode(true) também copia os data-* da linha original.
+     * A linha nova precisa ser considerada estruturalmente nova,
+     * para receber novamente + acima/abaixo e excluir.
+     */
+    delete tr.dataset.structureActions;
+    delete tr.dataset.autoMerged;
+
+    tr.classList.remove(
+        'has-warning',
+        'has-critical'
+    );
+
+    tr.dataset.rowConfirmed =
+        '0';
+
+    tr.dataset.vehicleConfirmed =
+        '0';
+
+    tr.dataset.previousKmConfirmed =
+        '0';
+
+    tr.dataset.newKmConfirmed =
+        '0';
+
+    tr.dataset.confirmingRow =
+        '0';
+
+    tr.dataset.manualRow =
+        '1';
+
+    [
+        'estimated_time',
+        'vehicle_id',
+        'plate_read',
+        'liters',
+        'previous_km',
+        'new_km',
+        'arla'
+    ].forEach(
+        field => {
+            const element =
+                tr.querySelector(
+                    `[data-field="${field}"]`
+                );
+
+            if (!element) {
+                return;
+            }
+
+            element.value =
+                '';
+
+            element.classList.remove(
+                'is-ok',
+                'is-warning',
+                'is-critical'
+            );
+
+            if (
+                field === 'plate_read'
+            ) {
+                delete element.dataset
+                    .ocrPlate;
+            }
+        }
+    );
+
+    tr.querySelectorAll(
+        '.is-confirmed'
+    ).forEach(
+        element =>
+            element.classList.remove(
+                'is-confirmed'
+            )
+    );
+
+    tr.querySelectorAll(
+        '.fuel-photo-ai-km-reference,'
+        + '.fuel-photo-ai-merge-note,'
+        + '.fuel-photo-ai-duplicate-row-warning'
+    ).forEach(
+        element =>
+            element.remove()
+    );
+
+    const distance =
+        tr.querySelector(
+            '.fuel-photo-ai-distance'
+        );
+
+    if (distance) {
+        distance.innerHTML =
+            '<strong class="fuel-photo-ai-distance-sheet">'
+            + 'Folha: —'
+            + '</strong>'
+            + '<span class="fuel-photo-ai-distance-db">'
+            + 'CHM: —'
+            + '</span>'
+            + '<small>Histórico insuficiente</small>';
+    }
+
+    const statusCell =
+        tr.querySelector(
+            '.fuel-photo-ai-status-cell'
+        );
+
+    if (statusCell) {
+        statusCell.innerHTML =
+            '<strong>⚠ Revisar</strong>'
+            + '<small class="fuel-photo-ai-manual-row-note">'
+            + 'Linha inserida manualmente.'
+            + '</small>'
+            + '<button'
+            + ' type="button"'
+            + ' class="fuel-photo-ai-row-confirm-btn"'
+            + ' onclick="confirmFuelPhotoRow(this)"'
+            + ' title="Confirmar todos os dados desta linha"'
+            + '>'
+            + '<i class="bi bi-check-lg"></i>'
+            + '<span>Confirmar linha</span>'
+            + '</button>';
+    }
+}
+
+
+function fuelPhotoInsertReviewRow(
+    button,
+    position
+) {
+    const current =
+        button.closest('tr');
+
+    const tbody =
+        current?.parentElement;
+
+    if (
+        !current
+        || !tbody
+    ) {
+        return;
+    }
+
+    const clone =
+        current.cloneNode(
+            true
+        );
+
+    /*
+     * Remove ações estruturais herdadas.
+     * Elas serão recriadas após a inserção.
+     */
+    clone
+        .querySelectorAll(
+            '.fuel-photo-ai-structure-actions,'
+            + '.fuel-photo-ai-row-delete-btn'
+        )
+        .forEach(
+            element =>
+                element.remove()
+        );
+
+    const currentLineCell =
+        current.querySelector(
+            '.fuel-photo-ai-line'
+        );
+
+    const currentLine =
+        Number(
+            currentLineCell?.textContent
+        );
+
+    if (
+        position === 'before'
+    ) {
+        fuelPhotoShiftVisibleLines(
+            current,
+            1
+        );
+
+        tbody.insertBefore(
+            clone,
+            current
+        );
+
+        const line =
+            clone.querySelector(
+                '.fuel-photo-ai-line'
+            );
+
+        if (
+            line
+            && Number.isFinite(
+                currentLine
+            )
+        ) {
+            line.textContent =
+                String(currentLine);
+        }
+
+    } else {
+
+        const next =
+            current.nextElementSibling;
+
+        if (next) {
+            fuelPhotoShiftVisibleLines(
+                next,
+                1
+            );
+        }
+
+        tbody.insertBefore(
+            clone,
+            next
+        );
+
+        const line =
+            clone.querySelector(
+                '.fuel-photo-ai-line'
+            );
+
+        if (
+            line
+            && Number.isFinite(
+                currentLine
+            )
+        ) {
+            line.textContent =
+                String(
+                    currentLine + 1
+                );
+        }
+    }
+
+    fuelPhotoResetInsertedRow(
+        clone
+    );
+
+    /*
+     * O clone deve receber seus próprios controles:
+     * + acima, + abaixo e excluir.
+     */
+    delete clone.dataset.structureActions;
+
+    fuelPhotoEnhanceReviewRow(
+        clone
+    );
+
+    fuelPhotoAfterStructureChange();
+
+    clone.querySelector(
+        '[data-field="vehicle_id"]'
+    )?.focus();
+}
+
+
+function fuelPhotoDeleteReviewRow(
+    button
+) {
+    const tr =
+        button.closest('tr');
+
+    if (!tr) {
+        return;
+    }
+
+    const line =
+        tr.querySelector(
+            '.fuel-photo-ai-line'
+        )?.textContent?.trim();
+
+    if (
+        !window.confirm(
+            `Excluir a linha ${line || ''} desta revisão?`
+        )
+    ) {
+        return;
+    }
+
+    const next =
+        tr.nextElementSibling;
+
+    tr.remove();
+
+    if (next) {
+        fuelPhotoShiftVisibleLines(
+            next,
+            -1
+        );
+    }
+
+    fuelPhotoAfterStructureChange();
+}
+
+
+function fuelPhotoEnhanceReviewRow(
+    tr
+) {
+    if (
+        !tr
+        || tr.dataset.structureActions
+            === '1'
+    ) {
+        return;
+    }
+
+    const line =
+        tr.querySelector(
+            '.fuel-photo-ai-line'
+        );
+
+    const lineCell =
+        line?.closest('td');
+
+    const statusCell =
+        tr.querySelector(
+            '.fuel-photo-ai-status-cell'
+        );
+
+    if (
+        !lineCell
+        || !statusCell
+    ) {
+        return;
+    }
+
+    tr.dataset.structureActions =
+        '1';
+
+    lineCell.classList.add(
+        'fuel-photo-ai-line-cell'
+    );
+
+    const actions =
+        document.createElement(
+            'div'
+        );
+
+    actions.className =
+        'fuel-photo-ai-structure-actions';
+
+    actions.innerHTML =
+        `
+            <button
+                type="button"
+                class="fuel-photo-ai-structure-btn"
+                onclick="fuelPhotoInsertReviewRow(this, 'before')"
+                title="Inserir linha acima"
+                aria-label="Inserir linha acima"
+            >
+                <i class="bi bi-plus-lg"></i>
+            </button>
+
+            <button
+                type="button"
+                class="fuel-photo-ai-structure-btn"
+                onclick="fuelPhotoInsertReviewRow(this, 'after')"
+                title="Inserir linha abaixo"
+                aria-label="Inserir linha abaixo"
+            >
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        `;
+
+    lineCell.appendChild(
+        actions
+    );
+
+    if (
+        !statusCell.querySelector(
+            '.fuel-photo-ai-row-delete-btn'
+        )
+    ) {
+        const remove =
+            document.createElement(
+                'button'
+            );
+
+        remove.type =
+            'button';
+
+        remove.className =
+            'fuel-photo-ai-row-delete-btn';
+
+        remove.title =
+            'Excluir esta linha';
+
+        remove.setAttribute(
+            'aria-label',
+            'Excluir esta linha'
+        );
+
+        remove.onclick =
+            function () {
+                fuelPhotoDeleteReviewRow(
+                    this
+                );
+            };
+
+        remove.innerHTML =
+            '<i class="bi bi-trash3"></i>';
+
+        statusCell.appendChild(
+            remove
+        );
+    }
+}
+
+
+function fuelPhotoEnhanceReviewRows() {
+    document
+        .querySelectorAll(
+            '#fuelPhotoAiRows > tr'
+        )
+        .forEach(
+            tr => {
+                fuelPhotoEnhanceReviewRow(
+                    tr
+                );
+
+                syncFuelPhotoRowMeterControl(
+                    tr
+                );
+            }
+        );
+}
+
+
+/*
+ * Quando o operador troca manualmente o veículo,
+ * a regra KM/Horas deve acompanhar o cadastro
+ * do veículo atualmente selecionado.
+ */
+if (
+    !window.fuelPhotoMeterControlListenerInstalled
+) {
+    window.fuelPhotoMeterControlListenerInstalled =
+        true;
+
+    document.addEventListener(
+        'change',
+        function (event) {
+            if (
+                !event.target.matches(
+                    '#fuelPhotoAiRows [data-field="vehicle_id"]'
+                )
+            ) {
+                return;
+            }
+
+            const tr =
+                event.target.closest(
+                    'tr'
+                );
+
+            /*
+             * Outras rotinas do sistema também
+             * processam o change. Rodamos depois
+             * delas para corrigir a apresentação
+             * final do medidor.
+             */
+            /*
+             * Primeiro deixa as rotinas de associação do
+             * veículo atualizarem placa, confiança e demais
+             * referências. Depois recalcula o medidor.
+             */
+            setTimeout(
+                () => {
+                    syncFuelPhotoRowMeterControl(
+                        tr
+                    );
+                },
+                30
+            );
+
+            /*
+             * Segunda sincronização defensiva para linhas
+             * que nasceram sem veículo e são reconstruídas
+             * pela rotina de associação manual.
+             */
+            setTimeout(
+                () => {
+                    syncFuelPhotoRowMeterControl(
+                        tr
+                    );
+                },
+                120
+            );
+        }
+    );
+}
+
+
+function setupFuelPhotoStructuralTools() {
+    const tbody =
+        document.getElementById(
+            'fuelPhotoAiRows'
+        );
+
+    if (
+        !tbody
+        || tbody.dataset.structuralObserver
+            === '1'
+    ) {
+        return;
+    }
+
+    tbody.dataset.structuralObserver =
+        '1';
+
+    let timer =
+        null;
+
+    const run =
+        () => {
+            clearTimeout(
+                timer
+            );
+
+            timer =
+                setTimeout(
+                    () => {
+                        if (
+                            fuelPhotoStructuralToolsBusy
+                        ) {
+                            return;
+                        }
+
+                        fuelPhotoAutoMergeSplitRows();
+                        fuelPhotoEnhanceReviewRows();
+                    },
+                    20
+                );
+        };
+
+    const observer =
+        new MutationObserver(
+            run
+        );
+
+    observer.observe(
+        tbody,
+        {
+            childList: true
+        }
+    );
+
+    fuelPhotoEnhanceReviewRows();
+    fuelPhotoAutoMergeSplitRows();
+}
+
+
+if (
+    document.readyState
+    === 'loading'
+) {
+    document.addEventListener(
+        'DOMContentLoaded',
+        setupFuelPhotoStructuralTools
+    );
+} else {
+    setupFuelPhotoStructuralTools();
+}
+
+
 function fuelPhotoHumanReviewStatus() {
     const rows =
         [
@@ -5908,17 +8216,6 @@ async function storeFuelPhotoImport() {
     const payload =
         buildFuelPhotoLaunchPayload();
 
-    console.table(
-        payload.rows.map(
-            row => ({
-                line: row.line,
-                vehicle_km: row.vehicle_km,
-                km_reading_confirmed:
-                    row.km_reading_confirmed
-            })
-        )
-    );
-
     if (!payload.rows.length) {
         return;
     }
@@ -5938,6 +8235,30 @@ async function storeFuelPhotoImport() {
                 'meta[name="csrf-token"]'
             )?.content;
 
+        const formData =
+            new FormData();
+
+        formData.append(
+            'payload',
+            JSON.stringify(
+                payload
+            )
+        );
+
+        const sourceInput =
+            document.getElementById(
+                'fuelPhotoAiFile'
+            );
+
+        if (
+            sourceInput?.files?.length
+        ) {
+            formData.append(
+                'source_file',
+                sourceInput.files[0]
+            );
+        }
+
         const response =
             await fetch(
                 fuelPhotoStoreUrl,
@@ -5948,17 +8269,17 @@ async function storeFuelPhotoImport() {
                         'Accept':
                             'application/json',
 
-                        'Content-Type':
-                            'application/json',
-
+                        /*
+                         * Não definir Content-Type aqui.
+                         * O navegador adiciona o boundary
+                         * correto do multipart/form-data.
+                         */
                         'X-CSRF-TOKEN':
                             csrf || ''
                     },
 
                     body:
-                        JSON.stringify(
-                            payload
-                        )
+                        formData
                 }
             );
 
@@ -5977,15 +8298,39 @@ async function storeFuelPhotoImport() {
 
         confirmation.hidden = true;
 
-        showFuelPhotoFeedback(
+        const successMessage =
             data.message
             + (
                 data.arla_fillings > 0
                     ? ` ARLA: ${data.arla_fillings} lançamento(s).`
                     : ''
-            ),
+            )
+            + (
+                data.archive_file_id
+                    ? ' Ficha arquivada automaticamente.'
+                    : ''
+            )
+            + (
+                data.archive_warning
+                    ? ' ' + data.archive_warning
+                    : ''
+            );
+
+        showFuelPhotoFeedback(
+            successMessage,
             'success'
         );
+
+        if (data.archive_warning) {
+            setTimeout(
+                () => {
+                    alert(
+                        data.archive_warning
+                    );
+                },
+                250
+            );
+        }
 
         /*
          * Evita clique duplo depois do sucesso.
@@ -6303,8 +8648,86 @@ document.addEventListener(
 
 
 @push('scripts')
+<script>
+    window.fuelLastFillingByVehicle = @json($lastFillingByVehicle ?? []);
+</script>
+
     <script>
-        function openFuelModal(id) {
+
+function updateFuelLastFillingCard(form = null) {
+    const fillingForm =
+        form
+        || document.querySelector(
+            '#fuel-modal-filling .fuel-filling-form'
+        );
+
+    const vehicleSelect =
+        fillingForm?.querySelector(
+            'select[name="vehicle_id"]'
+        );
+
+    const empty =
+        document.getElementById(
+            'fuelLastFillingEmpty'
+        );
+
+    const content =
+        document.getElementById(
+            'fuelLastFillingContent'
+        );
+
+    const status =
+        document.getElementById(
+            'fuelLastFillingStatus'
+        );
+
+    if (!vehicleSelect || !empty || !content || !status) {
+        return;
+    }
+
+    const vehicleId = vehicleSelect.value;
+    const dataMap =
+        window.fuelLastFillingByVehicle || {};
+
+    const filling =
+        vehicleId
+            ? dataMap[String(vehicleId)] || null
+            : null;
+
+    if (!filling) {
+        status.textContent = 'Sem histórico';
+        empty.hidden = false;
+        content.hidden = true;
+        return;
+    }
+
+    status.textContent = 'Encontrado';
+    empty.hidden = true;
+    content.hidden = false;
+
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+
+        if (el) {
+            el.textContent =
+                value && String(value).trim() !== ''
+                    ? value
+                    : '—';
+        }
+    };
+
+    setText('fuelLastFillingDate', filling.filled_at);
+    setText('fuelLastFillingLiters', filling.quantity_liters ? `${filling.quantity_liters} L` : '—');
+    setText('fuelLastFillingProduct', filling.product);
+    setText('fuelLastFillingSource', filling.source_label);
+    setText('fuelLastFillingPreviousKm', filling.previous_km ? `${filling.previous_km} km` : '—');
+    setText('fuelLastFillingVehicleKm', filling.vehicle_km ? `${filling.vehicle_km} km` : '—');
+    setText('fuelLastFillingTank', filling.tank);
+    setText('fuelLastFillingResponsible', filling.responsible);
+}
+
+
+function openFuelModal(id) {
             closeFuelModals();
 
             const modal = document.getElementById(`fuel-modal-${id}`);
@@ -6312,6 +8735,13 @@ document.addEventListener(
             if (modal) {
                 modal.classList.add('is-open');
                 document.body.classList.add('fuel-modal-open');
+
+                if (id === 'filling') {
+                    setTimeout(
+                        updateFuelLastFillingCard,
+                        0
+                    );
+                }
             }
         }
 
@@ -6618,6 +9048,8 @@ document.addEventListener(
 
             if (form && form.classList.contains('fuel-filling-form')) {
                 syncVehicleCounters(form);
+                syncVehicleFuelCompatibility(form);
+                updateFuelLastFillingCard(form);
             }
         }
     });
@@ -6634,6 +9066,7 @@ document.addEventListener(
 
                 syncFuelFillingSource(form);
                 syncVehicleFuelCompatibility(form);
+                updateFuelLastFillingCard(form);
             });
     }
 
