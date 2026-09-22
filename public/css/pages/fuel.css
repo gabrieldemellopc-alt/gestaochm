@@ -12258,3 +12258,13 @@ tbody tr:hover
         grid-column: auto;
     }
 }
+
+/* Histórico de recebimentos - ação documental */
+.fuel-receipt-document-link {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.fuel-receipt-document-link:hover {
+    filter: brightness(1.12);
+}

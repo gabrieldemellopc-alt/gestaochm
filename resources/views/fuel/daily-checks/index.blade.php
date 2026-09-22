@@ -900,7 +900,21 @@
         @endif
 
 
+        @php
+            $focusedReceiptId =
+                request()->integer('receipt_id');
+
+            $focusedReceipt =
+                $focusedReceiptId > 0
+                    ? $receiptCandidates->firstWhere(
+                        'id',
+                        $focusedReceiptId
+                    )
+                    : null;
+        @endphp
+
         <form
+            id="fuelArchiveUploadForm"
             method="POST"
             action="{{ route(
                 'fuel.daily-check.files.store'
@@ -929,7 +943,12 @@
                                     name="document_type"
                                     value="fuel_invoice"
                                     @checked(
-                                        old('document_type')
+                                        old(
+                                            'document_type',
+                                            request(
+                                                'document_type'
+                                            )
+                                        )
                                         === 'fuel_invoice'
                                     )
                                 >
@@ -1020,13 +1039,22 @@
                           </div>
 
                           <x-supplier-autocomplete
-                              value="{{ old('supplier_name') }}"
-                              document-name="supplier_document"
-                              document-value="{{ old('supplier_document') }}"
-                              id-name="supplier_id"
-                              id-value="{{ old('supplier_id') }}"
-                              placeholder="Digite para buscar ou cadastrar"
-                          />
+                                value="{{ old(
+                                    'supplier_name',
+                                    $focusedReceipt?->supplier_name
+                                ) }}"
+                                document-name="supplier_document"
+                                document-value="{{ old(
+                                    'supplier_document',
+                                    $focusedReceipt?->supplier_document
+                                ) }}"
+                                id-name="supplier_id"
+                                id-value="{{ old(
+                                    'supplier_id',
+                                    $focusedReceipt?->supplier_id
+                                ) }}"
+                                placeholder="Digite para buscar ou cadastrar"
+                            />
                       </div>
 
                       <div class="fuel-receipt-linker">
@@ -1054,7 +1082,10 @@
                                       <input
                                           type="date"
                                           id="fuelReceiptSearchDate"
-                                      >
+                                            value="{{ $focusedReceipt
+                                                ?->received_at
+                                                ?->format('Y-m-d') }}"
+                                        >
 
                                       <button
                                           type="button"
@@ -1099,9 +1130,13 @@
                                                   array_map(
                                                       'strval',
                                                       old(
-                                                          'receipt_ids',
-                                                          []
-                                                      )
+                                                            'receipt_ids',
+                                                            $focusedReceipt
+                                                                ? [
+                                                                    (string) $focusedReceipt->id
+                                                                ]
+                                                                : []
+                                                        )
                                                   ),
                                                   true
                                               )

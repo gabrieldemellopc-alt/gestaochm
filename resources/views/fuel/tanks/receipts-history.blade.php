@@ -213,15 +213,11 @@
 @forelse($receipts as $receipt)
 
 @php
-    $documentPending =
-        ! $receipt->cancelled_at
-        && (
-            $receipt->invoice_pending
-            || (
-                ($fuelReceiptInvoiceRequired ?? false)
-                && blank($receipt->invoice_number)
-            )
-        );
+    $invoiceFile =
+        $receipt->invoiceFiles
+            ->sortByDesc('id')
+            ->first();
+
 @endphp
 
 <tr class="{{ $receipt->cancelled_at ? 'is-cancelled' : '' }}">
@@ -280,22 +276,47 @@
 
         <br>
 
-        @if($receipt->invoice_number)
+        @if($invoiceFile)
 
-            <span>
-                NF {{ $receipt->invoice_number }}
+            <span class="fuel-history-status is-complete">
+                <i class="bi bi-paperclip"></i>
+
+                NF
+                {{ $invoiceFile->invoice_number
+                    ?: 'anexada' }}
             </span>
 
-            @if($receipt->invoice_date)
+            @if($invoiceFile->document_date)
                 <small>
-                    · {{ $receipt->invoice_date->format('d/m/Y') }}
+                    ·
+                    {{ $invoiceFile->document_date
+                        ->format('d/m/Y') }}
                 </small>
             @endif
+
+        @elseif(! $receipt->cancelled_at)
+
+            <a
+                href="{{ route(
+                    'fuel.daily-check.index',
+                    [
+                        'date' => $receipt->received_at
+                            ?->format('Y-m-d'),
+                        'document_type' => 'fuel_invoice',
+                        'receipt_id' => $receipt->id,
+                    ]
+                ) }}#fuelArchiveUploadForm"
+                class="fuel-history-status is-pending fuel-receipt-document-link"
+                title="Anexar NF a este recebimento"
+            >
+                <i class="bi bi-paperclip"></i>
+                NF pendente
+            </a>
 
         @else
 
             <span class="fuel-receipt-document-missing">
-                Sem documento
+                Sem NF vinculada
             </span>
 
         @endif
@@ -337,12 +358,6 @@
             <span class="fuel-history-status is-complete">
                 Realizado
             </span>
-
-            @if($documentPending)
-                <span class="fuel-history-status is-pending">
-                    NF pendente
-                </span>
-            @endif
 
             @if($receipt->replaces_receipt_id)
                 <small>

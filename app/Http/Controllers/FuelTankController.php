@@ -827,7 +827,13 @@ class FuelTankController extends Controller
     public function receiptsHistory(Request $request)
     {
         $context = $this->historyContext(); $this->authorizeFuelPermission('fuel.view', $context);
-        $query = FuelReceipt::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with(['tank', 'product', 'responsible', 'canceller']);
+        $query = FuelReceipt::query()->where('tenant_id', $context['tenant_id'])->where('division_id', $context['division_id'])->where('location_id', $context['location_id'])->with([
+            'tank',
+            'product',
+            'responsible',
+            'canceller',
+            'invoiceFiles',
+        ]);
         $this->applyPeriod($query, $request, 'received_at');
 
         if ($request->filled('search')) {

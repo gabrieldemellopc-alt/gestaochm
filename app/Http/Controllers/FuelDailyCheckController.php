@@ -75,6 +75,21 @@ class FuelDailyCheckController extends Controller
          * portanto os IDs enviados pelo navegador nunca são
          * considerados confiáveis por si só.
          */
+        $focusReceiptId =
+            $request->integer('receipt_id') ?: null;
+
+        $focusReceipt = $focusReceiptId
+            ? FuelReceipt::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('division_id', $context['division_id'])
+                ->where('location_id', $context['location_id'])
+                ->whereKey($focusReceiptId)
+                ->whereNull('cancelled_at')
+                ->whereDoesntHave('invoiceFiles')
+                ->with('tank:id,name')
+                ->first()
+            : null;
+
         $receiptCandidates = FuelReceipt::query()
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division_id'])
@@ -85,6 +100,36 @@ class FuelDailyCheckController extends Controller
             ->orderByDesc('id')
             ->limit(5)
             ->get();
+
+        if (
+            $focusReceipt
+            && ! $receiptCandidates->contains(
+                'id',
+                $focusReceipt->id
+            )
+        ) {
+            $receiptCandidates =
+                collect([$focusReceipt])
+                    ->concat($receiptCandidates)
+                    ->unique('id')
+                    ->take(5)
+                    ->values();
+        }
+
+        if (
+            $focusReceipt
+            && ! $receiptCandidates->contains(
+                'id',
+                $focusReceipt->id
+            )
+        ) {
+            $receiptCandidates =
+                collect([$focusReceipt])
+                    ->concat($receiptCandidates)
+                    ->unique('id')
+                    ->take(5)
+                    ->values();
+        }
 
         $dayReceipts = FuelReceipt::query()
             ->where('tenant_id', $context['tenant_id'])
