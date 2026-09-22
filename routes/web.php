@@ -1132,6 +1132,14 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
 
 
 
+    Route::get(
+        '/fuel/photo-import',
+        [\App\Http\Controllers\FuelPhotoImportController::class, 'index']
+    )
+        ->middleware('permission:navigation.fuel')
+        ->name('fuel.photo-import.index');
+
+
     Route::post(
         '/fuel/photo-import/analyze',
         [\App\Http\Controllers\FuelPhotoImportController::class, 'analyze']

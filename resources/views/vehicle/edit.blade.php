@@ -265,12 +265,6 @@
                                 {{ $vehicle->operation_started_at->format('d/m/Y') }}
                             </small>
 
-                            @if($period->changer)
-                                <small class="vehicle-operation-history__user">
-                                    <i class="bi bi-person"></i>
-                                    Alterado por {{ $period->changer->name }}
-                                </small>
-                            @endif
                         </div>
                     </div>
                 @endif

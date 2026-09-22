@@ -10910,3 +10910,94 @@ tbody tr:hover
         gap: 5px;
     }
 }
+
+
+/* =========================================================
+   FOTO IA - PÁGINA DEDICADA
+   ========================================================= */
+
+.fuel-photo-import-page {
+    width: 100%;
+    padding: 24px;
+}
+
+.fuel-photo-ai-page-shell {
+    width: 100%;
+}
+
+.fuel-photo-import-page
+.fuel-photo-ai-modal {
+    position: relative;
+    inset: auto;
+
+    width: 100%;
+    max-width: none;
+    max-height: none;
+
+    margin: 0;
+
+    /*
+     * Preserva o recorte do conteúdo dentro dos
+     * cantos arredondados do antigo modal.
+     */
+    overflow: hidden;
+
+    transform: none;
+}
+
+.fuel-photo-import-page
+.fuel-photo-ai-body {
+    overflow: visible;
+}
+
+.fuel-photo-ai-page-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 38px;
+
+    padding: 8px 12px;
+
+    border:
+        1px solid
+        rgba(203, 213, 225, .16);
+
+    border-radius: 9px;
+
+    background:
+        rgba(30, 45, 70, .42);
+
+    color: #dbe5f3;
+
+    font-size: .76rem;
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        color .15s ease;
+}
+
+.fuel-photo-ai-page-back:hover {
+    border-color:
+        rgba(203, 213, 225, .30);
+
+    background:
+        rgba(54, 72, 103, .66);
+
+    color: #fff;
+}
+
+@media (max-width: 760px) {
+    .fuel-photo-import-page {
+        padding: 12px;
+    }
+
+    .fuel-photo-ai-page-back span {
+        display: none;
+    }
+}

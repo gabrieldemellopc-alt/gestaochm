@@ -98,10 +98,9 @@
                 </button>
 
                 @if($canUseFuelPhotoImport)
-                    <button
-                        type="button"
+                    <a
+                        href="{{ route('fuel.photo-import.index') }}"
                         class="fuel-secondary-action fuel-photo-import-trigger"
-                        onclick="openFuelPhotoImport()"
                         title="Importar abastecimentos a partir de uma foto"
                     >
                         <span class="fuel-manager-photo-icon">
@@ -112,7 +111,7 @@
                             <strong>Importar via foto (IA)</strong>
                             <small>Ler, revisar e lançar uma ficha</small>
                         </span>
-                    </button>
+                    </a>
                 @endif
 
 

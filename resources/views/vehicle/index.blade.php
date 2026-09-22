@@ -463,7 +463,7 @@
 
 
 
-                <option value="active">
+                <option value="active" selected>
 
 
 
@@ -2920,6 +2920,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     );
+
+
+
+    /*
+     * Situação cadastral padrão:
+     * ao abrir a tela, exibe somente veículos ativos.
+     */
+    applyFilters();
 
 
 

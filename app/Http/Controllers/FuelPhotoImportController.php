@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FuelFilling;
 use App\Models\FuelDailyCheck;
 use App\Models\FuelTank;
+use App\Models\Vehicle;
 use App\Services\ActiveContextService;
 use App\Services\FuelService;
 use App\Services\Permissions\ProfilePermissionService;
@@ -17,6 +18,89 @@ use Illuminate\Validation\ValidationException;
 
 class FuelPhotoImportController extends Controller
 {
+    public function index(
+        Request $request
+    ) {
+        $context =
+            $this->activeContext(
+                $request
+            );
+
+        $this->authorizePhotoImport(
+            $context
+        );
+
+        /*
+         * Mantém exatamente o mesmo conjunto de dados
+         * utilizado pela importação via foto dentro de /fuel.
+         */
+        $vehicles =
+            Vehicle::query()
+                ->where(
+                    'tenant_id',
+                    $context['tenant_id']
+                )
+                ->where(
+                    'division_id',
+                    $context['division_id']
+                )
+                ->where(
+                    'location_id',
+                    $context['location_id']
+                )
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                    'plate',
+                    'type',
+                    'current_km',
+                    'current_hours',
+                    'km_control_enabled',
+                    'hours_control_enabled',
+                    'km_meter_status',
+                    'hours_meter_status',
+                    'fleet_relation',
+                ]);
+
+        $tanks =
+            FuelTank::query()
+                ->where(
+                    'tenant_id',
+                    $context['tenant_id']
+                )
+                ->where(
+                    'division_id',
+                    $context['division_id']
+                )
+                ->where(
+                    'location_id',
+                    $context['location_id']
+                )
+                ->with('product')
+                ->orderByDesc('active')
+                ->orderBy('name')
+                ->get();
+
+        return view(
+            'fuel.photo-import.index',
+            [
+                'activeDivision' =>
+                    $context['division'],
+
+                'activeLocation' =>
+                    $context['location'],
+
+                'vehicles' =>
+                    $vehicles,
+
+                'tanks' =>
+                    $tanks,
+            ]
+        );
+    }
+
+
     public function analyze(
         Request $request,
         GoogleVisionFuelSheetService $vision
