@@ -876,6 +876,30 @@
 
                         </dialog>
 
+                        @if(
+                            (int) request('open_document')
+                            === (int) $file->id
+                        )
+                            <script>
+                                document.addEventListener(
+                                    'DOMContentLoaded',
+                                    function () {
+                                        const dialog =
+                                            document.getElementById(
+                                                'fuelDocumentDetails{{ $file->id }}'
+                                            );
+
+                                        if (
+                                            dialog
+                                            && ! dialog.open
+                                        ) {
+                                            dialog.showModal();
+                                        }
+                                    }
+                                );
+                            </script>
+                        @endif
+
                     @endforeach
 
             </div>
@@ -1513,24 +1537,49 @@
 
                             @if($invoiceFile)
 
-                                <span
-                                    class="fuel-receipt-document-status is-linked"
+                                <a
+                                    href="{{ route(
+                                        'fuel.daily-check.index',
+                                        [
+                                            'date' =>
+                                                $invoiceFile->check?->operation_date
+                                                    ? \Illuminate\Support\Carbon::parse(
+                                                        $invoiceFile->check
+                                                            ->operation_date
+                                                    )->format('Y-m-d')
+                                                    : $date->format('Y-m-d'),
+                                            'open_document' =>
+                                                $invoiceFile->id,
+                                        ]
+                                    ) }}#fuelDocumentDetails{{ $invoiceFile->id }}"
+                                    class="fuel-receipt-document-status is-linked fuel-receipt-document-link"
+                                    title="Ver detalhes desta NF"
                                 >
                                     <i class="bi bi-paperclip"></i>
 
                                     NF
                                     {{ $invoiceFile->invoice_number
                                         ?: 'anexada' }}
-                                </span>
+                                </a>
 
                             @else
 
-                                <span
-                                    class="fuel-receipt-document-status is-pending"
+                                <a
+                                    href="{{ route(
+                                        'fuel.daily-check.index',
+                                        [
+                                            'date' => $receipt->received_at
+                                                ?->format('Y-m-d'),
+                                            'document_type' => 'fuel_invoice',
+                                            'receipt_id' => $receipt->id,
+                                        ]
+                                    ) }}#fuelArchiveUploadForm"
+                                    class="fuel-receipt-document-status is-pending fuel-receipt-document-link"
+                                    title="Anexar NF a este recebimento"
                                 >
-                                    <i class="bi bi-clock"></i>
+                                    <i class="bi bi-paperclip"></i>
                                     NF pendente
-                                </span>
+                                </a>
 
                             @endif
 

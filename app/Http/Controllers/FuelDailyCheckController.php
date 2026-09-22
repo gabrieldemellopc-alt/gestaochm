@@ -142,7 +142,7 @@ class FuelDailyCheckController extends Controller
             ->whereNull('cancelled_at')
             ->with([
                 'tank:id,name',
-                'invoiceFiles',
+                'invoiceFiles.check',
             ])
             ->orderByDesc('received_at')
             ->orderByDesc('id')

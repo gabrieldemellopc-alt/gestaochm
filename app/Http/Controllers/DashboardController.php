@@ -45,6 +45,7 @@ use App\Models\VehicleOperation;
 use App\Models\UserDivisionAccess;
 
 use App\Services\ActiveContextService;
+use App\Services\AlertService;
 use App\Services\OperationalDashboardService;
 use Illuminate\Http\Request;
 
@@ -1715,6 +1716,13 @@ class DashboardController extends Controller
 
         $warningFuelTankCount = $warningFuelTanks->count();
 
+        $pendingFuelReceiptInvoiceCount =
+            AlertService::getPendingFuelReceiptInvoiceCount(
+                (int) auth()->user()->tenant_id,
+                (int) session('active_division_id'),
+                (int) $activeLocation->id
+            );
+
         /*
 
 
@@ -2451,6 +2459,7 @@ class DashboardController extends Controller
             'criticalFuelTankCount',
 
             'warningFuelTankCount',
+            'pendingFuelReceiptInvoiceCount',
 
 
 

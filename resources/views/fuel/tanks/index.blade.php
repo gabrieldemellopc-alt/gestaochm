@@ -1595,7 +1595,12 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('fuel.receipts.store') }}" class="fuel-form">
+                    <form
+                        method="POST"
+                        action="{{ route('fuel.receipts.store') }}"
+                        enctype="multipart/form-data"
+                        class="fuel-form"
+                    >
                         @csrf
                         <input type="hidden" name="fuel_tank_id" value="{{ $tank->id }}">
                         <input type="hidden" name="fuel_product_id" value="{{ $tank->fuel_product_id }}">
@@ -1695,6 +1700,59 @@
                                     </small>
                                 @endif
                             </label>
+
+
+                            <div
+                                class="receipt-span-6 fuel-receipt-invoice-upload"
+                            >
+                                <div class="fuel-receipt-invoice-upload-head">
+                                    <div>
+                                        <strong>
+                                            Anexar nota fiscal
+                                        </strong>
+
+                                        <span>
+                                            Opcional
+                                        </span>
+                                    </div>
+
+                                    <i class="bi bi-paperclip"></i>
+                                </div>
+
+                                <p>
+                                    Você pode anexar a NF agora.
+                                    Se não anexar, o recebimento será
+                                    registrado normalmente e ficará como
+                                    <strong>NF pendente</strong> para
+                                    inclusão posterior.
+                                </p>
+
+                                <label class="fuel-receipt-invoice-file">
+                                    <i class="bi bi-cloud-arrow-up"></i>
+
+                                    <span>
+                                        <strong>
+                                            Selecionar NF
+                                        </strong>
+
+                                        <small>
+                                            PDF, JPG, PNG ou WEBP · até 12 MB
+                                        </small>
+                                    </span>
+
+                                    <input
+                                        type="file"
+                                        name="invoice_file"
+                                        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                                    >
+                                </label>
+
+                                <small class="fuel-form-help">
+                                    Ao selecionar um arquivo, número,
+                                    data da NF e fornecedor devem estar
+                                    informados.
+                                </small>
+                            </div>
 
 
                             {{-- CUSTO CALCULADO --}}

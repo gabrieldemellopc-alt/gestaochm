@@ -12268,3 +12268,148 @@ tbody tr:hover
 .fuel-receipt-document-link:hover {
     filter: brightness(1.12);
 }
+
+/* Recebimento de combustível - NF opcional */
+.fuel-receipt-invoice-upload {
+    display: grid;
+    gap: 10px;
+
+    padding: 14px 16px;
+
+    border: 1px dashed rgba(111, 157, 221, .34);
+    border-radius: 12px;
+
+    background: rgba(30, 57, 95, .18);
+}
+
+.fuel-receipt-invoice-upload-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fuel-receipt-invoice-upload-head > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fuel-receipt-invoice-upload-head strong {
+    color: #eef4ff;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.fuel-receipt-invoice-upload-head span {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 3px 8px;
+
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 999px;
+
+    background: rgba(148, 163, 184, .10);
+
+    color: #aebdd3;
+    font-size: .64rem;
+    font-weight: 800;
+}
+
+.fuel-receipt-invoice-upload-head > i {
+    color: #86afe5;
+    font-size: 1rem;
+}
+
+.fuel-receipt-invoice-upload > p {
+    margin: 0;
+
+    color: #9fb0c9;
+    font-size: .72rem;
+    line-height: 1.5;
+}
+
+.fuel-receipt-invoice-upload > p strong {
+    color: #e4bd68;
+}
+
+.fuel-receipt-invoice-file {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    min-height: 54px;
+    padding: 9px 12px;
+
+    border: 1px solid rgba(111, 157, 221, .26);
+    border-radius: 10px;
+
+    background: rgba(25, 48, 82, .24);
+
+    cursor: pointer;
+}
+
+.fuel-receipt-invoice-file:hover {
+    border-color: rgba(111, 157, 221, .45);
+    background: rgba(35, 66, 108, .28);
+}
+
+.fuel-receipt-invoice-file > i {
+    flex: 0 0 auto;
+
+    color: #86afe5;
+    font-size: 1.05rem;
+}
+
+.fuel-receipt-invoice-file > span {
+    display: grid;
+    gap: 2px;
+
+    min-width: 145px;
+}
+
+.fuel-receipt-invoice-file strong {
+    color: #eaf2ff;
+    font-size: .72rem;
+}
+
+.fuel-receipt-invoice-file small {
+    color: #8499b9;
+    font-size: .61rem;
+}
+
+.fuel-receipt-invoice-file input[type="file"] {
+    flex: 1;
+    min-width: 0;
+
+    color: #afbdd2;
+    font-size: .68rem;
+}
+
+.fuel-receipt-invoice-file input[type="file"]::file-selector-button {
+    margin-right: 10px;
+    padding: 7px 11px;
+
+    border: 1px solid rgba(116, 165, 232, .30);
+    border-radius: 7px;
+
+    background: rgba(79, 125, 187, .18);
+
+    color: #e7f0ff;
+    font: inherit;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.fuel-receipt-invoice-file input[type="file"]::file-selector-button:hover {
+    background: rgba(79, 125, 187, .30);
+}
+
+.fuel-receipt-invoice-upload > .fuel-form-help {
+    margin: 0;
+
+    color: #8195b2;
+    font-size: .62rem;
+}

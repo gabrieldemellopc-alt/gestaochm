@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FuelDailyCheck;
 use App\Models\FuelFilling;
 use App\Models\FuelProduct;
 use App\Models\FuelReceipt;
@@ -346,15 +347,20 @@ class FuelTankController extends Controller
             ->with('success', 'Tanque atualizado com sucesso.');
     }
 
-    public function storeReceipt(Request $request, FuelService $fuelService)
-    {
+    public function storeReceipt(
+        Request $request,
+        FuelService $fuelService
+    ) {
         $context = $this->activeContext();
 
         if (! $context) {
             return $this->missingActiveLocationRedirect();
         }
 
-        $this->authorizeFuelPermission('fuel.receive', $context);
+        $this->authorizeFuelPermission(
+            'fuel.receive',
+            $context
+        );
 
         $invoiceRequired = app(
             TenantFiscalSettingService::class
@@ -364,38 +370,260 @@ class FuelTankController extends Controller
             $invoiceRequired
             && blank($request->input('invoice_number'));
 
+        $invoiceFile =
+            $request->file('invoice_file');
+
+        $storedInvoicePath = null;
+
         try {
-            $fuelService->receiveFuel(array_merge(
-                $request->only([
-                'source',
-                'fuel_tank_id',
-                'fuel_product_id',
-                'received_at',
-                'quantity_liters',
-                'unit_cost',
-                'total_cost',
-                'supplier_name',
-                'supplier_id',
-                'supplier_document',
-                'invoice_number',
-                'invoice_date',
-                'notes',
-            ]),
-            [
-                'invoice_pending' => $invoicePending,
-            ]
-            ));
+            validator(
+                [
+                    'invoice_file' => $invoiceFile,
+                ],
+                [
+                    'invoice_file' => [
+                        'nullable',
+                        'file',
+                        'mimes:jpg,jpeg,png,webp,pdf',
+                        'max:12288',
+                    ],
+                ],
+                [
+                    'invoice_file.file' =>
+                        'O anexo da NF deve ser um arquivo válido.',
+
+                    'invoice_file.mimes' =>
+                        'A NF deve estar em JPG, JPEG, PNG, WEBP ou PDF.',
+
+                    'invoice_file.max' =>
+                        'O arquivo da NF deve possuir no máximo 12 MB.',
+                ]
+            )->validate();
+
+            if ($invoiceFile) {
+                $errors = [];
+
+                if (
+                    blank(
+                        $request->input('invoice_number')
+                    )
+                ) {
+                    $errors['invoice_number'] =
+                        'Informe o número da NF para anexar o documento.';
+                }
+
+                if (
+                    blank(
+                        $request->input('invoice_date')
+                    )
+                ) {
+                    $errors['invoice_date'] =
+                        'Informe a data da NF para anexar o documento.';
+                }
+
+                if (
+                    blank(
+                        $request->input('supplier_name')
+                    )
+                ) {
+                    $errors['supplier_name'] =
+                        'Informe o fornecedor para anexar a NF.';
+                }
+
+                if ($errors) {
+                    throw ValidationException::withMessages(
+                        $errors
+                    );
+                }
+            }
+
+            DB::transaction(function () use (
+                $request,
+                $fuelService,
+                $context,
+                $invoicePending,
+                $invoiceFile,
+                &$storedInvoicePath
+            ) {
+                $receipt = $fuelService->receiveFuel(
+                    array_merge(
+                        $request->only([
+                            'source',
+                            'fuel_tank_id',
+                            'fuel_product_id',
+                            'received_at',
+                            'quantity_liters',
+                            'unit_cost',
+                            'total_cost',
+                            'supplier_name',
+                            'supplier_id',
+                            'supplier_document',
+                            'invoice_number',
+                            'invoice_date',
+                            'notes',
+                        ]),
+                        [
+                            'invoice_pending' =>
+                                $invoicePending,
+                        ]
+                    )
+                );
+
+                if (! $invoiceFile) {
+                    return;
+                }
+
+                $operationDate =
+                    Carbon::parse(
+                        $receipt->received_at
+                    )->toDateString();
+
+                $check =
+                    FuelDailyCheck::query()
+                        ->firstOrCreate(
+                            [
+                                'tenant_id' =>
+                                    $receipt->tenant_id,
+
+                                'division_id' =>
+                                    $receipt->division_id,
+
+                                'location_id' =>
+                                    $receipt->location_id,
+
+                                'operation_date' =>
+                                    $operationDate,
+                            ],
+                            [
+                                'status' => 'pending',
+                            ]
+                        );
+
+                $extension = strtolower(
+                    $invoiceFile
+                        ->getClientOriginalExtension()
+                    ?: $invoiceFile->extension()
+                    ?: 'jpg'
+                );
+
+                $path =
+                    'protected/fuel-daily-checks/'
+                    .$check->tenant_id.'/'
+                    .$check->location_id.'/'
+                    .$check->id.'/'
+                    .Str::uuid().'.'.$extension;
+
+                Storage::disk('local')->putFileAs(
+                    dirname($path),
+                    $invoiceFile,
+                    basename($path)
+                );
+
+                $storedInvoicePath = $path;
+
+                $storedFile =
+                    $check->files()->create([
+                        'disk' => 'local',
+
+                        'path' => $path,
+
+                        'original_name' =>
+                            $invoiceFile
+                                ->getClientOriginalName(),
+
+                        'mime_type' =>
+                            $invoiceFile->getMimeType(),
+
+                        'size_bytes' =>
+                            Storage::disk('local')
+                                ->size($path),
+
+                        'source' =>
+                            'receipt_entry',
+
+                        'document_type' =>
+                            'fuel_invoice',
+
+                        'document_date' =>
+                            Carbon::parse(
+                                $request->input(
+                                    'invoice_date'
+                                )
+                            )->toDateString(),
+
+                        'invoice_number' =>
+                            trim(
+                                (string)
+                                $request->input(
+                                    'invoice_number'
+                                )
+                            ),
+
+                        'supplier_id' =>
+                            $receipt->supplier_id,
+
+                        'supplier_name' =>
+                            $receipt->supplier_name,
+
+                        'supplier_document' =>
+                            $receipt->supplier_document,
+
+                        'uploaded_by' =>
+                            $context['user']->id,
+                    ]);
+
+                $storedFile
+                    ->receipts()
+                    ->sync([
+                        $receipt->id,
+                    ]);
+            });
+
         } catch (ValidationException $exception) {
+            if (
+                $storedInvoicePath
+                && Storage::disk('local')
+                    ->exists($storedInvoicePath)
+            ) {
+                Storage::disk('local')
+                    ->delete($storedInvoicePath);
+            }
+
             return back()
-                ->withErrors($exception->errors(), 'fuelReceipt')
+                ->withErrors(
+                    $exception->errors(),
+                    'fuelReceipt'
+                )
                 ->withInput()
-                ->with('fuel_modal', 'receipt-'.$request->input('fuel_tank_id'));
+                ->with(
+                    'fuel_modal',
+                    'receipt-'
+                    .$request->input('fuel_tank_id')
+                );
+
+        } catch (\Throwable $exception) {
+            if (
+                $storedInvoicePath
+                && Storage::disk('local')
+                    ->exists($storedInvoicePath)
+            ) {
+                Storage::disk('local')
+                    ->delete($storedInvoicePath);
+            }
+
+            throw $exception;
         }
 
         return redirect()
             ->route('fuel.tanks.index')
-            ->with('success', 'Recebimento registrado com sucesso.');
+            ->with(
+                'success',
+                $invoiceFile
+                    ? 'Recebimento registrado e NF arquivada com sucesso.'
+                    : 'Recebimento registrado com sucesso. A NF permanece pendente.'
+            );
     }
+
 
     public function replaceReceipt(
         Request $request,

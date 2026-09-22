@@ -1473,239 +1473,6 @@
     {{-- COLUNA LATERAL --}}
     <aside class="dashboard-side-column">
 
-        <section class="side-widget operational-indicators-widget">
-
-            <div class="side-widget-header">
-                <div>
-                    <small>Últimos 30 dias</small>
-                    <h3>Indicadores críticos</h3>
-                </div>
-
-                <i class="bi bi-bar-chart-line"></i>
-            </div>
-
-            <div class="operational-indicator-section">
-                <div class="operational-indicator-title">
-                    <span>Maiores consumos</span>
-                    <small>Litros abastecidos</small>
-                </div>
-
-                <div class="operational-ranking-list">
-                    @forelse($fuelConsumptionRanking as $index => $item)
-                        <div class="operational-ranking-item">
-
-                            <div class="operational-ranking-main">
-                                <strong>{{ $item['vehicle_label'] }}</strong>
-                                <small>
-                                    {{ $item['product'] }}{{ $item['has_multiple_products'] ? ' + outros' : '' }}
-                                </small>
-                            </div>
-
-                            <div class="operational-ranking-value">
-                                <strong>{{ number_format($item['liters'], 1, ',', '.') }} L</strong>
-                                @if($canViewDashboardCosts)
-                                    <small>R$ {{ number_format($item['total_cost'], 2, ',', '.') }}</small>
-                                @endif
-                            </div>
-                        </div>
-
-                    @empty
-                        <p class="operational-indicator-empty">Sem abastecimentos no período.</p>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="operational-indicator-section">
-                <div class="operational-indicator-title">
-                    <span>Parados há mais tempo</span>
-                    <small>Situação atual</small>
-                </div>
-
-                <div class="operational-ranking-list">
-                    @forelse($longestStoppedVehicles as $index => $item)
-                        <div class="operational-ranking-item stopped">
-
-                            <div class="operational-ranking-main">
-                                <strong>{{ $item['vehicle_label'] }}</strong>
-                                <small title="{{ $item['reason'] }}">
-                                    {{ $item['status'] }}
-                                    @if($item['started_at'])
-                                        · desde {{ $item['started_at'] }}
-                                    @endif
-                                </small>
-                            </div>
-
-                            <div class="operational-ranking-value danger">
-                                <strong>{{ $item['days'] !== null ? $item['days'] : '—' }}</strong>
-                                <small>{{ $item['days'] === 1 ? 'dia' : 'dias' }}</small>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="operational-indicator-empty">Nenhum veículo parado no momento.</p>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="operational-indicator-section cost-comparison-section">
-                <div class="operational-indicator-title">
-                    <span>Custos nos últimos 6 meses</span>
-                    <small>Combustível × manutenção</small>
-                </div>
-
-                @if($canViewDashboardCosts)
-                    <div class="operational-cost-legend">
-                        <span><i class="fuel"></i>Combustível</span>
-                        <span><i class="maintenance"></i>Manutenção</span>
-                    </div>
-
-                    <div class="operational-cost-chart">
-                        @foreach($sixMonthCostSeries as $month)
-                            <div class="operational-cost-month">
-                                <div class="operational-cost-bars">
-                                    <span
-                                        class="operational-cost-bar fuel"
-                                        style="height: {{ max(2, $month['fuel_percent']) }}%"
-                                        title="Combustível: R$ {{ number_format($month['fuel'], 2, ',', '.') }}"
-                                    ></span>
-                                    <span
-                                        class="operational-cost-bar maintenance"
-                                        style="height: {{ max(2, $month['maintenance_percent']) }}%"
-                                        title="Manutenção: R$ {{ number_format($month['maintenance'], 2, ',', '.') }}"
-                                    ></span>
-                                </div>
-                                <small>{{ $month['label'] }}</small>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <p class="operational-indicator-empty restricted">
-                        <i class="bi bi-lock"></i>
-                        Custos restritos para seu perfil.
-                    </p>
-                @endif
-            </div>
-
-        </section>
-
-        {{-- RESUMO DA FROTA --}}
-
-
-        <section class="side-widget fleet-summary-widget">
-
-
-
-            <div class="side-widget-header">
-
-
-
-                <div>
-
-                    <small>Situação</small>
-
-
-
-                    <h3>
-
-                        Resumo da frota
-
-                    </h3>
-
-                </div>
-
-
-
-                <i class="bi bi-bar-chart"></i>
-
-
-
-            </div>
-
-
-
-            <div class="fleet-summary-list">
-
-
-
-                @foreach($statusSummary as $statusItem)
-
-
-
-                    @php
-
-                        $filterName = match ($statusItem['status']) {
-
-                            'operational' => 'operational',
-
-                            'maintenance' => 'maintenance',
-
-                            default => 'status:' . $statusItem['status'],
-
-                        };
-
-                    @endphp
-
-
-
-                    <button
-
-                        type="button"
-
-                        class="
-
-                            fleet-summary-item
-
-                            {{ $statusItem['tone'] }}
-
-                        "
-
-                        @click="setFilter('{{ $filterName }}')"
-
-                    >
-
-                        <span class="fleet-summary-label">
-
-
-
-                            <i class="{{ chm_icon($statusItem['icon']) }}"></i>
-
-
-
-                            <span>
-
-                                {{ $statusItem['label'] }}
-
-                            </span>
-
-
-
-                        </span>
-
-
-
-                        <strong>
-
-                            {{ $statusItem['count'] }}
-
-                        </strong>
-
-
-
-                    </button>
-
-
-
-                @endforeach
-
-
-
-            </div>
-
-
-
-        </section>
-
-
-
             {{-- PRIORIDADES OPERACIONAIS --}}
 
 
@@ -2116,6 +1883,54 @@
 
 
 
+                {{-- NFS DE COMBUSTÍVEL PENDENTES --}}
+                @if($pendingFuelReceiptInvoiceCount > 0)
+
+                    <a
+                        href="{{ route('fuel.receipts.history') }}"
+                        class="operation-task warning"
+                    >
+                        <div class="task-icon">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+
+                        <div class="task-content">
+
+                            <div class="task-title-row">
+
+                                <strong>
+                                    Notas fiscais pendentes
+                                </strong>
+
+                                <span class="task-priority-badge warning">
+                                    Atenção
+                                </span>
+
+                            </div>
+
+                            <p>
+                                {{ $pendingFuelReceiptInvoiceCount }}
+
+                                {{
+                                    $pendingFuelReceiptInvoiceCount === 1
+                                        ? 'recebimento aguarda'
+                                        : 'recebimentos aguardam'
+                                }}
+
+                                anexo da nota fiscal.
+                            </p>
+
+                        </div>
+
+                        <i
+                            class="task-arrow bi bi-chevron-right"
+                        ></i>
+
+                    </a>
+
+                @endif
+
+
                 {{-- TANQUES EM ATENÇÃO --}}
 
                 @if($warningFuelTankCount > 0)
@@ -2305,6 +2120,7 @@
                     &&
 
                     $warningFuelTankCount == 0
+                    && $pendingFuelReceiptInvoiceCount == 0
 
                 )
 
@@ -2366,7 +2182,243 @@
 
 
 
-            {{-- AÇÕES RÁPIDAS --}}
+
+
+
+        <section class="side-widget operational-indicators-widget">
+
+            <div class="side-widget-header">
+                <div>
+                    <small>Últimos 30 dias</small>
+                    <h3>Indicadores críticos</h3>
+                </div>
+
+                <i class="bi bi-bar-chart-line"></i>
+            </div>
+
+            <div class="operational-indicator-section">
+                <div class="operational-indicator-title">
+                    <span>Maiores consumos</span>
+                    <small>Litros abastecidos</small>
+                </div>
+
+                <div class="operational-ranking-list">
+                    @forelse($fuelConsumptionRanking as $index => $item)
+                        <div class="operational-ranking-item">
+
+                            <div class="operational-ranking-main">
+                                <strong>{{ $item['vehicle_label'] }}</strong>
+                                <small>
+                                    {{ $item['product'] }}{{ $item['has_multiple_products'] ? ' + outros' : '' }}
+                                </small>
+                            </div>
+
+                            <div class="operational-ranking-value">
+                                <strong>{{ number_format($item['liters'], 1, ',', '.') }} L</strong>
+                                @if($canViewDashboardCosts)
+                                    <small>R$ {{ number_format($item['total_cost'], 2, ',', '.') }}</small>
+                                @endif
+                            </div>
+                        </div>
+
+                    @empty
+                        <p class="operational-indicator-empty">Sem abastecimentos no período.</p>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="operational-indicator-section">
+                <div class="operational-indicator-title">
+                    <span>Parados há mais tempo</span>
+                    <small>Situação atual</small>
+                </div>
+
+                <div class="operational-ranking-list">
+                    @forelse($longestStoppedVehicles as $index => $item)
+                        <div class="operational-ranking-item stopped">
+
+                            <div class="operational-ranking-main">
+                                <strong>{{ $item['vehicle_label'] }}</strong>
+                                <small title="{{ $item['reason'] }}">
+                                    {{ $item['status'] }}
+                                    @if($item['started_at'])
+                                        · desde {{ $item['started_at'] }}
+                                    @endif
+                                </small>
+                            </div>
+
+                            <div class="operational-ranking-value danger">
+                                <strong>{{ $item['days'] !== null ? $item['days'] : '—' }}</strong>
+                                <small>{{ $item['days'] === 1 ? 'dia' : 'dias' }}</small>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="operational-indicator-empty">Nenhum veículo parado no momento.</p>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="operational-indicator-section cost-comparison-section">
+                <div class="operational-indicator-title">
+                    <span>Custos nos últimos 6 meses</span>
+                    <small>Combustível × manutenção</small>
+                </div>
+
+                @if($canViewDashboardCosts)
+                    <div class="operational-cost-legend">
+                        <span><i class="fuel"></i>Combustível</span>
+                        <span><i class="maintenance"></i>Manutenção</span>
+                    </div>
+
+                    <div class="operational-cost-chart">
+                        @foreach($sixMonthCostSeries as $month)
+                            <div class="operational-cost-month">
+                                <div class="operational-cost-bars">
+                                    <span
+                                        class="operational-cost-bar fuel"
+                                        style="height: {{ max(2, $month['fuel_percent']) }}%"
+                                        title="Combustível: R$ {{ number_format($month['fuel'], 2, ',', '.') }}"
+                                    ></span>
+                                    <span
+                                        class="operational-cost-bar maintenance"
+                                        style="height: {{ max(2, $month['maintenance_percent']) }}%"
+                                        title="Manutenção: R$ {{ number_format($month['maintenance'], 2, ',', '.') }}"
+                                    ></span>
+                                </div>
+                                <small>{{ $month['label'] }}</small>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="operational-indicator-empty restricted">
+                        <i class="bi bi-lock"></i>
+                        Custos restritos para seu perfil.
+                    </p>
+                @endif
+            </div>
+
+        </section>
+
+        {{-- RESUMO DA FROTA --}}
+
+
+        <section class="side-widget fleet-summary-widget">
+
+
+
+            <div class="side-widget-header">
+
+
+
+                <div>
+
+                    <small>Situação</small>
+
+
+
+                    <h3>
+
+                        Resumo da frota
+
+                    </h3>
+
+                </div>
+
+
+
+                <i class="bi bi-bar-chart"></i>
+
+
+
+            </div>
+
+
+
+            <div class="fleet-summary-list">
+
+
+
+                @foreach($statusSummary as $statusItem)
+
+
+
+                    @php
+
+                        $filterName = match ($statusItem['status']) {
+
+                            'operational' => 'operational',
+
+                            'maintenance' => 'maintenance',
+
+                            default => 'status:' . $statusItem['status'],
+
+                        };
+
+                    @endphp
+
+
+
+                    <button
+
+                        type="button"
+
+                        class="
+
+                            fleet-summary-item
+
+                            {{ $statusItem['tone'] }}
+
+                        "
+
+                        @click="setFilter('{{ $filterName }}')"
+
+                    >
+
+                        <span class="fleet-summary-label">
+
+
+
+                            <i class="{{ chm_icon($statusItem['icon']) }}"></i>
+
+
+
+                            <span>
+
+                                {{ $statusItem['label'] }}
+
+                            </span>
+
+
+
+                        </span>
+
+
+
+                        <strong>
+
+                            {{ $statusItem['count'] }}
+
+                        </strong>
+
+
+
+                    </button>
+
+
+
+                @endforeach
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+{{-- AÇÕES RÁPIDAS --}}
 
             @if(false)
 

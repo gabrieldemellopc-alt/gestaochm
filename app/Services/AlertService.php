@@ -4,6 +4,20 @@ namespace App\Services;
 
 class AlertService
 {
+    public static function getPendingFuelReceiptInvoiceCount(
+        int $tenantId,
+        int $divisionId,
+        int $locationId
+    ): int {
+        return \App\Models\FuelReceipt::query()
+            ->where('tenant_id', $tenantId)
+            ->where('division_id', $divisionId)
+            ->where('location_id', $locationId)
+            ->whereNull('cancelled_at')
+            ->whereDoesntHave('invoiceFiles')
+            ->count();
+    }
+
     public static function getVehicleStatus($vehicle)
     {
         $latest =
