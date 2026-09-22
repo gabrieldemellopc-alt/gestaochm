@@ -1177,6 +1177,11 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
                 'uploadFiles'
             )->name('files.store');
 
+            Route::get(
+                '/receipts/search',
+                'searchReceiptCandidates'
+            )->name('receipts.search');
+
             Route::post(
                 '/{check}/upload-token',
                 'createUploadToken'

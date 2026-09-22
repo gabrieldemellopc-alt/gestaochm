@@ -6,8 +6,11 @@ use App\Models\FuelDailyCheck;
 use App\Models\FuelDailyCheckFile;
 use App\Models\FuelDailyCheckUploadToken;
 use App\Models\FuelFilling;
+use App\Models\FuelReceipt;
 use App\Services\ActiveContextService;
 use App\Services\Permissions\ProfilePermissionService;
+use App\Services\SupplierResolverService;
+use App\Services\SupplierSnapshotService;
 use Carbon\Carbon;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
@@ -53,9 +56,52 @@ class FuelDailyCheckController extends Controller
 
         $check->load([
             'files' => fn ($query) =>
-                $query->latest(),
+                $query
+                    ->with([
+                        'receipts' => fn ($receiptQuery) =>
+                            $receiptQuery
+                                ->with('tank:id,name')
+                                ->orderBy('received_at')
+                                ->orderBy('fuel_receipts.id'),
+                    ])
+                    ->latest(),
             'checker',
         ]);
+
+        /*
+         * Recebimentos disponíveis para vínculo documental.
+         *
+         * A seleção final também é revalidada no backend,
+         * portanto os IDs enviados pelo navegador nunca são
+         * considerados confiáveis por si só.
+         */
+        $receiptCandidates = FuelReceipt::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->whereNull('cancelled_at')
+            ->whereDoesntHave('invoiceFiles')
+            ->with('tank:id,name')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        $dayReceipts = FuelReceipt::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->whereDate(
+                'received_at',
+                $date->toDateString()
+            )
+            ->whereNull('cancelled_at')
+            ->with([
+                'tank:id,name',
+                'invoiceFiles',
+            ])
+            ->orderByDesc('received_at')
+            ->orderByDesc('id')
+            ->get();
 
         $summary = $this->summary(
             $context,
@@ -192,7 +238,9 @@ class FuelDailyCheckController extends Controller
                 'vehicleCount',
                 'date',
                 'month',
-                'calendarWeeks'
+                'calendarWeeks',
+                'receiptCandidates',
+            'dayReceipts'
             )
         );
     }
@@ -364,6 +412,51 @@ class FuelDailyCheckController extends Controller
                 'required',
                 'date',
             ],
+            'document_type' => [
+                'nullable',
+                'string',
+                'in:fuel_invoice,fuel_sheet,other',
+            ],
+            'document_date' => [
+                'nullable',
+                'date',
+            ],
+            'invoice_number' => [
+                'nullable',
+                'string',
+                'max:120',
+            ],
+            'supplier_id' => [
+                'nullable',
+                'integer',
+            ],
+            'supplier_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'supplier_document' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+            'supplier_resolution_action' => [
+                'nullable',
+                'string',
+                'in:enrich_existing,create_new,use_existing',
+            ],
+            'supplier_candidate_id' => [
+                'nullable',
+                'integer',
+            ],
+            'receipt_ids' => [
+                'nullable',
+                'array',
+            ],
+            'receipt_ids.*' => [
+                'integer',
+                'distinct',
+            ],
             'files' => [
                 'required',
                 'array',
@@ -386,6 +479,85 @@ class FuelDailyCheckController extends Controller
             $data['operation_date']
         )->toDateString();
 
+        /*
+         * Compatibilidade temporária com o formulário antigo:
+         * até a Blade nova entrar, anexos sem tipo explícito
+         * continuam aceitos e passam a ser classificados como
+         * "other".
+         */
+        $documentType =
+            $data['document_type'] ?? 'other';
+
+        $documentDate =
+            isset($data['document_date'])
+                ? Carbon::parse(
+                    $data['document_date']
+                )->toDateString()
+                : $date;
+
+        $invoiceNumber = filled(
+            $data['invoice_number'] ?? null
+        )
+            ? trim((string) $data['invoice_number'])
+            : null;
+
+        $receiptIds = collect(
+            $data['receipt_ids'] ?? []
+        )
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        if ($documentType === 'fuel_invoice') {
+            $errors = [];
+
+            if (
+                count(
+                    $request->file('files', [])
+                ) !== 1
+            ) {
+                $errors['files'] =
+                    'A nota fiscal deve possuir exatamente um arquivo.';
+            }
+
+            if (
+                empty(
+                    $data['document_date']
+                    ?? null
+                )
+            ) {
+                $errors['document_date'] =
+                    'Informe a data de emissão da nota fiscal.';
+            }
+
+            if (!$invoiceNumber) {
+                $errors['invoice_number'] =
+                    'Informe o número da nota fiscal.';
+            }
+
+            if (
+                !filled(
+                    $data['supplier_name']
+                    ?? null
+                )
+            ) {
+                $errors['supplier_name'] =
+                    'Informe o fornecedor da nota fiscal.';
+            }
+
+            if ($receiptIds->isEmpty()) {
+                $errors['receipt_ids'] =
+                    'Selecione pelo menos um recebimento vinculado à nota fiscal.';
+            }
+
+            if ($errors) {
+                throw ValidationException::withMessages(
+                    $errors
+                );
+            }
+        }
+
         $check = FuelDailyCheck::query()->firstOrCreate(
             [
                 'tenant_id' =>
@@ -403,36 +575,197 @@ class FuelDailyCheckController extends Controller
             ]
         );
 
-        DB::transaction(function () use (
-            $request,
-            $data,
-            $context,
-            $check
-        ) {
-            foreach (
-                $request->file('files', [])
-                as $file
+        $storedPaths = [];
+
+        try {
+            DB::transaction(function () use (
+                $request,
+                $data,
+                $context,
+                $check,
+                $documentType,
+                $documentDate,
+                $invoiceNumber,
+                $receiptIds,
+                &$storedPaths
             ) {
-                $this->storeFile(
-                    $check,
-                    $file,
-                    'manual_upload',
-                    $context['user']->id
+                $validReceiptIds = collect();
+
+                $supplierSnapshot = [
+                    'supplier_id' => null,
+                    'supplier_name' => null,
+                    'supplier_document' => null,
+                ];
+
+                if ($documentType === 'fuel_invoice') {
+                    $validReceiptIds =
+                        FuelReceipt::query()
+                            ->where(
+                                'tenant_id',
+                                $context['tenant_id']
+                            )
+                            ->where(
+                                'division_id',
+                                $context['division_id']
+                            )
+                            ->where(
+                                'location_id',
+                                $context['location_id']
+                            )
+                            ->whereNull('cancelled_at')
+                            ->whereDoesntHave(
+                                'invoiceFiles'
+                            )
+                            ->whereIn(
+                                'id',
+                                $receiptIds->all()
+                            )
+                            ->lockForUpdate()
+                            ->pluck('id')
+                            ->map(
+                                fn ($id) => (int) $id
+                            )
+                            ->values();
+
+                    if (
+                        $validReceiptIds->count()
+                        !== $receiptIds->count()
+                    ) {
+                        throw ValidationException::withMessages([
+                            'receipt_ids' =>
+                                'Um ou mais recebimentos selecionados não pertencem à unidade ativa ou já possuem nota fiscal vinculada.',
+                        ]);
+                    }
+
+                    $supplier = app(
+                        SupplierResolverService::class
+                    )->resolve(
+                        $context['tenant_id'],
+                        isset($data['supplier_id'])
+                            ? (int) $data['supplier_id']
+                            : null,
+                        $data['supplier_name']
+                            ?? null,
+                        $data['supplier_document']
+                            ?? null,
+                        $data['supplier_resolution_action']
+                            ?? null,
+                        isset($data['supplier_candidate_id'])
+                            ? (int) $data['supplier_candidate_id']
+                            : null
+                    );
+
+                    $supplierSnapshot = app(
+                        SupplierSnapshotService::class
+                    )->fromResolvedSupplier(
+                        $supplier,
+                        $data['supplier_name']
+                            ?? null
+                    );
+                }
+
+                foreach (
+                    $request->file('files', [])
+                    as $file
+                ) {
+                    $storedFile =
+                        $this->storeFile(
+                            $check,
+                            $file,
+                            'manual_upload',
+                            $context['user']->id,
+                            [
+                                'document_type' =>
+                                    $documentType,
+                                'document_date' =>
+                                    $documentDate,
+                                'invoice_number' =>
+                                    $documentType
+                                        === 'fuel_invoice'
+                                            ? $invoiceNumber
+                                            : null,
+                                'supplier_id' =>
+                                    $documentType
+                                        === 'fuel_invoice'
+                                            ? $supplierSnapshot[
+                                                'supplier_id'
+                                            ]
+                                            : null,
+                                'supplier_name' =>
+                                    $documentType
+                                        === 'fuel_invoice'
+                                            ? $supplierSnapshot[
+                                                'supplier_name'
+                                            ]
+                                            : null,
+                                'supplier_document' =>
+                                    $documentType
+                                        === 'fuel_invoice'
+                                            ? $supplierSnapshot[
+                                                'supplier_document'
+                                            ]
+                                            : null,
+                            ]
+                        );
+
+                    $storedPaths[] = [
+                        'disk' =>
+                            $storedFile->disk
+                            ?: 'local',
+                        'path' =>
+                            $storedFile->path,
+                    ];
+
+                    if (
+                        $documentType
+                        === 'fuel_invoice'
+                    ) {
+                        $storedFile
+                            ->receipts()
+                            ->sync(
+                                $validReceiptIds->all()
+                            );
+                    }
+                }
+
+                if (
+                    array_key_exists(
+                        'notes',
+                        $data
+                    )
+                ) {
+                    $check->update([
+                        'notes' =>
+                            $data['notes'],
+                    ]);
+                }
+            });
+        } catch (\Throwable $e) {
+            foreach ($storedPaths as $storedPath) {
+                if (
+                    empty($storedPath['path'])
+                ) {
+                    continue;
+                }
+
+                $disk = Storage::disk(
+                    $storedPath['disk']
+                    ?: 'local'
                 );
+
+                if (
+                    $disk->exists(
+                        $storedPath['path']
+                    )
+                ) {
+                    $disk->delete(
+                        $storedPath['path']
+                    );
+                }
             }
 
-            if (
-                array_key_exists(
-                    'notes',
-                    $data
-                )
-            ) {
-                $check->update([
-                    'notes' =>
-                        $data['notes'],
-                ]);
-            }
-        });
+            throw $e;
+        }
 
         return redirect()
             ->route(
@@ -450,6 +783,68 @@ class FuelDailyCheckController extends Controller
             );
     }
 
+
+    public function searchReceiptCandidates(Request $request)
+    {
+        $context = $this->context();
+        $this->authorizeFuel($context);
+
+        $data = $request->validate([
+            'date' => [
+                'required',
+                'date',
+            ],
+        ]);
+
+        $date = Carbon::parse(
+            $data['date']
+        )->toDateString();
+
+        $receipts = FuelReceipt::query()
+            ->where('tenant_id', $context['tenant_id'])
+            ->where('division_id', $context['division_id'])
+            ->where('location_id', $context['location_id'])
+            ->whereNull('cancelled_at')
+            ->whereDoesntHave('invoiceFiles')
+            ->whereDate('received_at', $date)
+            ->with('tank:id,name')
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get()
+            ->map(fn ($receipt) => [
+                'id' =>
+                    (int) $receipt->id,
+
+                'received_at' =>
+                    $receipt->received_at
+                        ?->format('d/m/Y H:i'),
+
+                'tank' =>
+                    $receipt->tank?->name
+                    ?? 'Tanque',
+
+                'quantity_liters' =>
+                    number_format(
+                        (float) $receipt->quantity_liters,
+                        3,
+                        ',',
+                        '.'
+                    ),
+
+                'supplier_name' =>
+                    $receipt->supplier_name,
+
+                'invoice_number' =>
+                    $receipt->invoice_number,
+            ])
+            ->values();
+
+        return response()->json([
+            'date' => $date,
+            'count' => $receipts->count(),
+            'receipts' => $receipts,
+        ]);
+    }
 
     public function createUploadToken(
         FuelDailyCheck $check
@@ -690,7 +1085,8 @@ class FuelDailyCheckController extends Controller
         FuelDailyCheck $check,
         $file,
         string $source,
-        ?int $userId
+        ?int $userId,
+        array $metadata = []
     ): FuelDailyCheckFile {
         $extension = strtolower(
             $file->getClientOriginalExtension()
@@ -711,19 +1107,47 @@ class FuelDailyCheckController extends Controller
             basename($path)
         );
 
-        return $check->files()->create([
-            'disk' => 'local',
-            'path' => $path,
-            'original_name' =>
-                $file->getClientOriginalName(),
-            'mime_type' =>
-                $file->getMimeType(),
-            'size_bytes' =>
-                Storage::disk('local')
-                    ->size($path),
-            'source' => $source,
-            'uploaded_by' => $userId,
-        ]);
+        try {
+            return $check->files()->create([
+                'disk' => 'local',
+                'path' => $path,
+                'original_name' =>
+                    $file->getClientOriginalName(),
+                'mime_type' =>
+                    $file->getMimeType(),
+                'size_bytes' =>
+                    Storage::disk('local')
+                        ->size($path),
+                'source' => $source,
+                'document_type' =>
+                    $metadata['document_type']
+                    ?? null,
+                'document_date' =>
+                    $metadata['document_date']
+                    ?? null,
+                'invoice_number' =>
+                    $metadata['invoice_number']
+                    ?? null,
+                'supplier_id' =>
+                    $metadata['supplier_id']
+                    ?? null,
+                'supplier_name' =>
+                    $metadata['supplier_name']
+                    ?? null,
+                'supplier_document' =>
+                    $metadata['supplier_document']
+                    ?? null,
+                'uploaded_by' => $userId,
+            ]);
+        } catch (\Throwable $e) {
+            $disk = Storage::disk('local');
+
+            if ($disk->exists($path)) {
+                $disk->delete($path);
+            }
+
+            throw $e;
+        }
     }
 
     private function context(): array

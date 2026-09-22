@@ -17,6 +17,9 @@ class FuelDailyCheckFile extends Model
         'document_type',
         'document_date',
         'invoice_number',
+        'supplier_id',
+        'supplier_name',
+        'supplier_document',
         'uploaded_by',
     ];
 
@@ -27,6 +30,11 @@ class FuelDailyCheckFile extends Model
     public function check()
     {
         return $this->belongsTo(FuelDailyCheck::class, 'fuel_daily_check_id');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function receipts()

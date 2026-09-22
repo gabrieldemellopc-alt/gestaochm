@@ -11001,3 +11001,1260 @@ tbody tr:hover
         display: none;
     }
 }
+
+/* =========================================================
+   ARQUIVO DIÁRIO - DOCUMENTOS DE COMBUSTÍVEL
+   ========================================================= */
+
+.fuel-document-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, .55fr);
+    gap: 10px;
+}
+
+.fuel-document-field {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.fuel-document-field > span {
+    color: #9fb0ca;
+    font-size: .61rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+}
+
+.fuel-document-field input,
+.fuel-document-field select,
+.fuel-receipt-linker-head input {
+    width: 100%;
+    min-height: 39px;
+    padding: 0 11px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    border-radius: 9px;
+    outline: none;
+    background: rgba(22, 34, 55, .72);
+    color: #eef4ff;
+    font: inherit;
+    font-size: .68rem;
+}
+
+.fuel-document-field input:focus,
+.fuel-document-field select:focus,
+.fuel-receipt-linker-head input:focus {
+    border-color: rgba(113, 158, 232, .7);
+    box-shadow: 0 0 0 2px rgba(83, 132, 213, .12);
+}
+
+.fuel-invoice-fields {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid rgba(105, 150, 222, .24);
+    border-radius: 11px;
+    background: rgba(61, 91, 143, .10);
+}
+
+.fuel-invoice-fields[hidden] {
+    display: none;
+}
+
+.fuel-receipt-linker {
+    display: grid;
+    gap: 8px;
+}
+
+.fuel-receipt-linker-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr);
+    gap: 12px;
+    align-items: end;
+}
+
+.fuel-receipt-linker-head > div {
+    min-width: 0;
+}
+
+.fuel-receipt-linker-head strong,
+.fuel-receipt-linker-head small {
+    display: block;
+}
+
+.fuel-receipt-linker-head strong {
+    font-size: .68rem;
+}
+
+.fuel-receipt-linker-head small {
+    margin-top: 2px;
+    color: #8fa2c1;
+    font-size: .57rem;
+}
+
+.fuel-receipt-candidates {
+    display: grid;
+    gap: 5px;
+    max-height: 270px;
+    overflow-y: auto;
+    padding: 2px 5px 2px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #617da8 transparent;
+}
+
+.fuel-receipt-option {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 9px;
+    align-items: center;
+    min-height: 52px;
+    padding: 8px 10px;
+    border: 1px solid rgba(148, 163, 184, .12);
+    border-radius: 9px;
+    background: rgba(24, 38, 61, .52);
+    cursor: pointer;
+    transition:
+        border-color .15s ease,
+        background .15s ease;
+}
+
+.fuel-receipt-option:hover {
+    border-color: rgba(120, 164, 230, .35);
+    background: rgba(56, 83, 128, .22);
+}
+
+.fuel-receipt-option:has(input:checked) {
+    border-color: rgba(91, 202, 151, .48);
+    background: rgba(48, 131, 93, .12);
+}
+
+.fuel-receipt-option input {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: #58c990;
+}
+
+.fuel-receipt-option > span {
+    min-width: 0;
+}
+
+.fuel-receipt-option strong,
+.fuel-receipt-option small {
+    display: block;
+}
+
+.fuel-receipt-option strong {
+    overflow: hidden;
+    color: #edf4ff;
+    font-size: .64rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fuel-receipt-option small {
+    margin-top: 3px;
+    overflow: hidden;
+    color: #8fa2c1;
+    font-size: .56rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fuel-document-type-label {
+    color: #8fc4ff !important;
+    font-weight: 800;
+}
+
+.fuel-document-meta {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 5px !important;
+    margin-top: 6px !important;
+}
+
+.fuel-document-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: rgba(96, 130, 183, .15);
+    color: #b9c9df;
+    font-size: .55rem;
+}
+
+.fuel-document-receipts {
+    display: grid !important;
+    gap: 3px !important;
+    margin-top: 7px !important;
+    padding: 7px 8px;
+    border-radius: 8px;
+    background: rgba(14, 25, 42, .32);
+}
+
+.fuel-document-receipts small {
+    color: #8da2c0;
+    font-size: .53rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.fuel-document-receipts span {
+    color: #bdcce0;
+    font-size: .56rem;
+}
+
+.fuel-document-actions {
+    display: flex !important;
+    gap: 6px !important;
+    margin-top: 8px !important;
+}
+
+@media (max-width: 760px) {
+    .fuel-document-fields,
+    .fuel-receipt-linker-head {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-receipt-candidates {
+        max-height: 230px;
+    }
+
+    .fuel-receipt-option strong,
+    .fuel-receipt-option small {
+        white-space: normal;
+    }
+
+    .fuel-archive-document {
+        grid-template-columns: 72px minmax(0, 1fr);
+    }
+
+    .fuel-archive-document-preview,
+    .fuel-archive-document-preview img {
+        min-height: 64px;
+        height: 64px;
+    }
+}
+
+/* =========================================================
+   ARQUIVO DIÁRIO - FLUXO DOCUMENTAL PROGRESSIVO
+   ========================================================= */
+
+.fuel-document-type-only {
+    grid-template-columns: minmax(260px, 520px);
+}
+
+.fuel-document-details {
+    display: grid;
+    gap: 10px;
+}
+
+.fuel-document-details[hidden] {
+    display: none;
+}
+
+.fuel-invoice-supplier {
+    display: grid;
+    gap: 5px;
+}
+
+.fuel-invoice-supplier-head {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(180px, .55fr);
+    gap: 10px;
+
+    color: #9fb0ca;
+    font-size: .61rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+}
+
+.fuel-invoice-supplier .chm-supplier-picker {
+    width: 100%;
+}
+
+.fuel-invoice-supplier
+.chm-supplier-picker__fields {
+    width: 100%;
+}
+
+.fuel-invoice-supplier
+.chm-supplier-picker__fields--split {
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(180px, .55fr);
+}
+
+.fuel-receipt-linker-head {
+    align-items: start;
+}
+
+.fuel-receipt-date-search {
+    display: grid;
+    gap: 5px;
+}
+
+.fuel-receipt-date-search > label {
+    color: #9fb0ca;
+    font-size: .61rem;
+    font-weight: 800;
+}
+
+.fuel-receipt-date-search > div {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        40px;
+    gap: 6px;
+}
+
+.fuel-receipt-date-search input {
+    width: 100%;
+    min-height: 39px;
+    padding: 0 10px;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, .20);
+    border-radius: 9px;
+    outline: none;
+
+    background:
+        rgba(22, 34, 55, .72);
+    color: #eef4ff;
+
+    font: inherit;
+    font-size: .68rem;
+}
+
+.fuel-receipt-date-search input:focus {
+    border-color:
+        rgba(113, 158, 232, .70);
+
+    box-shadow:
+        0 0 0 2px
+        rgba(83, 132, 213, .12);
+}
+
+.fuel-receipt-search-button {
+    display: grid;
+    place-items: center;
+
+    width: 40px;
+    min-height: 39px;
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(113, 158, 232, .38);
+    border-radius: 9px;
+
+    background:
+        rgba(78, 119, 184, .18);
+    color: #a9caff;
+
+    cursor: pointer;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
+}
+
+.fuel-receipt-search-button:hover {
+    border-color:
+        rgba(123, 170, 241, .68);
+
+    background:
+        rgba(78, 119, 184, .28);
+
+    transform:
+        translateY(-1px);
+}
+
+.fuel-receipt-search-button:disabled {
+    opacity: .5;
+    cursor: wait;
+    transform: none;
+}
+
+#fuelReceiptSearchStatus {
+    color: #8397b6;
+    font-size: .54rem;
+    line-height: 1.35;
+}
+
+.fuel-receipt-empty {
+    min-height: 64px;
+    padding: 12px;
+}
+
+@media (max-width: 760px) {
+    .fuel-document-type-only {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-invoice-supplier-head {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-invoice-supplier-head
+    span:nth-child(2) {
+        display: none;
+    }
+
+    .fuel-invoice-supplier
+    .chm-supplier-picker__fields--split {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* NF no Arquivo diário: feedback discreto do fornecedor */
+.fuel-invoice-supplier
+.chm-supplier-picker__manual {
+    margin: 4px 0 0;
+    color: #8fa2c1;
+    font-size: .58rem;
+    line-height: 1.35;
+}
+
+.fuel-invoice-supplier
+.chm-supplier-picker__status {
+    font-size: .62rem;
+}
+
+/* NF no Arquivo diário: feedback discreto do fornecedor */
+.fuel-invoice-supplier
+.chm-supplier-picker__manual {
+    margin: 4px 0 0;
+    color: #8fa2c1;
+    font-size: .58rem;
+    line-height: 1.35;
+}
+
+.fuel-invoice-supplier
+.chm-supplier-picker__status {
+    font-size: .62rem;
+}
+
+/* =========================================================
+   ARQUIVO DIÁRIO - TOGGLE DE TIPO DOCUMENTAL
+   ========================================================= */
+
+.fuel-document-toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fuel-document-toggle-option {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.fuel-document-toggle-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fuel-document-toggle-option span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 999px;
+    background: rgba(22, 34, 55, .58);
+    color: #d9e5f7;
+    font-size: .66rem;
+    font-weight: 700;
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        color .15s ease,
+        transform .15s ease;
+}
+
+.fuel-document-toggle-option:hover span {
+    border-color: rgba(120, 164, 230, .42);
+    background: rgba(56, 83, 128, .20);
+    transform: translateY(-1px);
+}
+
+.fuel-document-toggle-option input:checked + span {
+    border-color: rgba(91, 202, 151, .48);
+    background: rgba(48, 131, 93, .14);
+    color: #eefaf3;
+}
+
+.fuel-document-toggle-option input:focus-visible + span {
+    box-shadow: 0 0 0 2px rgba(83, 132, 213, .18);
+}
+
+@media (max-width: 760px) {
+    .fuel-document-toggle-group {
+        flex-direction: column;
+    }
+
+    .fuel-document-toggle-option span {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* =========================================================
+   ARQUIVO DIÁRIO - RECEBIMENTOS DO DIA
+   ========================================================= */
+
+.fuel-day-receipts-block {
+    display: grid;
+    gap: 11px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(148, 163, 184, .12);
+}
+
+.fuel-day-receipts-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fuel-day-receipts-head > div {
+    display: grid;
+    gap: 2px;
+}
+
+.fuel-day-receipts-head span:first-child {
+    color: #91a6c9;
+    font-size: .59rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.fuel-day-receipts-head h3 {
+    margin: 0;
+    font-size: .94rem;
+}
+
+.fuel-day-receipts-list {
+    display: grid;
+    gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
+
+    scrollbar-width: thin;
+    scrollbar-color: #637fa8 transparent;
+}
+
+.fuel-day-receipts-list article {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    min-height: 54px;
+    padding: 8px 10px;
+
+    border: 1px solid rgba(148, 163, 184, .12);
+    border-radius: 9px;
+
+    background: rgba(31, 46, 72, .34);
+}
+
+.fuel-day-receipt-main {
+    min-width: 0;
+}
+
+.fuel-day-receipt-main strong,
+.fuel-day-receipt-main small {
+    display: block;
+}
+
+.fuel-day-receipt-main strong {
+    color: #eef4ff;
+    font-size: .65rem;
+}
+
+.fuel-day-receipt-main small {
+    margin-top: 3px;
+    color: #8fa2c1;
+    font-size: .56rem;
+}
+
+.fuel-receipt-document-status {
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 5px 8px;
+
+    border-radius: 999px;
+
+    font-size: .56rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.fuel-receipt-document-status.is-linked {
+    border: 1px solid rgba(70, 211, 139, .35);
+    background: rgba(42, 151, 99, .12);
+    color: #75e7ad;
+}
+
+.fuel-receipt-document-status.is-pending {
+    border: 1px solid rgba(245, 190, 71, .32);
+    background: rgba(196, 137, 35, .12);
+    color: #f4ca71;
+}
+
+.fuel-day-receipts-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 70px;
+
+    border: 1px dashed rgba(148, 163, 184, .18);
+    border-radius: 9px;
+
+    color: #8fa2c1;
+    font-size: .61rem;
+}
+
+@media (max-width: 760px) {
+    .fuel-day-receipts-list article {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+/* =========================================================
+   ARQUIVO DIÁRIO - ABASTECIMENTOS RETRÁTEIS
+   ========================================================= */
+
+.fuel-fillings-accordion {
+    display: block;
+}
+
+.fuel-fillings-accordion-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding-bottom: 2px;
+
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.fuel-fillings-accordion-summary::-webkit-details-marker {
+    display: none;
+}
+
+.fuel-fillings-accordion-summary > div:first-child {
+    display: grid;
+    gap: 2px;
+}
+
+.fuel-fillings-accordion-summary > div:first-child > span {
+    color: #91a6c9;
+    font-size: .59rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.fuel-fillings-accordion-summary h2 {
+    margin: 0;
+    font-size: .94rem;
+}
+
+.fuel-fillings-accordion-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.fuel-fillings-accordion-actions > i {
+    color: #91a6c9;
+    font-size: .75rem;
+
+    transition:
+        transform .18s ease;
+}
+
+.fuel-fillings-accordion[open]
+.fuel-fillings-accordion-actions > i {
+    transform: rotate(180deg);
+}
+
+.fuel-fillings-accordion-content {
+    margin-top: 14px;
+    padding-top: 13px;
+
+    border-top:
+        1px solid
+        rgba(148, 163, 184, .10);
+}
+
+.fuel-fillings-scroll {
+    max-height: 330px;
+    overflow-y: auto;
+
+    padding-right: 6px;
+
+    scrollbar-width: thin;
+    scrollbar-color:
+        #637fa8
+        transparent;
+}
+
+.fuel-fillings-accordion-summary:hover h2 {
+    color: #ffffff;
+}
+
+@media (max-width: 760px) {
+    .fuel-fillings-scroll {
+        max-height: 280px;
+    }
+}
+
+/* =========================================================
+   ARQUIVO DIÁRIO - CARD E MODAL DE DOCUMENTO
+   ========================================================= */
+
+.fuel-document-card-heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.fuel-document-card-heading > strong {
+    color: #f4f7ff;
+    font-size: .75rem;
+}
+
+.fuel-document-card-number {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 3px 7px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(60, 174, 116, .13);
+
+    color: #70e3aa !important;
+
+    font-size: .55rem !important;
+    font-weight: 800;
+}
+
+.fuel-document-card-summary {
+    display: flex !important;
+    flex-wrap: wrap;
+
+    gap: 5px !important;
+    margin-top: 6px !important;
+}
+
+.fuel-document-card-summary span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    padding: 3px 6px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(91, 127, 183, .14);
+
+    color: #b7c7dd !important;
+
+    font-size: .54rem !important;
+}
+
+.fuel-document-card-filename {
+    margin-top: 6px !important;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #9cafca !important;
+}
+
+.fuel-document-card-origin {
+    color: #758cac !important;
+}
+
+.fuel-document-card-actions {
+    display: flex !important;
+    flex-wrap: wrap;
+
+    gap: 6px !important;
+    margin-top: 8px !important;
+}
+
+
+/* Modal */
+
+.fuel-document-details-modal {
+    width:
+        min(
+            640px,
+            calc(100vw - 30px)
+        );
+
+    max-height: 88vh;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(132, 166, 219, .28);
+
+    border-radius: 16px;
+
+    background: #293d5d;
+    color: #eef4ff;
+
+    box-shadow:
+        0 25px 75px
+        rgba(0, 0, 0, .48);
+}
+
+.fuel-document-details-modal::backdrop {
+    background:
+        rgba(4, 10, 20, .72);
+
+    backdrop-filter:
+        blur(3px);
+}
+
+.fuel-document-details-card {
+    display: grid;
+    gap: 16px;
+
+    max-height: 88vh;
+    overflow-y: auto;
+
+    padding: 20px;
+}
+
+.fuel-document-details-card > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.fuel-document-details-card > header > div {
+    display: grid;
+    gap: 3px;
+}
+
+.fuel-document-details-card > header small {
+    color: #91a6c9;
+
+    font-size: .56rem;
+    font-weight: 800;
+
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.fuel-document-details-card > header h3 {
+    margin: 0;
+
+    color: #ffffff;
+    font-size: 1.08rem;
+}
+
+.fuel-document-details-card > header span {
+    color: #70e3aa;
+
+    font-size: .66rem;
+    font-weight: 800;
+}
+
+.fuel-document-details-close {
+    display: grid;
+    place-items: center;
+
+    width: 34px;
+    height: 34px;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, .20);
+
+    border-radius: 9px;
+
+    background:
+        rgba(148, 163, 184, .08);
+
+    color: #eef4ff;
+
+    cursor: pointer;
+}
+
+.fuel-document-details-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+}
+
+.fuel-document-details-grid > div,
+.fuel-document-details-file {
+    display: grid;
+    gap: 4px;
+
+    padding: 10px;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, .12);
+
+    border-radius: 9px;
+
+    background:
+        rgba(18, 31, 52, .28);
+}
+
+.fuel-document-details-grid small,
+.fuel-document-details-file small {
+    color: #869ab8;
+    font-size: .54rem;
+}
+
+.fuel-document-details-grid strong,
+.fuel-document-details-file strong {
+    color: #edf4ff;
+    font-size: .66rem;
+}
+
+.fuel-document-details-file strong {
+    overflow-wrap: anywhere;
+}
+
+.fuel-document-details-receipts {
+    display: grid;
+    gap: 7px;
+}
+
+.fuel-document-details-receipts-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+}
+
+.fuel-document-details-receipts-head > strong {
+    font-size: .68rem;
+}
+
+.fuel-document-details-receipts-head > span {
+    display: grid;
+    place-items: center;
+
+    min-width: 25px;
+    height: 25px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(98, 127, 175, .22);
+
+    color: #dce8f8;
+
+    font-size: .57rem;
+    font-weight: 800;
+}
+
+.fuel-document-details-receipts article {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 9px 10px;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, .11);
+
+    border-radius: 9px;
+
+    background:
+        rgba(18, 31, 52, .25);
+}
+
+.fuel-document-details-receipts article > div {
+    min-width: 0;
+}
+
+.fuel-document-details-receipts article strong,
+.fuel-document-details-receipts article small {
+    display: block;
+}
+
+.fuel-document-details-receipts article strong {
+    font-size: .62rem;
+}
+
+.fuel-document-details-receipts article small {
+    margin-top: 2px;
+
+    color: #8fa2c1;
+    font-size: .54rem;
+}
+
+.fuel-document-details-receipts article > strong {
+    flex: 0 0 auto;
+}
+
+.fuel-document-details-empty {
+    padding: 12px;
+
+    border:
+        1px dashed
+        rgba(148, 163, 184, .16);
+
+    border-radius: 8px;
+
+    color: #8fa2c1;
+
+    font-size: .58rem;
+    text-align: center;
+}
+
+.fuel-document-details-card > footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 7px;
+
+    padding-top: 2px;
+}
+
+@media (max-width: 760px) {
+    .fuel-document-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-document-details-receipts article {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .fuel-document-details-card > footer {
+        flex-wrap: wrap;
+    }
+}
+
+/* Modal documental: apenas um scroll */
+.fuel-document-details-modal {
+    overflow: hidden;
+}
+
+.fuel-document-details-card {
+    max-height: 88vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #637fa8 transparent;
+}
+
+/* Modal documental centralizado na viewport */
+.fuel-document-details-modal {
+    margin: auto;
+    inset: 0;
+}
+
+.fuel-document-details-modal[open] {
+    position: fixed;
+}
+
+/* =========================================================
+   MODAL DOCUMENTAL - ANEXO E RECEBIMENTOS EXPANSÍVEIS
+   ========================================================= */
+
+/* Abrir anexo é ação de consulta, não gravação */
+.fuel-document-open-action {
+    border-color: rgba(102, 159, 238, .50) !important;
+    background: rgba(62, 116, 194, .25) !important;
+    color: #dceaff !important;
+}
+
+.fuel-document-open-action:hover {
+    border-color: rgba(126, 177, 247, .72) !important;
+    background: rgba(62, 116, 194, .38) !important;
+    color: #ffffff !important;
+}
+
+
+/* Recebimentos vinculados */
+
+.fuel-document-receipt-detail {
+    overflow: hidden;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, .11);
+
+    border-radius: 9px;
+
+    background:
+        rgba(18, 31, 52, .25);
+}
+
+.fuel-document-receipt-detail > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    min-height: 54px;
+    padding: 9px 10px;
+
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.fuel-document-receipt-detail > summary::-webkit-details-marker {
+    display: none;
+}
+
+.fuel-document-receipt-detail > summary:hover {
+    background:
+        rgba(76, 112, 168, .09);
+}
+
+.fuel-document-receipt-detail > summary > div:first-child {
+    min-width: 0;
+}
+
+.fuel-document-receipt-detail > summary strong,
+.fuel-document-receipt-detail > summary small {
+    display: block;
+}
+
+.fuel-document-receipt-detail > summary strong {
+    color: #edf4ff;
+    font-size: .62rem;
+}
+
+.fuel-document-receipt-detail > summary small {
+    margin-top: 2px;
+
+    color: #8fa2c1;
+    font-size: .54rem;
+}
+
+.fuel-document-receipt-summary-right {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.fuel-document-receipt-summary-right > strong {
+    white-space: nowrap;
+}
+
+.fuel-document-receipt-summary-right > i {
+    color: #8fa6c8;
+    font-size: .68rem;
+
+    transition:
+        transform .18s ease;
+}
+
+.fuel-document-receipt-detail[open]
+.fuel-document-receipt-summary-right > i {
+    transform: rotate(180deg);
+}
+
+.fuel-document-receipt-expanded {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 7px;
+
+    padding: 10px;
+
+    border-top:
+        1px solid
+        rgba(148, 163, 184, .10);
+
+    background:
+        rgba(9, 20, 36, .16);
+}
+
+.fuel-document-receipt-expanded > div {
+    display: grid;
+    gap: 3px;
+
+    padding: 8px 9px;
+
+    border-radius: 8px;
+
+    background:
+        rgba(45, 66, 98, .30);
+}
+
+.fuel-document-receipt-expanded small {
+    color: #8398b8;
+    font-size: .52rem;
+}
+
+.fuel-document-receipt-expanded strong {
+    color: #e8f0fb;
+    font-size: .60rem;
+    overflow-wrap: anywhere;
+}
+
+.fuel-document-receipt-notes {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+    .fuel-document-receipt-expanded {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-document-receipt-notes {
+        grid-column: auto;
+    }
+}

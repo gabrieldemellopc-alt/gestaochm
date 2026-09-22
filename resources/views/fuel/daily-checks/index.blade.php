@@ -317,118 +317,566 @@
 
                 @foreach($check->files as $file)
 
-                    @php
-                        $isImage =
-                            str_starts_with(
+                        @php
+                            $isImage = str_starts_with(
                                 (string) $file->mime_type,
                                 'image/'
                             );
 
-                        $sourceLabel = match(
-                            $file->source
-                        ) {
-                            'photo_import' =>
-                                'Importação via foto (IA)',
-
-                            'qr_mobile' =>
-                                'Enviado pelo celular',
-
-                            'manual_upload' =>
-                                'Anexo manual',
-
-                            'web' =>
-                                'Anexo manual',
-
-                            default =>
+                            $sourceLabel = match(
                                 $file->source
-                                ?: 'Documento',
-                        };
-                    @endphp
+                            ) {
+                                'photo_import' =>
+                                    'Importação via foto (IA)',
 
-                    <article
-                        class="fuel-archive-document"
-                        data-file-id="{{ $file->id }}"
-                    >
+                                'qr_mobile' =>
+                                    'Enviado pelo celular',
 
-                        <a
-                            href="{{ route(
-                                'fuel.daily-check.files.show',
-                                [$check, $file]
-                            ) }}"
-                            target="_blank"
-                            rel="noopener"
-                            class="fuel-archive-document-preview"
+                                'manual_upload',
+                                'web' =>
+                                    'Anexo manual',
+
+                                default =>
+                                    $file->source
+                                    ?: 'Documento',
+                            };
+
+                            $documentTypeLabel = match(
+                                $file->document_type
+                            ) {
+                                'fuel_invoice' =>
+                                    'NF de abastecimento',
+
+                                'fuel_sheet' =>
+                                    'Folha de abastecimentos',
+
+                                'other' =>
+                                    'Outro documento',
+
+                                default =>
+                                    'Documento não classificado',
+                            };
+
+                            $linkedCount =
+                                $file->receipts->count();
+                        @endphp
+
+                        <article
+                            class="fuel-archive-document fuel-document-card"
+                            data-file-id="{{ $file->id }}"
                         >
 
-                            @if($isImage)
+                            <a
+                                href="{{ route(
+                                    'fuel.daily-check.files.show',
+                                    [$check, $file]
+                                ) }}"
+                                target="_blank"
+                                rel="noopener"
+                                class="fuel-archive-document-preview"
+                            >
 
-                                <img
-                                    src="{{ route(
-                                        'fuel.daily-check.files.show',
-                                        [$check, $file]
-                                    ) }}"
-                                    alt="{{ $file->original_name }}"
-                                >
+                                @if($isImage)
 
-                            @else
+                                    <img
+                                        src="{{ route(
+                                            'fuel.daily-check.files.show',
+                                            [$check, $file]
+                                        ) }}"
+                                        alt="{{ $file->original_name }}"
+                                    >
 
-                                <div>
-                                    <i class="bi bi-file-earmark-pdf"></i>
-                                    <span>PDF</span>
+                                @else
+
+                                    <div>
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                        <span>PDF</span>
+                                    </div>
+
+                                @endif
+
+                            </a>
+
+                            <div class="fuel-archive-document-body">
+
+                                <div class="fuel-document-card-heading">
+
+                                    <strong>
+                                        {{ $documentTypeLabel }}
+                                    </strong>
+
+                                    @if(
+                                        $file->document_type
+                                        === 'fuel_invoice'
+                                        && filled(
+                                            $file->invoice_number
+                                        )
+                                    )
+                                        <span
+                                            class="fuel-document-card-number"
+                                        >
+                                            NF {{ $file->invoice_number }}
+                                        </span>
+                                    @endif
+
                                 </div>
 
-                            @endif
+                                <div class="fuel-document-card-summary">
 
-                        </a>
+                                    @if($file->document_date)
+                                        <span>
+                                            <i class="bi bi-calendar3"></i>
 
+                                            {{ $file->document_date
+                                                ->format('d/m/Y') }}
+                                        </span>
+                                    @endif
 
-                        <div class="fuel-archive-document-body">
+                                    @if(filled($file->supplier_name))
+                                        <span>
+                                            <i class="bi bi-building"></i>
 
-                            <strong>
-                                {{ $file->original_name }}
-                            </strong>
+                                            {{ $file->supplier_name }}
+                                        </span>
+                                    @endif
 
-                            <span>
-                                {{ $sourceLabel }}
-                            </span>
+                                    @if(
+                                        $file->document_type
+                                        === 'fuel_invoice'
+                                    )
+                                        <span>
+                                            <i class="bi bi-link-45deg"></i>
 
-                            <small>
-                                {{ $file->created_at
-                                    ?->format('d/m/Y H:i') }}
-                            </small>
+                                            {{ $linkedCount }}
 
-                            <div>
-                                <a
-                                    href="{{ route(
-                                        'fuel.daily-check.files.show',
-                                        [$check, $file]
-                                    ) }}"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="fuel-secondary-action"
-                                >
-                                    <i class="bi bi-eye"></i>
-                                    Visualizar
-                                </a>
+                                            {{ $linkedCount === 1
+                                                ? 'recebimento vinculado'
+                                                : 'recebimentos vinculados' }}
+                                        </span>
+                                    @endif
 
-                                <button
-                                    type="button"
-                                    class="fuel-daily-file-delete"
-                                    data-delete-url="{{ route(
-                                        'fuel.daily-check.files.delete',
-                                        [$check, $file]
-                                    ) }}"
-                                >
-                                    <i class="bi bi-trash3"></i>
-                                    Excluir
-                                </button>
+                                </div>
+
+                                <small class="fuel-document-card-filename">
+                                    Arquivo:
+                                    {{ $file->original_name }}
+                                </small>
+
+                                <small class="fuel-document-card-origin">
+                                    {{ $sourceLabel }}
+                                    ·
+                                    {{ $file->created_at
+                                        ?->format('d/m/Y H:i') }}
+                                </small>
+
+                                <div class="fuel-document-card-actions">
+
+                                    <a
+                                        href="{{ route(
+                                            'fuel.daily-check.files.show',
+                                            [$check, $file]
+                                        ) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="fuel-secondary-action"
+                                    >
+                                        <i class="bi bi-eye"></i>
+                                        Visualizar
+                                    </a>
+
+                                    <button
+                                        type="button"
+                                        class="fuel-secondary-action"
+                                        onclick="document.getElementById(
+                                            'fuelDocumentDetails{{ $file->id }}'
+                                        ).showModal()"
+                                    >
+                                        <i class="bi bi-info-circle"></i>
+                                        Detalhes
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="fuel-daily-file-delete"
+                                        data-delete-url="{{ route(
+                                            'fuel.daily-check.files.delete',
+                                            [$check, $file]
+                                        ) }}"
+                                    >
+                                        <i class="bi bi-trash3"></i>
+                                        Excluir
+                                    </button>
+
+                                </div>
+
                             </div>
 
-                        </div>
+                        </article>
 
-                    </article>
+                        <dialog
+                            id="fuelDocumentDetails{{ $file->id }}"
+                            class="fuel-document-details-modal"
+                        >
 
-                @endforeach
+                            <div class="fuel-document-details-card">
+
+                                <header>
+
+                                    <div>
+                                        <small>
+                                            Documento arquivado
+                                        </small>
+
+                                        <h3>
+                                            {{ $documentTypeLabel }}
+                                        </h3>
+
+                                        @if(
+                                            $file->document_type
+                                            === 'fuel_invoice'
+                                            && filled(
+                                                $file->invoice_number
+                                            )
+                                        )
+                                            <span>
+                                                NF
+                                                {{ $file->invoice_number }}
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        class="fuel-document-details-close"
+                                        onclick="this.closest('dialog').close()"
+                                        aria-label="Fechar"
+                                    >
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+
+                                </header>
+
+                                <div class="fuel-document-details-grid">
+
+                                    <div>
+                                        <small>Tipo</small>
+                                        <strong>
+                                            {{ $documentTypeLabel }}
+                                        </strong>
+                                    </div>
+
+                                    <div>
+                                        <small>Data do documento</small>
+                                        <strong>
+                                            {{ $file->document_date
+                                                ?->format('d/m/Y')
+                                                ?? '—' }}
+                                        </strong>
+                                    </div>
+
+                                    @if(
+                                        $file->document_type
+                                        === 'fuel_invoice'
+                                    )
+
+                                        <div>
+                                            <small>Número da NF</small>
+                                            <strong>
+                                                {{ $file->invoice_number
+                                                    ?: '—' }}
+                                            </strong>
+                                        </div>
+
+                                        <div>
+                                            <small>Fornecedor</small>
+                                            <strong>
+                                                {{ $file->supplier_name
+                                                    ?: '—' }}
+                                            </strong>
+                                        </div>
+
+                                        <div>
+                                            <small>CNPJ / CPF</small>
+                                            <strong>
+                                                {{ $file->supplier_document
+                                                    ?: '—' }}
+                                            </strong>
+                                        </div>
+
+                                    @endif
+
+                                    <div>
+                                        <small>Origem do arquivo</small>
+                                        <strong>
+                                            {{ $sourceLabel }}
+                                        </strong>
+                                    </div>
+
+                                    <div>
+                                        <small>Arquivado em</small>
+                                        <strong>
+                                            {{ $file->created_at
+                                                ?->format('d/m/Y H:i')
+                                                ?? '—' }}
+                                        </strong>
+                                    </div>
+
+                                    <div>
+                                        <small>Tamanho</small>
+                                        <strong>
+                                            @if($file->size_bytes)
+                                                {{ number_format(
+                                                    $file->size_bytes
+                                                        / 1024
+                                                        / 1024,
+                                                    2,
+                                                    ',',
+                                                    '.'
+                                                ) }} MB
+                                            @else
+                                                —
+                                            @endif
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+                                <div class="fuel-document-details-file">
+
+                                    <small>Nome do arquivo</small>
+
+                                    <strong>
+                                        {{ $file->original_name }}
+                                    </strong>
+
+                                </div>
+
+                                @if(
+                                    $file->document_type
+                                    === 'fuel_invoice'
+                                )
+
+                                    <div class="fuel-document-details-receipts">
+
+                                        <div class="fuel-document-details-receipts-head">
+                                            <strong>
+                                                Recebimentos vinculados
+                                            </strong>
+
+                                            <span>
+                                                {{ $linkedCount }}
+                                            </span>
+                                        </div>
+
+                                        @forelse(
+                                            $file->receipts
+                                            as $receipt
+                                        )
+
+                                            <details
+                                                class="fuel-document-receipt-detail"
+                                            >
+
+                                                <summary>
+
+                                                    <div>
+                                                        <strong>
+                                                            {{ $receipt->received_at
+                                                                ?->format(
+                                                                    'd/m/Y H:i'
+                                                                ) }}
+                                                        </strong>
+
+                                                        <small>
+                                                            {{ $receipt->tank?->name
+                                                                ?? 'Tanque' }}
+
+                                                            @if(
+                                                                filled(
+                                                                    $receipt
+                                                                        ->supplier_name
+                                                                )
+                                                            )
+                                                                ·
+                                                                {{ $receipt
+                                                                    ->supplier_name }}
+                                                            @endif
+                                                        </small>
+                                                    </div>
+
+                                                    <div class="fuel-document-receipt-summary-right">
+
+                                                        <strong>
+                                                            {{ number_format(
+                                                                (float) $receipt
+                                                                    ->quantity_liters,
+                                                                3,
+                                                                ',',
+                                                                '.'
+                                                            ) }} L
+                                                        </strong>
+
+                                                        <i class="bi bi-chevron-down"></i>
+
+                                                    </div>
+
+                                                </summary>
+
+                                                <div class="fuel-document-receipt-expanded">
+
+                                                    <div>
+                                                        <small>Tanque</small>
+                                                        <strong>
+                                                            {{ $receipt->tank?->name
+                                                                ?? '—' }}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>Quantidade recebida</small>
+                                                        <strong>
+                                                            {{ number_format(
+                                                                (float) $receipt
+                                                                    ->quantity_liters,
+                                                                3,
+                                                                ',',
+                                                                '.'
+                                                            ) }} L
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>Fornecedor</small>
+                                                        <strong>
+                                                            {{ $receipt->supplier_name
+                                                                ?: '—' }}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>CNPJ / CPF</small>
+                                                        <strong>
+                                                            {{ $receipt->supplier_document
+                                                                ?: '—' }}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>NF informada no recebimento</small>
+                                                        <strong>
+                                                            {{ $receipt->invoice_number
+                                                                ?: '—' }}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>Data da NF</small>
+                                                        <strong>
+                                                            {{ $receipt->invoice_date
+                                                                ?->format('d/m/Y')
+                                                                ?? '—' }}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>Custo unitário</small>
+                                                        <strong>
+                                                            @if(
+                                                                $receipt->unit_cost
+                                                                !== null
+                                                            )
+                                                                R$
+                                                                {{ number_format(
+                                                                    (float) $receipt
+                                                                        ->unit_cost,
+                                                                    4,
+                                                                    ',',
+                                                                    '.'
+                                                                ) }}
+                                                            @else
+                                                                —
+                                                            @endif
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>Custo total</small>
+                                                        <strong>
+                                                            @if(
+                                                                $receipt->total_cost
+                                                                !== null
+                                                            )
+                                                                R$
+                                                                {{ number_format(
+                                                                    (float) $receipt
+                                                                        ->total_cost,
+                                                                    2,
+                                                                    ',',
+                                                                    '.'
+                                                                ) }}
+                                                            @else
+                                                                —
+                                                            @endif
+                                                        </strong>
+                                                    </div>
+
+                                                    @if(
+                                                        filled($receipt->notes)
+                                                    )
+                                                        <div class="fuel-document-receipt-notes">
+                                                            <small>Observações</small>
+                                                            <strong>
+                                                                {{ $receipt->notes }}
+                                                            </strong>
+                                                        </div>
+                                                    @endif
+
+                                                </div>
+
+                                            </details>
+
+                                        @empty
+
+                                            <div class="fuel-document-details-empty">
+                                                Nenhum recebimento vinculado.
+                                            </div>
+
+                                        @endforelse
+
+                                    </div>
+
+                                @endif
+
+                                <footer>
+
+                                    <button
+                                        type="button"
+                                        class="fuel-secondary-action"
+                                        onclick="this.closest('dialog').close()"
+                                    >
+                                        Fechar
+                                    </button>
+
+                                    <a
+                                        href="{{ route(
+                                            'fuel.daily-check.files.show',
+                                            [$check, $file]
+                                        ) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="fuel-primary-action fuel-document-open-action"
+                                    >
+                                        <i class="bi bi-eye"></i>
+                                        Abrir anexo
+                                    </a>
+
+                                </footer>
+
+                            </div>
+
+                        </dialog>
+
+                    @endforeach
 
             </div>
 
@@ -468,45 +916,286 @@
                 value="{{ $date->format('Y-m-d') }}"
             >
 
-            <label
-                class="fuel-archive-file-picker"
-                id="fuelArchiveFilePicker"
-            >
+            <div class="fuel-document-fields fuel-document-type-only">
 
-                <i class="bi bi-cloud-arrow-up"></i>
+                    <div class="fuel-document-field">
+                        <span>Tipo de documento</span>
 
-                <span>
-                    <strong>Selecionar arquivo</strong>
-                    <small>
-                        JPG, PNG, WEBP ou PDF · até 12 MB
-                    </small>
-                </span>
+                        <div class="fuel-document-toggle-group">
 
-                <input
-                    type="file"
-                    name="files[]"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    multiple
-                    onchange="showArchiveSelectedFiles(this)"
-                >
+                            <label class="fuel-document-toggle-option">
+                                <input
+                                    type="radio"
+                                    name="document_type"
+                                    value="fuel_invoice"
+                                    @checked(
+                                        old('document_type')
+                                        === 'fuel_invoice'
+                                    )
+                                >
 
-            </label>
+                                <span>NF Abastecimento</span>
+                            </label>
 
-            <small id="dailySelectedFiles">
-                Nenhum arquivo selecionado.
-            </small>
+                            <label class="fuel-document-toggle-option">
+                                <input
+                                    type="radio"
+                                    name="document_type"
+                                    value="fuel_sheet"
+                                    @checked(
+                                        old('document_type')
+                                        === 'fuel_sheet'
+                                    )
+                                >
 
-            <button
-                type="submit"
-                id="fuelArchiveSubmit"
-                class="fuel-primary-action"
-                disabled
-            >
-                <i class="bi bi-archive"></i>
-                Arquivar documento
-            </button>
+                                <span>Folha de Abastecimentos</span>
+                            </label>
 
-        </form>
+                            <label class="fuel-document-toggle-option">
+                                <input
+                                    type="radio"
+                                    name="document_type"
+                                    value="other"
+                                    @checked(
+                                        old('document_type')
+                                        === 'other'
+                                    )
+                                >
+
+                                <span>Outros</span>
+                            </label>
+
+                        </div>
+                    </div>
+
+                </div>
+
+              <div
+                  id="fuelDocumentDetails"
+                  class="fuel-document-details"
+                  hidden
+              >
+                  <div class="fuel-document-fields">
+
+                      <label class="fuel-document-field">
+                          <span id="fuelDocumentDateLabel">
+                              Data do documento
+                          </span>
+
+                          <input
+                              type="date"
+                              name="document_date"
+                              id="fuelDocumentDate"
+                              value="{{ old(
+                                  'document_date',
+                                  $date->format('Y-m-d')
+                              ) }}"
+                          >
+                      </label>
+
+                  </div>
+
+                  <div
+                      id="fuelInvoiceFields"
+                      class="fuel-invoice-fields"
+                      hidden
+                  >
+                      <label class="fuel-document-field">
+                          <span>Número da NF</span>
+
+                          <input
+                              type="text"
+                              name="invoice_number"
+                              id="fuelInvoiceNumber"
+                              maxlength="120"
+                              value="{{ old('invoice_number') }}"
+                              placeholder="Ex.: 7256"
+                          >
+                      </label>
+
+                      <div class="fuel-invoice-supplier">
+                          <div class="fuel-invoice-supplier-head">
+                              <span>Fornecedor</span>
+                              <span>CNPJ</span>
+                          </div>
+
+                          <x-supplier-autocomplete
+                              value="{{ old('supplier_name') }}"
+                              document-name="supplier_document"
+                              document-value="{{ old('supplier_document') }}"
+                              id-name="supplier_id"
+                              id-value="{{ old('supplier_id') }}"
+                              placeholder="Digite para buscar ou cadastrar"
+                          />
+                      </div>
+
+                      <div class="fuel-receipt-linker">
+
+                          <div class="fuel-receipt-linker-head">
+
+                              <div>
+                                  <strong>
+                                      Recebimentos vinculados
+                                  </strong>
+
+                                  <small>
+                                      Últimos 5 recebimentos registrados
+                                      ainda sem NF vinculada.
+                                  </small>
+                              </div>
+
+                              <div class="fuel-receipt-date-search">
+
+                                  <label for="fuelReceiptSearchDate">
+                                      Data do recebimento
+                                  </label>
+
+                                  <div>
+                                      <input
+                                          type="date"
+                                          id="fuelReceiptSearchDate"
+                                      >
+
+                                      <button
+                                          type="button"
+                                          id="fuelReceiptSearchButton"
+                                          class="fuel-receipt-search-button"
+                                          data-url="{{ route(
+                                              'fuel.daily-check.receipts.search'
+                                          ) }}"
+                                          title="Buscar recebimentos"
+                                          aria-label="Buscar recebimentos"
+                                      >
+                                          <i class="bi bi-search"></i>
+                                      </button>
+                                  </div>
+
+                                  <small id="fuelReceiptSearchStatus">
+                                      Informe uma data e clique na lupa
+                                      para buscar outros recebimentos.
+                                  </small>
+
+                              </div>
+
+                          </div>
+
+                          <div
+                              id="fuelReceiptCandidates"
+                              class="fuel-receipt-candidates"
+                          >
+                              @forelse($receiptCandidates as $receipt)
+
+                                  <label
+                                      class="fuel-receipt-option"
+                                      data-receipt-id="{{ $receipt->id }}"
+                                  >
+                                      <input
+                                          type="checkbox"
+                                          name="receipt_ids[]"
+                                          value="{{ $receipt->id }}"
+                                          @checked(
+                                              in_array(
+                                                  (string) $receipt->id,
+                                                  array_map(
+                                                      'strval',
+                                                      old(
+                                                          'receipt_ids',
+                                                          []
+                                                      )
+                                                  ),
+                                                  true
+                                              )
+                                          )
+                                      >
+
+                                      <span>
+                                          <strong>
+                                              {{ $receipt->received_at
+                                                  ?->format('d/m/Y H:i') }}
+                                              ·
+                                              {{ $receipt->tank?->name
+                                                  ?? 'Tanque' }}
+                                          </strong>
+
+                                          <small>
+                                              {{ number_format(
+                                                  (float) $receipt
+                                                      ->quantity_liters,
+                                                  3,
+                                                  ',',
+                                                  '.'
+                                              ) }} L
+
+                                              @if(
+                                                  filled(
+                                                      $receipt->supplier_name
+                                                  )
+                                              )
+                                                  ·
+                                                  {{ $receipt->supplier_name }}
+                                              @endif
+                                          </small>
+                                      </span>
+                                  </label>
+
+                              @empty
+
+                                  <div
+                                      class="fuel-archive-empty-document fuel-receipt-empty"
+                                  >
+                                      <span>
+                                          Não há recebimentos recentes
+                                          aguardando NF.
+                                      </span>
+                                  </div>
+
+                              @endforelse
+                          </div>
+
+                      </div>
+
+                  </div>
+
+                  <label
+                      class="fuel-archive-file-picker"
+                      id="fuelArchiveFilePicker"
+                  >
+                      <i class="bi bi-cloud-arrow-up"></i>
+
+                      <span>
+                          <strong>Selecionar arquivo</strong>
+
+                          <small>
+                              JPG, PNG, WEBP ou PDF · até 12 MB
+                          </small>
+                      </span>
+
+                      <input
+                          type="file"
+                          name="files[]"
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          multiple
+                          onchange="showArchiveSelectedFiles(this)"
+                      >
+                  </label>
+
+                  <small id="dailySelectedFiles">
+                      Nenhum arquivo selecionado.
+                  </small>
+
+                  <button
+                      type="submit"
+                      id="fuelArchiveSubmit"
+                      class="fuel-primary-action"
+                      disabled
+                  >
+                      <i class="bi bi-archive"></i>
+                      Arquivar documento
+                  </button>
+
+              </div>
+
+</form>
 
 
         <div class="fuel-archive-mobile-upload">
@@ -590,103 +1279,237 @@
 
     <section class="fuel-archive-panel">
 
-        <div class="fuel-archive-section-head">
-            <div>
-                <span>Lançamentos do dia</span>
-                <h2>Abastecimentos registrados</h2>
+        <details class="fuel-fillings-accordion">
+
+            <summary class="fuel-fillings-accordion-summary">
+
+                <div>
+                    <span>Lançamentos do dia</span>
+                    <h2>Abastecimentos registrados</h2>
+                </div>
+
+                <div class="fuel-fillings-accordion-actions">
+
+                    <span class="fuel-archive-count">
+                        {{ $fillings->count() }}
+                    </span>
+
+                    <i class="bi bi-chevron-down"></i>
+
+                </div>
+
+            </summary>
+
+            <div class="fuel-fillings-accordion-content">
+
+                @if($fillings->isEmpty())
+
+                    <div class="fuel-archive-empty-document">
+                        <i class="bi bi-fuel-pump"></i>
+
+                        <strong>
+                            Nenhum abastecimento registrado
+                        </strong>
+
+                        <span>
+                            Não há lançamentos válidos nesta data.
+                        </span>
+                    </div>
+
+                @else
+
+                    <div class="fuel-archive-fillings fuel-fillings-scroll">
+
+                        @foreach($fillings as $filling)
+
+                            <article>
+
+                                <time>
+                                    {{ $filling->filled_at
+                                        ->format('H:i') }}
+                                </time>
+
+                                <div class="fuel-archive-filling-vehicle">
+
+                                    <strong>
+                                        {{ $filling->vehicle?->name
+                                            ?? 'Veículo' }}
+                                    </strong>
+
+                                    <small>
+                                        {{ $filling->vehicle?->plate
+                                            ?? '—' }}
+                                    </small>
+
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        {{ $filling->product?->name
+                                            ?? 'Produto' }}
+                                    </strong>
+
+                                    <small>
+                                        {{ $filling->source
+                                            === 'internal_tank'
+                                                ? 'Tanque da unidade'
+                                                : 'Posto externo' }}
+                                    </small>
+
+                                </div>
+
+                                <strong class="fuel-archive-filling-liters">
+                                    {{ number_format(
+                                        (float) $filling->quantity_liters,
+                                        3,
+                                        ',',
+                                        '.'
+                                    ) }} L
+                                </strong>
+
+                                <span class="fuel-archive-filling-km">
+
+                                    @if(
+                                        $filling->vehicle_km
+                                        !== null
+                                    )
+
+                                        {{ number_format(
+                                            (float) $filling->vehicle_km,
+                                            0,
+                                            ',',
+                                            '.'
+                                        ) }} km
+
+                                    @else
+
+                                        —
+
+                                    @endif
+
+                                </span>
+
+                            </article>
+
+                        @endforeach
+
+                    </div>
+
+                @endif
+
             </div>
-        </div>
+
+        </details>
 
 
-        @if($fillings->isEmpty())
+        <div class="fuel-day-receipts-block">
 
-            <div class="fuel-archive-empty-document">
+            <div class="fuel-day-receipts-head">
 
-                <i class="bi bi-fuel-pump"></i>
+                <div>
+                    <span>Entradas no tanque</span>
+                    <h3>Recebimentos de combustível</h3>
+                </div>
 
-                <strong>
-                    Nenhum abastecimento registrado
-                </strong>
-
-                <span>
-                    Não há lançamentos válidos nesta data.
+                <span class="fuel-archive-count">
+                    {{ $dayReceipts->count() }}
                 </span>
 
             </div>
 
-        @else
+            @if($dayReceipts->isEmpty())
 
-            <div class="fuel-archive-fillings">
+                <div class="fuel-day-receipts-empty">
+                    <i class="bi bi-box-arrow-in-down"></i>
 
-                @foreach($fillings as $filling)
+                    <span>
+                        Nenhum recebimento de combustível nesta data.
+                    </span>
+                </div>
 
-                    <article>
+            @else
 
-                        <time>
-                            {{ $filling->filled_at
-                                ->format('H:i') }}
-                        </time>
+                <div class="fuel-day-receipts-list">
 
-                        <div class="fuel-archive-filling-vehicle">
+                    @foreach($dayReceipts as $receipt)
 
-                            <strong>
-                                {{ $filling->vehicle?->name
-                                    ?? 'Veículo' }}
-                            </strong>
+                        @php
+                            $invoiceFile =
+                                $receipt->invoiceFiles
+                                    ->sortByDesc('id')
+                                    ->first();
+                        @endphp
 
-                            <small>
-                                {{ $filling->vehicle?->plate
-                                    ?? '—' }}
-                            </small>
+                        <article>
 
-                        </div>
+                            <div class="fuel-day-receipt-main">
 
-                        <div>
-                            <strong>
-                                {{ $filling->product?->name
-                                    ?? 'Produto' }}
-                            </strong>
+                                <strong>
+                                    {{ $receipt->received_at
+                                        ?->format('H:i') }}
 
-                            <small>
-                                {{ $filling->source === 'internal_tank'
-                                    ? 'Tanque da unidade'
-                                    : 'Posto externo' }}
-                            </small>
-                        </div>
+                                    ·
 
-                        <strong class="fuel-archive-filling-liters">
-                            {{ number_format(
-                                (float) $filling->quantity_liters,
-                                3,
-                                ',',
-                                '.'
-                            ) }} L
-                        </strong>
+                                    {{ $receipt->tank?->name
+                                        ?? 'Tanque' }}
+                                </strong>
 
-                        <span class="fuel-archive-filling-km">
-                            @if($filling->vehicle_km !== null)
+                                <small>
+                                    {{ number_format(
+                                        (float) $receipt
+                                            ->quantity_liters,
+                                        3,
+                                        ',',
+                                        '.'
+                                    ) }} L
 
-                                {{ number_format(
-                                    (float) $filling->vehicle_km,
-                                    0,
-                                    ',',
-                                    '.'
-                                ) }} km
+                                    @if(
+                                        filled(
+                                            $receipt->supplier_name
+                                        )
+                                    )
+                                        ·
+                                        {{ $receipt->supplier_name }}
+                                    @endif
+                                </small>
+
+                            </div>
+
+                            @if($invoiceFile)
+
+                                <span
+                                    class="fuel-receipt-document-status is-linked"
+                                >
+                                    <i class="bi bi-paperclip"></i>
+
+                                    NF
+                                    {{ $invoiceFile->invoice_number
+                                        ?: 'anexada' }}
+                                </span>
 
                             @else
-                                —
+
+                                <span
+                                    class="fuel-receipt-document-status is-pending"
+                                >
+                                    <i class="bi bi-clock"></i>
+                                    NF pendente
+                                </span>
+
                             @endif
-                        </span>
 
-                    </article>
+                        </article>
 
-                @endforeach
+                    @endforeach
 
-            </div>
+                </div>
 
-        @endif
+            @endif
 
-    </section>
+        </div>
+
+</section>
 
 </section>
 
@@ -714,6 +1537,309 @@
 
 
 <script>
+function getSelectedFuelDocumentType() {
+    return document.querySelector(
+        'input[name="document_type"]:checked'
+    )?.value || '';
+}
+
+function updateFuelDocumentForm() {
+    const type =
+        getSelectedFuelDocumentType();
+
+    const details =
+        document.getElementById(
+            'fuelDocumentDetails'
+        );
+
+    const invoiceFields =
+        document.getElementById(
+            'fuelInvoiceFields'
+        );
+
+    const invoiceNumber =
+        document.getElementById(
+            'fuelInvoiceNumber'
+        );
+
+    const documentDate =
+        document.getElementById(
+            'fuelDocumentDate'
+        );
+
+    const dateLabel =
+        document.getElementById(
+            'fuelDocumentDateLabel'
+        );
+
+    const receiptInputs =
+        document.querySelectorAll(
+            'input[name="receipt_ids[]"]'
+        );
+
+    const fileInput =
+        document.querySelector(
+            '#fuelArchiveFilePicker input[type="file"]'
+        );
+
+    const submit =
+        document.getElementById(
+            'fuelArchiveSubmit'
+        );
+
+    if (
+        !details
+        || !invoiceFields
+    ) {
+        return;
+    }
+
+    const hasType =
+        type !== '';
+
+    const isInvoice =
+        type === 'fuel_invoice';
+
+    details.hidden = !hasType;
+    invoiceFields.hidden = !isInvoice;
+
+    if (dateLabel) {
+        dateLabel.textContent =
+            isInvoice
+                ? 'Data da NF'
+                : type === 'fuel_sheet'
+                    ? 'Data da folha'
+                    : 'Data do documento';
+    }
+
+    if (documentDate) {
+        documentDate.required = hasType;
+    }
+
+    if (invoiceNumber) {
+        invoiceNumber.required = isInvoice;
+    }
+
+    receiptInputs.forEach(input => {
+        input.disabled = !isInvoice;
+    });
+
+    if (fileInput) {
+        fileInput.disabled = !hasType;
+        fileInput.multiple = !isInvoice;
+    }
+
+    if (submit && !hasType) {
+        submit.disabled = true;
+    }
+}
+
+function createFuelReceiptOption(receipt) {
+    const label =
+        document.createElement('label');
+
+    label.className =
+        'fuel-receipt-option';
+
+    label.dataset.receiptId =
+        String(receipt.id);
+
+    const input =
+        document.createElement('input');
+
+    input.type = 'checkbox';
+    input.name = 'receipt_ids[]';
+    input.value = receipt.id;
+
+    const body =
+        document.createElement('span');
+
+    const title =
+        document.createElement('strong');
+
+    title.textContent =
+        `${receipt.received_at || ''} · ${receipt.tank || 'Tanque'}`;
+
+    const meta =
+        document.createElement('small');
+
+    let metaText =
+        `${receipt.quantity_liters || '0,000'} L`;
+
+    if (receipt.supplier_name) {
+        metaText +=
+            ` · ${receipt.supplier_name}`;
+    }
+
+    meta.textContent = metaText;
+
+    body.appendChild(title);
+    body.appendChild(meta);
+
+    label.appendChild(input);
+    label.appendChild(body);
+
+    return label;
+}
+
+async function searchFuelReceiptCandidates() {
+    const dateInput =
+        document.getElementById(
+            'fuelReceiptSearchDate'
+        );
+
+    const button =
+        document.getElementById(
+            'fuelReceiptSearchButton'
+        );
+
+    const status =
+        document.getElementById(
+            'fuelReceiptSearchStatus'
+        );
+
+    const container =
+        document.getElementById(
+            'fuelReceiptCandidates'
+        );
+
+    if (
+        !dateInput
+        || !button
+        || !container
+    ) {
+        return;
+    }
+
+    if (!dateInput.value) {
+        if (status) {
+            status.textContent =
+                'Informe a data do recebimento antes de pesquisar.';
+        }
+
+        dateInput.focus();
+        return;
+    }
+
+    const selected = new Map();
+
+    container
+        .querySelectorAll(
+            '.fuel-receipt-option'
+        )
+        .forEach(option => {
+            const input =
+                option.querySelector(
+                    'input[name="receipt_ids[]"]'
+                );
+
+            if (input?.checked) {
+                selected.set(
+                    String(input.value),
+                    option.cloneNode(true)
+                );
+            }
+        });
+
+    button.disabled = true;
+
+    if (status) {
+        status.textContent =
+            'Buscando recebimentos...';
+    }
+
+    try {
+        const url =
+            new URL(
+                button.dataset.url,
+                window.location.origin
+            );
+
+        url.searchParams.set(
+            'date',
+            dateInput.value
+        );
+
+        const response =
+            await fetch(
+                url.toString(),
+                {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                'Falha na pesquisa.'
+            );
+        }
+
+        const payload =
+            await response.json();
+
+        container.innerHTML = '';
+
+        selected.forEach(node => {
+            container.appendChild(node);
+        });
+
+        const added =
+            new Set(selected.keys());
+
+        (payload.receipts || [])
+            .forEach(receipt => {
+                const id =
+                    String(receipt.id);
+
+                if (added.has(id)) {
+                    return;
+                }
+
+                container.appendChild(
+                    createFuelReceiptOption(
+                        receipt
+                    )
+                );
+
+                added.add(id);
+            });
+
+        if (added.size === 0) {
+            const empty =
+                document.createElement('div');
+
+            empty.className =
+                'fuel-archive-empty-document fuel-receipt-empty';
+
+            const message =
+                document.createElement('span');
+
+            message.textContent =
+                'Nenhum recebimento sem NF foi encontrado nesta data.';
+
+            empty.appendChild(message);
+
+            container.appendChild(empty);
+        }
+
+        if (status) {
+            status.textContent =
+                payload.count === 1
+                    ? '1 recebimento encontrado.'
+                    : `${payload.count || 0} recebimentos encontrados.`;
+        }
+    } catch (error) {
+        if (status) {
+            status.textContent =
+                'Não foi possível realizar a pesquisa.';
+        }
+    } finally {
+        button.disabled = false;
+    }
+}
+
 function showArchiveSelectedFiles(input) {
     const target =
         document.getElementById(
@@ -743,8 +1869,12 @@ function showArchiveSelectedFiles(input) {
     }
 
     if (submit) {
+        const type =
+            getSelectedFuelDocumentType();
+
         submit.disabled =
-            count === 0;
+            count === 0
+            || !type;
     }
 
     if (picker) {
@@ -755,6 +1885,33 @@ function showArchiveSelectedFiles(input) {
     }
 }
 
+
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+        updateFuelDocumentForm();
+
+        document
+            .querySelectorAll(
+                'input[name="document_type"]'
+            )
+            .forEach(input => {
+                input.addEventListener(
+                    'change',
+                    updateFuelDocumentForm
+                );
+            });
+
+        document
+            .getElementById(
+                'fuelReceiptSearchButton'
+            )
+            ?.addEventListener(
+                'click',
+                searchFuelReceiptCandidates
+            );
+    }
+);
 
 (() => {
     const generate =
