@@ -14,11 +14,28 @@ class FuelDailyCheckFile extends Model
         'mime_type',
         'size_bytes',
         'source',
+        'document_type',
+        'document_date',
+        'invoice_number',
         'uploaded_by',
+    ];
+
+    protected $casts = [
+        'document_date' => 'date',
     ];
 
     public function check()
     {
         return $this->belongsTo(FuelDailyCheck::class, 'fuel_daily_check_id');
+    }
+
+    public function receipts()
+    {
+        return $this->belongsToMany(
+            FuelReceipt::class,
+            'fuel_daily_check_file_receipt',
+            'fuel_daily_check_file_id',
+            'fuel_receipt_id'
+        )->withTimestamps();
     }
 }

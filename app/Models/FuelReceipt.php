@@ -81,6 +81,25 @@ class FuelReceipt extends Model
         return $this->belongsTo(User::class, 'cancelled_by');
     }
 
+    public function dailyCheckFiles()
+    {
+        return $this->belongsToMany(
+            FuelDailyCheckFile::class,
+            'fuel_daily_check_file_receipt',
+            'fuel_receipt_id',
+            'fuel_daily_check_file_id'
+        )->withTimestamps();
+    }
+
+    public function invoiceFiles()
+    {
+        return $this->dailyCheckFiles()
+            ->where(
+                'fuel_daily_check_files.document_type',
+                'fuel_invoice'
+            );
+    }
+
     public function replacesReceipt()
     {
         return $this->belongsTo(
