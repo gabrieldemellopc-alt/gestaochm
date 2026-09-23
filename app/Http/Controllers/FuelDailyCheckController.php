@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FuelDailyCheck;
 use App\Models\FuelDailyCheckFile;
+use App\Models\FuelDailyCheckMobileUpload;
 use App\Models\FuelDailyCheckUploadToken;
 use App\Models\FuelFilling;
 use App\Models\FuelReceipt;
@@ -503,15 +504,23 @@ class FuelDailyCheckController extends Controller
                 'distinct',
             ],
             'files' => [
-                'required',
+                'nullable',
                 'array',
-                'min:1',
                 'max:5',
             ],
             'files.*' => [
                 'file',
                 'mimes:jpg,jpeg,png,webp,pdf',
                 'max:12288',
+            ],
+            'mobile_upload_ids' => [
+                'nullable',
+                'array',
+                'max:5',
+            ],
+            'mobile_upload_ids.*' => [
+                'integer',
+                'distinct',
             ],
             'notes' => [
                 'nullable',
@@ -554,13 +563,42 @@ class FuelDailyCheckController extends Controller
             ->unique()
             ->values();
 
+        $localFiles = collect(
+            $request->file('files', [])
+        )->values();
+
+        $mobileUploadIds = collect(
+            $data['mobile_upload_ids'] ?? []
+        )
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        $totalFileCount =
+            $localFiles->count()
+            + $mobileUploadIds->count();
+
+        if ($totalFileCount < 1) {
+            throw ValidationException::withMessages([
+                'files' =>
+                    'Selecione um arquivo no computador '
+                    .'ou envie pelo celular.',
+            ]);
+        }
+
+        if ($totalFileCount > 5) {
+            throw ValidationException::withMessages([
+                'files' =>
+                    'É permitido arquivar no máximo 5 arquivos.',
+            ]);
+        }
+
         if ($documentType === 'fuel_invoice') {
             $errors = [];
 
             if (
-                count(
-                    $request->file('files', [])
-                ) !== 1
+                $totalFileCount !== 1
             ) {
                 $errors['files'] =
                     'A nota fiscal deve possuir exatamente um arquivo.';
@@ -632,6 +670,8 @@ class FuelDailyCheckController extends Controller
                 $documentDate,
                 $invoiceNumber,
                 $receiptIds,
+                $localFiles,
+                $mobileUploadIds,
                 &$storedPaths
             ) {
                 $validReceiptIds = collect();
@@ -709,8 +749,49 @@ class FuelDailyCheckController extends Controller
                     );
                 }
 
+                $mobileUploads = collect();
+
+                if ($mobileUploadIds->isNotEmpty()) {
+                    $mobileUploads =
+                        FuelDailyCheckMobileUpload::query()
+                            ->whereIn(
+                                'id',
+                                $mobileUploadIds->all()
+                            )
+                            ->whereHas(
+                                'token',
+                                function ($query) use (
+                                    $check,
+                                    $documentType
+                                ) {
+                                    $query
+                                        ->where(
+                                            'fuel_daily_check_id',
+                                            $check->id
+                                        )
+                                        ->where(
+                                            'document_type',
+                                            $documentType
+                                        );
+                                }
+                            )
+                            ->lockForUpdate()
+                            ->get();
+
+                    if (
+                        $mobileUploads->count()
+                        !== $mobileUploadIds->count()
+                    ) {
+                        throw ValidationException::withMessages([
+                            'files' =>
+                                'Um ou mais arquivos enviados pelo celular '
+                                .'não pertencem a este documento ou já foram utilizados.',
+                        ]);
+                    }
+                }
+
                 foreach (
-                    $request->file('files', [])
+                    $localFiles
                     as $file
                 ) {
                     $storedFile =
@@ -772,6 +853,88 @@ class FuelDailyCheckController extends Controller
                             );
                     }
                 }
+
+                foreach ($mobileUploads as $mobileUpload) {
+                    $storedFile =
+                        $check->files()->create([
+                            'disk' =>
+                                $mobileUpload->disk
+                                ?: 'local',
+
+                            'path' =>
+                                $mobileUpload->path,
+
+                            'original_name' =>
+                                $mobileUpload->original_name,
+
+                            'mime_type' =>
+                                $mobileUpload->mime_type,
+
+                            'size_bytes' =>
+                                $mobileUpload->size_bytes,
+
+                            'source' =>
+                                'qr_mobile',
+
+                            'document_type' =>
+                                $documentType,
+
+                            'document_date' =>
+                                $documentDate,
+
+                            'invoice_number' =>
+                                $documentType
+                                    === 'fuel_invoice'
+                                        ? $invoiceNumber
+                                        : null,
+
+                            'supplier_id' =>
+                                $documentType
+                                    === 'fuel_invoice'
+                                        ? $supplierSnapshot[
+                                            'supplier_id'
+                                        ]
+                                        : null,
+
+                            'supplier_name' =>
+                                $documentType
+                                    === 'fuel_invoice'
+                                        ? $supplierSnapshot[
+                                            'supplier_name'
+                                        ]
+                                        : null,
+
+                            'supplier_document' =>
+                                $documentType
+                                    === 'fuel_invoice'
+                                        ? $supplierSnapshot[
+                                            'supplier_document'
+                                        ]
+                                        : null,
+
+                            'uploaded_by' =>
+                                $context['user']->id,
+                        ]);
+
+                    if (
+                        $documentType
+                        === 'fuel_invoice'
+                    ) {
+                        $storedFile
+                            ->receipts()
+                            ->sync(
+                                $validReceiptIds->all()
+                            );
+                    }
+
+                    /*
+                     * O arquivo físico permanece no mesmo caminho.
+                     * Apenas o registro temporário deixa de existir.
+                     * Se a transaction falhar, o delete também sofre rollback.
+                     */
+                    $mobileUpload->delete();
+                }
+
 
                 if (
                     array_key_exists(
@@ -839,26 +1002,70 @@ class FuelDailyCheckController extends Controller
                 'required',
                 'date',
             ],
+            'file_id' => [
+                'nullable',
+                'integer',
+            ],
         ]);
 
         $date = Carbon::parse(
             $data['date']
         )->toDateString();
 
+        $editingFile = null;
+
+        if (!empty($data['file_id'])) {
+            $editingFile =
+                FuelDailyCheckFile::query()
+                    ->whereKey((int) $data['file_id'])
+                    ->whereHas(
+                        'check',
+                        function ($query) use ($context) {
+                            $query
+                                ->where(
+                                    'tenant_id',
+                                    $context['tenant_id']
+                                )
+                                ->where(
+                                    'division_id',
+                                    $context['division_id']
+                                )
+                                ->where(
+                                    'location_id',
+                                    $context['location_id']
+                                );
+                        }
+                    )
+                    ->firstOrFail();
+        }
+
         $receipts = FuelReceipt::query()
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division_id'])
             ->where('location_id', $context['location_id'])
             ->whereNull('cancelled_at')
-            ->whereDoesntHave('invoiceFiles')
             ->whereDate('received_at', $date)
+            ->where(function ($query) use ($editingFile) {
+                $query->whereDoesntHave('invoiceFiles');
+
+                if ($editingFile) {
+                    $query->orWhereHas(
+                        'invoiceFiles',
+                        function ($invoiceQuery) use ($editingFile) {
+                            $invoiceQuery->where(
+                                'fuel_daily_check_files.id',
+                                $editingFile->id
+                            );
+                        }
+                    );
+                }
+            })
             ->with('tank:id,name')
             ->orderByDesc('id')
             ->limit(50)
             ->get()
             ->map(fn ($receipt) => [
-                'id' =>
-                    (int) $receipt->id,
+                'id' => (int) $receipt->id,
 
                 'received_at' =>
                     $receipt->received_at
@@ -891,17 +1098,28 @@ class FuelDailyCheckController extends Controller
         ]);
     }
 
+
     public function createUploadToken(
+        Request $request,
         FuelDailyCheck $check
     ) {
         $context = $this->context();
         $this->authorizeFuel($context);
         $this->ensureCheck($check, $context);
 
+        $data = $request->validate([
+            'document_type' => [
+                'required',
+                'string',
+                'in:fuel_invoice,fuel_sheet,other',
+            ],
+        ]);
+
         $plain = (string) Str::uuid();
 
         $token = FuelDailyCheckUploadToken::create([
             'fuel_daily_check_id' => $check->id,
+            'document_type' => $data['document_type'],
             'token_hash' => hash('sha256', $plain),
             'created_by' => $context['user']->id,
             'expires_at' => now()->copy()->addHours(2),
@@ -927,11 +1145,13 @@ class FuelDailyCheckController extends Controller
             'qr' => $qrData,
             'expires_at' =>
                 $token->expires_at->format('d/m/Y H:i'),
-            'files_status_url' => route(
-                'fuel.daily-check.files.status',
-                $check
-            ),
-            'files_count' => $check->files()->count(),
+            'files_status_url' =>
+                route(
+                    'fuel.daily-check.files.status',
+                    $check
+                )
+                .'?token_id='.$token->id,
+            'files_count' => 0,
         ];
 
         if (request()->expectsJson()) {
@@ -947,28 +1167,358 @@ class FuelDailyCheckController extends Controller
         ]);
     }
 
-    public function filesStatus(FuelDailyCheck $check)
-    {
+    public function filesStatus(
+        Request $request,
+        FuelDailyCheck $check
+    ) {
         $context = $this->context();
         $this->authorizeFuel($context);
         $this->ensureCheck($check, $context);
 
-        return response()->json([
-            'count' => $check->files()->count(),
-            'files' => $check->files()
-                ->latest()
+        $data = $request->validate([
+            'token_id' => [
+                'required',
+                'integer',
+            ],
+        ]);
+
+        $token = FuelDailyCheckUploadToken::query()
+            ->whereKey((int) $data['token_id'])
+            ->where(
+                'fuel_daily_check_id',
+                $check->id
+            )
+            ->firstOrFail();
+
+        $uploads =
+            FuelDailyCheckMobileUpload::query()
+                ->where(
+                    'fuel_daily_check_upload_token_id',
+                    $token->id
+                )
+                ->orderBy('id')
                 ->get()
-                ->map(fn ($file) => [
-                    'id' => $file->id,
-                    'name' => $file->original_name,
-                    'source' => $file->source,
-                    'url' => route(
-                        'fuel.daily-check.files.show',
-                        [$check, $file]
-                    ),
-                ]),
+                ->map(fn ($upload) => [
+                    'id' => (int) $upload->id,
+                    'name' => $upload->original_name,
+                    'mime_type' => $upload->mime_type,
+                    'size_bytes' => $upload->size_bytes,
+                ])
+                ->values();
+
+        return response()->json([
+            'count' => $uploads->count(),
+            'uploads' => $uploads,
         ]);
     }
+
+
+    public function updateFile(
+        Request $request,
+        FuelDailyCheck $check,
+        FuelDailyCheckFile $file
+    ) {
+        $context = $this->context();
+        $this->authorizeFuel($context);
+        $this->ensureCheck($check, $context);
+
+        abort_unless(
+            (int) $file->fuel_daily_check_id
+                === (int) $check->id,
+            404
+        );
+
+        $data = $request->validate([
+            'editing_file_id' => [
+                'required',
+                'integer',
+            ],
+            'document_date' => [
+                'nullable',
+                'date',
+            ],
+            'invoice_number' => [
+                'nullable',
+                'string',
+                'max:120',
+            ],
+            'supplier_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'supplier_document' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+            'replacement_file' => [
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,webp,pdf',
+                'max:12288',
+            ],
+            'receipt_ids' => [
+                'nullable',
+                'array',
+            ],
+            'receipt_ids.*' => [
+                'integer',
+                'distinct',
+            ],
+        ]);
+
+        if ((int) $data['editing_file_id'] !== (int) $file->id) {
+            abort(422);
+        }
+
+        $documentDate =
+            filled($data['document_date'] ?? null)
+                ? Carbon::parse(
+                    $data['document_date']
+                )->toDateString()
+                : null;
+
+        $invoiceNumber =
+            filled($data['invoice_number'] ?? null)
+                ? trim((string) $data['invoice_number'])
+                : null;
+
+        $receiptIds = collect(
+            $data['receipt_ids'] ?? []
+        )
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        if ($file->document_type === 'fuel_invoice') {
+            $errors = [];
+
+            if (!$documentDate) {
+                $errors['document_date'] =
+                    'Informe a data de emissão da nota fiscal.';
+            }
+
+            if (!$invoiceNumber) {
+                $errors['invoice_number'] =
+                    'Informe o número da nota fiscal.';
+            }
+
+            if (!filled($data['supplier_name'] ?? null)) {
+                $errors['supplier_name'] =
+                    'Informe o fornecedor da nota fiscal.';
+            }
+
+            if ($receiptIds->isEmpty()) {
+                $errors['receipt_ids'] =
+                    'Selecione pelo menos um recebimento vinculado à nota fiscal.';
+            }
+
+            if ($errors) {
+                throw ValidationException::withMessages($errors);
+            }
+        }
+
+        $supplierSnapshot = [
+            'supplier_id' => null,
+            'supplier_name' => null,
+            'supplier_document' => null,
+        ];
+
+        if ($file->document_type === 'fuel_invoice') {
+            $supplier = app(
+                SupplierResolverService::class
+            )->resolve(
+                $context['tenant_id'],
+                $file->supplier_id
+                    ? (int) $file->supplier_id
+                    : null,
+                $data['supplier_name'] ?? null,
+                $data['supplier_document'] ?? null,
+                null,
+                null
+            );
+
+            $supplierSnapshot = app(
+                SupplierSnapshotService::class
+            )->fromResolvedSupplier(
+                $supplier,
+                $data['supplier_name'] ?? null
+            );
+        }
+
+        $validReceiptIds = collect();
+
+        if ($file->document_type === 'fuel_invoice') {
+            $validReceiptIds =
+                FuelReceipt::query()
+                    ->where(
+                        'tenant_id',
+                        $context['tenant_id']
+                    )
+                    ->where(
+                        'division_id',
+                        $context['division_id']
+                    )
+                    ->where(
+                        'location_id',
+                        $context['location_id']
+                    )
+                    ->whereNull('cancelled_at')
+                    ->whereIn(
+                        'id',
+                        $receiptIds->all()
+                    )
+                    ->where(function ($query) use ($file) {
+                        $query
+                            ->whereDoesntHave('invoiceFiles')
+                            ->orWhereHas(
+                                'invoiceFiles',
+                                fn ($invoiceQuery) =>
+                                    $invoiceQuery->where(
+                                        'fuel_daily_check_files.id',
+                                        $file->id
+                                    )
+                            );
+                    })
+                    ->lockForUpdate()
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values();
+
+            if (
+                $validReceiptIds->count()
+                !== $receiptIds->count()
+            ) {
+                throw ValidationException::withMessages([
+                    'receipt_ids' =>
+                        'Um ou mais recebimentos selecionados já pertencem a outra nota fiscal ou não pertencem à unidade ativa.',
+                ]);
+            }
+        }
+
+        $replacement = $request->file(
+            'replacement_file'
+        );
+
+        $newPath = null;
+        $oldDiskName = $file->disk ?: 'local';
+        $oldPath = $file->path;
+
+        try {
+            if ($replacement) {
+                $extension = strtolower(
+                    $replacement->getClientOriginalExtension()
+                    ?: $replacement->extension()
+                    ?: 'jpg'
+                );
+
+                $newPath =
+                    'protected/fuel-daily-checks/'
+                    .$check->tenant_id.'/'
+                    .$check->location_id.'/'
+                    .$check->id.'/'
+                    .Str::uuid().'.'.$extension;
+
+                Storage::disk('local')->putFileAs(
+                    dirname($newPath),
+                    $replacement,
+                    basename($newPath)
+                );
+            }
+
+            DB::transaction(function () use (
+                $file,
+                $data,
+                $documentDate,
+                $invoiceNumber,
+                $supplierSnapshot,
+                $validReceiptIds,
+                $replacement,
+                $newPath
+            ) {
+                $update = [
+                    'document_date' => $documentDate,
+                ];
+
+                if ($file->document_type === 'fuel_invoice') {
+                    $update['invoice_number'] =
+                        $invoiceNumber;
+
+                    $update['supplier_id'] =
+                        $supplierSnapshot['supplier_id'];
+
+                    $update['supplier_name'] =
+                        $supplierSnapshot['supplier_name'];
+
+                    $update['supplier_document'] =
+                        $supplierSnapshot['supplier_document'];
+                }
+
+                if ($replacement && $newPath) {
+                    $update['disk'] = 'local';
+                    $update['path'] = $newPath;
+                    $update['original_name'] =
+                        $replacement->getClientOriginalName();
+                    $update['mime_type'] =
+                        $replacement->getMimeType();
+                    $update['size_bytes'] =
+                        Storage::disk('local')
+                            ->size($newPath);
+                }
+
+                $file->update($update);
+
+                if (
+                    $file->document_type
+                    === 'fuel_invoice'
+                ) {
+                    $file
+                        ->receipts()
+                        ->sync(
+                            $validReceiptIds->all()
+                        );
+                }
+            });
+        } catch (\Throwable $e) {
+            if (
+                $newPath
+                && Storage::disk('local')->exists($newPath)
+            ) {
+                Storage::disk('local')->delete($newPath);
+            }
+
+            throw $e;
+        }
+
+        if (
+            $replacement
+            && $oldPath
+        ) {
+            $oldDisk = Storage::disk($oldDiskName);
+
+            if ($oldDisk->exists($oldPath)) {
+                $oldDisk->delete($oldPath);
+            }
+        }
+
+        return redirect()
+            ->route(
+                'fuel.daily-check.index',
+                [
+                    'date' => $check->operation_date
+                        ?->format('Y-m-d'),
+                    'month' => $check->operation_date
+                        ?->format('Y-m'),
+                ]
+            )
+            ->with(
+                'success',
+                'Documento atualizado com sucesso.'
+            );
+    }
+
 
     public function deleteFile(
         FuelDailyCheck $check,

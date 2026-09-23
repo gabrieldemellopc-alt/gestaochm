@@ -12413,3 +12413,678 @@ tbody tr:hover
     color: #8195b2;
     font-size: .62rem;
 }
+
+/* =========================================================
+   ARQUIVO DIÁRIO — EDIÇÃO DE DOCUMENTO
+   ========================================================= */
+
+.fuel-document-edit-panel {
+    margin: 10px 0 16px;
+    padding: 18px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, .18);
+}
+
+.fuel-document-edit-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.fuel-document-edit-head > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fuel-document-edit-head small {
+    color: #8ea0c8;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.fuel-document-edit-head strong {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.fuel-document-edit-close {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .025);
+    color: #cbd5e1;
+    cursor: pointer;
+}
+
+.fuel-document-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.fuel-document-edit-grid label,
+.fuel-document-edit-linked {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fuel-document-edit-grid label > span,
+.fuel-document-edit-linked > span,
+.fuel-document-replacement > div > span {
+    color: #9dadca;
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+.fuel-document-edit-grid input {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .28);
+    color: #fff;
+    box-sizing: border-box;
+}
+
+.fuel-document-edit-grid input:disabled {
+    opacity: .68;
+}
+
+.fuel-document-edit-linked {
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .18);
+}
+
+.fuel-document-edit-linked strong {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.fuel-document-edit-linked small {
+    color: #8392ae;
+    font-size: .68rem;
+}
+
+.fuel-document-replacement {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(148, 163, 184, .12);
+}
+
+.fuel-document-replacement > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.fuel-document-replacement > div strong {
+    color: #e8edf7;
+    font-size: .78rem;
+}
+
+.fuel-document-replacement-picker {
+    min-height: 44px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px dashed rgba(148, 163, 184, .28);
+    border-radius: 11px;
+    background: rgba(15, 23, 42, .16);
+    color: #e2e8f0;
+    cursor: pointer;
+}
+
+.fuel-document-replacement-picker > span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 700;
+    font-size: .78rem;
+}
+
+.fuel-document-replacement-picker small {
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, .1);
+    color: #93c5fd;
+    font-size: .58rem;
+    text-transform: uppercase;
+}
+
+.fuel-document-replacement-picker input {
+    margin-left: auto;
+    max-width: 52%;
+    color: #aebbd1;
+    font-size: .72rem;
+}
+
+.fuel-document-replacement-help {
+    display: block;
+    margin-top: 7px;
+    color: #8392ae;
+    font-size: .68rem;
+}
+
+.fuel-document-edit-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+@media (max-width: 720px) {
+    .fuel-document-edit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-document-replacement-picker {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .fuel-document-replacement-picker input {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+    }
+}
+
+/* Ajustes da edição documental */
+
+.fuel-document-edit-full {
+    grid-column: 1 / -1;
+}
+
+.fuel-document-edit-receipts {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .16);
+}
+
+.fuel-document-edit-receipts-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 11px;
+}
+
+.fuel-document-edit-receipts-head > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fuel-document-edit-receipts-head span {
+    color: #b9c8e5;
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.fuel-document-edit-receipts-head small,
+.fuel-document-edit-receipts-help {
+    color: #8495b5;
+    font-size: .66rem;
+}
+
+.fuel-document-edit-receipts-head > strong {
+    color: #8fb7ff;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.fuel-document-edit-receipt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.fuel-document-edit-receipt-option {
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+    padding: 9px 10px;
+
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .18);
+    cursor: pointer;
+
+    box-sizing: border-box;
+}
+
+.fuel-document-edit-receipt-option:hover {
+    border-color: rgba(123, 157, 220, .34);
+    background: rgba(57, 75, 111, .2);
+}
+
+.fuel-document-edit-receipt-option > input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fuel-document-edit-receipt-check {
+    width: 20px;
+    height: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(148, 163, 184, .32);
+    border-radius: 6px;
+    background: rgba(15, 23, 42, .28);
+    color: transparent;
+}
+
+.fuel-document-edit-receipt-option
+    > input:checked
+    + .fuel-document-edit-receipt-check {
+    color: #ffffff;
+    background: #456fc3;
+    border-color: #6b91dc;
+}
+
+.fuel-document-edit-receipt-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fuel-document-edit-receipt-main strong {
+    color: #edf2ff;
+    font-size: .76rem;
+}
+
+.fuel-document-edit-receipt-main small {
+    overflow: hidden;
+    color: #91a1bf;
+    font-size: .66rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fuel-document-edit-receipt-value {
+    color: #dce7fb;
+    font-size: .72rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.fuel-document-edit-receipts-help {
+    display: block;
+    margin-top: 9px;
+}
+
+/* File input visual */
+
+.fuel-document-replacement-picker {
+    position: relative;
+}
+
+.fuel-document-replacement-input {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none;
+}
+
+.fuel-document-replacement-button {
+    flex: 0 0 auto;
+
+    min-height: 32px;
+    padding: 0 11px;
+
+    display: inline-flex !important;
+    align-items: center;
+    gap: 7px;
+
+    border: 1px solid rgba(113, 145, 205, .38);
+    border-radius: 8px;
+
+    background: rgba(69, 111, 195, .14);
+    color: #dbe8ff;
+
+    font-size: .7rem !important;
+    font-weight: 800 !important;
+}
+
+.fuel-document-replacement-picker:hover
+.fuel-document-replacement-button {
+    background: rgba(69, 111, 195, .24);
+    border-color: rgba(113, 145, 205, .58);
+}
+
+.fuel-document-replacement-name {
+    min-width: 0;
+    margin-left: auto;
+
+    overflow: hidden;
+    color: #94a5c3;
+    font-size: .67rem !important;
+    font-weight: 600 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+    .fuel-document-edit-receipt-option {
+        grid-template-columns: 20px minmax(0, 1fr);
+    }
+
+    .fuel-document-edit-receipt-value {
+        grid-column: 2;
+    }
+
+    .fuel-document-replacement-name {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+/* =========================================================
+   CORREÇÃO VISUAL — RECEBIMENTOS NA EDIÇÃO DA NF
+   ========================================================= */
+
+.fuel-document-edit-grid .fuel-document-edit-receipt-option {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+
+    padding: 10px 12px;
+
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+
+    gap: 11px;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 10px;
+
+    background: rgba(15, 23, 42, .18);
+
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-option:hover {
+    border-color: rgba(113, 145, 205, .36);
+    background: rgba(57, 75, 111, .2);
+}
+
+/* Esconde completamente o checkbox nativo */
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-option
+> input[type="checkbox"] {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+
+    padding: 0;
+    margin: 0;
+
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Checkbox visual */
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-option
+> .fuel-document-edit-receipt-check {
+    width: 20px;
+    height: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+    margin: 0;
+
+    border: 1px solid rgba(148, 163, 184, .34);
+    border-radius: 6px;
+
+    background: rgba(15, 23, 42, .34);
+
+    color: transparent;
+
+    box-sizing: border-box;
+}
+
+/* Somente selecionado mostra o check */
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-option
+> input[type="checkbox"]:checked
++ .fuel-document-edit-receipt-check {
+    color: #ffffff;
+
+    background: #456fc3;
+    border-color: #7398df;
+
+    box-shadow: 0 0 0 2px rgba(69, 111, 195, .12);
+}
+
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-option
+> .fuel-document-edit-receipt-check
+i {
+    font-size: .76rem;
+    line-height: 1;
+}
+
+/* Conteúdo */
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-main {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-main strong {
+    margin: 0;
+
+    color: #edf3ff;
+
+    font-size: .76rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-main small {
+    margin: 0;
+
+    color: #91a3c3;
+
+    font-size: .67rem;
+    line-height: 1.25;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-value {
+    color: #dbe7fb;
+
+    font-size: .72rem;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+/* Recebimento já selecionado ganha leve destaque */
+.fuel-document-edit-grid
+.fuel-document-edit-receipt-option:has(
+    > input[type="checkbox"]:checked
+) {
+    border-color: rgba(91, 132, 211, .35);
+    background: rgba(69, 111, 195, .08);
+}
+
+@media (max-width: 720px) {
+    .fuel-document-edit-grid
+    .fuel-document-edit-receipt-option {
+        grid-template-columns: 22px minmax(0, 1fr);
+    }
+
+    .fuel-document-edit-grid
+    .fuel-document-edit-receipt-value {
+        grid-column: 2;
+        justify-self: start;
+    }
+}
+
+/* =========================================================
+   BUSCA AUXILIAR DE RECEBIMENTOS
+   Não representa dado persistido da NF.
+   ========================================================= */
+
+.fuel-receipt-search-helper {
+    min-width: 250px;
+    padding: 10px 11px;
+
+    border: 1px dashed rgba(107, 145, 214, .32);
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(54, 82, 132, .08),
+            rgba(15, 23, 42, .12)
+        );
+}
+
+.fuel-receipt-search-helper-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.fuel-receipt-search-helper-title > i {
+    margin-top: 2px;
+    color: #8fb7ff;
+    font-size: .82rem;
+}
+
+.fuel-receipt-search-helper-title > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fuel-receipt-search-helper-title strong {
+    color: #cfe0ff;
+    font-size: .67rem;
+    font-weight: 800;
+}
+
+.fuel-receipt-search-helper-title small {
+    color: #7f91b3;
+    font-size: .59rem;
+    line-height: 1.3;
+}
+
+.fuel-receipt-search-helper-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+}
+
+.fuel-receipt-search-helper-controls input[type="date"] {
+    min-height: 36px;
+    padding: 6px 9px;
+
+    border: 1px solid rgba(120, 148, 199, .2);
+    border-radius: 8px;
+
+    background: rgba(15, 23, 42, .2);
+    color: #cbd7ec;
+
+    font-size: .7rem;
+}
+
+.fuel-receipt-search-helper
+.fuel-receipt-search-button {
+    min-height: 36px;
+    padding: 0 11px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    border-radius: 8px;
+}
+
+.fuel-receipt-search-helper
+.fuel-receipt-search-button span {
+    font-size: .67rem;
+    font-weight: 800;
+}
+
+.fuel-receipt-search-helper-status {
+    display: block;
+    margin-top: 6px;
+
+    color: #7486a7;
+    font-size: .58rem;
+    line-height: 1.3;
+}
+
+.fuel-receipt-search-helper--edit {
+    margin: 10px 0 11px;
+}
+
+@media (max-width: 720px) {
+    .fuel-receipt-search-helper {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .fuel-receipt-search-helper-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Estado oculto do envio pelo celular / QR */
+.fuel-archive-mobile-upload[hidden],
+.fuel-daily-qr-box[hidden] {
+    display: none !important;
+}

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FuelDailyCheckFile;
+use App\Models\FuelDailyCheckMobileUpload;
 use App\Models\FuelDailyCheckUploadToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,11 +14,31 @@ class PublicFuelDailyCheckUploadController extends Controller
     {
         $session = $this->resolve($token);
 
+        $documentTypeLabel = match (
+            $session->document_type
+        ) {
+            'fuel_invoice' =>
+                'NF de Recebimentos',
+
+            'fuel_sheet' =>
+                'Folha de Abastecimentos',
+
+            'other' =>
+                'Outros',
+
+            default =>
+                'Documento',
+        };
+
         return view(
             'fuel.daily-checks.mobile-upload',
             [
                 'token' => $token,
                 'check' => $session->check,
+                'documentType' =>
+                    $session->document_type,
+                'documentTypeLabel' =>
+                    $documentTypeLabel,
             ]
         );
     }
@@ -29,8 +49,18 @@ class PublicFuelDailyCheckUploadController extends Controller
     ) {
         $session = $this->resolve($token);
 
+        $maxFiles =
+            $session->document_type === 'fuel_invoice'
+                ? 1
+                : 5;
+
         $data = $request->validate([
-            'files' => ['required', 'array', 'min:1', 'max:5'],
+            'files' => [
+                'required',
+                'array',
+                'min:1',
+                'max:'.$maxFiles,
+            ],
             'files.*' => [
                 'file',
                 'mimes:jpg,jpeg,png,webp,pdf',
@@ -60,9 +90,9 @@ class PublicFuelDailyCheckUploadController extends Controller
                 basename($path)
             );
 
-            FuelDailyCheckFile::create([
-                'fuel_daily_check_id' =>
-                    $check->id,
+            FuelDailyCheckMobileUpload::create([
+                'fuel_daily_check_upload_token_id' =>
+                    $session->id,
                 'disk' => 'local',
                 'path' => $path,
                 'original_name' =>
@@ -72,8 +102,6 @@ class PublicFuelDailyCheckUploadController extends Controller
                 'size_bytes' =>
                     Storage::disk('local')
                         ->size($path),
-                'source' => 'qr_mobile',
-                'uploaded_by' => null,
             ]);
         }
 
@@ -81,7 +109,10 @@ class PublicFuelDailyCheckUploadController extends Controller
             'last_used_at' => now(),
         ]);
 
-        $message = 'Arquivo(s) enviado(s) ao CHM com sucesso.';
+        $message =
+            'Arquivo enviado ao computador. '
+            .'Volte ao CHM para conferir os dados '
+            .'e concluir o arquivamento.';
 
         if ($request->expectsJson()) {
             return response()->json([

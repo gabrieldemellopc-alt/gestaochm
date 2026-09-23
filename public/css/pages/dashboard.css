@@ -11586,3 +11586,99 @@ input:not([readonly]) {
 .fuel-reading-delta.is-negative strong {
     color: #ecd490;
 }
+
+/* =========================================================
+   ACESSO RÁPIDO DUPLO — KM/HR + ARQUIVO DIÁRIO
+   ========================================================= */
+
+.kpi-quick-actions-stack {
+    width: 100%;
+    min-width: 0;
+    min-height: 148px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kpi-quick-actions-stack .kpi-quick-action {
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 11px 14px;
+    border-radius: 12px;
+}
+
+.kpi-quick-actions-stack .kpi-quick-action-content strong {
+    margin-top: 4px;
+    font-size: clamp(1rem, 1.55cqw, 1.3rem);
+}
+
+.kpi-quick-actions-stack .kpi-quick-action-content small {
+    font-size: 0.68rem;
+}
+
+.kpi-quick-actions-stack .kpi-quick-action-icon {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 11px;
+}
+
+.kpi-quick-actions-stack .kpi-quick-action-icon i {
+    font-size: 1rem;
+}
+
+.kpi-quick-actions-stack .kpi-quick-action::after {
+    left: 14px;
+    right: 14px;
+    height: 3px;
+}
+
+.kpi-quick-action-title-row {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kpi-quick-action-title-row strong {
+    min-width: 0;
+}
+
+.kpi-archive-alert-badge {
+    flex: 0 0 auto;
+
+    min-width: 21px;
+    height: 21px;
+    padding: 0 6px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.18);
+    border: 1px solid rgba(245, 158, 11, 0.42);
+    border-radius: 999px;
+
+    font-size: 0.67rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.kpi-quick-action--archive.has-alert {
+    border-color: rgba(245, 158, 11, 0.36);
+}
+
+.kpi-quick-action--archive.has-alert .kpi-quick-action-icon {
+    color: #f9d572;
+    background: rgba(245, 158, 11, 0.09);
+    border-color: rgba(245, 158, 11, 0.24);
+}
+
+@media (max-width: 480px) {
+    .kpi-quick-actions-stack {
+        min-height: 148px;
+    }
+}

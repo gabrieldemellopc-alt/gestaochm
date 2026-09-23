@@ -345,7 +345,7 @@
                                 $file->document_type
                             ) {
                                 'fuel_invoice' =>
-                                    'NF de abastecimento',
+                                    'NF de Recebimentos',
 
                                 'fuel_sheet' =>
                                     'Folha de abastecimentos',
@@ -497,6 +497,15 @@
 
                                     <button
                                         type="button"
+                                        class="fuel-secondary-action"
+                                        onclick="openFuelDocumentEdit({{ $file->id }})"
+                                    >
+                                        <i class="bi bi-pencil-square"></i>
+                                        Editar
+                                    </button>
+
+                                    <button
+                                        type="button"
                                         class="fuel-daily-file-delete"
                                         data-delete-url="{{ route(
                                             'fuel.daily-check.files.delete',
@@ -512,6 +521,336 @@
                             </div>
 
                         </article>
+
+                        <div
+                            id="fuelDocumentEdit{{ $file->id }}"
+                            class="fuel-document-edit-panel"
+                            style="{{ (int) old('editing_file_id') === (int) $file->id ? 'display:block;' : 'display:none;' }}"
+                        >
+                            <div class="fuel-document-edit-head">
+                                <div>
+                                    <small>Documento arquivado</small>
+                                    <strong>Editar documento</strong>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="fuel-document-edit-close"
+                                    onclick="closeFuelDocumentEdit({{ $file->id }})"
+                                    aria-label="Fechar edição"
+                                >
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+
+                            <form
+                                method="POST"
+                                action="{{ route(
+                                    'fuel.daily-check.files.update',
+                                    [$check, $file]
+                                ) }}"
+                                enctype="multipart/form-data"
+                                class="fuel-document-edit-form"
+                            >
+                                @csrf
+                                @method('PATCH')
+
+                                <input
+                                    type="hidden"
+                                    name="editing_file_id"
+                                    value="{{ $file->id }}"
+                                >
+
+                                @php
+                                    $editReceiptCandidates =
+                                        $file->receipts
+                                            ->concat($receiptCandidates)
+                                            ->unique('id')
+                                            ->values();
+
+                                    $oldEditReceiptIds =
+                                        (int) old('editing_file_id')
+                                            === (int) $file->id
+                                                ? collect(old('receipt_ids', []))
+                                                    ->map(fn ($id) => (int) $id)
+                                                    ->all()
+                                                : null;
+                                @endphp
+
+                                <div class="fuel-document-edit-grid">
+
+                                    <label>
+                                        <span>Tipo do documento</span>
+                                        <input
+                                            type="text"
+                                            value="{{ $documentTypeLabel }}"
+                                            disabled
+                                        >
+                                    </label>
+
+                                    @if($file->document_type === 'fuel_invoice')
+
+                                        <label>
+                                            <span>Número da NF</span>
+                                            <input
+                                                type="text"
+                                                name="invoice_number"
+                                                value="{{ old('editing_file_id') == $file->id
+                                                    ? old('invoice_number')
+                                                    : $file->invoice_number }}"
+                                            >
+                                        </label>
+
+                                        <label>
+                                            <span>Fornecedor</span>
+                                            <input
+                                                type="text"
+                                                name="supplier_name"
+                                                value="{{ old('editing_file_id') == $file->id
+                                                    ? old('supplier_name')
+                                                    : $file->supplier_name }}"
+                                            >
+                                        </label>
+
+                                        <label>
+                                            <span>CNPJ / CPF</span>
+                                            <input
+                                                type="text"
+                                                name="supplier_document"
+                                                value="{{ old('editing_file_id') == $file->id
+                                                    ? old('supplier_document')
+                                                    : $file->supplier_document }}"
+                                            >
+                                        </label>
+
+                                    @endif
+
+                                    <label class="fuel-document-edit-full">
+                                        <span>
+                                            {{ $file->document_type === 'fuel_invoice'
+                                                ? 'Data da emissão'
+                                                : 'Data do documento' }}
+                                        </span>
+                                        <input
+                                            type="date"
+                                            name="document_date"
+                                            value="{{ old('editing_file_id') == $file->id
+                                                ? old('document_date')
+                                                : $file->document_date?->format('Y-m-d') }}"
+                                        >
+                                    </label>
+
+                                    @if($file->document_type === 'fuel_invoice')
+
+                                        <div class="fuel-document-edit-receipts fuel-document-edit-full">
+
+                                            <div class="fuel-document-edit-receipts-head">
+                                                <div>
+                                                    <span>Recebimentos vinculados</span>
+                                                    <small>
+                                                        Marque os recebimentos que pertencem a esta NF.
+                                                    </small>
+                                                </div>
+
+                                                <strong>
+                                                    {{ $linkedCount }}
+                                                    {{ $linkedCount === 1 ? 'atual' : 'atuais' }}
+                                                </strong>
+                                            </div>
+
+                                            <div class="fuel-receipt-search-helper fuel-receipt-search-helper--edit">
+
+                                                <div class="fuel-receipt-search-helper-title">
+                                                    <i class="bi bi-calendar-search"></i>
+
+                                                    <div>
+                                                        <strong>
+                                                            Buscar recebimentos de outro dia
+                                                        </strong>
+
+                                                        <small>
+                                                            Use somente para localizar
+                                                            recebimentos e marcá-los abaixo.
+                                                        </small>
+                                                    </div>
+                                                </div>
+
+                                                <div class="fuel-receipt-search-helper-controls">
+
+                                                    <input
+                                                        type="date"
+                                                        id="fuelEditReceiptSearchDate{{ $file->id }}"
+                                                    >
+
+                                                    <button
+                                                        type="button"
+                                                        class="fuel-receipt-search-button fuel-edit-receipt-search-button"
+                                                        data-file-id="{{ $file->id }}"
+                                                        data-url="{{ route(
+                                                            'fuel.daily-check.receipts.search'
+                                                        ) }}"
+                                                    >
+                                                        <i class="bi bi-search"></i>
+                                                        <span>Buscar</span>
+                                                    </button>
+
+                                                </div>
+
+                                                <small
+                                                    id="fuelEditReceiptSearchStatus{{ $file->id }}"
+                                                    class="fuel-receipt-search-helper-status"
+                                                >
+                                                    Esta data é apenas um filtro de pesquisa.
+                                                </small>
+
+                                            </div>
+
+                                            <div class="fuel-document-edit-receipt-list" id="fuelEditReceiptCandidates{{ $file->id }}">
+
+                                                @foreach($editReceiptCandidates as $receiptCandidate)
+
+                                                    @php
+                                                        $receiptChecked =
+                                                            $oldEditReceiptIds !== null
+                                                                ? in_array(
+                                                                    (int) $receiptCandidate->id,
+                                                                    $oldEditReceiptIds,
+                                                                    true
+                                                                )
+                                                                : $file->receipts->contains(
+                                                                    'id',
+                                                                    $receiptCandidate->id
+                                                                );
+                                                    @endphp
+
+                                                    <label class="fuel-document-edit-receipt-option">
+
+                                                        <input
+                                                            type="checkbox"
+                                                            name="receipt_ids[]"
+                                                            value="{{ $receiptCandidate->id }}"
+                                                            {{ $receiptChecked ? 'checked' : '' }}
+                                                        >
+
+                                                        <span class="fuel-document-edit-receipt-check">
+                                                            <i class="bi bi-check2"></i>
+                                                        </span>
+
+                                                        <span class="fuel-document-edit-receipt-main">
+                                                            <strong>
+                                                                {{ $receiptCandidate->received_at
+                                                                    ?->format('d/m/Y H:i') }}
+                                                            </strong>
+
+                                                            <small>
+                                                                {{ $receiptCandidate->tank?->name ?? 'Tanque' }}
+
+                                                                @if(filled($receiptCandidate->supplier_name))
+                                                                    · {{ $receiptCandidate->supplier_name }}
+                                                                @endif
+                                                            </small>
+                                                        </span>
+
+                                                        <span class="fuel-document-edit-receipt-value">
+                                                            {{ number_format(
+                                                                (float) $receiptCandidate->quantity_liters,
+                                                                3,
+                                                                ',',
+                                                                '.'
+                                                            ) }} L
+                                                        </span>
+
+                                                    </label>
+
+                                                @endforeach
+
+                                            </div>
+
+                                            <small class="fuel-document-edit-receipts-help">
+                                                Recebimentos já vinculados a outra NF não aparecem como opção.
+                                            </small>
+
+                                        </div>
+
+                                    @endif
+
+                                </div>
+
+                                <div class="fuel-document-replacement">
+                                    <div>
+                                        <span>Arquivo atual</span>
+                                        <strong>
+                                            {{ $file->original_name }}
+                                        </strong>
+                                    </div>
+
+                                    <label class="fuel-document-replacement-picker">
+                                        <i class="bi bi-paperclip"></i>
+
+                                        <span>
+                                            Substituir anexo
+                                            <small>Opcional</small>
+                                        </span>
+
+                                        <input
+                                            type="file"
+                                            name="replacement_file"
+                                            accept=".jpg,.jpeg,.png,.webp,.pdf"
+                                            class="fuel-document-replacement-input"
+                                            id="fuelReplacementFile{{ $file->id }}"
+                                            onchange="
+                                                const name =
+                                                    this.files.length
+                                                        ? this.files[0].name
+                                                        : 'Nenhum arquivo selecionado';
+
+                                                document.getElementById(
+                                                    'fuelReplacementName{{ $file->id }}'
+                                                ).textContent = name;
+                                            "
+                                        >
+
+                                        <span class="fuel-document-replacement-button">
+                                            <i class="bi bi-upload"></i>
+                                            Escolher arquivo
+                                        </span>
+
+                                        <span
+                                            id="fuelReplacementName{{ $file->id }}"
+                                            class="fuel-document-replacement-name"
+                                        >
+                                            Nenhum arquivo selecionado
+                                        </span>
+                                    </label>
+
+                                    <small class="fuel-document-replacement-help">
+                                        Se nenhum novo arquivo for selecionado,
+                                        o anexo atual será mantido.
+                                    </small>
+                                </div>
+
+                                <div class="fuel-document-edit-actions">
+
+                                    <button
+                                        type="button"
+                                        class="fuel-secondary-action"
+                                        onclick="closeFuelDocumentEdit({{ $file->id }})"
+                                    >
+                                        Cancelar
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        class="fuel-primary-action"
+                                    >
+                                        <i class="bi bi-check2"></i>
+                                        Salvar alterações
+                                    </button>
+
+                                </div>
+                            </form>
+                        </div>
+
 
                         <dialog
                             id="fuelDocumentDetails{{ $file->id }}"
@@ -977,7 +1316,7 @@
                                     )
                                 >
 
-                                <span>NF Abastecimento</span>
+                                <span>NF de Recebimentos</span>
                             </label>
 
                             <label class="fuel-document-toggle-option">
@@ -1096,20 +1435,31 @@
                                   </small>
                               </div>
 
-                              <div class="fuel-receipt-date-search">
+                              <div class="fuel-receipt-search-helper">
 
-                                  <label for="fuelReceiptSearchDate">
-                                      Data do recebimento
-                                  </label>
+                                  <div class="fuel-receipt-search-helper-title">
+                                      <i class="bi bi-calendar-search"></i>
 
-                                  <div>
+                                      <div>
+                                          <strong>
+                                              Buscar recebimentos de outro dia
+                                          </strong>
+
+                                          <small>
+                                              Auxílio para localizar e selecionar
+                                              um recebimento abaixo.
+                                          </small>
+                                      </div>
+                                  </div>
+
+                                  <div class="fuel-receipt-search-helper-controls">
                                       <input
                                           type="date"
                                           id="fuelReceiptSearchDate"
-                                            value="{{ $focusedReceipt
-                                                ?->received_at
-                                                ?->format('Y-m-d') }}"
-                                        >
+                                          value="{{ $focusedReceipt
+                                              ?->received_at
+                                              ?->format('Y-m-d') }}"
+                                      >
 
                                       <button
                                           type="button"
@@ -1119,15 +1469,18 @@
                                               'fuel.daily-check.receipts.search'
                                           ) }}"
                                           title="Buscar recebimentos"
-                                          aria-label="Buscar recebimentos"
                                       >
                                           <i class="bi bi-search"></i>
+                                          <span>Buscar</span>
                                       </button>
                                   </div>
 
-                                  <small id="fuelReceiptSearchStatus">
-                                      Informe uma data e clique na lupa
-                                      para buscar outros recebimentos.
+                                  <small
+                                      id="fuelReceiptSearchStatus"
+                                      class="fuel-receipt-search-helper-status"
+                                  >
+                                      Esta data é somente para pesquisa
+                                      e não será salva na nota fiscal.
                                   </small>
 
                               </div>
@@ -1257,7 +1610,11 @@
 </form>
 
 
-        <div class="fuel-archive-mobile-upload">
+        <div
+            id="fuelArchiveMobileUpload"
+            class="fuel-archive-mobile-upload"
+            hidden
+        >
 
             <div>
                 <i class="bi bi-phone"></i>
@@ -1658,7 +2015,7 @@ function updateFuelDocumentForm() {
 
     const receiptInputs =
         document.querySelectorAll(
-            'input[name="receipt_ids[]"]'
+            '#fuelArchiveUploadForm input[name="receipt_ids[]"]'
         );
 
     const fileInput =
@@ -1684,13 +2041,36 @@ function updateFuelDocumentForm() {
     const isInvoice =
         type === 'fuel_invoice';
 
+    const mobileUpload =
+        document.getElementById(
+            'fuelArchiveMobileUpload'
+        );
+
+    const qrBox =
+        document.getElementById(
+            'fuelDailyQrBox'
+        );
+
+    if (mobileUpload) {
+        mobileUpload.hidden = !hasType;
+    }
+
+    /*
+     * Se o usuário trocar o tipo do documento,
+     * qualquer QR anteriormente gerado deixa de
+     * representar a seleção atual.
+     */
+    if (qrBox) {
+        qrBox.hidden = true;
+    }
+
     details.hidden = !hasType;
     invoiceFields.hidden = !isInvoice;
 
     if (dateLabel) {
         dateLabel.textContent =
             isInvoice
-                ? 'Data da NF'
+                ? 'Data da emissão'
                 : type === 'fuel_sheet'
                     ? 'Data da folha'
                     : 'Data do documento';
@@ -1943,6 +2323,15 @@ function showArchiveSelectedFiles(input) {
     const count =
         input.files?.length || 0;
 
+    const mobileCount =
+        document.querySelectorAll(
+            '#fuelArchiveUploadForm '
+            + 'input[name="mobile_upload_ids[]"]'
+        ).length;
+
+    const totalCount =
+        count + mobileCount;
+
     if (target) {
         target.textContent =
             count === 0
@@ -1957,7 +2346,7 @@ function showArchiveSelectedFiles(input) {
             getSelectedFuelDocumentType();
 
         submit.disabled =
-            count === 0
+            totalCount === 0
             || !type;
     }
 
@@ -1970,10 +2359,322 @@ function showArchiveSelectedFiles(input) {
 }
 
 
+
+function createFuelEditReceiptOption(receipt) {
+    const label = document.createElement('label');
+
+    label.className =
+        'fuel-document-edit-receipt-option';
+
+    label.dataset.receiptId =
+        String(receipt.id);
+
+    const input =
+        document.createElement('input');
+
+    input.type = 'checkbox';
+    input.name = 'receipt_ids[]';
+    input.value = receipt.id;
+
+    const check =
+        document.createElement('span');
+
+    check.className =
+        'fuel-document-edit-receipt-check';
+
+    check.innerHTML =
+        '<i class="bi bi-check2"></i>';
+
+    const main =
+        document.createElement('span');
+
+    main.className =
+        'fuel-document-edit-receipt-main';
+
+    const title =
+        document.createElement('strong');
+
+    title.textContent =
+        receipt.received_at || '';
+
+    const meta =
+        document.createElement('small');
+
+    meta.textContent =
+        `${receipt.tank || 'Tanque'}`
+        + (
+            receipt.supplier_name
+                ? ` · ${receipt.supplier_name}`
+                : ''
+        );
+
+    main.appendChild(title);
+    main.appendChild(meta);
+
+    const value =
+        document.createElement('span');
+
+    value.className =
+        'fuel-document-edit-receipt-value';
+
+    value.textContent =
+        `${receipt.quantity_liters || '0,000'} L`;
+
+    label.appendChild(input);
+    label.appendChild(check);
+    label.appendChild(main);
+    label.appendChild(value);
+
+    return label;
+}
+
+async function searchFuelEditReceiptCandidates(button) {
+    const fileId =
+        button.dataset.fileId;
+
+    const dateInput =
+        document.getElementById(
+            `fuelEditReceiptSearchDate${fileId}`
+        );
+
+    const status =
+        document.getElementById(
+            `fuelEditReceiptSearchStatus${fileId}`
+        );
+
+    const container =
+        document.getElementById(
+            `fuelEditReceiptCandidates${fileId}`
+        );
+
+    if (
+        !dateInput
+        || !container
+        || !dateInput.value
+    ) {
+        if (status) {
+            status.textContent =
+                'Informe uma data para realizar a pesquisa.';
+        }
+
+        dateInput?.focus();
+        return;
+    }
+
+    const selected = new Map();
+
+    container
+        .querySelectorAll(
+            '.fuel-document-edit-receipt-option'
+        )
+        .forEach(option => {
+            const input =
+                option.querySelector(
+                    'input[name="receipt_ids[]"]'
+                );
+
+            if (input?.checked) {
+                selected.set(
+                    String(input.value),
+                    option.cloneNode(true)
+                );
+            }
+        });
+
+    button.disabled = true;
+
+    if (status) {
+        status.textContent =
+            'Buscando recebimentos...';
+    }
+
+    try {
+        const url =
+            new URL(
+                button.dataset.url,
+                window.location.origin
+            );
+
+        url.searchParams.set(
+            'date',
+            dateInput.value
+        );
+
+        url.searchParams.set(
+            'file_id',
+            fileId
+        );
+
+        const response =
+            await fetch(
+                url.toString(),
+                {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                'Falha na pesquisa.'
+            );
+        }
+
+        const payload =
+            await response.json();
+
+        container.innerHTML = '';
+
+        selected.forEach(node => {
+            container.appendChild(node);
+        });
+
+        const added =
+            new Set(selected.keys());
+
+        (payload.receipts || [])
+            .forEach(receipt => {
+                const id =
+                    String(receipt.id);
+
+                if (added.has(id)) {
+                    return;
+                }
+
+                container.appendChild(
+                    createFuelEditReceiptOption(
+                        receipt
+                    )
+                );
+
+                added.add(id);
+            });
+
+        if (added.size === 0) {
+            const empty =
+                document.createElement('div');
+
+            empty.className =
+                'fuel-archive-empty-document fuel-receipt-empty';
+
+            empty.textContent =
+                'Nenhum recebimento disponível foi encontrado nesta data.';
+
+            container.appendChild(empty);
+        }
+
+        if (status) {
+            status.textContent =
+                payload.count === 1
+                    ? '1 recebimento encontrado.'
+                    : `${payload.count || 0} recebimentos encontrados.`;
+        }
+    } catch (error) {
+        if (status) {
+            status.textContent =
+                'Não foi possível realizar a pesquisa.';
+        }
+    } finally {
+        button.disabled = false;
+    }
+}
+
+
+function openFuelDocumentEdit(fileId) {
+    const target =
+        document.getElementById(
+            `fuelDocumentEdit${fileId}`
+        );
+
+    const uploadForm =
+        document.getElementById(
+            'fuelArchiveUploadForm'
+        );
+
+    document
+        .querySelectorAll(
+            '.fuel-document-edit-panel'
+        )
+        .forEach(panel => {
+            panel.style.display = 'none';
+        });
+
+    if (!target) {
+        return;
+    }
+
+    target.style.display = 'block';
+
+    if (uploadForm) {
+        uploadForm.style.display = 'none';
+    }
+
+    target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+    });
+}
+
+function closeFuelDocumentEdit(fileId) {
+    const target =
+        document.getElementById(
+            `fuelDocumentEdit${fileId}`
+        );
+
+    const uploadForm =
+        document.getElementById(
+            'fuelArchiveUploadForm'
+        );
+
+    if (target) {
+        target.style.display = 'none';
+    }
+
+    const hasOpenEditor =
+        Array.from(
+            document.querySelectorAll(
+                '.fuel-document-edit-panel'
+            )
+        ).some(
+            panel =>
+                panel.style.display !== 'none'
+                && getComputedStyle(panel).display !== 'none'
+        );
+
+    if (
+        uploadForm
+        && !hasOpenEditor
+    ) {
+        uploadForm.style.display = '';
+    }
+}
+
 document.addEventListener(
     'DOMContentLoaded',
     () => {
         updateFuelDocumentForm();
+
+        document
+            .querySelectorAll(
+                '.fuel-document-edit-panel'
+            )
+            .forEach(panel => {
+                if (
+                    getComputedStyle(panel).display
+                    !== 'none'
+                ) {
+                    const uploadForm =
+                        document.getElementById(
+                            'fuelArchiveUploadForm'
+                        );
+
+                    if (uploadForm) {
+                        uploadForm.style.display =
+                            'none';
+                    }
+                }
+            });
 
         document
             .querySelectorAll(
@@ -1994,6 +2695,20 @@ document.addEventListener(
                 'click',
                 searchFuelReceiptCandidates
             );
+
+        document
+            .querySelectorAll(
+                '.fuel-edit-receipt-search-button'
+            )
+            .forEach(button => {
+                button.addEventListener(
+                    'click',
+                    () =>
+                        searchFuelEditReceiptCandidates(
+                            button
+                        )
+                );
+            });
     }
 );
 
@@ -2083,16 +2798,95 @@ document.addEventListener(
                                 pollTimer
                             );
 
+                            const form =
+                                document.getElementById(
+                                    'fuelArchiveUploadForm'
+                                );
+
+                            const selectedFiles =
+                                document.getElementById(
+                                    'dailySelectedFiles'
+                                );
+
+                            const submit =
+                                document.getElementById(
+                                    'fuelArchiveSubmit'
+                                );
+
+                            const picker =
+                                document.getElementById(
+                                    'fuelArchiveFilePicker'
+                                );
+
+                            if (form) {
+                                form
+                                    .querySelectorAll(
+                                        '.fuel-mobile-upload-id'
+                                    )
+                                    .forEach(
+                                        input => input.remove()
+                                    );
+
+                                (data.uploads || [])
+                                    .forEach(upload => {
+                                        const input =
+                                            document.createElement(
+                                                'input'
+                                            );
+
+                                        input.type =
+                                            'hidden';
+
+                                        input.name =
+                                            'mobile_upload_ids[]';
+
+                                        input.value =
+                                            upload.id;
+
+                                        input.className =
+                                            'fuel-mobile-upload-id';
+
+                                        form.appendChild(
+                                            input
+                                        );
+                                    });
+                            }
+
+                            if (selectedFiles) {
+                                const names =
+                                    (data.uploads || [])
+                                        .map(
+                                            upload =>
+                                                upload.name
+                                        );
+
+                                selectedFiles.textContent =
+                                    names.length === 1
+                                        ? 'Recebido do celular: '
+                                            + names[0]
+                                        : names.length
+                                            + ' arquivos recebidos do celular.';
+                            }
+
+                            if (picker) {
+                                picker.classList.add(
+                                    'has-file'
+                                );
+                            }
+
+                            if (
+                                submit
+                                && getSelectedFuelDocumentType()
+                            ) {
+                                submit.disabled = false;
+                            }
+
                             status.innerHTML =
                                 '<strong>'
-                                + '✓ Arquivo recebido pelo celular.'
+                                + '✓ Arquivo recebido. '
+                                + 'Confira os dados acima e clique em '
+                                + '“Arquivar documento”.'
                                 + '</strong>';
-
-                            setTimeout(
-                                () =>
-                                    window.location.reload(),
-                                850
-                            );
                         }
 
                     } catch (_) {}
@@ -2126,9 +2920,15 @@ document.addEventListener(
                             headers: {
                                 'Accept':
                                     'application/json',
+                                'Content-Type':
+                                    'application/json',
                                 'X-CSRF-TOKEN':
                                     @json(csrf_token())
-                            }
+                            },
+                            body: JSON.stringify({
+                                document_type:
+                                    getSelectedFuelDocumentType()
+                            })
                         }
                     );
 
@@ -2151,6 +2951,11 @@ document.addEventListener(
 
                 urlInput.value =
                     data.url;
+
+                if (data.files_status_url) {
+                    box.dataset.filesStatusUrl =
+                        data.files_status_url;
+                }
 
                 box.hidden = false;
 

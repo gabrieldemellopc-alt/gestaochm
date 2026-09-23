@@ -8,6 +8,7 @@ class FuelDailyCheckUploadToken extends Model
 {
     protected $fillable = [
         'fuel_daily_check_id',
+        'document_type',
         'token_hash',
         'created_by',
         'expires_at',

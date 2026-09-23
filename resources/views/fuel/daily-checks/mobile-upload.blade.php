@@ -9,7 +9,7 @@
     content="width=device-width,initial-scale=1,viewport-fit=cover"
 >
 
-<title>Enviar folha de abastecimento</title>
+<title>Enviar {{ $documentTypeLabel }}</title>
 
 <style>
 * {
@@ -303,12 +303,13 @@ h1 {
     </span>
 
     <h1>
-        Enviar folha de abastecimento
+        Enviar {{ $documentTypeLabel }}
     </h1>
 
     <p class="intro">
         Tire uma foto agora ou escolha uma imagem/PDF
-        já salvo no celular.
+        já salvo no celular para anexar como
+        <strong>{{ $documentTypeLabel }}</strong>.
     </p>
 
 
@@ -410,7 +411,9 @@ h1 {
         </strong>
 
         <p>
-            A folha já está disponível no CHM.
+            O arquivo foi enviado ao computador.
+            Agora confira os dados no CHM e conclua
+            o arquivamento por lá.
             Você pode fechar esta página.
         </p>
     </div>

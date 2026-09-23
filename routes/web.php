@@ -1192,6 +1192,11 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
                 'filesStatus'
             )->name('files.status');
 
+            Route::patch(
+                '/{check}/files/{file}',
+                'updateFile'
+            )->name('files.update');
+
             Route::delete(
                 '/{check}/files/{file}',
                 'deleteFile'

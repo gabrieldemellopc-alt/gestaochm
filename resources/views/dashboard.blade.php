@@ -332,34 +332,49 @@
 
 
             {{-- Acesso rápido --}}
+            <div class="kpi-quick-actions-stack">
 
-            <a
+                <a
+                    href="{{ route('vehicle.quick-update') }}"
+                    class="kpi-quick-action kpi-quick-action--split"
+                >
+                    <div class="kpi-quick-action-content">
+                        <small>Atualizar rápido</small>
+                        <strong>KM/HR</strong>
+                    </div>
 
-                href="{{ route('vehicle.quick-update') }}"
+                    <span class="kpi-quick-action-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </span>
+                </a>
 
-                class="kpi-quick-action"
+                <a
+                    href="{{ route('fuel.daily-check.index') }}"
+                    class="kpi-quick-action kpi-quick-action--split kpi-quick-action--archive {{ $pendingFuelReceiptInvoiceCount > 0 ? 'has-alert' : '' }}"
+                >
+                    <div class="kpi-quick-action-content">
+                        <small>Documentos</small>
 
-            >
+                        <div class="kpi-quick-action-title-row">
+                            <strong>Arquivo Diário</strong>
 
-                <div class="kpi-quick-action-content">
+                            @if($pendingFuelReceiptInvoiceCount > 0)
+                                <span
+                                    class="kpi-archive-alert-badge"
+                                    title="{{ $pendingFuelReceiptInvoiceCount }} {{ $pendingFuelReceiptInvoiceCount === 1 ? 'NF pendente' : 'NFs pendentes' }}"
+                                >
+                                    {{ $pendingFuelReceiptInvoiceCount }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
 
-                    <small>Atualizar rápido</small>
+                    <span class="kpi-quick-action-icon">
+                        <i class="bi bi-folder2-open"></i>
+                    </span>
+                </a>
 
-                    <strong>KM/HR</strong>
-
-                </div>
-
-
-
-                <span class="kpi-quick-action-icon">
-
-                    <i class="bi bi-speedometer2"></i>
-
-                </span>
-
-            </a>
-
-
+            </div>
 
         </div>
 
