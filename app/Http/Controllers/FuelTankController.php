@@ -14,6 +14,7 @@ use App\Services\VehicleFuelPolicy;
 
 use App\Services\TenantFiscalSettingService;
 use App\Services\Permissions\ProfilePermissionService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -1359,9 +1360,10 @@ class FuelTankController extends Controller
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division_id'])
             ->where('location_id', $context['location_id'])
-            ->with(['tank.product', 'product', 'responsible'])
+            ->whereNull('cancelled_at')
+            ->with(['tank.product', 'product', 'responsible', 'invoiceFiles'])
             ->latest('received_at')
-            ->limit(8)
+            ->limit(10)
             ->get();
     }
 
@@ -1371,9 +1373,10 @@ class FuelTankController extends Controller
             ->where('tenant_id', $context['tenant_id'])
             ->where('division_id', $context['division_id'])
             ->where('location_id', $context['location_id'])
+            ->whereNull('cancelled_at')
             ->with(['tank.product', 'product', 'vehicle', 'responsible'])
             ->latest('filled_at')
-            ->limit(8)
+            ->limit(10)
             ->get();
     }
 

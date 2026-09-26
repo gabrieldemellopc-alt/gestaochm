@@ -762,6 +762,56 @@ class FuelService
                 $validated['unit_cost'] ?? null
             );
 
+            /*
+             * Alterações financeiras ou cronológicas em um recebimento
+             * já consumido exigem replay/conciliação do custo médio.
+             *
+             * Sem essa proteção, retirar integralmente o valor antigo
+             * e adicionar o novo ao estoque atual concentra toda a
+             * diferença financeira apenas nos litros remanescentes.
+             */
+            $stockAffectingChange =
+                abs($oldQuantity - $newQuantity) > 0.0005
+                || abs($oldTotal - $newTotal) > 0.005
+                || ! Carbon::parse($receipt->received_at)
+                    ->equalTo(Carbon::parse($validated['received_at']));
+
+            if ($stockAffectingChange) {
+                $receiptMovement = FuelMovement::query()
+                    ->where('fuel_tank_id', $tank->id)
+                    ->where('movement_type', FuelMovement::TYPE_RECEIPT)
+                    ->where('source_type', FuelReceipt::class)
+                    ->where('source_id', $receipt->id)
+                    ->orderBy('id')
+                    ->first();
+
+                if (! $receiptMovement) {
+                    throw ValidationException::withMessages([
+                        'receipt' =>
+                            'Não foi possível localizar o movimento original '
+                            .'deste recebimento. Faça a conciliação do tanque '
+                            .'antes de alterar quantidade, valor ou data.',
+                    ]);
+                }
+
+                $hasPosteriorFillings = FuelMovement::query()
+                    ->where('fuel_tank_id', $tank->id)
+                    ->where('movement_type', FuelMovement::TYPE_FILLING)
+                    ->where('id', '>', $receiptMovement->id)
+                    ->exists();
+
+                if ($hasPosteriorFillings) {
+                    throw ValidationException::withMessages([
+                        'receipt' =>
+                            'Este recebimento já possui abastecimentos '
+                            .'posteriores. Quantidade, valor ou data não podem '
+                            .'ser alterados diretamente porque isso afetaria '
+                            .'o custo médio histórico. Faça uma conciliação '
+                            .'do tanque.',
+                    ]);
+                }
+            }
+
             $balanceBefore = $this->decimal(
                 $tank->current_balance_liters,
                 3

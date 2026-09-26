@@ -859,7 +859,7 @@
                 </div>
 
                 <div class="fuel-panel-actions">
-                    <p>Exibindo os 8 registros mais recentes.</p>
+                    <p>Exibindo os últimos 10 registros válidos.</p>
 
                     <a
                         href="{{ route('fuel.fillings.history') }}"
@@ -937,7 +937,11 @@
 
 <section
             class="fuel-panel fuel-collapsible-panel"
-            x-data="{ open: false }"
+            x-data="{
+                open: false,
+                receiptEditId: @js(session('edit_receipt_id')),
+                receiptCancelId: null
+            }"
         >
             <div
                 class="fuel-panel-header fuel-collapsible-header"
@@ -956,7 +960,7 @@
                 </div>
 
                 <div class="fuel-panel-actions">
-                    <p>Exibindo os 8 registros mais recentes.</p>
+                    <p>Exibindo os últimos 10 registros válidos.</p>
 
                     <a
                         href="{{ route('fuel.receipts.history') }}"
@@ -978,12 +982,21 @@
             >
                 <div class="fuel-receipt-list">
                     @forelse($latestReceipts as $receipt)
+                        @php
+                            $invoiceFile = $receipt->invoiceFiles
+                                ->sortByDesc('id')
+                                ->first();
+                        @endphp
+
                         <article class="fuel-receipt-item">
                             <div>
                                 <strong>
                                     {{ $receipt->tank?->name ?? 'Tanque' }}
+
                                     @if($receipt->cancelled_at)
-                                        <span class="fuel-status-badge low">Cancelado</span>
+                                        <span class="fuel-status-badge low">
+                                            {{ $receipt->replaced_by_receipt_id ? 'Substituído' : 'Cancelado' }}
+                                        </span>
                                     @endif
                                 </strong>
 
@@ -1013,9 +1026,67 @@
 
                             <div>
                                 <span>{{ $receipt->supplier_name ?: 'Fornecedor não informado' }}</span>
+
                                 <small>
                                     Recebido por: {{ $receipt->responsible?->name ?: 'Não informado' }}
                                 </small>
+
+                                <div style="margin-top: .45rem;">
+                                    @if($invoiceFile)
+                                        <span class="fuel-history-status is-complete">
+                                            <i class="bi bi-paperclip"></i>
+                                            NF {{ $invoiceFile->invoice_number ?: 'anexada' }}
+                                        </span>
+
+                                    @elseif(! $receipt->cancelled_at)
+                                        <a
+                                            href="{{ route(
+                                                'fuel.daily-check.index',
+                                                [
+                                                    'date' => $receipt->received_at?->format('Y-m-d'),
+                                                    'document_type' => 'fuel_invoice',
+                                                    'receipt_id' => $receipt->id,
+                                                ]
+                                            ) }}#fuelArchiveUploadForm"
+                                            class="fuel-history-status is-pending fuel-receipt-document-link"
+                                            title="Anexar NF a este recebimento"
+                                        >
+                                            <i class="bi bi-paperclip"></i>
+                                            NF pendente
+                                        </a>
+
+                                    @else
+                                        <span class="fuel-receipt-document-missing">
+                                            Sem NF vinculada
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @if(! $receipt->cancelled_at)
+                                    <div
+                                        style="display:flex; gap:.45rem; flex-wrap:wrap; margin-top:.55rem;"
+                                    >
+                                        @if($fuelPermissions['receive'])
+                                            <button
+                                                type="button"
+                                                class="fuel-secondary-action"
+                                                x-on:click="receiptEditId = {{ $receipt->id }}"
+                                            >
+                                                Editar
+                                            </button>
+                                        @endif
+
+                                        @if($fuelPermissions['cancel'])
+                                            <button
+                                                type="button"
+                                                class="fuel-secondary-action fuel-cancel-action"
+                                                x-on:click="receiptCancelId = {{ $receipt->id }}"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         </article>
                     @empty
@@ -1025,7 +1096,242 @@
                     @endforelse
                 </div>
             </div>
-        </section>
+
+        {{-- AÇÕES DAS ÚLTIMAS ENTRADAS --}}
+        @foreach($latestReceipts as $receipt)
+
+            @if(! $receipt->cancelled_at && $fuelPermissions['receive'])
+                <div
+                    class="fuel-modal-overlay"
+                    :class="{ 'is-open': receiptEditId === {{ $receipt->id }} }"
+                >
+                    <div class="fuel-modal-card fuel-receipt-edit-modal">
+                        <div class="fuel-modal-header">
+                            <div>
+                                <span class="fuel-kicker">Correção auditável</span>
+
+                                <h2>
+                                    Editar recebimento #{{ $receipt->id }}
+                                </h2>
+
+                                <p>
+                                    O lançamento atual será mantido no histórico
+                                    como substituído e um novo será criado.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="fuel-modal-close"
+                                x-on:click="receiptEditId = null"
+                            >
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+
+                        <form
+                            method="POST"
+                            action="{{ route('fuel.receipts.replace', $receipt) }}"
+                            class="fuel-form"
+                        >
+                            @csrf
+
+                            <div class="fuel-form-grid">
+                                <div class="form-group">
+                                    <label>Data/hora do recebimento</label>
+
+                                    <input
+                                        type="datetime-local"
+                                        name="received_at"
+                                        class="form-input"
+                                        value="{{ old(
+                                            'received_at',
+                                            $receipt->received_at?->format('Y-m-d\TH:i')
+                                        ) }}"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Quantidade (L)</label>
+
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        min="0.001"
+                                        name="quantity_liters"
+                                        class="form-input"
+                                        value="{{ old(
+                                            'quantity_liters',
+                                            $receipt->quantity_liters
+                                        ) }}"
+                                        required
+                                    >
+                                </div>
+
+                                @if($fuelPermissions['view_costs'])
+                                    <div class="form-group">
+                                        <label>Valor total</label>
+
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            name="total_cost"
+                                            class="form-input"
+                                            value="{{ old(
+                                                'total_cost',
+                                                $receipt->total_cost
+                                            ) }}"
+                                        >
+                                    </div>
+                                @endif
+
+                                <div class="form-group">
+                                    <label>Fornecedor</label>
+
+                                    <input
+                                        type="text"
+                                        name="supplier_name"
+                                        class="form-input"
+                                        value="{{ old(
+                                            'supplier_name',
+                                            $receipt->supplier_name
+                                        ) }}"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="supplier_id"
+                                        value="{{ $receipt->supplier_id }}"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="supplier_document"
+                                        value="{{ $receipt->supplier_document }}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Número da NF</label>
+
+                                    <input
+                                        type="text"
+                                        name="invoice_number"
+                                        class="form-input"
+                                        value="{{ old(
+                                            'invoice_number',
+                                            $receipt->invoice_number
+                                        ) }}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Data da NF</label>
+
+                                    <input
+                                        type="date"
+                                        name="invoice_date"
+                                        class="form-input"
+                                        value="{{ old(
+                                            'invoice_date',
+                                            $receipt->invoice_date?->format('Y-m-d')
+                                        ) }}"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Observações</label>
+
+                                <textarea
+                                    name="notes"
+                                    class="form-input"
+                                >{{ old('notes', $receipt->notes) }}</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Motivo da correção</label>
+
+                                <textarea
+                                    name="reason"
+                                    class="form-input"
+                                    required
+                                    minlength="5"
+                                    placeholder="Ex.: quantidade corrigida conforme conferência da ficha manual."
+                                >{{ old('reason') }}</textarea>
+                            </div>
+
+                            <div class="fuel-form-actions">
+                                <button
+                                    type="button"
+                                    class="fuel-secondary-action"
+                                    x-on:click="receiptEditId = null"
+                                >
+                                    Voltar
+                                </button>
+
+                                <button class="fuel-primary-action">
+                                    Salvar correção
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
+
+            @if(! $receipt->cancelled_at && $fuelPermissions['cancel'])
+                <div
+                    class="fuel-modal-overlay"
+                    :class="{ 'is-open': receiptCancelId === {{ $receipt->id }} }"
+                >
+                    <div class="fuel-modal-card">
+                        <h2>
+                            Cancelar recebimento #{{ $receipt->id }}
+                        </h2>
+
+                        <p>
+                            Informe o motivo.
+                            O lançamento será mantido no histórico para auditoria.
+                        </p>
+
+                        <form
+                            method="POST"
+                            action="{{ route('fuel.receipts.cancel', $receipt) }}"
+                            class="fuel-form"
+                        >
+                            @csrf
+
+                            <textarea
+                                name="reason"
+                                required
+                                minlength="5"
+                                placeholder="Motivo do cancelamento"
+                            >{{ old('reason') }}</textarea>
+
+                            <div class="fuel-form-actions">
+                                <button
+                                    type="button"
+                                    class="fuel-secondary-action"
+                                    x-on:click="receiptCancelId = null"
+                                >
+                                    Voltar
+                                </button>
+
+                                <button class="fuel-primary-action">
+                                    Cancelar lançamento
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
+        @endforeach
+
+</section>
 
         <section
             class="fuel-panel fuel-collapsible-panel"
@@ -1452,6 +1758,8 @@
                                         value="{{ $vehicle->id }}"
                                         data-current-km="{{ $vehicle->current_km ?? 0 }}"
                                         data-current-hours="{{ $vehicle->current_hours ?? 0 }}"
+                                        data-km-control-enabled="{{ $vehicle->km_control_enabled ? '1' : '0' }}"
+                                        data-hours-control-enabled="{{ $vehicle->hours_control_enabled ? '1' : '0' }}"
                                         @selected((string) old('vehicle_id', $selectedFuelVehicleId) === (string) $vehicle->id)
                                     >
                                         {{ $vehicle->name }} @if($vehicle->plate) · {{ $vehicle->plate }} @endif
@@ -1514,6 +1822,15 @@
                                 step="0.01"
                                 data-vehicle-hours-input
                             >
+
+                            <small
+                                class="fuel-meter-disabled-help"
+                                data-meter-disabled-help="hours"
+                                hidden
+                            >
+                                <i class="bi bi-info-circle"></i>
+                                Controle de horímetro desabilitado para este veículo.
+                            </small>
                         </label>
 
                         <label class="fuel-span-4">
@@ -1525,6 +1842,15 @@
                                 step="0.01"
                                 data-vehicle-km-input
                             >
+
+                            <small
+                                class="fuel-meter-disabled-help"
+                                data-meter-disabled-help="km"
+                                hidden
+                            >
+                                <i class="bi bi-info-circle"></i>
+                                Controle de hodômetro desabilitado para este veículo.
+                            </small>
                         </label>
 
                         <label class="fuel-span-6 is-hidden" data-source-field="external">
@@ -9021,36 +9347,105 @@ function openFuelModal(id) {
         }
     });
     function syncVehicleCounters(form) {
-        const vehicleSelect = form.querySelector('select[name="vehicle_id"]');
-        const kmInput = form.querySelector('[data-vehicle-km-input]');
-        const hoursInput = form.querySelector('[data-vehicle-hours-input]');
+        const vehicleSelect =
+            form.querySelector(
+                'select[name="vehicle_id"]'
+            );
 
-        if (!vehicleSelect || !kmInput || !hoursInput) {
+        const kmInput =
+            form.querySelector(
+                '[data-vehicle-km-input]'
+            );
+
+        const hoursInput =
+            form.querySelector(
+                '[data-vehicle-hours-input]'
+            );
+
+        const kmHelp =
+            form.querySelector(
+                '[data-meter-disabled-help="km"]'
+            );
+
+        const hoursHelp =
+            form.querySelector(
+                '[data-meter-disabled-help="hours"]'
+            );
+
+        if (
+            !vehicleSelect
+            || !kmInput
+            || !hoursInput
+        ) {
             return;
         }
 
-        const selected = vehicleSelect.options[vehicleSelect.selectedIndex];
+        const selected =
+            vehicleSelect.options[
+                vehicleSelect.selectedIndex
+            ];
 
         if (!selected || !selected.value) {
             kmInput.value = '';
             hoursInput.value = '';
+
             kmInput.min = 0;
             hoursInput.min = 0;
+
+            kmInput.disabled = false;
+            hoursInput.disabled = false;
+
+            if (kmHelp) {
+                kmHelp.hidden = true;
+            }
+
+            if (hoursHelp) {
+                hoursHelp.hidden = true;
+            }
+
             return;
         }
 
-        const currentKm = Number(selected.dataset.currentKm || 0);
-        const currentHours = Number(selected.dataset.currentHours || 0);
+        const currentKm =
+            Number(
+                selected.dataset.currentKm || 0
+            );
 
+        const currentHours =
+            Number(
+                selected.dataset.currentHours || 0
+            );
+
+        const kmEnabled =
+            selected.dataset.kmControlEnabled
+                === '1';
+
+        const hoursEnabled =
+            selected.dataset.hoursControlEnabled
+                === '1';
+
+        /*
+         * Mantemos o valor atual visível mesmo quando
+         * o controle está desligado. O disabled impede
+         * que uma nova leitura seja submetida.
+         */
         kmInput.value = currentKm;
-        // The current counter is a convenience default only. A filling may be
-        // backdated, so HTML must not reject a value before the service can
-        // classify it against the chronological timeline.
         kmInput.min = 0;
+        kmInput.disabled = !kmEnabled;
 
         hoursInput.value = currentHours;
         hoursInput.min = 0;
+        hoursInput.disabled = !hoursEnabled;
+
+        if (kmHelp) {
+            kmHelp.hidden = kmEnabled;
+        }
+
+        if (hoursHelp) {
+            hoursHelp.hidden = hoursEnabled;
+        }
     }
+
 
     function validateFuelFillingCounters(form) {
         const vehicleSelect = form.querySelector('select[name="vehicle_id"]');
@@ -9071,8 +9466,17 @@ function openFuelModal(id) {
         const currentKm = Number(selected.dataset.currentKm || 0);
         const currentHours = Number(selected.dataset.currentHours || 0);
 
-        const informedKm = kmInput.value !== '' ? Number(kmInput.value) : null;
-        const informedHours = hoursInput.value !== '' ? Number(hoursInput.value) : null;
+        const informedKm =
+            !kmInput.disabled
+            && kmInput.value !== ''
+                ? Number(kmInput.value)
+                : null;
+
+        const informedHours =
+            !hoursInput.disabled
+            && hoursInput.value !== ''
+                ? Number(hoursInput.value)
+                : null;
 
         const newKm = Number(kmInput.value || 0);
 

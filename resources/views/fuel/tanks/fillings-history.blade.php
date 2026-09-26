@@ -375,7 +375,7 @@
     </div>
 @endif
 
-<div class="fuel-table-wrap"><table class="fuel-table fuel-history-table"><thead><tr><th>Data</th><th>Veículo</th><th>Origem / produto</th><th>Quantidade</th><th>KM</th><th>Responsável</th><th>Status</th><th class="fuel-history-actions-head">Ações</th></tr></thead><tbody>
+<div class="fuel-table-wrap"><table class="fuel-table fuel-history-table"><thead><tr><th>Data</th><th>Veículo</th><th>Origem / produto</th><th>Quantidade</th><th>KM / HR</th><th>Responsável</th><th>Status</th><th class="fuel-history-actions-head">Ações</th></tr></thead><tbody>
 @forelse ($fillings as $filling)
 <tr class="{{ $filling->cancelled_at ? 'is-cancelled' : '' }}">
 <td class="fuel-history-date">
@@ -398,10 +398,79 @@
     @endif
 </td>
 <td class="fuel-history-reading">
-    <strong>
-        {{ $filling->vehicle_km !== null ? rtrim(rtrim(number_format((float) $filling->vehicle_km, 2, ',', '.'), '0'), ',') : '—' }}
-        @if ($filling->vehicle_km !== null) km @endif
-    </strong>
+    @php
+        $vehicleUsesKm =
+            (bool) ($filling->vehicle?->km_control_enabled ?? false);
+
+        $vehicleUsesHours =
+            (bool) ($filling->vehicle?->hours_control_enabled ?? false);
+    @endphp
+
+    @if($vehicleUsesKm || $vehicleUsesHours)
+
+        <div class="fuel-history-meter-list">
+
+            @if($vehicleUsesKm)
+                <div class="fuel-history-meter-reading">
+                    <strong>
+                        {{ $filling->vehicle_km !== null
+                            ? rtrim(
+                                rtrim(
+                                    number_format(
+                                        (float) $filling->vehicle_km,
+                                        2,
+                                        ',',
+                                        '.'
+                                    ),
+                                    '0'
+                                ),
+                                ','
+                            )
+                            : '—' }}
+                        @if($filling->vehicle_km !== null)
+                            km
+                        @endif
+                    </strong>
+
+                    <span class="fuel-history-meter-tag">
+                        KM
+                    </span>
+                </div>
+            @endif
+
+            @if($vehicleUsesHours)
+                <div class="fuel-history-meter-reading">
+                    <strong>
+                        {{ $filling->vehicle_hours !== null
+                            ? rtrim(
+                                rtrim(
+                                    number_format(
+                                        (float) $filling->vehicle_hours,
+                                        2,
+                                        ',',
+                                        '.'
+                                    ),
+                                    '0'
+                                ),
+                                ','
+                            )
+                            : '—' }}
+                        @if($filling->vehicle_hours !== null)
+                            h
+                        @endif
+                    </strong>
+
+                    <span class="fuel-history-meter-tag is-hours">
+                        HR
+                    </span>
+                </div>
+            @endif
+
+        </div>
+
+    @else
+        <strong>—</strong>
+    @endif
 </td>
 <td>{{ $filling->responsible?->name ?: '—' }}</td>
 <td>

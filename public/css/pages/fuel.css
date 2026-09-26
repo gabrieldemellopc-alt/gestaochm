@@ -13088,3 +13088,83 @@ i {
 .fuel-daily-qr-box[hidden] {
     display: none !important;
 }
+
+/* =========================================================
+   Abastecimentos - identificação KM / HR
+   ========================================================= */
+
+.fuel-history-meter-list {
+    display: grid;
+    gap: 5px;
+}
+
+.fuel-history-meter-reading {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: max-content;
+    max-width: 100%;
+}
+
+.fuel-history-meter-reading strong {
+    white-space: nowrap;
+}
+
+.fuel-history-meter-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 28px;
+    padding: 2px 5px;
+
+    border: 1px solid rgba(125, 172, 238, .25);
+    border-radius: 5px;
+
+    background: rgba(125, 172, 238, .09);
+    color: #b9d5fa;
+
+    font-size: .59rem;
+    line-height: 1.15;
+    font-weight: 850;
+    letter-spacing: .04em;
+}
+
+.fuel-history-meter-tag.is-hours {
+    border-color: rgba(179, 156, 232, .27);
+    background: rgba(179, 156, 232, .09);
+    color: #d0c0f4;
+}
+
+
+/* Medidor desabilitado no cadastro do veículo */
+
+.fuel-meter-disabled-help {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+
+    margin-top: 6px;
+
+    color: var(--chm-theme-muted, #aebbd0);
+
+    font-size: .68rem;
+    line-height: 1.35;
+    font-weight: 600;
+}
+
+.fuel-meter-disabled-help[hidden] {
+    display: none !important;
+}
+
+.fuel-meter-disabled-help i {
+    margin-top: 1px;
+    font-size: .7rem;
+}
+
+.fuel-filling-form input[data-vehicle-km-input]:disabled,
+.fuel-filling-form input[data-vehicle-hours-input]:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    background: rgba(15, 23, 42, .18);
+}
