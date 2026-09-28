@@ -921,6 +921,18 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
         ->middlewareFor(['edit', 'update'], 'permission:maintenance.procedures.update');
 
 
+    Route::put(
+        'procedures/{procedure}/vehicles',
+        [ProcedureController::class, 'syncVehicles']
+    )
+        ->name('procedures.vehicles.sync')
+        ->middleware([
+            'permission:navigation.workshop',
+            'permission:maintenance.procedures.view',
+            'permission:maintenance.procedures.update',
+        ]);
+
+
 
     /*
 

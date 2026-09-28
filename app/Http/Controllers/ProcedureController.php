@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Procedure;
+use App\Models\Vehicle;
 use App\Models\StockCategory;
 use App\Models\StockItem;
 use App\Services\ActiveContextService;
@@ -21,18 +22,94 @@ class ProcedureController extends Controller
             return $this->missingActiveLocationRedirect();
         }
 
-        $procedures = Procedure::with('fields')
+        $procedures = Procedure::with([
+                'fields',
+                'vehicles:id,name,plate,type,fleet_relation',
+            ])
             ->where('tenant_id', auth()->user()->tenant_id)
             ->where('location_id', $activeLocation->id)
             ->latest()
             ->get();
 
+        $vehicles = Vehicle::query()
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('location_id', $activeLocation->id)
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'plate',
+                'type',
+                'fleet_relation',
+            ]);
+
+        $vehicleTypeOptions = Vehicle::typeOptions();
+
         $permissionService = app(ProfilePermissionService::class);
         $canCreateProcedures = $permissionService->allows(auth()->user(), 'maintenance.procedures.create');
         $canUpdateProcedures = $permissionService->allows(auth()->user(), 'maintenance.procedures.update');
 
-        return view('procedures.index', compact('procedures', 'canCreateProcedures', 'canUpdateProcedures'));
+        return view(
+            'procedures.index',
+            compact(
+                'procedures',
+                'vehicles',
+                'vehicleTypeOptions',
+                'canCreateProcedures',
+                'canUpdateProcedures'
+            )
+        );
     }
+
+    public function syncVehicles(
+        Request $request,
+        Procedure $procedure
+    ) {
+        if ($redirect = $this->ensureProcedureInActiveContext($procedure)) {
+            return $redirect;
+        }
+
+        $tenantId = (int) auth()->user()->tenant_id;
+        $locationId = (int) $procedure->location_id;
+
+        $validated = $request->validate([
+            'vehicle_ids' => ['nullable', 'array'],
+            'vehicle_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('vehicles', 'id')
+                    ->where(
+                        fn ($query) =>
+                            $query
+                                ->where('tenant_id', $tenantId)
+                                ->where('location_id', $locationId)
+                    ),
+            ],
+        ], [
+            'vehicle_ids.*.exists' =>
+                'Um dos veículos selecionados não pertence à unidade ativa.',
+        ]);
+
+        $vehicleIds = collect(
+            $validated['vehicle_ids'] ?? []
+        )
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $procedure->vehicles()->sync($vehicleIds);
+
+        return redirect()
+            ->route('procedures.index')
+            ->with(
+                'success',
+                count($vehicleIds).' veículo(s) vinculado(s) ao procedimento '
+                    .$procedure->name.'.'
+            );
+    }
+
 
     public function create()
     {

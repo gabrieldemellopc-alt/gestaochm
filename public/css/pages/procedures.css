@@ -2290,3 +2290,408 @@ margin-bottom: 10px;
 .sub-procedure{
     font-size: smaller;
 }
+/* ==========================================================
+   Vincular procedimento a veículos
+   ========================================================== */
+
+.procedure-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.procedure-link-vehicles-btn {
+    min-height: 38px;
+    padding: 0 12px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    border: 1px solid rgba(125, 211, 252, .28);
+    border-radius: 9px;
+
+    background: rgba(125, 211, 252, .05);
+    color: #d9f2ff;
+
+    font: inherit;
+    font-size: .76rem;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.procedure-link-vehicles-btn:hover {
+    background: rgba(125, 211, 252, .10);
+    border-color: rgba(125, 211, 252, .45);
+}
+
+.procedure-vehicles-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+}
+
+.procedure-vehicles-modal.is-open {
+    display: flex;
+}
+
+.procedure-vehicles-modal-backdrop {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(3, 8, 20, .74);
+    backdrop-filter: blur(3px);
+}
+
+.procedure-vehicles-modal-card {
+    position: relative;
+    z-index: 1;
+
+    width: min(1050px, 100%);
+    max-height: calc(100vh - 48px);
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 18px;
+
+    background: #344563;
+}
+
+.procedure-vehicles-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    padding: 20px 22px;
+
+    border-bottom: 1px solid rgba(148, 163, 184, .16);
+}
+
+.procedure-vehicles-modal-header > div > span {
+    color: #ff7279;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.procedure-vehicles-modal-header h2 {
+    margin: 5px 0 3px;
+}
+
+.procedure-vehicles-modal-header p {
+    margin: 0;
+    color: rgba(226, 232, 240, .66);
+}
+
+.procedure-vehicles-modal-close {
+    width: 42px;
+    height: 42px;
+
+    border: 1px solid rgba(148, 163, 184, .24);
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, .03);
+    color: #fff;
+
+    cursor: pointer;
+}
+
+.procedure-vehicles-form {
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.procedure-vehicles-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 16px;
+
+    padding: 16px 22px 12px;
+}
+
+.procedure-vehicles-filter-block,
+.procedure-vehicles-search,
+.procedure-vehicles-types {
+    display: grid;
+    gap: 7px;
+}
+
+.procedure-vehicles-filter-block > span,
+.procedure-vehicles-search > span,
+.procedure-vehicles-types > span {
+    color: rgba(226, 232, 240, .70);
+    font-size: .70rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.procedure-vehicles-filter-tabs,
+.procedure-vehicles-type-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.procedure-vehicles-filter-tabs button,
+.procedure-vehicles-type-buttons button,
+.procedure-vehicles-selection-bar button {
+    min-height: 34px;
+
+    padding: 0 10px;
+
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 9px;
+
+    background: rgba(255, 255, 255, .025);
+    color: rgba(255, 255, 255, .78);
+
+    font: inherit;
+    font-size: .70rem;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.procedure-vehicles-filter-tabs button.is-active,
+.procedure-vehicles-type-buttons button.is-active {
+    border-color: rgba(255, 114, 121, .58);
+    background: rgba(255, 114, 121, .10);
+    color: #fff;
+}
+
+.procedure-vehicles-type-buttons button small {
+    margin-left: 4px;
+    opacity: .64;
+}
+
+.procedure-vehicles-search input {
+    width: 100%;
+    min-height: 42px;
+
+    padding: 0 12px;
+
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, .04);
+    color: #fff;
+}
+
+.procedure-vehicles-types {
+    padding: 0 22px 14px;
+}
+
+.procedure-vehicles-selection-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 10px 22px;
+
+    border-top: 1px solid rgba(148, 163, 184, .11);
+    border-bottom: 1px solid rgba(148, 163, 184, .11);
+
+    color: rgba(226, 232, 240, .68);
+    font-size: .72rem;
+}
+
+.procedure-vehicles-selection-bar > div:last-child {
+    display: flex;
+    gap: 7px;
+}
+
+.procedure-vehicles-list {
+    min-height: 220px;
+    max-height: 430px;
+
+    overflow-y: auto;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+
+    padding: 12px 22px;
+}
+
+.procedure-vehicle-option {
+    min-width: 0;
+
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+
+    padding: 10px 11px;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, .025);
+
+    cursor: pointer;
+}
+
+.procedure-vehicle-option[hidden] {
+    display: none;
+}
+
+.procedure-vehicle-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.procedure-vehicle-option-check {
+    width: 20px;
+    height: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(148, 163, 184, .36);
+    border-radius: 5px;
+
+    color: transparent;
+}
+
+.procedure-vehicle-option:has(input:checked) {
+    border-color: rgba(74, 222, 128, .35);
+    background: rgba(74, 222, 128, .045);
+}
+
+.procedure-vehicle-option:has(input:checked)
+.procedure-vehicle-option-check {
+    border-color: rgba(74, 222, 128, .58);
+    background: rgba(74, 222, 128, .15);
+    color: #7ee2a8;
+}
+
+.procedure-vehicle-option-main {
+    min-width: 0;
+}
+
+.procedure-vehicle-option-main strong,
+.procedure-vehicle-option-main small {
+    display: block;
+}
+
+.procedure-vehicle-option-main strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: .78rem;
+}
+
+.procedure-vehicle-option-main small {
+    margin-top: 2px;
+
+    color: rgba(226, 232, 240, .55);
+    font-size: .67rem;
+}
+
+.procedure-vehicle-option-tags {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.procedure-vehicle-option-tags em {
+    padding: 3px 6px;
+
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 999px;
+
+    color: rgba(226, 232, 240, .65);
+
+    font-size: .59rem;
+    font-style: normal;
+}
+
+.procedure-vehicles-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+
+    padding: 14px 22px 18px;
+
+    border-top: 1px solid rgba(148, 163, 184, .16);
+}
+
+.procedure-vehicles-modal-footer > span {
+    color: rgba(226, 232, 240, .68);
+    font-size: .72rem;
+}
+
+.procedure-vehicles-modal-footer > div {
+    display: flex;
+    gap: 8px;
+}
+
+body.procedure-vehicles-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 760px) {
+    .procedure-vehicles-modal {
+        padding: 10px;
+    }
+
+    .procedure-vehicles-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .procedure-vehicles-list {
+        grid-template-columns: 1fr;
+    }
+
+    .procedure-vehicles-selection-bar,
+    .procedure-vehicles-modal-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .procedure-vehicles-selection-bar > div:last-child,
+    .procedure-vehicles-modal-footer > div {
+        width: 100%;
+    }
+
+    .procedure-vehicles-modal-footer button {
+        flex: 1;
+    }
+}
+
+/* Modal de vínculo deve ficar acima da sidebar */
+.procedure-vehicles-modal {
+    z-index: 9999 !important;
+}
+
+.procedure-vehicles-modal-backdrop {
+    z-index: 0;
+}
+
+.procedure-vehicles-modal-card {
+    z-index: 1;
+}
+
