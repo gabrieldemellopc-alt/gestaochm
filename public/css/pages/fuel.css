@@ -493,7 +493,11 @@
 
 .fuel-receipt-item {
     display: grid;
-    grid-template-columns: minmax(220px, 1.4fr) minmax(150px, 0.8fr) minmax(180px, 1fr);
+    grid-template-columns:
+        minmax(220px, 1.35fr)
+        minmax(150px, .8fr)
+        minmax(110px, .55fr)
+        minmax(180px, 1fr);
     gap: 14px;
     align-items: center;
     padding: 13px 14px;
@@ -13167,4 +13171,832 @@ i {
     opacity: .55;
     cursor: not-allowed;
     background: rgba(15, 23, 42, .18);
+}
+
+/* ==========================================================
+   Recebimento de combustível - composição compacta
+   ========================================================== */
+
+.fuel-modal-card.fuel-receipt-create-modal {
+    width: min(820px, calc(100vw - 48px));
+}
+
+.receipt-entry-summary {
+    grid-column: 1 / -1 !important;
+
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        1px
+        minmax(0, 1fr);
+
+    gap: 22px;
+    align-items: stretch;
+
+    padding-bottom: 2px;
+}
+
+.receipt-entry-summary__column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    min-width: 0;
+}
+
+.receipt-entry-summary__column > label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+
+    min-width: 0;
+    margin: 0;
+}
+
+.receipt-entry-summary__column input {
+    width: 100%;
+}
+
+.receipt-entry-summary__divider {
+    width: 1px;
+    align-self: stretch;
+
+    background: rgba(203, 213, 225, .16);
+}
+
+.receipt-entry-summary .fuel-form-help {
+    margin-top: 7px;
+}
+
+@media (max-width: 760px) {
+    .fuel-modal-card.fuel-receipt-create-modal {
+        width: calc(100vw - 24px);
+    }
+
+    .receipt-entry-summary {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .receipt-entry-summary__divider {
+        width: 100%;
+        height: 1px;
+    }
+}
+
+/* Recebimentos - custo unitário */
+.fuel-receipt-unit-cost {
+    display: grid;
+    gap: 3px;
+    align-content: center;
+}
+
+.fuel-receipt-unit-cost small,
+.fuel-receipt-unit-cost-cell span {
+    color: #aeb9dc;
+    font-size: .72rem;
+}
+
+.fuel-receipt-unit-cost strong,
+.fuel-receipt-unit-cost-cell strong {
+    color: #fff;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .fuel-receipt-item {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ==========================================================
+   Arquivo diário - indicadores documentais
+   ========================================================== */
+
+.fuel-archive-day-indicators {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.fuel-archive-day-indicators > i,
+.fuel-archive-day-indicator-count > i,
+.fuel-archive-calendar-legend i {
+    font-size: .76rem;
+}
+
+.fuel-archive-day-indicators .is-invoice,
+.fuel-archive-calendar-legend .is-invoice {
+    color: #72b7f2;
+}
+
+.fuel-archive-day-indicators .is-sheet,
+.fuel-archive-calendar-legend .is-sheet {
+    color: #4fd39a;
+}
+
+.fuel-archive-day-indicators .is-other,
+.fuel-archive-calendar-legend .is-other {
+    color: #b9c7dc;
+}
+
+.fuel-archive-day-indicators .is-sheet-pending,
+.fuel-archive-calendar-legend .is-sheet-pending {
+    color: #f1bf4f;
+}
+
+.fuel-archive-day-indicator-count {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+
+    color: #ee7379;
+}
+
+.fuel-archive-calendar-legend .is-invoice-pending {
+    color: #ee7379;
+}
+
+.fuel-archive-day-indicator-count b {
+    min-width: 13px;
+    height: 13px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 3px;
+
+    border-radius: 999px;
+
+    background: rgba(238, 115, 121, .17);
+    color: #ffafb3;
+
+    font-size: .54rem;
+    line-height: 1;
+}
+
+.fuel-archive-calendar-legend {
+    flex-wrap: wrap;
+    gap: 10px 18px;
+}
+
+
+/* ==========================================================
+   Arquivo diário - painel de pendências documentais
+   ========================================================== */
+
+.fuel-document-pending-panel {
+    display: grid;
+    gap: 16px;
+}
+
+.fuel-document-pending-head {
+    align-items: center;
+}
+
+.fuel-document-pending-head p {
+    margin: 5px 0 0;
+
+    color: rgba(226, 232, 240, .58);
+    font-size: .76rem;
+}
+
+.fuel-document-pending-total {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 34px;
+    padding: 0 11px;
+
+    border: 1px solid rgba(74, 222, 128, .22);
+    border-radius: 999px;
+
+    color: #9ee4bc;
+    background: rgba(74, 222, 128, .06);
+
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.fuel-document-pending-total.has-pending {
+    border-color: rgba(238, 115, 121, .28);
+    background: rgba(238, 115, 121, .07);
+    color: #ffafb3;
+}
+
+.fuel-document-pending-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.fuel-document-pending-group {
+    min-width: 0;
+
+    border: 1px solid rgba(148, 163, 184, .14);
+    border-radius: 13px;
+
+    overflow: hidden;
+
+    background: rgba(15, 23, 42, .08);
+}
+
+.fuel-document-pending-group-head {
+    min-height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 11px 13px;
+
+    border-bottom: 1px solid rgba(148, 163, 184, .11);
+}
+
+.fuel-document-pending-group-head > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fuel-document-pending-group-head strong {
+    font-size: .8rem;
+}
+
+.fuel-document-pending-group-head > span {
+    min-width: 25px;
+    height: 25px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    background: rgba(148, 163, 184, .10);
+
+    font-size: .67rem;
+    font-weight: 800;
+}
+
+.fuel-document-pending-list {
+    display: grid;
+}
+
+.fuel-document-pending-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+
+    padding: 11px 13px;
+
+    border-bottom: 1px solid rgba(148, 163, 184, .08);
+}
+
+.fuel-document-pending-item:last-child {
+    border-bottom: 0;
+}
+
+.fuel-document-pending-item > div {
+    min-width: 0;
+}
+
+.fuel-document-pending-item strong,
+.fuel-document-pending-item span,
+.fuel-document-pending-item small {
+    display: block;
+}
+
+.fuel-document-pending-item strong {
+    font-size: .76rem;
+}
+
+.fuel-document-pending-item span {
+    margin-top: 3px;
+
+    color: rgba(226, 232, 240, .68);
+    font-size: .70rem;
+}
+
+.fuel-document-pending-item small {
+    margin-top: 2px;
+
+    color: rgba(226, 232, 240, .48);
+    font-size: .64rem;
+}
+
+.fuel-document-pending-item .fuel-secondary-action {
+    min-height: 33px;
+
+    padding-inline: 10px;
+
+    white-space: nowrap;
+    font-size: .67rem;
+}
+
+.fuel-document-pending-empty {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 14px;
+
+    color: rgba(226, 232, 240, .62);
+
+    font-size: .74rem;
+}
+
+.fuel-document-pending-empty > i {
+    color: #4fd39a;
+}
+
+.fuel-document-pending-empty.is-compact {
+    min-height: 72px;
+}
+
+.fuel-document-pending-more {
+    display: block;
+
+    padding: 8px 13px 11px;
+
+    color: rgba(226, 232, 240, .48);
+    font-size: .63rem;
+}
+
+@media (max-width: 900px) {
+    .fuel-document-pending-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .fuel-document-pending-item {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-document-pending-item .fuel-secondary-action {
+        width: 100%;
+    }
+}
+
+/* ==========================================================
+   Pendências documentais - barra de aviso + cards com scroll
+   ========================================================== */
+
+.fuel-document-pending-banner-wrap {
+    margin: 0 0 22px;
+}
+
+.fuel-document-pending-banner {
+    width: 100%;
+    border: 1px solid rgba(255, 173, 173, 0.22);
+    background: rgba(255, 255, 255, 0.03);
+    color: inherit;
+    border-radius: 18px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: .18s ease;
+}
+
+.fuel-document-pending-banner:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 173, 173, 0.35);
+}
+
+.fuel-document-pending-banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fuel-document-pending-banner-kicker {
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: .78rem;
+    font-weight: 700;
+    color: #ffb0b0;
+}
+
+.fuel-document-pending-banner-content strong {
+    font-size: 1.08rem;
+    color: #ffffff;
+}
+
+.fuel-document-pending-banner-content small {
+    font-size: .95rem;
+    color: rgba(255,255,255,.72);
+}
+
+.fuel-document-pending-banner-action {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: #ffd0d0;
+}
+
+.fuel-document-pending-panel {
+    scroll-margin-top: 20px;
+}
+
+.fuel-document-pending-grid {
+    align-items: start;
+}
+
+.fuel-document-pending-group {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.fuel-document-pending-list {
+    max-height: 430px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+}
+
+.fuel-document-pending-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.fuel-document-pending-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.18);
+    border-radius: 999px;
+}
+
+.fuel-document-pending-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+@media (max-width: 900px) {
+    .fuel-document-pending-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fuel-document-pending-banner-action {
+        white-space: normal;
+    }
+
+    .fuel-document-pending-list {
+        max-height: 360px;
+    }
+}
+
+/* Ajuste fino: aproximadamente 4 pendências visíveis por card */
+.fuel-document-pending-list {
+    max-height: 365px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+
+
+/* ==========================================================
+   Ajuste fino da barra de pendências documentais
+   ========================================================== */
+
+.fuel-document-pending-banner-wrap {
+    margin: 0 0 10px;
+}
+
+.fuel-document-pending-banner {
+    border: 1px solid rgba(245, 196, 67, 0.32);
+    background: rgba(245, 196, 67, 0.06);
+    border-radius: 16px;
+    padding: 10px 18px;
+    min-height: 68px;
+    gap: 14px;
+}
+
+.fuel-document-pending-banner:hover {
+    background: rgba(245, 196, 67, 0.10);
+    border-color: rgba(245, 196, 67, 0.46);
+}
+
+.fuel-document-pending-banner-content {
+    gap: 3px;
+}
+
+.fuel-document-pending-banner-kicker {
+    color: #f5c443;
+}
+
+.fuel-document-pending-banner-content strong {
+    color: #ffd873;
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.fuel-document-pending-banner-content small {
+    font-size: .92rem;
+    line-height: 1.2;
+    opacity: .95;
+}
+
+.fuel-document-pending-banner-action {
+    color: #ffd873;
+    font-size: 1rem;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.fuel-document-pending-panel {
+    margin-top: 18px;
+}
+
+.fuel-document-pending-grid {
+    gap: 14px;
+}
+
+
+/* ==========================================================
+   Atalho compacto para pendências documentais
+   ========================================================== */
+
+.fuel-document-pending-jump-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin: 12px 0 14px;
+}
+
+.fuel-document-pending-jump {
+    width: min(100%, 420px);
+    border: 1px solid rgba(245, 196, 67, 0.32);
+    background: rgba(245, 196, 67, 0.06);
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: .18s ease;
+}
+
+.fuel-document-pending-jump:hover {
+    background: rgba(245, 196, 67, 0.10);
+    border-color: rgba(245, 196, 67, 0.46);
+    transform: translateY(-1px);
+}
+
+.fuel-document-pending-jump-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.fuel-document-pending-jump-kicker {
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #f5c443;
+}
+
+.fuel-document-pending-jump-content strong {
+    font-size: 1rem;
+    line-height: 1.2;
+    color: #ffd873;
+}
+
+.fuel-document-pending-jump-content small {
+    font-size: .90rem;
+    line-height: 1.2;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.fuel-document-pending-jump-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-weight: 700;
+    color: #ffd873;
+}
+
+@media (max-width: 900px) {
+    .fuel-document-pending-jump-wrap {
+        justify-content: stretch;
+    }
+
+    .fuel-document-pending-jump {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fuel-document-pending-jump-action {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+
+/* ==========================================================
+   Arquivo diário - atalho compacto de pendências no cabeçalho
+   ========================================================== */
+
+.fuel-archive-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.fuel-document-pending-header-action {
+    flex-basis: 100%;
+    margin-left: auto;
+
+    width: fit-content;
+    min-width: 230px;
+    min-height: 48px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    padding: 0 15px;
+
+    border: 1px solid rgba(245, 196, 67, .34);
+    border-radius: 12px;
+
+    background: rgba(245, 196, 67, .07);
+    color: #ffd45f;
+
+    font-size: .82rem;
+    font-weight: 800;
+    text-decoration: none;
+
+    transition: .18s ease;
+}
+
+.fuel-document-pending-header-action:hover {
+    border-color: rgba(245, 196, 67, .55);
+    background: rgba(245, 196, 67, .12);
+    color: #ffe08a;
+}
+
+.fuel-document-pending-header-action .bi-arrow-down {
+    margin-left: auto;
+}
+
+@media (max-width: 760px) {
+    .fuel-archive-header-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .fuel-document-pending-header-action {
+        width: 100%;
+    }
+}
+
+/* ==========================================================
+   Arquivo diário - botão compacto de pendências
+   ========================================================== */
+
+.fuel-archive-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-content: center;
+    gap: 10px;
+}
+
+.fuel-archive-header-pending-row {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.fuel-document-pending-header-action {
+    width: auto;
+    min-width: 210px;
+    min-height: 44px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    margin: 0;
+    padding: 0 14px;
+
+    border: 1px solid rgba(245, 196, 67, .36);
+    border-radius: 12px;
+
+    background: rgba(245, 196, 67, .07);
+    color: #ffd45f;
+
+    font-size: .80rem;
+    font-weight: 800;
+    text-decoration: none;
+
+    transition: .18s ease;
+}
+
+.fuel-document-pending-header-action:hover {
+    border-color: rgba(245, 196, 67, .56);
+    background: rgba(245, 196, 67, .12);
+    color: #ffe18a;
+}
+
+.fuel-document-pending-header-action .bi-arrow-down {
+    margin-left: 5px;
+}
+
+@media (max-width: 760px) {
+    .fuel-archive-header-pending-row {
+        justify-content: stretch;
+    }
+
+    .fuel-document-pending-header-action {
+        width: 100%;
+    }
+}
+
+/* ==========================================================
+   Simetria do botão de pendências com as ações do cabeçalho
+   ========================================================== */
+
+.fuel-archive-header-actions {
+    align-items: stretch;
+}
+
+.fuel-archive-header-pending-row {
+    flex-basis: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: stretch;
+}
+
+.fuel-document-pending-header-action {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+
+    justify-content: center;
+}
+
+/* ==========================================================
+   Cabeçalho do Arquivo Diário - simetria exata das ações
+   ========================================================== */
+
+.fuel-archive-header-actions {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 10px;
+
+    width: max-content;
+    margin-left: auto;
+
+    align-items: stretch;
+}
+
+.fuel-archive-header-pending-row {
+    grid-column: 1 / -1;
+
+    display: block;
+    width: 100%;
+}
+
+.fuel-document-pending-header-action {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 760px) {
+    .fuel-archive-header-actions {
+        width: 100%;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .fuel-archive-header-pending-row {
+        grid-column: 1 / -1;
+    }
 }

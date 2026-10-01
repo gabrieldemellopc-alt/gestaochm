@@ -201,6 +201,7 @@
     <th>Data / tanque</th>
     <th>Produto</th>
     <th>Quantidade / valor</th>
+    <th>Custo/L</th>
     <th>Fornecedor / NF</th>
     <th>Responsável</th>
     <th>Status</th>
@@ -264,6 +265,39 @@
                     '.'
                 ) }}
             </small>
+        @endif
+    </td>
+
+
+    <td class="fuel-receipt-unit-cost-cell">
+        @if($fuelPermissions['view_costs'])
+            @php
+                $receiptUnitCost =
+                    $receipt->unit_cost !== null
+                        ? (float) $receipt->unit_cost
+                        : (
+                            (float) $receipt->quantity_liters > 0
+                                && $receipt->total_cost !== null
+                                    ? (float) $receipt->total_cost
+                                        / (float) $receipt->quantity_liters
+                                    : null
+                        );
+            @endphp
+
+            @if($receiptUnitCost !== null)
+                <strong>
+                    R$ {{ number_format(
+                        $receiptUnitCost,
+                        2,
+                        ',',
+                        '.'
+                    ) }}/L
+                </strong>
+            @else
+                <span>—</span>
+            @endif
+        @else
+            <span>Custo restrito</span>
         @endif
     </td>
 
@@ -408,7 +442,7 @@
 @empty
 
 <tr>
-    <td colspan="7">
+    <td colspan="8">
         Nenhum recebimento encontrado.
     </td>
 </tr>

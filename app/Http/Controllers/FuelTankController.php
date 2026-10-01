@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+
 use App\Models\FuelDailyCheck;
 use App\Models\FuelFilling;
 use App\Models\FuelProduct;
@@ -15,6 +17,8 @@ use App\Services\VehicleFuelPolicy;
 use App\Services\TenantFiscalSettingService;
 use App\Services\Permissions\ProfilePermissionService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;

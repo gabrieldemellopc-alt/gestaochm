@@ -72,7 +72,7 @@ class FuelService
             'received_at' => ['required', 'date'],
             'quantity_liters' => ['required', 'numeric', 'gt:0'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
-            'total_cost' => ['nullable', 'numeric', 'min:0'],
+            'total_cost' => ['required', 'numeric', 'gt:0'],
             'source_unit_cost' => ['nullable', 'numeric', 'min:0'],
             'source_total_cost' => ['nullable', 'numeric', 'min:0'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
@@ -670,7 +670,7 @@ class FuelService
         $validated = Validator::make($data, [
             'received_at' => ['required', 'date'],
             'quantity_liters' => ['required', 'numeric', 'gt:0'],
-            'total_cost' => ['nullable', 'numeric', 'min:0'],
+            'total_cost' => ['required', 'numeric', 'gt:0'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
 
             'supplier_name' => ['nullable', 'string', 'max:255'],

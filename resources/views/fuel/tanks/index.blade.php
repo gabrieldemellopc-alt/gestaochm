@@ -1024,6 +1024,40 @@
                                 </span>
                             </div>
 
+                            <div class="fuel-receipt-unit-cost">
+                                <small>Custo/L</small>
+
+                                <strong>
+                                    @if($canViewFuelCosts)
+                                        @php
+                                            $receiptUnitCost =
+                                                $receipt->unit_cost !== null
+                                                    ? (float) $receipt->unit_cost
+                                                    : (
+                                                        (float) $receipt->quantity_liters > 0
+                                                            && $receipt->total_cost !== null
+                                                                ? (float) $receipt->total_cost
+                                                                    / (float) $receipt->quantity_liters
+                                                                : null
+                                                    );
+                                        @endphp
+
+                                        @if($receiptUnitCost !== null)
+                                            R$ {{ number_format(
+                                                $receiptUnitCost,
+                                                2,
+                                                ',',
+                                                '.'
+                                            ) }}
+                                        @else
+                                            —
+                                        @endif
+                                    @else
+                                        Restrito
+                                    @endif
+                                </strong>
+                            </div>
+
                             <div>
                                 <span>{{ $receipt->supplier_name ?: 'Fornecedor não informado' }}</span>
 
@@ -1902,7 +1936,7 @@
         @foreach($tanks as $tank)
             @if($canReceiveFuel)
             <div id="fuel-modal-receipt-{{ $tank->id }}" class="fuel-modal-overlay {{ $errors->fuelReceipt->any() && $openFuelModal === 'receipt-'.$tank->id ? 'is-open' : '' }}">
-                <div class="fuel-modal-card wide">
+                <div class="fuel-modal-card wide fuel-receipt-create-modal">
                     <div class="fuel-modal-header">
                         <div>
                             <span class="fuel-kicker">Entrada</span>
@@ -1921,56 +1955,110 @@
                         </div>
                     @endif
 
+                    @php
+                        $receiptCostHistory = $tank
+                            ->receipts()
+                            ->whereNull('cancelled_at')
+                            ->whereNotNull('total_cost')
+                            ->where('total_cost', '>', 0)
+                            ->where('quantity_liters', '>', 0)
+                            ->orderBy('received_at')
+                            ->orderBy('id')
+                            ->get([
+                                'received_at',
+                                'quantity_liters',
+                                'unit_cost',
+                                'total_cost',
+                            ])
+                            ->map(function ($receipt) {
+                                $quantity = (float) $receipt->quantity_liters;
+                                $total = (float) $receipt->total_cost;
+
+                                $unit = $receipt->unit_cost !== null
+                                    ? (float) $receipt->unit_cost
+                                    : ($quantity > 0 ? $total / $quantity : 0);
+
+                                return [
+                                    'at' => $receipt->received_at?->format(
+                                        'Y-m-d\\TH:i:s'
+                                    ),
+                                    'unit' => $unit,
+                                ];
+                            })
+                            ->values();
+                    @endphp
+
                     <form
                         method="POST"
                         action="{{ route('fuel.receipts.store') }}"
                         enctype="multipart/form-data"
                         class="fuel-form"
+                        data-fuel-receipt-form
+                        data-receipt-cost-history="{{ $receiptCostHistory->toJson() }}"
                     >
                         @csrf
                         <input type="hidden" name="fuel_tank_id" value="{{ $tank->id }}">
                         <input type="hidden" name="fuel_product_id" value="{{ $tank->fuel_product_id }}">
                         <div class="fuel-form-grid receipt-grid">
 
-                            {{-- LINHA 1 --}}
-                            <label class="receipt-span-2">
-                                Data do recebimento
+                            <div class="receipt-entry-summary">
+                                <div class="receipt-entry-summary__column">
+                                    <label>
+                                        Data do recebimento
 
-                                <input
-                                    type="datetime-local"
-                                    name="received_at"
-                                    value="{{ old('received_at', now()->format('Y-m-d\TH:i')) }}"
-                                    required
-                                >
-                            </label>
+                                        <input
+                                            type="datetime-local"
+                                            name="received_at"
+                                            value="{{ old('received_at', now()->format('Y-m-d\TH:i')) }}"
+                                            required
+                                        >
+                                    </label>
 
+                                    <label>
+                                        Quantidade em litros
 
-                            <label class="receipt-span-2">
-                                Quantidade em litros
+                                        <input
+                                            type="number"
+                                            name="quantity_liters"
+                                            min="0.001"
+                                            step="0.001"
+                                            required
+                                            data-fuel-liters
+                                        >
+                                    </label>
+                                </div>
 
-                                <input
-                                    type="number"
-                                    name="quantity_liters"
-                                    min="0.001"
-                                    step="0.001"
-                                    required
-                                    data-fuel-liters
-                                >
-                            </label>
+                                <div
+                                    class="receipt-entry-summary__divider"
+                                    aria-hidden="true"
+                                ></div>
 
+                                <div class="receipt-entry-summary__column">
+                                    <label>
+                                        Custo total
 
-                            <label class="receipt-span-2">
-                                Custo total
-
-                                <input
-                                    type="number"
+                                        <input
+                                    type="text"
                                     name="total_cost"
-                                    min="0"
-                                    step="0.01"
+                                    inputmode="decimal"
+                                    autocomplete="off"
+                                    required
+                                    pattern="[0-9]+(,[0-9]{1,2})?"
                                     data-fuel-total-cost
+                                    placeholder="Ex.: 34450,00"
                                     value="{{ old('total_cost') }}"
                                 >
-                            </label>
+
+                                        <small class="fuel-form-help">
+                                    Não use ponto nem vírgula para separar
+                                    os milhares. Use a vírgula somente
+                                    para os centavos.
+                                    Ex.: para <strong>R$ 34.450,00</strong>,
+                                    digite <strong>34450,00</strong>.
+                                </small>
+                                    </label>
+                                </div>
+                            </div>
 
 
                             {{-- LINHA 2 --}}
@@ -9142,6 +9230,35 @@ function openFuelModal(id) {
             }
         });
 
+        function parseFuelReceiptMoney(value) {
+            const normalized = String(value ?? '')
+                .trim()
+                .replace(/\./g, '')
+                .replace(',', '.');
+
+            return Number(normalized || 0);
+        }
+
+        function sanitizeFuelReceiptMoneyInput(input) {
+            let value = String(input.value || '')
+                .replace(/\./g, '')
+                .replace(/[^0-9,]/g, '');
+
+            const commaIndex = value.indexOf(',');
+
+            if (commaIndex !== -1) {
+                const integerPart = value.slice(0, commaIndex);
+                const decimalPart = value
+                    .slice(commaIndex + 1)
+                    .replace(/,/g, '')
+                    .slice(0, 2);
+
+                value = integerPart + ',' + decimalPart;
+            }
+
+            input.value = value;
+        }
+
         function calculateFuelUnitCost(form) {
             const litersInput = form.querySelector('[data-fuel-liters]');
             const totalInput = form.querySelector('[data-fuel-total-cost]');
@@ -9153,7 +9270,9 @@ function openFuelModal(id) {
             }
 
             const liters = Number(litersInput.value || 0);
-            const total = Number(totalInput.value || 0);
+            const total = parseFuelReceiptMoney(
+                totalInput.value
+            );
 
             if (liters <= 0 || total <= 0) {
                 unitInput.value = '';
@@ -9172,17 +9291,159 @@ function openFuelModal(id) {
             });
         }
 
+        function fuelReceiptPreviousCost(form) {
+            const receivedAtInput = form.querySelector(
+                'input[name="received_at"]'
+            );
+
+            if (!receivedAtInput?.value) {
+                return null;
+            }
+
+            const currentAt = new Date(receivedAtInput.value);
+
+            if (Number.isNaN(currentAt.getTime())) {
+                return null;
+            }
+
+            let history = [];
+
+            try {
+                history = JSON.parse(
+                    form.dataset.receiptCostHistory || '[]'
+                );
+            } catch (error) {
+                return null;
+            }
+
+            return history
+                .filter(function (receipt) {
+                    if (!receipt.at || Number(receipt.unit) <= 0) {
+                        return false;
+                    }
+
+                    const receiptAt = new Date(receipt.at);
+
+                    return !Number.isNaN(receiptAt.getTime())
+                        && receiptAt <= currentAt;
+                })
+                .sort(function (a, b) {
+                    return new Date(b.at) - new Date(a.at);
+                })[0] || null;
+        }
+
+        function formatFuelCurrency(value) {
+            return Number(value).toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        document.addEventListener('submit', function (event) {
+            const form = event.target.closest(
+                'form[data-fuel-receipt-form]'
+            );
+
+            if (!form) {
+                return;
+            }
+
+            const liters = Number(
+                form.querySelector('[data-fuel-liters]')?.value || 0
+            );
+
+            const total = parseFuelReceiptMoney(
+                form.querySelector('[data-fuel-total-cost]')?.value
+            );
+
+            if (liters <= 0 || total <= 0) {
+                return;
+            }
+
+            const currentUnit = total / liters;
+            const previous = fuelReceiptPreviousCost(form);
+
+            if (!previous || Number(previous.unit) <= 0) {
+                return;
+            }
+
+            const previousUnit = Number(previous.unit);
+            const variation =
+                ((currentUnit - previousUnit) / previousUnit) * 100;
+
+            if (variation > -50 && variation < 50) {
+                return;
+            }
+
+            const variationText =
+                `${variation >= 0 ? '+' : ''}${variation.toLocaleString(
+                    'pt-BR',
+                    {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    }
+                )}%`;
+
+            const message =
+                'ATENÇÃO: variação relevante no preço do combustível.\n\n'
+                + `Último recebimento anterior: ${formatFuelCurrency(previousUnit)}/L\n`
+                + `Preço deste recebimento: ${formatFuelCurrency(currentUnit)}/L\n`
+                + `Variação: ${variationText}\n\n`
+                + 'A diferença é igual ou superior a 50% em relação ao '
+                + 'último recebimento válido anterior.\n\n'
+                + 'Confira a quantidade de litros e o valor total informado.\n\n'
+                + 'Deseja confirmar o lançamento mesmo assim?';
+
+            if (!window.confirm(message)) {
+                event.preventDefault();
+            }
+        });
+
         document.addEventListener('input', function (event) {
             if (
                 event.target.matches('[data-fuel-liters]')
                 ||
                 event.target.matches('[data-fuel-total-cost]')
             ) {
+                if (event.target.matches('[data-fuel-total-cost]')) {
+                    sanitizeFuelReceiptMoneyInput(event.target);
+                }
+
                 const form = event.target.closest('form');
 
                 if (form) {
                     calculateFuelUnitCost(form);
                 }
+            }
+        });
+
+        document.addEventListener('submit', function (event) {
+            if (event.defaultPrevented) {
+                return;
+            }
+
+            const form = event.target.closest(
+                'form[data-fuel-receipt-form]'
+            );
+
+            if (!form) {
+                return;
+            }
+
+            const totalInput = form.querySelector(
+                '[data-fuel-total-cost]'
+            );
+
+            if (!totalInput) {
+                return;
+            }
+
+            const total = parseFuelReceiptMoney(totalInput.value);
+
+            if (total > 0) {
+                totalInput.value = total.toFixed(2);
             }
         });
 

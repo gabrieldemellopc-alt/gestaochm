@@ -212,12 +212,70 @@ class FuelDailyCheckController extends Controller
                     $monthEnd->toDateString(),
                 ]
             )
-            ->withCount('files')
+            ->withCount([
+                'files',
+                'files as invoice_files_count' => fn ($query) =>
+                    $query->where('document_type', 'fuel_invoice'),
+                'files as sheet_files_count' => fn ($query) =>
+                    $query->where('document_type', 'fuel_sheet'),
+                'files as other_files_count' => fn ($query) =>
+                    $query->where('document_type', 'other'),
+            ])
             ->get()
             ->keyBy(
                 fn ($item) =>
                     $item->operation_date->format('Y-m-d')
             );
+
+        /*
+         * Recebimentos do mês com NF ainda pendente.
+         */
+        $monthPendingReceiptInvoices =
+            FuelReceipt::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('division_id', $context['division_id'])
+                ->where('location_id', $context['location_id'])
+                ->whereBetween(
+                    'received_at',
+                    [
+                        $monthStart->copy()->startOfDay(),
+                        $monthEnd->copy()->endOfDay(),
+                    ]
+                )
+                ->whereNull('cancelled_at')
+                ->whereDoesntHave('invoiceFiles')
+                ->selectRaw(
+                    'DATE(received_at) as operation_day, '
+                    .'COUNT(*) as pending_invoice_count'
+                )
+                ->groupByRaw('DATE(received_at)')
+                ->get()
+                ->keyBy('operation_day');
+
+        /*
+         * Pendências de NF da unidade.
+         */
+        $pendingInvoiceReceiptQuery =
+            FuelReceipt::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('division_id', $context['division_id'])
+                ->where('location_id', $context['location_id'])
+                ->whereNull('cancelled_at')
+                ->whereDoesntHave('invoiceFiles');
+
+        $pendingInvoiceReceiptCount =
+            (clone $pendingInvoiceReceiptQuery)->count();
+
+        $pendingInvoiceReceipts =
+            (clone $pendingInvoiceReceiptQuery)
+                ->with([
+                    'tank:id,name',
+                    'product:id,name',
+                ])
+                ->orderByDesc('received_at')
+                ->orderByDesc('id')
+                ->limit(30)
+                ->get();
 
         /*
          * Grade completa domingo -> sábado.
@@ -245,6 +303,9 @@ class FuelDailyCheckController extends Controller
             $dayCheck =
                 $monthChecks->get($key);
 
+            $dayPendingReceipts =
+                $monthPendingReceiptInvoices->get($key);
+
             $calendarDays->push([
                 'date' => $cursor->copy(),
                 'in_month' =>
@@ -269,11 +330,54 @@ class FuelDailyCheckController extends Controller
                         $dayCheck?->files_count
                         ?? 0
                     ),
+
+                'has_invoice_file' =>
+                    (int) (
+                        $dayCheck?->invoice_files_count
+                        ?? 0
+                    ) > 0,
+
+                'has_sheet_file' =>
+                    (int) (
+                        $dayCheck?->sheet_files_count
+                        ?? 0
+                    ) > 0,
+
+                'has_other_file' =>
+                    (int) (
+                        $dayCheck?->other_files_count
+                        ?? 0
+                    ) > 0,
+
+                'sheet_pending' =>
+                    (int) (
+                        $dayFillings?->fillings_count
+                        ?? 0
+                    ) > 0
+                    && (int) (
+                        $dayCheck?->sheet_files_count
+                        ?? 0
+                    ) === 0,
+
+                'pending_invoice_count' =>
+                    (int) (
+                        $dayPendingReceipts?->pending_invoice_count
+                        ?? 0
+                    ),
             ]);
         }
 
         $calendarWeeks =
             $calendarDays->chunk(7);
+
+        $pendingFuelSheetDays =
+            $calendarDays
+                ->filter(
+                    fn ($day) =>
+                        $day['in_month']
+                        && $day['sheet_pending']
+                )
+                ->values();
 
         return view(
             'fuel.daily-checks.index',
@@ -286,7 +390,10 @@ class FuelDailyCheckController extends Controller
                 'month',
                 'calendarWeeks',
                 'receiptCandidates',
-            'dayReceipts'
+                'dayReceipts',
+                'pendingInvoiceReceipts',
+                'pendingInvoiceReceiptCount',
+                'pendingFuelSheetDays'
             )
         );
     }

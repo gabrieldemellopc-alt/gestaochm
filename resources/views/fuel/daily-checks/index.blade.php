@@ -46,6 +46,32 @@
             Voltar
         </a>
 
+        @if(
+            $pendingInvoiceReceiptCount > 0
+            || $pendingFuelSheetDays->count() > 0
+        )
+            <div class="fuel-archive-header-pending-row">
+                <a
+                    href="#fuelDocumentPendingPanel"
+                    class="fuel-document-pending-header-action"
+                    onclick="document.getElementById('fuelDocumentPendingPanel')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    }); return false;"
+                >
+                    <i class="bi bi-exclamation-triangle"></i>
+
+                    <span>
+                        {{ $pendingInvoiceReceiptCount
+                            + $pendingFuelSheetDays->count() }}
+                        pendências
+                    </span>
+
+                    <i class="bi bi-arrow-down"></i>
+                </a>
+            </div>
+        @endif
+
     </div>
 
 </header>
@@ -183,22 +209,49 @@
                         </small>
                     @endif
 
-                    <span class="fuel-archive-day-status">
+                    <span class="fuel-archive-day-status fuel-archive-day-indicators">
 
-                        @if($day['files_count'] > 0)
-
+                        @if($day['has_invoice_file'])
                             <i
-                                class="bi bi-paperclip"
-                                title="Documento arquivado"
+                                class="bi bi-file-earmark-text is-invoice"
+                                title="NF de recebimento arquivada"
                             ></i>
+                        @endif
 
-                        @elseif($day['fillings_count'] > 0)
-
+                        @if($day['has_sheet_file'])
                             <i
-                                class="bi bi-circle-fill"
-                                title="Sem documento arquivado"
+                                class="bi bi-clipboard2-check is-sheet"
+                                title="Folha de abastecimento arquivada"
                             ></i>
+                        @endif
 
+                        @if($day['has_other_file'])
+                            <i
+                                class="bi bi-paperclip is-other"
+                                title="Outros documentos arquivados"
+                            ></i>
+                        @endif
+
+                        @if($day['sheet_pending'])
+                            <i
+                                class="bi bi-exclamation-triangle-fill is-sheet-pending"
+                                title="Há abastecimentos sem folha anexada"
+                            ></i>
+                        @endif
+
+                        @if($day['pending_invoice_count'] > 0)
+                            <span
+                                class="fuel-archive-day-indicator-count is-invoice-pending"
+                                title="{{ $day['pending_invoice_count'] }} recebimento(s) com NF pendente"
+                            >
+                                <i class="bi bi-file-earmark-x-fill"></i>
+
+                                @if($day['pending_invoice_count'] > 1)
+                                    <b>
+                                        {{ $day['pending_invoice_count'] }}
+                                    </b>
+                                @endif
+                            </span>
                         @endif
 
                     </span>
@@ -215,18 +268,36 @@
     <div class="fuel-archive-calendar-legend">
 
         <span>
-            <i class="bi bi-paperclip"></i>
-            Documento arquivado
+            <i class="bi bi-file-earmark-text is-invoice"></i>
+            NF arquivada
         </span>
 
         <span>
-            <i class="bi bi-circle-fill"></i>
-            Abastecimentos sem documento
+            <i class="bi bi-clipboard2-check is-sheet"></i>
+            Folha arquivada
+        </span>
+
+        <span>
+            <i class="bi bi-paperclip is-other"></i>
+            Outros
+        </span>
+
+        <span>
+            <i class="bi bi-exclamation-triangle-fill is-sheet-pending"></i>
+            Folha pendente
+        </span>
+
+        <span>
+            <i class="bi bi-file-earmark-x-fill is-invoice-pending"></i>
+            NF pendente
         </span>
 
     </div>
 
 </section>
+
+
+
 
 
 <section class="fuel-archive-day-header">
@@ -1973,6 +2044,216 @@
 </section>
 
 @endif
+
+
+
+<section id="fuelDocumentPendingPanel" class="fuel-archive-panel fuel-document-pending-panel">
+
+    <div class="fuel-archive-section-head fuel-document-pending-head">
+        <div>
+            <span>Pendências documentais</span>
+
+            <h2>O que ainda precisa ser arquivado</h2>
+
+            <p>
+                Recebimentos sem NF e dias com abastecimentos
+                ainda sem folha anexada.
+            </p>
+        </div>
+
+        @php
+            $documentPendingTotal =
+                $pendingInvoiceReceiptCount
+                + $pendingFuelSheetDays->count();
+        @endphp
+
+        <span
+            class="fuel-document-pending-total
+                {{ $documentPendingTotal > 0 ? 'has-pending' : '' }}"
+        >
+            {{ $documentPendingTotal }}
+
+            {{ $documentPendingTotal === 1
+                ? 'pendência'
+                : 'pendências' }}
+        </span>
+    </div>
+
+    @if(
+        $pendingInvoiceReceiptCount === 0
+        && $pendingFuelSheetDays->isEmpty()
+    )
+        <div class="fuel-document-pending-empty">
+            <i class="bi bi-check-circle"></i>
+
+            <span>
+                Nenhuma pendência documental encontrada.
+            </span>
+        </div>
+    @else
+        <div class="fuel-document-pending-grid">
+
+            <div class="fuel-document-pending-group">
+                <div class="fuel-document-pending-group-head">
+                    <div>
+                        <i class="bi bi-file-earmark-x"></i>
+
+                        <strong>NFs pendentes</strong>
+                    </div>
+
+                    <span>
+                        {{ $pendingInvoiceReceiptCount }}
+                    </span>
+                </div>
+
+                @if($pendingInvoiceReceipts->isEmpty())
+                    <div class="fuel-document-pending-empty is-compact">
+                        Nenhuma NF pendente.
+                    </div>
+                @else
+                    <div class="fuel-document-pending-list">
+
+                        @foreach($pendingInvoiceReceipts as $receipt)
+                            <article class="fuel-document-pending-item">
+
+                                <div>
+                                    <strong>
+                                        {{ $receipt->received_at
+                                            ?->format('d/m/Y H:i') }}
+                                    </strong>
+
+                                    <span>
+                                        {{ $receipt->tank?->name
+                                            ?? 'Tanque' }}
+
+                                        ·
+
+                                        {{ number_format(
+                                            (float) $receipt->quantity_liters,
+                                            3,
+                                            ',',
+                                            '.'
+                                        ) }} L
+                                    </span>
+
+                                    @if(filled($receipt->supplier_name))
+                                        <small>
+                                            {{ $receipt->supplier_name }}
+                                        </small>
+                                    @endif
+                                </div>
+
+                                <a
+                                    href="{{ route(
+                                        'fuel.daily-check.index',
+                                        [
+                                            'date' =>
+                                                $receipt->received_at
+                                                    ?->format('Y-m-d'),
+                                            'document_type' =>
+                                                'fuel_invoice',
+                                            'receipt_id' =>
+                                                $receipt->id,
+                                        ]
+                                    ) }}#fuelArchiveUploadForm"
+                                    class="fuel-secondary-action"
+                                >
+                                    <i class="bi bi-paperclip"></i>
+                                    Anexar NF
+                                </a>
+
+                            </article>
+                        @endforeach
+
+                    </div>
+
+                    @if(
+                        $pendingInvoiceReceiptCount
+                        > $pendingInvoiceReceipts->count()
+                    )
+                        <small class="fuel-document-pending-more">
+                            Exibindo as 30 pendências mais recentes.
+                        </small>
+                    @endif
+                @endif
+            </div>
+
+            <div class="fuel-document-pending-group">
+                <div class="fuel-document-pending-group-head">
+                    <div>
+                        <i class="bi bi-exclamation-triangle"></i>
+
+                        <strong>
+                            Folhas pendentes no mês
+                        </strong>
+                    </div>
+
+                    <span>
+                        {{ $pendingFuelSheetDays->count() }}
+                    </span>
+                </div>
+
+                @if($pendingFuelSheetDays->isEmpty())
+                    <div class="fuel-document-pending-empty is-compact">
+                        Nenhuma folha pendente neste mês.
+                    </div>
+                @else
+                    <div class="fuel-document-pending-list">
+
+                        @foreach($pendingFuelSheetDays as $pendingDay)
+                            <article class="fuel-document-pending-item">
+
+                                <div>
+                                    <strong>
+                                        {{ $pendingDay['date']
+                                            ->format('d/m/Y') }}
+                                    </strong>
+
+                                    <span>
+                                        {{ $pendingDay['fillings_count'] }}
+                                        abastecimento(s)
+
+                                        ·
+
+                                        {{ number_format(
+                                            $pendingDay['liters'],
+                                            3,
+                                            ',',
+                                            '.'
+                                        ) }} L
+                                    </span>
+                                </div>
+
+                                <a
+                                    href="{{ route(
+                                        'fuel.daily-check.index',
+                                        [
+                                            'date' =>
+                                                $pendingDay['date']
+                                                    ->format('Y-m-d'),
+                                            'month' =>
+                                                $month->format('Y-m'),
+                                            'document_type' =>
+                                                'fuel_sheet',
+                                        ]
+                                    ) }}#fuelArchiveUploadForm"
+                                    class="fuel-secondary-action"
+                                >
+                                    <i class="bi bi-paperclip"></i>
+                                    Anexar folha
+                                </a>
+
+                            </article>
+                        @endforeach
+
+                    </div>
+                @endif
+            </div>
+
+        </div>
+    @endif
+
+</section>
 
 </main>
 
