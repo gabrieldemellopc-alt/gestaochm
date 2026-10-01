@@ -46,30 +46,10 @@ class GoogleVisionFuelSheetService
 
         $visionStartedAt = microtime(true);
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->timeout(90)
-            ->post(
-                'https://vision.googleapis.com/v1/images:annotate',
-                [
-                    'requests' => [
-                        [
-                            'image' => [
-                                'content' => base64_encode($binary),
-                            ],
-                            'features' => [
-                                [
-                                    'type' =>
-                                        'DOCUMENT_TEXT_DETECTION',
-                                ],
-                            ],
-                            'imageContext' => [
-                                'languageHints' => ['pt-BR'],
-                            ],
-                        ],
-                    ],
-                ]
-            );
+        $response = $this->requestVision(
+            $token,
+            $binary
+        );
 
         $visionSeconds =
             microtime(true) - $visionStartedAt;
@@ -114,12 +94,35 @@ class GoogleVisionFuelSheetService
         }
 
         if ($error = data_get($json, 'responses.0.error')) {
-            throw new RuntimeException(
-                data_get(
+            $message = (string) data_get(
+                $error,
+                'message',
+                'Falha ao processar a imagem.'
+            );
+
+            $status = strtoupper(
+                (string) data_get(
                     $error,
-                    'message',
-                    'Falha ao processar a imagem.'
+                    'status',
+                    ''
                 )
+            );
+
+            if (
+                $status === 'UNAVAILABLE'
+                || str_contains(
+                    strtolower($message),
+                    'currently unavailable'
+                )
+            ) {
+                throw new RuntimeException(
+                    'O serviço de leitura do Google está temporariamente '
+                    .'indisponível. Aguarde alguns instantes e tente novamente.'
+                );
+            }
+
+            throw new RuntimeException(
+                $message
             );
         }
 
@@ -221,6 +224,109 @@ class GoogleVisionFuelSheetService
 
             'engine' => 'google_cloud_vision',
         ];
+    }
+
+
+    private function requestVision(
+        string $token,
+        string $binary
+    ) {
+        $lastResponse = null;
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $response = Http::withToken($token)
+                ->acceptJson()
+                ->timeout(90)
+                ->post(
+                    'https://vision.googleapis.com/v1/images:annotate',
+                    [
+                        'requests' => [
+                            [
+                                'image' => [
+                                    'content' => base64_encode($binary),
+                                ],
+                                'features' => [
+                                    [
+                                        'type' =>
+                                            'DOCUMENT_TEXT_DETECTION',
+                                    ],
+                                ],
+                                'imageContext' => [
+                                    'languageHints' => ['pt-BR'],
+                                ],
+                            ],
+                        ],
+                    ]
+                );
+
+            $lastResponse = $response;
+
+            if (! $response->successful()) {
+                break;
+            }
+
+            $error = data_get(
+                $response->json(),
+                'responses.0.error'
+            );
+
+            if (! $error) {
+                return $response;
+            }
+
+            $code = (int) data_get(
+                $error,
+                'code',
+                0
+            );
+
+            $status = strtoupper(
+                (string) data_get(
+                    $error,
+                    'status',
+                    ''
+                )
+            );
+
+            $message = (string) data_get(
+                $error,
+                'message',
+                ''
+            );
+
+            \Log::warning(
+                'Google Vision fuel sheet error',
+                [
+                    'attempt' => $attempt,
+                    'code' => $code,
+                    'status' => $status,
+                    'message' => $message,
+                ]
+            );
+
+            $temporary =
+                $code === 14
+                || $status === 'UNAVAILABLE'
+                || str_contains(
+                    strtolower($message),
+                    'currently unavailable'
+                );
+
+            if (
+                ! $temporary
+                || $attempt === 3
+            ) {
+                return $response;
+            }
+
+            usleep(
+                $attempt === 1
+                    ? 500000
+                    : 1500000
+            );
+        }
+
+        return $lastResponse;
     }
 
 

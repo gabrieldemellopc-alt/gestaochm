@@ -186,6 +186,13 @@
             </div>
 
 
+            <div
+                id="fuelPhotoAiFeedback"
+                class="fuel-photo-ai-feedback fuel-photo-ai-feedback-standalone"
+                hidden
+            ></div>
+
+
             <section
                 id="fuelPhotoAiResult"
                 class="fuel-photo-ai-result"
@@ -448,15 +455,7 @@
 
                 <div class="fuel-photo-ai-footer">
 
-                    <div class="fuel-photo-ai-footer-feedback">
-                    <div
-                id="fuelPhotoAiFeedback"
-                class="fuel-photo-ai-feedback"
-                hidden
-            ></div>
-                </div>
-
-                <div class="fuel-photo-ai-footer-actions">
+                    <div class="fuel-photo-ai-footer-actions">
 
                         <button
                             type="button"
@@ -925,9 +924,56 @@ async function analyzeFuelPhoto() {
 
     } catch (error) {
         showFuelPhotoFeedback(
-            error.message,
+            error.message
+                || 'Não foi possível analisar a imagem.',
             'error'
         );
+
+        feedback.hidden = false;
+        feedback.className =
+            'fuel-photo-ai-feedback fuel-photo-ai-feedback-standalone is-error';
+
+        feedback.innerHTML = '';
+
+        const title =
+            document.createElement('strong');
+
+        title.textContent =
+            'Não foi possível concluir a leitura.';
+
+        const message =
+            document.createElement('span');
+
+        message.textContent =
+            error.message
+            || 'Tente novamente em alguns instantes.';
+
+        const retry =
+            document.createElement('button');
+
+        retry.type = 'button';
+        retry.className =
+            'fuel-photo-ai-feedback-retry';
+
+        retry.innerHTML =
+            '<i class="bi bi-arrow-clockwise"></i>'
+            + ' Tentar novamente';
+
+        retry.addEventListener(
+            'click',
+            analyzeFuelPhoto
+        );
+
+        feedback.append(
+            title,
+            message,
+            retry
+        );
+
+        feedback.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
 
     } finally {
         stopFuelPhotoLoading();
