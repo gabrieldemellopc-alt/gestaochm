@@ -662,6 +662,13 @@ class VehicleController extends Controller
 
 
 
+        $initialReadingAt =
+            ! empty($validated['operation_started_at'])
+                ? \Carbon\Carbon::parse(
+                    $validated['operation_started_at']
+                )->startOfDay()
+                : now()->startOfDay();
+
         $vehicle = Vehicle::create([
 
 
@@ -747,13 +754,13 @@ class VehicleController extends Controller
 
             'last_km_update_at' =>
 
-                now(),
+                $initialReadingAt,
 
 
 
             'last_hours_update_at' =>
 
-                now(),
+                $initialReadingAt,
 
 
 
@@ -827,8 +834,13 @@ class VehicleController extends Controller
 
 
             'type' =>
-
                 'km',
+
+            'source' =>
+                'initial_registration',
+
+            'read_at' =>
+                $initialReadingAt,
 
 
 
@@ -895,8 +907,13 @@ class VehicleController extends Controller
 
 
             'type' =>
-
                 'hours',
+
+            'source' =>
+                'initial_registration',
+
+            'read_at' =>
+                $initialReadingAt,
 
 
 
@@ -1614,6 +1631,59 @@ $vehicle->update([
 
 
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATA DOS REGISTROS INICIAIS
+        |--------------------------------------------------------------------------
+        |
+        | O início operacional é uma data, não um horário.
+        | Ao alterá-lo, os registros iniciais de KM e horas
+        | permanecem às 00:00 daquele dia.
+        |
+        */
+
+        if (
+            $oldData->operation_started_at?->toDateString()
+            !== $vehicle->operation_started_at?->toDateString()
+            && $vehicle->operation_started_at
+        ) {
+            $initialReadingAt =
+                $vehicle->operation_started_at
+                    ->copy()
+                    ->startOfDay();
+
+            VehicleUpdateLog::query()
+                ->where('vehicle_id', $vehicle->id)
+                ->whereIn('type', ['km', 'hours'])
+                ->whereNull('old_value')
+                ->where(function ($query) {
+                    $query
+                        ->where(
+                            'source',
+                            'initial_registration'
+                        )
+                        ->orWhere(function ($legacy) {
+                            $legacy
+                                ->whereNull('source')
+                                ->where(
+                                    'observation',
+                                    'Registro inicial do veículo'
+                                );
+                        });
+                })
+                ->update([
+                    'source' =>
+                        'initial_registration',
+
+                    'read_at' =>
+                        $initialReadingAt,
+
+                    'updated_at' =>
+                        now(),
+                ]);
+        }
+
 
         /*
         |--------------------------------------------------------------------------

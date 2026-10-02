@@ -528,9 +528,43 @@
     class="fuel-modal-overlay"
     :class="{ 'is-open': editId === {{ $filling->id }} }"
 >
+    @php
+        $isCurrentEditError =
+            (int) session('edit_filling_id') === (int) $filling->id;
+
+        $editErrorMessages =
+            $isCurrentEditError
+                ? collect($errors->all())
+                : collect();
+
+        $needsKmReadingConfirmation =
+            $editErrorMessages->contains(
+                fn ($message) =>
+                    str_contains(
+                        $message,
+                        'O KM informado parece muito acima'
+                    )
+            );
+
+        $needsHoursReadingConfirmation =
+            $editErrorMessages->contains(
+                fn ($message) =>
+                    str_contains(
+                        $message,
+                        'O horímetro informado parece muito acima'
+                    )
+            );
+    @endphp
+
     <div
         class="fuel-modal-card wide"
-        x-data="{ source: @js(old('source', $filling->resolved_source)) }"
+        x-data="{
+            source: @js(old('source', $filling->resolved_source)),
+            needsKmConfirmation: @js($needsKmReadingConfirmation),
+            needsHoursConfirmation: @js($needsHoursReadingConfirmation),
+            kmConfirmed: false,
+            hoursConfirmed: false
+        }"
     >
         <div class="fuel-modal-header">
             <div>
@@ -564,8 +598,18 @@
             @csrf
 
             <input type="hidden" name="driver_id" value="{{ old('driver_id', $filling->driver_id) }}">
-            <input type="hidden" name="km_reading_confirmed" value="0">
-            <input type="hidden" name="hours_reading_confirmed" value="0">
+
+            <input
+                type="hidden"
+                name="km_reading_confirmed"
+                :value="kmConfirmed ? '1' : '0'"
+            >
+
+            <input
+                type="hidden"
+                name="hours_reading_confirmed"
+                :value="hoursConfirmed ? '1' : '0'"
+            >
 
             <div class="fuel-form-grid fuel-edit-filling-grid">
 
@@ -754,6 +798,71 @@
 
             </div>
 
+            <div
+                class="fuel-edit-warning"
+                x-show="needsKmConfirmation"
+                x-cloak
+            >
+                <i class="bi bi-exclamation-triangle"></i>
+
+                <div>
+                    <strong>Confirmação necessária do hodômetro</strong>
+
+                    <span>
+                        O KM informado está muito acima da leitura atual
+                        do veículo. Confira o painel antes de continuar.
+                    </span>
+
+                    <label
+                        style="display:flex; align-items:center; gap:10px; margin-top:12px; cursor:pointer;"
+                    >
+                        <input
+                            type="checkbox"
+                            x-model="kmConfirmed"
+                            style="width:18px; height:18px; flex:0 0 auto;"
+                        >
+
+                        <span>
+                            Conferi o hodômetro e quero lançar este
+                            abastecimento mesmo assim.
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div
+                class="fuel-edit-warning"
+                x-show="needsHoursConfirmation"
+                x-cloak
+            >
+                <i class="bi bi-exclamation-triangle"></i>
+
+                <div>
+                    <strong>Confirmação necessária do horímetro</strong>
+
+                    <span>
+                        O horímetro informado está muito acima da leitura
+                        atual do veículo. Confira o equipamento antes de
+                        continuar.
+                    </span>
+
+                    <label
+                        style="display:flex; align-items:center; gap:10px; margin-top:12px; cursor:pointer;"
+                    >
+                        <input
+                            type="checkbox"
+                            x-model="hoursConfirmed"
+                            style="width:18px; height:18px; flex:0 0 auto;"
+                        >
+
+                        <span>
+                            Conferi o horímetro e quero lançar este
+                            abastecimento mesmo assim.
+                        </span>
+                    </label>
+                </div>
+            </div>
+
             <div class="fuel-edit-warning">
                 <i class="bi bi-shield-check"></i>
                 <div>
@@ -774,7 +883,24 @@
                     Voltar
                 </button>
 
-                <button type="submit" class="fuel-primary-action">
+                <button
+                    type="submit"
+                    class="fuel-primary-action"
+                    :disabled="
+                        (needsKmConfirmation && ! kmConfirmed)
+                        ||
+                        (needsHoursConfirmation && ! hoursConfirmed)
+                    "
+                    :style="
+                        (
+                            (needsKmConfirmation && ! kmConfirmed)
+                            ||
+                            (needsHoursConfirmation && ! hoursConfirmed)
+                        )
+                            ? 'opacity:.55; cursor:not-allowed;'
+                            : ''
+                    "
+                >
                     <i class="bi bi-check2"></i>
                     Salvar correção
                 </button>
