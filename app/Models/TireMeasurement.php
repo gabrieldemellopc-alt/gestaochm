@@ -11,6 +11,7 @@ class TireMeasurement extends Model
         'tire_id',
         'vehicle_id',
         'position_code',
+        'measurement_type',
         'measured_at',
         'vehicle_km',
         'outer_tread',

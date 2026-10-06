@@ -119,14 +119,26 @@
 
     <section class="tire-history-summary">
         <article>
-            <span>Sulco inicial</span>
+            <span>
+                @if(
+                    in_array(
+                        $tire->acquisition_condition,
+                        ['used', 'retread_acquired'],
+                        true
+                    )
+                )
+                    Menor sulco na entrada
+                @else
+                    Sulco inicial
+                @endif
+            </span>
             <strong>
                 {{ $tire->initial_tread_depth !== null ? number_format((float) $tire->initial_tread_depth, 2, ',', '.') . ' mm' : '--' }}
             </strong>
         </article>
 
         <article>
-            <span>Sulco atual</span>
+            <span>Menor sulco atual</span>
             <strong>
                 {{ $tire->current_tread_depth !== null ? number_format((float) $tire->current_tread_depth, 2, ',', '.') . ' mm' : '--' }}
             </strong>
@@ -140,7 +152,14 @@
                         Recapagem R{{ $tire->retreads_count }}
                         @break
                     @case('measurement')
-                        Última medição
+                        @if(
+                            $tire->latestMeasurement?->measurement_type
+                            === 'entry'
+                        )
+                            Condição de entrada
+                        @else
+                            Última medição
+                        @endif
                         @break
                     @default
                         Sulco inicial
@@ -184,6 +203,7 @@
                             'installation' => 'Instalação',
                             'removal' => 'Retirada',
                             'measurement' => 'Medição',
+                            'entry_measurement' => 'Condição de entrada',
                             'retread' => 'Recapagem',
                         };
                     @endphp
@@ -202,6 +222,9 @@
                                     @break
                                 @case('measurement')
                                     <i class="bi bi-rulers"></i>
+                                    @break
+                                @case('entry_measurement')
+                                    <i class="bi bi-clipboard2-check"></i>
                                     @break
                                 @case('retread')
                                     <i class="bi bi-arrow-clockwise"></i>

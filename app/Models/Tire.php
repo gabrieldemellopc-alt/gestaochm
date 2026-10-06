@@ -13,6 +13,8 @@ class Tire extends Model
         'brand',
         'model',
         'initial_tread_depth',
+        'tread_grooves_count',
+        'acquisition_condition',
         'purchase_date',
         'status',
         'entry_id',
@@ -29,6 +31,7 @@ class Tire extends Model
     protected $casts = [
         'purchase_date' => 'date',
         'initial_tread_depth' => 'decimal:2',
+        'tread_grooves_count' => 'integer',
         'warning_tread_depth' => 'decimal:2',
         'critical_tread_depth' => 'decimal:2',
         'cancelled_at' => 'datetime',

@@ -151,26 +151,37 @@ class VehicleTireController extends Controller
 
 
 
-                    $latestMeasurement =
-
+                    $measurementHistoryQuery =
                         $installation
-
-                            ? TireMeasurement::where('tenant_id', $vehicle->tenant_id)
-
+                            ? TireMeasurement::query()
+                                ->where('tenant_id', $vehicle->tenant_id)
                                 ->where('tire_id', $installation->tire_id)
-
                                 ->where('vehicle_id', $vehicle->id)
-
                                 ->where('position_code', $position->code)
-
                                 ->whereNull('cancelled_at')
+                            : null;
 
+                    $latestMeasurement =
+                        $measurementHistoryQuery
+                            ? (clone $measurementHistoryQuery)
                                 ->latest('measured_at')
                                 ->latest('id')
-
                                 ->first()
-
                             : null;
+
+                    $measurementHistory =
+                        $measurementHistoryQuery
+                            ? (clone $measurementHistoryQuery)
+                                ->latest('measured_at')
+                                ->latest('id')
+                                ->limit(5)
+                                ->get()
+                            : collect();
+
+                    $measurementHistoryCount =
+                        $measurementHistoryQuery
+                            ? (clone $measurementHistoryQuery)->count()
+                            : 0;
 
 
 
@@ -214,6 +225,18 @@ class VehicleTireController extends Controller
                         'latest_measurement' =>
 
                             $latestMeasurement,
+
+
+
+                        'measurement_history' =>
+
+                            $measurementHistory,
+
+
+
+                        'measurement_history_count' =>
+
+                            $measurementHistoryCount,
 
 
 
@@ -820,19 +843,39 @@ class VehicleTireController extends Controller
 
 
 
-                'current_tread' => [
-
+                'tread_grooves_count' => [
                     'required',
-
-                    'numeric',
-
-                    'min:0',
-
-                    'max:50',
-
+                    'integer',
+                    'in:3,4',
                 ],
 
+                'tread_1' => [
+                    'required',
+                    'numeric',
+                    'min:0',
+                    'max:50',
+                ],
 
+                'tread_2' => [
+                    'required',
+                    'numeric',
+                    'min:0',
+                    'max:50',
+                ],
+
+                'tread_3' => [
+                    'required',
+                    'numeric',
+                    'min:0',
+                    'max:50',
+                ],
+
+                'tread_4' => [
+                    'nullable',
+                    'numeric',
+                    'min:0',
+                    'max:50',
+                ],
 
                 'notes' => [
 
@@ -908,17 +951,144 @@ class VehicleTireController extends Controller
 
 
 
-            $currentTread =
+            $tire = Tire::query()
+                ->where('tenant_id', $vehicle->tenant_id)
+                ->whereKey($data['tire_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
 
+            $groovesCount =
+                (int) $data['tread_grooves_count'];
+
+            if (
+                $tire->tread_grooves_count !== null
+                &&
+                (int) $tire->tread_grooves_count !== $groovesCount
+            ) {
+                throw ValidationException::withMessages([
+                    'tread_grooves_count' =>
+                        'A quantidade de sulcos informada não corresponde ao cadastro deste pneu.',
+                ]);
+            }
+
+            if (
+                $groovesCount === 4
+                &&
+                (
+                    ! isset($data['tread_4'])
+                    ||
+                    $data['tread_4'] === ''
+                    ||
+                    $data['tread_4'] === null
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'tread_4' =>
+                        'Informe a leitura do 4º sulco.',
+                ]);
+            }
+
+            if (
+                $groovesCount === 3
+                &&
+                isset($data['tread_4'])
+                &&
+                $data['tread_4'] !== ''
+                &&
+                $data['tread_4'] !== null
+            ) {
+                throw ValidationException::withMessages([
+                    'tread_4' =>
+                        'Este pneu está configurado para 3 sulcos.',
+                ]);
+            }
+
+            if ($tire->tread_grooves_count === null) {
+                $tire->update([
+                    'tread_grooves_count' => $groovesCount,
+                ]);
+            }
+
+            $treadValues = [
+                round((float) $data['tread_1'], 2),
+                round((float) $data['tread_2'], 2),
+                round((float) $data['tread_3'], 2),
+            ];
+
+            if ($groovesCount === 4) {
+                $treadValues[] =
+                    round((float) $data['tread_4'], 2);
+            }
+
+            $previousMeasurement =
+                TireMeasurement::query()
+                    ->where('tenant_id', $vehicle->tenant_id)
+                    ->where('tire_id', $tire->id)
+                    ->where('vehicle_id', $vehicle->id)
+                    ->where(
+                        'position_code',
+                        $data['position_code']
+                    )
+                    ->whereNull('cancelled_at')
+                    ->latest('measured_at')
+                    ->latest('id')
+                    ->first();
+
+            if ($previousMeasurement) {
+                $previousTreadValues =
+                    $groovesCount === 4
+                        ? [
+                            $previousMeasurement->outer_tread,
+                            $previousMeasurement->center_outer_tread,
+                            $previousMeasurement->center_inner_tread,
+                            $previousMeasurement->inner_tread,
+                        ]
+                        : [
+                            $previousMeasurement->outer_tread,
+                            $previousMeasurement->center_outer_tread,
+                            $previousMeasurement->inner_tread,
+                        ];
+
+                $previousIsComparable =
+                    collect($previousTreadValues)
+                        ->every(
+                            fn ($value) =>
+                                $value !== null
+                        );
+
+                if ($previousIsComparable) {
+                    $sameReadings =
+                        collect($treadValues)
+                            ->values()
+                            ->every(
+                                fn ($value, $index) =>
+                                    round((float) $value, 2)
+                                    ===
+                                    round(
+                                        (float)
+                                        $previousTreadValues[$index],
+                                        2
+                                    )
+                            );
+
+                    if ($sameReadings) {
+                        throw ValidationException::withMessages([
+                            'tread_1' =>
+                                'As leituras dos sulcos são iguais à última medição registrada. Altere ao menos uma leitura para registrar uma nova medição.',
+                        ]);
+                    }
+                }
+            }
+
+            $minimumTread =
+                round(min($treadValues), 2);
+
+            $averageTread =
                 round(
-
-                    (float) $data['current_tread'],
-
+                    array_sum($treadValues)
+                    / count($treadValues),
                     2
-
                 );
-
-
 
             /*
 
@@ -970,56 +1140,43 @@ class VehicleTireController extends Controller
 
 
                 /*
-
                 |--------------------------------------------------------------------------
-
-                | MVP: medição simples
-
+                | MEDIÇÃO DETALHADA DOS SULCOS
                 |--------------------------------------------------------------------------
-
-                | Usamos outer_tread como campo principal informado.
-
-                | Average e minimum recebem o mesmo valor para manter alertas/status.
-
+                |
+                | Pneus com 3 sulcos:
+                | externo / centro / interno.
+                |
+                | Pneus com 4 sulcos:
+                | externo / centro externo / centro interno / interno.
+                |
+                | O menor sulco é usado como referência operacional.
+                |
                 */
 
 
 
                 'outer_tread' =>
-
-                    $currentTread,
-
-
+                    $treadValues[0],
 
                 'center_outer_tread' =>
-
-                    null,
-
-
+                    $treadValues[1],
 
                 'center_inner_tread' =>
-
-                    null,
-
-
+                    $groovesCount === 4
+                        ? $treadValues[2]
+                        : null,
 
                 'inner_tread' =>
-
-                    null,
-
-
+                    $groovesCount === 4
+                        ? $treadValues[3]
+                        : $treadValues[2],
 
                 'average_tread' =>
-
-                    $currentTread,
-
-
+                    $averageTread,
 
                 'minimum_tread' =>
-
-                    $currentTread,
-
-
+                    $minimumTread,
 
                 'notes' =>
 
@@ -1044,6 +1201,9 @@ class VehicleTireController extends Controller
                     'vehicle_id' => $vehicle->id,
                     'tire_id' => $data['tire_id'],
                     'position_code' => $data['position_code'],
+                    'tread_grooves_count' => $groovesCount,
+                    'minimum_tread' => $minimumTread,
+                    'average_tread' => $averageTread,
                     'source' => 'manual_tire_measurement',
                 ],
             ]);

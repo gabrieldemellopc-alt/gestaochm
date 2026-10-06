@@ -18,7 +18,7 @@
 
     rel="stylesheet"
 
-    href="{{ asset('css/pages/vehicle-tires.css') }}?v=2"
+    href="{{ asset('css/pages/vehicle-tires.css') }}?v=3"
 >
 
 @endpush
@@ -141,11 +141,597 @@
 
 
 
-    <div class="tire-position-grid">
+    @php
+        $monitoredTirePositions = $positions->count();
+
+        $installedTirePositions =
+            $positions
+                ->filter(fn ($item) => ! empty($item['tire']))
+                ->count();
+
+        $goodTirePositions =
+            $positions
+                ->filter(
+                    fn ($item) =>
+                        ! empty($item['tire'])
+                        && ! in_array(
+                            $item['status'],
+                            ['warning', 'danger'],
+                            true
+                        )
+                )
+                ->count();
+
+        $attentionTirePositions =
+            $positions
+                ->filter(
+                    fn ($item) =>
+                        in_array(
+                            $item['status'],
+                            ['warning', 'danger'],
+                            true
+                        )
+                )
+                ->count();
+
+        $latestFleetTireMeasurement =
+            $positions
+                ->pluck('latest_measurement')
+                ->filter()
+                ->sortByDesc(
+                    fn ($item) =>
+                        optional($item->measured_at)->timestamp ?? 0
+                )
+                ->first();
+
+        $latestFleetTireMeasurementDate =
+            optional(
+                optional($latestFleetTireMeasurement)->measured_at
+            )->format('d/m/Y') ?? '--';
+    @endphp
+
+    <div class="tire-overview-grid">
+
+        <div class="tire-overview-card">
+            <div class="tire-overview-icon">
+                <i class="bi bi-record-circle"></i>
+            </div>
+
+            <div>
+                <small>Posições monitoradas</small>
+                <strong>{{ $monitoredTirePositions }} posições</strong>
+                <span>{{ $installedTirePositions }} com pneu instalado</span>
+            </div>
+        </div>
+
+        <div class="tire-overview-card">
+            <div class="tire-overview-icon">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+
+            <div>
+                <small>Em boas condições</small>
+                <strong>{{ $goodTirePositions }} pneus</strong>
+                <span>sem alerta operacional</span>
+            </div>
+        </div>
+
+        <div class="tire-overview-card">
+            <div class="tire-overview-icon is-accent">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+
+            <div>
+                <small>Em atenção</small>
+                <strong>{{ $attentionTirePositions }} pneus</strong>
+                <span>atenção ou situação crítica</span>
+            </div>
+        </div>
+
+        <div class="tire-overview-card">
+            <div class="tire-overview-icon">
+                <i class="bi bi-graph-up"></i>
+            </div>
+
+            <div>
+                <small>Última medição</small>
+                <strong>{{ $latestFleetTireMeasurementDate }}</strong>
+                <span>registro mais recente</span>
+            </div>
+        </div>
+
+        <div class="tire-overview-card">
+            <div class="tire-overview-icon">
+                <i class="bi bi-signpost-split"></i>
+            </div>
+
+            <div>
+                <small>KM do veículo</small>
+                <strong>
+                    {{ number_format($vehicle->current_km ?? 0, 0, ',', '.') }} km
+                </strong>
+                <span>leitura atual</span>
+            </div>
+        </div>
+
+    </div>
 
 
+    @php
+    $sortedPositions = collect($positions)
+        ->sortBy(function ($position) {
+            $code = strtoupper(
+                trim((string) ($position['code'] ?? ''))
+            );
 
-        @foreach($positions as $position)
+            $label = mb_strtolower(
+                (string) ($position['label'] ?? '')
+            );
+
+            preg_match('/^(\d+)/', $code, $matches);
+
+            $axleOrder =
+                isset($matches[1])
+                    ? (int) $matches[1]
+                    : 999;
+
+            $groupOrder =
+                (
+                    str_ends_with($code, 'EI')
+                    || str_ends_with($code, 'DI')
+                )
+                    ? 1
+                    : (
+                        (
+                            str_ends_with($code, 'EE')
+                            || str_ends_with($code, 'DE')
+                        )
+                            ? 2
+                            : 0
+                    );
+
+            $isLeftPosition =
+                str_ends_with($code, 'EI')
+                || str_ends_with($code, 'EE')
+                || (
+                    ! str_ends_with($code, 'DI')
+                    && ! str_ends_with($code, 'DE')
+                    && (
+                        str_ends_with($code, 'E')
+                        || str_contains($label, 'esquerd')
+                    )
+                );
+
+            $sideOrder = $isLeftPosition ? 0 : 1;
+
+            return sprintf(
+                '%04d-%04d-%04d-%s',
+                $axleOrder,
+                $groupOrder,
+                $sideOrder,
+                $code
+            );
+        })
+        ->values();
+@endphp
+
+    @php
+        $tireMapAxles =
+            $sortedPositions
+                ->groupBy(function ($position) {
+                    $code = strtoupper(
+                        trim((string) ($position['code'] ?? ''))
+                    );
+
+                    preg_match('/^(\\d+)/', $code, $matches);
+
+                    return isset($matches[1])
+                        ? (int) $matches[1]
+                        : 999;
+                })
+                ->sortKeys();
+    @endphp
+
+    <div
+        class="tire-map-workspace"
+        x-data="{
+            activeTirePosition: null,
+
+            toggleTirePosition(code) {
+                this.activeTirePosition =
+                    this.activeTirePosition === code
+                        ? null
+                        : code;
+
+                if (this.activeTirePosition) {
+                    this.$nextTick(() => {
+                        const target =
+                            document.getElementById(
+                                `tire-position-${code}`
+                            );
+
+                        if (target) {
+                            target.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    });
+                }
+            }
+        }"
+    >
+
+        <section class="tire-map-panel">
+
+            <div class="tire-map-header">
+
+                <div>
+                    <span>
+                        Distribuição dos pneus
+                    </span>
+
+                    <h2>
+                        Selecione uma posição
+                    </h2>
+
+                    <p>
+                        Clique em um pneu para abrir os detalhes,
+                        medições e histórico daquela posição.
+                    </p>
+                </div>
+
+                <div class="tire-map-legend">
+                    <span>
+                        <i class="tire-map-dot is-normal"></i>
+                        Normal
+                    </span>
+
+                    <span>
+                        <i class="tire-map-dot is-attention"></i>
+                        Atenção
+                    </span>
+
+                    <span>
+                        <i class="tire-map-dot is-selected"></i>
+                        Selecionado
+                    </span>
+                </div>
+
+            </div>
+
+
+            <div class="tire-map-layout">
+
+                <div class="tire-map-front">
+                    <i class="bi bi-arrow-up"></i>
+                    <span>Frente do veículo</span>
+                </div>
+
+
+                <div class="tire-map-body">
+
+                    <div class="tire-map-chassis">
+                        <span>
+                            {{ $vehicle->plate }}
+                        </span>
+
+                        <small>
+                            {{ $vehicle->name }}
+                        </small>
+                    </div>
+
+
+                    @foreach(
+                        $tireMapAxles
+                        as $axleNumber => $axlePositions
+                    )
+
+                        @php
+                            $axleByCode =
+                                $axlePositions
+                                    ->keyBy(
+                                        fn ($item) =>
+                                            strtoupper(
+                                                trim(
+                                                    (string)
+                                                    ($item['code'] ?? '')
+                                                )
+                                            )
+                                    );
+
+                            $simpleLeft =
+                                $axleByCode->get(
+                                    $axleNumber . 'E'
+                                );
+
+                            $simpleRight =
+                                $axleByCode->get(
+                                    $axleNumber . 'D'
+                                );
+
+                            $leftOuter =
+                                $axleByCode->get(
+                                    $axleNumber . 'EE'
+                                );
+
+                            $leftInner =
+                                $axleByCode->get(
+                                    $axleNumber . 'EI'
+                                );
+
+                            $rightInner =
+                                $axleByCode->get(
+                                    $axleNumber . 'DI'
+                                );
+
+                            $rightOuter =
+                                $axleByCode->get(
+                                    $axleNumber . 'DE'
+                                );
+
+                            $isDualAxle =
+                                $leftOuter
+                                || $leftInner
+                                || $rightInner
+                                || $rightOuter;
+                        @endphp
+
+
+                        <div
+                            class="tire-map-axle {{
+                                $isDualAxle
+                                    ? 'is-dual'
+                                    : 'is-simple'
+                            }}"
+                        >
+
+                            <div class="tire-map-axle-label">
+                                {{ $axleNumber }}º eixo
+                            </div>
+
+
+                            <div class="tire-map-side is-left">
+
+                                @foreach(
+                                    $isDualAxle
+                                        ? [$leftOuter, $leftInner]
+                                        : [$simpleLeft]
+                                    as $mapPosition
+                                )
+
+                                    @if($mapPosition)
+
+                                        @php
+                                            $mapCode =
+                                                strtoupper(
+                                                    (string)
+                                                    $mapPosition['code']
+                                                );
+
+                                            $mapTire =
+                                                $mapPosition['tire'];
+
+                                            $mapStatus =
+                                                $mapPosition['status'];
+
+                                            $mapCurrentTread =
+                                                $mapTire
+                                                    ? $mapTire
+                                                        ->current_tread_depth
+                                                    : null;
+                                        @endphp
+
+
+                                        <button
+                                            type="button"
+                                            class="tire-map-position {{
+                                                in_array(
+                                                    $mapStatus,
+                                                    ['warning', 'danger'],
+                                                    true
+                                                )
+                                                    ? 'is-attention'
+                                                    : (
+                                                        $mapStatus === 'empty'
+                                                            ? 'is-empty'
+                                                            : 'is-normal'
+                                                    )
+                                            }}"
+                                            :class="{
+                                                'is-selected':
+                                                    activeTirePosition
+                                                    === @js($mapCode)
+                                            }"
+                                            :aria-expanded="
+                                                activeTirePosition
+                                                === @js($mapCode)
+                                            "
+                                            @click="
+                                                toggleTirePosition(
+                                                    @js($mapCode)
+                                                )
+                                            "
+                                        >
+
+                                            <span class="tire-map-position-code">
+                                                {{ $mapCode }}
+                                            </span>
+
+                                            <span class="tire-map-wheel">
+                                                <i></i>
+                                                <i></i>
+                                                <i></i>
+                                            </span>
+
+                                            <span class="tire-map-position-value">
+                                                @if($mapTire)
+                                                    {{
+                                                        $mapCurrentTread
+                                                            !== null
+                                                            ? number_format(
+                                                                (float)
+                                                                $mapCurrentTread,
+                                                                2,
+                                                                ',',
+                                                                '.'
+                                                            ) . ' mm'
+                                                            : 'Sem medição'
+                                                    }}
+                                                @else
+                                                    Sem pneu
+                                                @endif
+                                            </span>
+
+                                        </button>
+
+                                    @endif
+
+                                @endforeach
+
+                            </div>
+
+
+                            <div class="tire-map-axle-line"></div>
+
+
+                            <div class="tire-map-side is-right">
+
+                                @foreach(
+                                    $isDualAxle
+                                        ? [$rightInner, $rightOuter]
+                                        : [$simpleRight]
+                                    as $mapPosition
+                                )
+
+                                    @if($mapPosition)
+
+                                        @php
+                                            $mapCode =
+                                                strtoupper(
+                                                    (string)
+                                                    $mapPosition['code']
+                                                );
+
+                                            $mapTire =
+                                                $mapPosition['tire'];
+
+                                            $mapStatus =
+                                                $mapPosition['status'];
+
+                                            $mapCurrentTread =
+                                                $mapTire
+                                                    ? $mapTire
+                                                        ->current_tread_depth
+                                                    : null;
+                                        @endphp
+
+
+                                        <button
+                                            type="button"
+                                            class="tire-map-position {{
+                                                in_array(
+                                                    $mapStatus,
+                                                    ['warning', 'danger'],
+                                                    true
+                                                )
+                                                    ? 'is-attention'
+                                                    : (
+                                                        $mapStatus === 'empty'
+                                                            ? 'is-empty'
+                                                            : 'is-normal'
+                                                    )
+                                            }}"
+                                            :class="{
+                                                'is-selected':
+                                                    activeTirePosition
+                                                    === @js($mapCode)
+                                            }"
+                                            :aria-expanded="
+                                                activeTirePosition
+                                                === @js($mapCode)
+                                            "
+                                            @click="
+                                                toggleTirePosition(
+                                                    @js($mapCode)
+                                                )
+                                            "
+                                        >
+
+                                            <span class="tire-map-position-code">
+                                                {{ $mapCode }}
+                                            </span>
+
+                                            <span class="tire-map-wheel">
+                                                <i></i>
+                                                <i></i>
+                                                <i></i>
+                                            </span>
+
+                                            <span class="tire-map-position-value">
+                                                @if($mapTire)
+                                                    {{
+                                                        $mapCurrentTread
+                                                            !== null
+                                                            ? number_format(
+                                                                (float)
+                                                                $mapCurrentTread,
+                                                                2,
+                                                                ',',
+                                                                '.'
+                                                            ) . ' mm'
+                                                            : 'Sem medição'
+                                                    }}
+                                                @else
+                                                    Sem pneu
+                                                @endif
+                                            </span>
+
+                                        </button>
+
+                                    @endif
+
+                                @endforeach
+
+                            </div>
+
+                        </div>
+
+                    @endforeach
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div
+            class="tire-map-empty-state"
+            x-show="! activeTirePosition"
+            x-transition.opacity.duration.180ms
+            x-cloak
+        >
+            <div class="tire-map-empty-icon">
+                <i class="bi bi-record-circle"></i>
+            </div>
+
+            <div>
+                <h3>
+                    Selecione um pneu no mapa
+                </h3>
+
+                <p>
+                    Os dados, histórico e formulário de medição
+                    aparecerão aqui.
+                </p>
+            </div>
+        </div>
+
+
+        <div class="tire-position-grid tire-position-grid-collapsible">
+
+@foreach($sortedPositions as $position)
 
 
 
@@ -155,7 +741,18 @@
 
                 $tire = $position['tire'];
 
-                $measurement = $position['latest_measurement'];
+                $measurement =
+                    $position['latest_measurement'];
+
+                $measurementHistory =
+                    $position['measurement_history']
+                    ?? collect();
+
+                $measurementHistoryCount =
+                    (int) (
+                        $position['measurement_history_count']
+                        ?? 0
+                    );
 
                 $status = $position['status'];
 
@@ -163,314 +760,1348 @@
 
 
 
-            <section class="tire-position-card {{ $status }}">
+            <section
+                id="tire-position-{{ $position['code'] }}"
+                class="tire-position-card {{ $status }}"
+                x-show="
+                    activeTirePosition
+                    === @js(strtoupper((string) $position['code']))
+                "
+                x-transition.opacity.duration.180ms
+                x-cloak
+            >
 
 
 
                 <div class="tire-position-header">
 
-
-
-                    <div>
-
-
-
-                        <small>
-
+                    <div class="tire-position-header-left">
+                        <span class="tire-position-badge">
                             {{ $position['code'] }}
+                        </span>
 
-                        </small>
-
-
-
-                        <h2>
-
+                        <h2 class="tire-position-title">
                             {{ $position['label'] }}
-
                         </h2>
+                    </div>
 
+                    <div class="tire-position-header-actions">
 
+                    <span
+                        class="tire-status-badge
+                            {{
+                                in_array(
+                                    $status,
+                                    ['warning', 'danger'],
+                                    true
+                                )
+                                    ? 'is-warn'
+                                    : (
+                                        in_array(
+                                            $status,
+                                            ['empty', 'pending'],
+                                            true
+                                        )
+                                            ? 'is-neutral'
+                                            : 'is-ok'
+                                    )
+                            }}"
+                    >
+                        @switch($status)
+                            @case('empty')
+                                <i class="bi bi-circle"></i>
+                                Sem pneu
+                                @break
+
+                            @case('pending')
+                                <i class="bi bi-clock"></i>
+                                Sem medição
+                                @break
+
+                            @case('danger')
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Crítico
+                                @break
+
+                            @case('warning')
+                                <i class="bi bi-exclamation-circle"></i>
+                                Atenção
+                                @break
+
+                            @default
+                                <i class="bi bi-check2-circle"></i>
+                                OK
+                        @endswitch
+                    </span>
+
+                    <button
+                        type="button"
+                        class="tire-position-close"
+                        title="Fechar detalhes"
+                        aria-label="Fechar detalhes desta posição"
+                        @click="
+                            activeTirePosition = null;
+                            window.scrollTo({
+                                top:
+                                    document.querySelector(
+                                        '.tire-map-panel'
+                                    )?.offsetTop
+                                    - 90,
+                                behavior: 'smooth'
+                            });
+                        "
+                    >
+                        <i class="bi bi-x-lg"></i>
+                    </button>
 
                     </div>
 
-
-
-                    <span class="tire-status {{ $status }}">
-
-                        @switch($status)
-
-                            @case('empty')
-
-                                Sem pneu
-
-                                @break
-
-
-
-                            @case('pending')
-
-                                Sem medição
-
-                                @break
-
-
-
-                            @case('danger')
-
-                                Crítico
-
-                                @break
-
-
-
-                            @case('warning')
-
-                                Atenção
-
-                                @break
-
-
-
-                            @default
-
-                                OK
-
-                        @endswitch
-
-                    </span>
-
-
-
                 </div>
-
-
 
                 @if($tire)
 
 
 
-                    <div class="tire-info-box">
+                    @php
+                        $visualGrooveCount =
+                            in_array(
+                                (int) $tire->tread_grooves_count,
+                                [3, 4],
+                                true
+                            )
+                                ? (int) $tire->tread_grooves_count
+                                : 0;
+
+                        $positionCode =
+                            strtoupper(
+                                trim((string) $position['code'])
+                            );
+
+                        $positionLabel =
+                            mb_strtolower(
+                                (string) $position['label']
+                            );
+
+                        $isLeftTirePosition =
+                            str_ends_with($positionCode, 'EI')
+                            || str_ends_with($positionCode, 'EE')
+                            || (
+                                ! str_ends_with($positionCode, 'DI')
+                                && ! str_ends_with($positionCode, 'DE')
+                                && str_contains(
+                                    $positionLabel,
+                                    'esquerd'
+                                )
+                            );
+
+                        $wearPercentValue =
+                            $position['wear_percent'] !== null
+                                ? max(
+                                    0,
+                                    min(
+                                        100,
+                                        (float) $position['wear_percent']
+                                    )
+                                )
+                                : 0;
 
 
+                        $treadDistribution = [];
 
-                        <div>
+                        if ($measurement) {
+                            if ($measurement->outer_tread !== null) {
+                                $treadDistribution['Externo'] =
+                                    (float) $measurement->outer_tread;
+                            }
 
-                            <span>
+                            if (
+                                (int) ($tire->tread_grooves_count ?? 0) === 3
+                                && $measurement->center_outer_tread !== null
+                            ) {
+                                $treadDistribution['Centro'] =
+                                    (float) $measurement->center_outer_tread;
+                            }
 
-                                Pneu
+                            if (
+                                (int) ($tire->tread_grooves_count ?? 0) === 4
+                            ) {
+                                if (
+                                    $measurement->center_outer_tread !== null
+                                ) {
+                                    $treadDistribution['Centro externo'] =
+                                        (float)
+                                        $measurement->center_outer_tread;
+                                }
 
-                            </span>
+                                if (
+                                    $measurement->center_inner_tread !== null
+                                ) {
+                                    $treadDistribution['Centro interno'] =
+                                        (float)
+                                        $measurement->center_inner_tread;
+                                }
+                            }
 
+                            if ($measurement->inner_tread !== null) {
+                                $treadDistribution['Interno'] =
+                                    (float) $measurement->inner_tread;
+                            }
+                        }
 
+                        $mostWornTreadLabel = null;
+                        $treadSpread = null;
 
-                            <strong>
+                        if (count($treadDistribution) >= 2) {
+                            $minimumDistribution =
+                                min($treadDistribution);
 
-                                {{ $tire->code }}
+                            $maximumDistribution =
+                                max($treadDistribution);
 
-                                @if($tire->retreads_count > 0)
-                                    <small>R{{ $tire->retreads_count }}</small>
+                            $mostWornTreadLabel =
+                                array_search(
+                                    $minimumDistribution,
+                                    $treadDistribution,
+                                    true
+                                );
+
+                            $treadSpread =
+                                round(
+                                    $maximumDistribution
+                                    - $minimumDistribution,
+                                    2
+                                );
+                        }
+                    @endphp
+
+                    <div
+                        class="tire-position-top {{
+                            $isLeftTirePosition
+                                ? 'is-left-position'
+                                : 'is-right-position'
+                        }}"
+                    >
+
+                        <div
+                            class="tire-visual-card"
+                            x-data="{
+                                hoveredGrooveCode: null,
+                                hoveredGrooveLabel: null
+                            }"
+                        >
+
+                            <div class="tire-visual-svg-wrap">
+                                @php
+                                $isDualTirePosition =
+                                    str_ends_with($positionCode, 'EI')
+                                    || str_ends_with($positionCode, 'EE')
+                                    || str_ends_with($positionCode, 'DI')
+                                    || str_ends_with($positionCode, 'DE');
+
+                                $isInnerTirePosition =
+                                    str_ends_with($positionCode, 'EI')
+                                    || str_ends_with($positionCode, 'DI');
+
+                                $isOuterTirePosition =
+                                    str_ends_with($positionCode, 'EE')
+                                    || str_ends_with($positionCode, 'DE');
+                            @endphp
+
+                            @php
+                                $grooveSemanticLabels =
+                                    $visualGrooveCount === 4
+                                        ? [
+                                            'S1' => 'Lado externo',
+                                            'S2' => 'Centro externo',
+                                            'S3' => 'Centro interno',
+                                            'S4' => 'Lado interno',
+                                        ]
+                                        : [
+                                            'S1' => 'Lado externo',
+                                            'S2' => 'Centro',
+                                            'S3' => 'Lado interno',
+                                        ];
+                            @endphp
+
+                            <svg
+                                viewBox="0 0 240 250"
+                                role="img"
+                                aria-label="Representação da posição do pneu"
+                                class="tire-technical-svg"
+                            >
+
+                                {{-- ========================================
+                                     REFERÊNCIA DO VEÍCULO
+                                     Esquerda: veículo à direita
+                                     Direita: veículo à esquerda
+                                     ======================================== --}}
+
+                                @if($isLeftTirePosition)
+
+                                    <path
+                                        d="
+                                            M226 70
+                                            H210
+                                            Q198 70 198 82
+                                            V103
+                                            Q198 114 210 114
+                                            H226
+
+                                            M226 160
+                                            H210
+                                            Q198 160 198 148
+                                            V134
+                                        "
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="3"
+                                        stroke-linecap="round"
+                                    />
+
+                                @else
+
+                                    <path
+                                        d="
+                                            M14 70
+                                            H30
+                                            Q42 70 42 82
+                                            V103
+                                            Q42 114 30 114
+                                            H14
+
+                                            M14 160
+                                            H30
+                                            Q42 160 42 148
+                                            V134
+                                        "
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="3"
+                                        stroke-linecap="round"
+                                    />
+
                                 @endif
-                            </strong>
+
+
+                                @if($isDualTirePosition)
+
+                                    {{-- ====================================
+                                         RODADO DUPLO
+                                         ==================================== --}}
+
+                                    @php
+                                        /*
+                                         * No lado esquerdo:
+                                         *   externo = pneu da esquerda
+                                         *   interno = pneu da direita
+                                         *
+                                         * No lado direito:
+                                         *   interno = pneu da esquerda
+                                         *   externo = pneu da direita
+                                         */
+
+                                        $leftTireIsSelected =
+                                            $isLeftTirePosition
+                                                ? $isOuterTirePosition
+                                                : $isInnerTirePosition;
+
+                                        $rightTireIsSelected =
+                                            $isLeftTirePosition
+                                                ? $isInnerTirePosition
+                                                : $isOuterTirePosition;
+
+                                        $leftTireLabel =
+                                            $isLeftTirePosition
+                                                ? 'EXTERNO'
+                                                : 'INTERNO';
+
+                                        $rightTireLabel =
+                                            $isLeftTirePosition
+                                                ? 'INTERNO'
+                                                : 'EXTERNO';
+                                    @endphp
+
+
+                                    {{-- PNEU ESQUERDO DO PAR --}}
+
+                                    <rect
+                                        x="66"
+                                        y="46"
+                                        width="48"
+                                        height="164"
+                                        rx="22"
+                                        fill="{{
+                                            $leftTireIsSelected
+                                                ? 'rgba(249,115,22,.08)'
+                                                : 'rgba(148,163,184,.035)'
+                                        }}"
+                                        stroke="{{
+                                            $leftTireIsSelected
+                                                ? '#f97316'
+                                                : '#94a3b8'
+                                        }}"
+                                        stroke-width="{{
+                                            $leftTireIsSelected ? '3' : '2'
+                                        }}"
+                                    />
+
+                                    <line
+                                        x1="78"
+                                        y1="56"
+                                        x2="78"
+                                        y2="200"
+                                        stroke="#64748b"
+                                        stroke-width="2"
+                                    />
+
+                                    <line
+                                        x1="90"
+                                        y1="56"
+                                        x2="90"
+                                        y2="200"
+                                        stroke="#64748b"
+                                        stroke-width="2"
+                                    />
+
+                                    <line
+                                        x1="102"
+                                        y1="56"
+                                        x2="102"
+                                        y2="200"
+                                        stroke="#64748b"
+                                        stroke-width="2"
+                                    />
+
+
+                                    {{-- PNEU DIREITO DO PAR --}}
+
+                                    <rect
+                                        x="122"
+                                        y="46"
+                                        width="48"
+                                        height="164"
+                                        rx="22"
+                                        fill="{{
+                                            $rightTireIsSelected
+                                                ? 'rgba(249,115,22,.08)'
+                                                : 'rgba(148,163,184,.035)'
+                                        }}"
+                                        stroke="{{
+                                            $rightTireIsSelected
+                                                ? '#f97316'
+                                                : '#94a3b8'
+                                        }}"
+                                        stroke-width="{{
+                                            $rightTireIsSelected ? '3' : '2'
+                                        }}"
+                                    />
+
+                                    <line
+                                        x1="134"
+                                        y1="56"
+                                        x2="134"
+                                        y2="200"
+                                        stroke="#64748b"
+                                        stroke-width="2"
+                                    />
+
+                                    <line
+                                        x1="146"
+                                        y1="56"
+                                        x2="146"
+                                        y2="200"
+                                        stroke="#64748b"
+                                        stroke-width="2"
+                                    />
+
+                                    <line
+                                        x1="158"
+                                        y1="56"
+                                        x2="158"
+                                        y2="200"
+                                        stroke="#64748b"
+                                        stroke-width="2"
+                                    />
+
+
+                                    {{-- INDICADORES DO PNEU SELECIONADO --}}
+
+                                    @if($leftTireIsSelected)
+                                        <circle
+                                            cx="90"
+                                            cy="29"
+                                            r="5"
+                                            fill="#f97316"
+                                        />
+
+                                        <path
+                                            d="M90 35 V43"
+                                            stroke="#f97316"
+                                            stroke-width="2"
+                                        />
+                                    @endif
+
+                                    @if($rightTireIsSelected)
+                                        <circle
+                                            cx="146"
+                                            cy="29"
+                                            r="5"
+                                            fill="#f97316"
+                                        />
+
+                                        <path
+                                            d="M146 35 V43"
+                                            stroke="#f97316"
+                                            stroke-width="2"
+                                        />
+                                    @endif
+
+
+                                    {{-- LEGENDAS --}}
+
+                                    <text
+                                        x="90"
+                                        y="226"
+                                        text-anchor="middle"
+                                        fill="{{
+                                            $leftTireIsSelected
+                                                ? '#fdba74'
+                                                : '#94a3b8'
+                                        }}"
+                                        font-size="9"
+                                        font-weight="{{
+                                            $leftTireIsSelected
+                                                ? '900'
+                                                : '700'
+                                        }}"
+                                    >
+                                        {{ $leftTireLabel }}
+                                    </text>
+
+                                    <text
+                                        x="146"
+                                        y="226"
+                                        text-anchor="middle"
+                                        fill="{{
+                                            $rightTireIsSelected
+                                                ? '#fdba74'
+                                                : '#94a3b8'
+                                        }}"
+                                        font-size="9"
+                                        font-weight="{{
+                                            $rightTireIsSelected
+                                                ? '900'
+                                                : '700'
+                                        }}"
+                                    >
+                                        {{ $rightTireLabel }}
+                                    </text>
+
+
+                                    <text
+                                        x="{{
+                                            $leftTireIsSelected
+                                                ? 90
+                                                : 146
+                                        }}"
+                                        y="241"
+                                        text-anchor="middle"
+                                        fill="#fdba74"
+                                        font-size="9"
+                                        font-weight="900"
+                                    >
+                                        ESTE PNEU
+                                    </text>
+
+                                @else
+
+                                    {{-- ====================================
+                                         RODADO SIMPLES
+                                         ==================================== --}}
+
+                                    <rect
+                                        x="78"
+                                        y="38"
+                                        width="84"
+                                        height="180"
+                                        rx="34"
+                                        fill="rgba(148,163,184,.06)"
+                                        stroke="#cbd5e1"
+                                        stroke-width="3"
+                                    />
+
+                                    <path
+                                        d="
+                                            M84 60 L98 70
+                                            M84 82 L98 92
+                                            M84 104 L98 114
+                                            M84 126 L98 136
+                                            M84 148 L98 158
+                                            M84 170 L98 180
+                                            M84 192 L98 202
+
+                                            M156 60 L142 70
+                                            M156 82 L142 92
+                                            M156 104 L142 114
+                                            M156 126 L142 136
+                                            M156 148 L142 158
+                                            M156 170 L142 180
+                                            M156 192 L142 202
+                                        "
+                                        fill="none"
+                                        stroke="#64748b"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                    />
+
+
+                                    @if($visualGrooveCount === 3)
+
+                                        @php
+                                            $svgGrooves3 =
+                                                $isLeftTirePosition
+                                                    ? [
+                                                        ['x' => 102, 'label' => 'S1'],
+                                                        ['x' => 120, 'label' => 'S2'],
+                                                        ['x' => 138, 'label' => 'S3'],
+                                                    ]
+                                                    : [
+                                                        ['x' => 102, 'label' => 'S3'],
+                                                        ['x' => 120, 'label' => 'S2'],
+                                                        ['x' => 138, 'label' => 'S1'],
+                                                    ];
+                                        @endphp
+
+                                        @foreach($svgGrooves3 as $groove)
+
+                                            <rect
+                                                class="tire-groove-hit"
+                                                x="{{ $groove['x'] - 9 }}"
+                                                y="12"
+                                                width="18"
+                                                height="202"
+                                                fill="transparent"
+                                                @mouseenter="
+                                                    hoveredGrooveCode =
+                                                        @js($groove['label']);
+
+                                                    hoveredGrooveLabel =
+                                                        @js(
+                                                            $grooveSemanticLabels[
+                                                                $groove['label']
+                                                            ]
+                                                            ?? ''
+                                                        );
+                                                "
+                                                @mouseleave="
+                                                    hoveredGrooveCode = null;
+                                                    hoveredGrooveLabel = null;
+                                                "
+                                            />
+
+                                            <line
+                                                x1="{{ $groove['x'] }}"
+                                                y1="49"
+                                                x2="{{ $groove['x'] }}"
+                                                y2="207"
+                                                stroke="#94a3b8"
+                                                stroke-width="3"
+                                                stroke-linecap="round"
+                                            />
+
+                                            <circle
+                                                cx="{{ $groove['x'] }}"
+                                                cy="28"
+                                                r="4"
+                                                fill="#f97316"
+                                            />
+
+                                            <text
+                                                x="{{ $groove['x'] }}"
+                                                y="17"
+                                                text-anchor="middle"
+                                                fill="#e2e8f0"
+                                                font-size="11"
+                                                font-weight="800"
+                                            >
+                                                {{ $groove['label'] }}
+                                            </text>
+
+                                        @endforeach
+
+                                    @elseif($visualGrooveCount === 4)
+
+                                        @php
+                                            $svgGrooves4 =
+                                                $isLeftTirePosition
+                                                    ? [
+                                                        ['x' => 96, 'label' => 'S1'],
+                                                        ['x' => 112, 'label' => 'S2'],
+                                                        ['x' => 128, 'label' => 'S3'],
+                                                        ['x' => 144, 'label' => 'S4'],
+                                                    ]
+                                                    : [
+                                                        ['x' => 96, 'label' => 'S4'],
+                                                        ['x' => 112, 'label' => 'S3'],
+                                                        ['x' => 128, 'label' => 'S2'],
+                                                        ['x' => 144, 'label' => 'S1'],
+                                                    ];
+                                        @endphp
+
+                                        @foreach($svgGrooves4 as $groove)
+
+                                            <rect
+                                                class="tire-groove-hit"
+                                                x="{{ $groove['x'] - 8 }}"
+                                                y="12"
+                                                width="16"
+                                                height="202"
+                                                fill="transparent"
+                                                @mouseenter="
+                                                    hoveredGrooveCode =
+                                                        @js($groove['label']);
+
+                                                    hoveredGrooveLabel =
+                                                        @js(
+                                                            $grooveSemanticLabels[
+                                                                $groove['label']
+                                                            ]
+                                                            ?? ''
+                                                        );
+                                                "
+                                                @mouseleave="
+                                                    hoveredGrooveCode = null;
+                                                    hoveredGrooveLabel = null;
+                                                "
+                                            />
+
+                                            <line
+                                                x1="{{ $groove['x'] }}"
+                                                y1="49"
+                                                x2="{{ $groove['x'] }}"
+                                                y2="207"
+                                                stroke="#94a3b8"
+                                                stroke-width="3"
+                                                stroke-linecap="round"
+                                            />
+
+                                            <circle
+                                                cx="{{ $groove['x'] }}"
+                                                cy="28"
+                                                r="4"
+                                                fill="#f97316"
+                                            />
+
+                                            <text
+                                                x="{{ $groove['x'] }}"
+                                                y="17"
+                                                text-anchor="middle"
+                                                fill="#e2e8f0"
+                                                font-size="11"
+                                                font-weight="800"
+                                            >
+                                                {{ $groove['label'] }}
+                                            </text>
+
+                                        @endforeach
+
+                                    @else
+
+                                        <line
+                                            x1="108"
+                                            y1="49"
+                                            x2="108"
+                                            y2="207"
+                                            stroke="#64748b"
+                                            stroke-width="2"
+                                            stroke-dasharray="5 6"
+                                        />
+
+                                        <line
+                                            x1="132"
+                                            y1="49"
+                                            x2="132"
+                                            y2="207"
+                                            stroke="#64748b"
+                                            stroke-width="2"
+                                            stroke-dasharray="5 6"
+                                        />
+
+                                        <text
+                                            x="120"
+                                            y="232"
+                                            text-anchor="middle"
+                                            fill="#94a3b8"
+                                            font-size="9"
+                                            font-weight="700"
+                                        >
+                                            DEFINIR 3 OU 4 SULCOS
+                                        </text>
+
+                                    @endif
+
+                                @endif
+
+                            </svg>
+                            </div>
+
+                            <div
+                                class="tire-groove-lens"
+                                x-show="hoveredGrooveCode"
+                                x-transition.opacity.duration.120ms
+                                x-cloak
+                            >
+                                <strong
+                                    x-text="hoveredGrooveCode"
+                                ></strong>
+
+                                <span
+                                    x-text="hoveredGrooveLabel"
+                                ></span>
+                            </div>
+
+                            <div class="tire-visual-side">
+                                <i
+                                    class="bi {{
+                                        $isLeftTirePosition
+                                            ? 'bi-arrow-right'
+                                            : 'bi-arrow-left'
+                                    }}"
+                                ></i>
+
+                                <small>
+                                    Lado
+                                    <br>
+                                    {{
+                                        $isLeftTirePosition
+                                            ? 'esquerdo'
+                                            : 'direito'
+                                    }}
+                                </small>
+                            </div>
 
                         </div>
 
 
+                        <div class="tire-position-details">
 
-                        <div>
+                            <div class="tire-meta-card">
 
-                            <span>
+                                <div class="tire-meta-grid">
 
-                                Marca / Modelo
+                                    <div class="tire-meta-item">
+                                        <small>Pneu</small>
+                                        <strong>
+                                            {{ $tire->code }}
 
-                            </span>
+                                            @if($tire->retreads_count > 0)
+                                                <span class="tire-retread-tag">
+                                                    R{{ $tire->retreads_count }}
+                                                </span>
+                                            @endif
+                                        </strong>
+                                    </div>
+
+                                    <div class="tire-meta-item">
+                                        <small>Marca / Modelo</small>
+                                        <strong>
+                                            {{ $tire->brand ?? 'Sem marca' }}
+                                            {{
+                                                $tire->model
+                                                    ? '· ' . $tire->model
+                                                    : ''
+                                            }}
+                                        </strong>
+                                    </div>
+
+                                    <div class="tire-meta-item">
+                                        <small>Sulco inicial</small>
+                                        <strong>
+                                            {{ $tire->initial_tread_depth ?? '--' }}
+                                            mm
+                                        </strong>
+                                    </div>
+
+                                    <div class="tire-meta-item">
+                                        <small>KM instalação</small>
+                                        <strong>
+                                            {{
+                                                $installation?->installed_km
+                                                    ? number_format(
+                                                        $installation->installed_km,
+                                                        0,
+                                                        ',',
+                                                        '.'
+                                                    ) . ' km'
+                                                    : '--'
+                                            }}
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+                            </div>
 
 
+                            <div class="tire-reference-card">
 
-                            <strong>
+                                <div class="tire-reference-title">
+                                    Referência atual
+                                </div>
 
-                                {{ $tire->brand ?? 'Sem marca' }}
+                                @if($tire->current_tread_source !== 'initial')
 
-                                {{ $tire->model ? '· ' . $tire->model : '' }}
+                                    <div class="tire-reference-grid">
 
-                            </strong>
+                                        <div class="tire-reference-item">
+                                            <small>Menor sulco atual</small>
+
+                                            <strong>
+                                                {{ $tire->current_tread_depth }} mm
+                                            </strong>
+
+                                            <span>
+                                                @if(
+                                                    $tire->current_tread_source
+                                                    === 'retread'
+                                                )
+                                                    Referência: Recapagem
+                                                    R{{ $tire->retreads_count }}
+                                                @else
+                                                    Referência: Última medição
+                                                @endif
+                                            </span>
+                                        </div>
+
+                                        <div class="tire-reference-item">
+                                            <small>Desgaste</small>
+
+                                            <strong>
+                                                {{
+                                                    $position['wear_percent']
+                                                    !== null
+                                                        ? $position['wear_percent']
+                                                            . '%'
+                                                        : '--'
+                                                }}
+                                            </strong>
+
+                                            @if(
+                                                $position['wear_percent']
+                                                !== null
+                                            )
+                                                <div class="tire-wear-bar">
+                                                    <span
+                                                        style="width: {{ $wearPercentValue }}%;"
+                                                    ></span>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="tire-reference-item">
+                                            <small>KM</small>
+
+                                            <strong>
+                                                {{
+                                                    $measurement?->vehicle_km
+                                                        ? number_format(
+                                                            $measurement->vehicle_km,
+                                                            0,
+                                                            ',',
+                                                            '.'
+                                                        )
+                                                        : '--'
+                                                }}
+                                            </strong>
+                                        </div>
+
+                                        <div class="tire-reference-item">
+                                            <small>Data</small>
+
+                                            <strong>
+                                                {{
+                                                    optional(
+                                                        $tire->current_tread_date
+                                                    )->format('d/m/Y')
+                                                    ?? '--'
+                                                }}
+                                            </strong>
+                                        </div>
+
+                                    </div>
+
+                                @else
+
+                                    <div class="tire-reference-empty">
+                                        <i class="bi bi-info-circle"></i>
+
+                                        <span>
+                                            Nenhuma medição operacional
+                                            registrada para este pneu nesta
+                                            posição.
+                                        </span>
+                                    </div>
+
+                                @endif
+
+                            </div>
+
+                            @if(
+                                $mostWornTreadLabel
+                                && $treadSpread !== null
+                            )
+                                <div class="tire-wear-distribution">
+                                    <span>
+                                        <i class="bi bi-distribute-horizontal"></i>
+                                        Maior desgaste:
+                                        <strong>
+                                            {{ $mostWornTreadLabel }}
+                                        </strong>
+                                    </span>
+
+                                    <span>
+                                        Diferença entre sulcos:
+                                        <strong>
+                                            {{
+                                                number_format(
+                                                    $treadSpread,
+                                                    2,
+                                                    ',',
+                                                    '.'
+                                                )
+                                            }}
+                                            mm
+                                        </strong>
+                                    </span>
+                                </div>
+                            @endif
 
                         </div>
-
-
-
-                        <div>
-
-                            <span>
-
-                                Sulco inicial
-
-                            </span>
-
-
-
-                            <strong>
-
-                                {{ $tire->initial_tread_depth ?? '--' }} mm
-
-                            </strong>
-
-                        </div>
-
-
-
-
-
-                        <div>
-
-                            <span>
-
-                                KM instalação
-
-                            </span>
-
-
-
-                            <strong>
-
-                                {{ $installation?->installed_km ? number_format($installation->installed_km, 0, ',', '.') . ' km' : '--' }}
-
-                            </strong>
-
-                        </div>
-
-
 
                     </div>
 
+                    @if($measurementHistory->isNotEmpty())
 
+                        <details class="tire-history-card">
 
-                    <div class="tire-measure-box">
+                            <summary class="tire-history-summary">
 
+                                <div>
+                                    <i class="bi bi-clock-history"></i>
 
-
-                        <h3>
-
-                            Referência atual
-                        </h3>
-
-
-
-                        @if($tire->current_tread_source !== 'initial')
-
-
-                        <div class="tire-measure-grid">
-
-
-
-                            <div>
+                                    <strong>
+                                        Histórico de medições
+                                    </strong>
+                                </div>
 
                                 <span>
-
-                                    Sulco atual
-
+                                    {{
+                                        $measurementHistoryCount === 1
+                                            ? '1 medição'
+                                            : $measurementHistoryCount . ' medições'
+                                    }}
                                 </span>
 
+                            </summary>
 
 
-                                <strong>
+                            <div class="tire-history-list">
 
-                                    {{ $tire->current_tread_depth }} mm
-                                </strong>
+                                @foreach($measurementHistory as $historyMeasurement)
 
-                                @if($tire->current_tread_source === 'retread')
-                                    <small>
-                                        Referência: Recapagem R{{ $tire->retreads_count }}
-                                    </small>
-                                @elseif($tire->current_tread_source === 'measurement')
-                                    <small>
-                                        Referência: Última medição
-                                    </small>
+                                    @php
+                                        $historyValues = [];
+
+                                        if (
+                                            $historyMeasurement->outer_tread
+                                            !== null
+                                        ) {
+                                            $historyValues[] = [
+                                                'label' => 'S1',
+                                                'value' =>
+                                                    $historyMeasurement
+                                                        ->outer_tread,
+                                            ];
+                                        }
+
+                                        if (
+                                            $historyMeasurement
+                                                ->center_outer_tread
+                                            !== null
+                                        ) {
+                                            $historyValues[] = [
+                                                'label' => 'S2',
+                                                'value' =>
+                                                    $historyMeasurement
+                                                        ->center_outer_tread,
+                                            ];
+                                        }
+
+                                        if (
+                                            $historyMeasurement
+                                                ->center_inner_tread
+                                            !== null
+                                        ) {
+                                            $historyValues[] = [
+                                                'label' => 'S3',
+                                                'value' =>
+                                                    $historyMeasurement
+                                                        ->center_inner_tread,
+                                            ];
+                                        }
+
+                                        if (
+                                            $historyMeasurement->inner_tread
+                                            !== null
+                                        ) {
+                                            $innerLabel =
+                                                $historyMeasurement
+                                                    ->center_inner_tread
+                                                !== null
+                                                    ? 'S4'
+                                                    : (
+                                                        $historyMeasurement
+                                                            ->center_outer_tread
+                                                        !== null
+                                                            ? 'S3'
+                                                            : null
+                                                    );
+
+                                            if ($innerLabel) {
+                                                $historyValues[] = [
+                                                    'label' => $innerLabel,
+                                                    'value' =>
+                                                        $historyMeasurement
+                                                            ->inner_tread,
+                                                ];
+                                            }
+                                        }
+
+                                        $isLegacyHistoryMeasurement =
+                                            count($historyValues) <= 1;
+                                    @endphp
+
+
+                                    <div class="tire-history-row">
+
+                                        <div class="tire-history-main">
+
+                                            <div class="tire-history-date">
+                                                <strong>
+                                                    {{
+                                                        optional(
+                                                            $historyMeasurement
+                                                                ->measured_at
+                                                        )->format('d/m/Y')
+                                                        ?? '--'
+                                                    }}
+                                                </strong>
+
+                                                <span>
+                                                    {{
+                                                        $historyMeasurement
+                                                            ->vehicle_km
+                                                            !== null
+                                                            ? number_format(
+                                                                $historyMeasurement
+                                                                    ->vehicle_km,
+                                                                0,
+                                                                ',',
+                                                                '.'
+                                                            ) . ' km'
+                                                            : 'KM não informado'
+                                                    }}
+                                                </span>
+                                            </div>
+
+
+                                            <div class="tire-history-grooves">
+
+                                                @if(!$isLegacyHistoryMeasurement)
+
+                                                    @foreach(
+                                                        $historyValues
+                                                        as $historyValue
+                                                    )
+                                                        <span>
+                                                            <small>
+                                                                {{
+                                                                    $historyValue[
+                                                                        'label'
+                                                                    ]
+                                                                }}
+                                                            </small>
+
+                                                            <strong>
+                                                                {{
+                                                                    number_format(
+                                                                        (float)
+                                                                        $historyValue[
+                                                                            'value'
+                                                                        ],
+                                                                        2,
+                                                                        ',',
+                                                                        '.'
+                                                                    )
+                                                                }}
+                                                                mm
+                                                            </strong>
+                                                        </span>
+                                                    @endforeach
+
+                                                @else
+
+                                                    <span class="is-legacy">
+                                                        <small>
+                                                            Leitura
+                                                        </small>
+
+                                                        <strong>
+                                                            {{
+                                                                number_format(
+                                                                    (float)
+                                                                    $historyMeasurement
+                                                                        ->minimum_tread,
+                                                                    2,
+                                                                    ',',
+                                                                    '.'
+                                                                )
+                                                            }}
+                                                            mm
+                                                        </strong>
+                                                    </span>
+
+                                                @endif
+
+                                            </div>
+
+
+                                            <div class="tire-history-result">
+                                                <span>
+                                                    <small>Menor</small>
+
+                                                    <strong>
+                                                        {{
+                                                            number_format(
+                                                                (float)
+                                                                $historyMeasurement
+                                                                    ->minimum_tread,
+                                                                2,
+                                                                ',',
+                                                                '.'
+                                                            )
+                                                        }}
+                                                        mm
+                                                    </strong>
+                                                </span>
+
+                                                <span>
+                                                    <small>Média</small>
+
+                                                    <strong>
+                                                        {{
+                                                            number_format(
+                                                                (float)
+                                                                $historyMeasurement
+                                                                    ->average_tread,
+                                                                2,
+                                                                ',',
+                                                                '.'
+                                                            )
+                                                        }}
+                                                        mm
+                                                    </strong>
+                                                </span>
+                                            </div>
+
+                                        </div>
+
+
+                                        @if($historyMeasurement->notes)
+                                            <div class="tire-history-notes">
+                                                <i class="bi bi-chat-left-text"></i>
+
+                                                {{
+                                                    $historyMeasurement->notes
+                                                }}
+                                            </div>
+                                        @endif
+
+                                    </div>
+
+                                @endforeach
+
+
+                                @if($measurementHistoryCount > 5)
+                                    <div class="tire-history-more">
+                                        Exibindo as 5 medições mais recentes de
+                                        {{ $measurementHistoryCount }} registros.
+                                    </div>
                                 @endif
-                            </div>
-
-
-
-                            <div>
-
-                                <span>
-
-                                    Desgaste
-
-                                </span>
-
-
-
-                                <strong>
-
-                                    {{ $position['wear_percent'] !== null ? $position['wear_percent'] . '%' : '--' }}
-
-                                </strong>
 
                             </div>
 
+                        </details>
 
-
-                            <div>
-
-                                <span>
-
-                                    KM
-
-                                </span>
-
-
-
-                                <strong>
-
-                                    {{ $measurement?->vehicle_km ? number_format($measurement->vehicle_km, 0, ',', '.') : '--' }}
-                                </strong>
-
-                            </div>
-
-
-
-                            <div>
-
-                                <span>
-
-                                    Data
-
-                                </span>
-
-
-
-                                <strong>
-
-                                    {{ optional($tire->current_tread_date)->format('d/m/Y') ?? '--' }}
-                                </strong>
-
-                            </div>
-
-
-
-                        </div>
-
-                        @else
-
-
-
-                            <p>
-
-                                Nenhuma medição registrada para este pneu nesta posição.
-
-                            </p>
-
-
-
-                        @endif
-
-
-
-                    </div>
-
+                    @endif
 
 
                     @if($canMeasureTires)
+
+                    @php
+                        $previousGrooveCount =
+                            (int) ($tire->tread_grooves_count ?? 0);
+
+                        $previousTread1 = null;
+                        $previousTread2 = null;
+                        $previousTread3 = null;
+                        $previousTread4 = null;
+
+                        $previousMeasurementComparable = false;
+
+                        if (
+                            $measurement
+                            && $previousGrooveCount === 3
+                            && $measurement->outer_tread !== null
+                            && $measurement->center_outer_tread !== null
+                            && $measurement->inner_tread !== null
+                        ) {
+                            $previousTread1 =
+                                (float) $measurement->outer_tread;
+
+                            $previousTread2 =
+                                (float) $measurement->center_outer_tread;
+
+                            $previousTread3 =
+                                (float) $measurement->inner_tread;
+
+                            $previousMeasurementComparable = true;
+                        }
+
+                        if (
+                            $measurement
+                            && $previousGrooveCount === 4
+                            && $measurement->outer_tread !== null
+                            && $measurement->center_outer_tread !== null
+                            && $measurement->center_inner_tread !== null
+                            && $measurement->inner_tread !== null
+                        ) {
+                            $previousTread1 =
+                                (float) $measurement->outer_tread;
+
+                            $previousTread2 =
+                                (float) $measurement->center_outer_tread;
+
+                            $previousTread3 =
+                                (float) $measurement->center_inner_tread;
+
+                            $previousTread4 =
+                                (float) $measurement->inner_tread;
+
+                            $previousMeasurementComparable = true;
+                        }
+                    @endphp
+
                     <form
 
                         method="POST"
@@ -478,6 +2109,14 @@
                         action="{{ route('vehicles.tires.measurement', $vehicle) }}"
 
                         class="tire-form"
+                        data-previous-comparable="{{ $previousMeasurementComparable ? '1' : '0' }}"
+                        data-previous-groove-count="{{ $previousGrooveCount }}"
+                        data-previous-tread-1="{{ $previousTread1 }}"
+                        data-previous-tread-2="{{ $previousTread2 }}"
+                        data-previous-tread-3="{{ $previousTread3 }}"
+                        data-previous-tread-4="{{ $previousTread4 }}"
+                        oninput="syncTireMeasurementSubmit(this)"
+                        onchange="syncTireMeasurementSubmit(this)"
                         onsubmit="return confirmTireKmReading(this, 'vehicle_km');"
 
                     >
@@ -513,103 +2152,247 @@
 
 
 
-                        <div class="tire-form-title">
-
+                        <div class="tire-measure-card-title">
+                            <i class="bi bi-bar-chart tire-muted-icon"></i>
                             Nova medição de sulco
-
                         </div>
 
+                        <div class="tire-form-grid simple-measurement">
+
+                            <div class="tire-km-field">
+                                <label>
+                                    KM atual
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="vehicle_km"
+                                    data-current-reading="{{ $vehicle->current_km ?? 0 }}"
+                                    value="{{ old('vehicle_km', $vehicle->current_km ?? 0) }}"
+                                    min="0"
+                                    step="1"
+                                    required
+                                >
+                            </div>
 
 
-                    <div class="tire-form-grid simple-measurement">
+                            <div class="measurement-notes-field">
+                                <label>
+                                    Observações
+                                </label>
 
-                        <div>
+                                <input
+                                    type="text"
+                                    name="notes"
+                                    value="{{ old('notes') }}"
+                                    placeholder="Opcional"
+                                    maxlength="300"
+                                >
+                            </div>
 
-                            <label>
 
-                                KM atual
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                name="vehicle_km"
-                                data-current-reading="{{ $vehicle->current_km ?? 0 }}"
-
-                                value="{{ old('vehicle_km', $vehicle->current_km ?? 0) }}"
-
-                                min="0"
-
-                                step="1"
-
-                                required
-
+                            <div
+                                class="tire-grooves-measurement"
+                                x-data="{
+                                    grooveCount: @js(
+                                        (int) old(
+                                            'tread_grooves_count',
+                                            $tire->tread_grooves_count ?? 0
+                                        )
+                                    )
+                                }"
+                                x-init="
+                                    $nextTick(
+                                        () =>
+                                            syncTireMeasurementSubmit(
+                                                $el.closest('form')
+                                            )
+                                    )
+                                "
                             >
 
+                                @if($tire->tread_grooves_count)
+
+                                    <input
+                                        type="hidden"
+                                        name="tread_grooves_count"
+                                        value="{{ $tire->tread_grooves_count }}"
+                                    >
+
+                                    <div class="tire-grooves-heading">
+                                        <strong>
+                                            Medição dos sulcos
+                                        </strong>
+
+                                        <small>
+                                            {{ $tire->tread_grooves_count }}
+                                            sulcos neste pneu
+                                        </small>
+                                    </div>
+
+                                @else
+
+                                    <div class="tire-grooves-config" :class="{ 'is-pending': !grooveCount }">
+
+                                        <label>
+                                            Quantos sulcos este pneu possui?
+                                        </label>
+
+                                        <select
+                                            name="tread_grooves_count"
+                                            x-model.number="grooveCount"
+                                            required
+                                        >
+                                            <option value="">
+                                                Selecione
+                                            </option>
+
+                                            <option value="3">
+                                                3 sulcos
+                                            </option>
+
+                                            <option value="4">
+                                                4 sulcos
+                                            </option>
+                                        </select>
+
+                                        <small>
+                                            A escolha ficará vinculada ao pneu.
+                                        </small>
+
+                                    </div>
+
+                                @endif
+
+
+                                <div
+                                    class="tire-grooves-grid"
+                                    x-show="
+                                        grooveCount === 3
+                                        ||
+                                        grooveCount === 4
+                                    "
+                                    :style="
+                                        `grid-template-columns:
+                                        repeat(
+                                            ${grooveCount},
+                                            minmax(0, 1fr)
+                                        );`
+                                    "
+                                    x-cloak
+                                >
+
+                                    <div>
+                                        <label>S1 · Lado externo</label>
+
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="50"
+                                            name="tread_1"
+                                            value="{{ old('tread_1', $measurement?->outer_tread) }}"
+                                            placeholder="mm"
+                                            required
+                                        >
+                                    </div>
+
+
+                                    <div>
+                                        <label>
+                                            <span
+                                                x-show="grooveCount === 3"
+                                            >
+                                                S2 · Centro
+                                            </span>
+
+                                            <span
+                                                x-show="grooveCount === 4"
+                                            >
+                                                S2 · Centro externo
+                                            </span>
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="50"
+                                            name="tread_2"
+                                            value="{{ old('tread_2', $measurement?->center_outer_tread) }}"
+                                            placeholder="mm"
+                                            required
+                                        >
+                                    </div>
+
+
+                                    <div>
+                                        <label>
+                                            <span
+                                                x-show="grooveCount === 3"
+                                            >
+                                                S3 · Lado interno
+                                            </span>
+
+                                            <span
+                                                x-show="grooveCount === 4"
+                                            >
+                                                S3 · Centro interno
+                                            </span>
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="50"
+                                            name="tread_3"
+                                            value="{{ old(
+                                                'tread_3',
+                                                (int) ($tire->tread_grooves_count ?? 0) === 4
+                                                    ? $measurement?->center_inner_tread
+                                                    : $measurement?->inner_tread
+                                            ) }}"
+                                            placeholder="mm"
+                                            required
+                                        >
+                                    </div>
+
+
+                                    <div
+                                        x-show="grooveCount === 4"
+                                        x-cloak
+                                    >
+                                        <label>
+                                            S4 · Lado interno
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="50"
+                                            name="tread_4"
+                                            value="{{ old('tread_4', $measurement?->inner_tread) }}"
+                                            placeholder="mm"
+                                            :required="grooveCount === 4"
+                                            :disabled="grooveCount !== 4"
+                                        >
+                                    </div>
+
+                                </div>
+
+
+                                <small class="tire-grooves-help">
+                                    <i class="bi bi-info-circle"></i>
+                                    O CHM usará o menor valor como referência
+                                    operacional e calculará também a média dos
+                                    sulcos.
+                                </small>
+
+                            </div>
+
                         </div>
-
-
-
-                         <div>
-
-                            <label>
-
-                                Sulco atual
-
-                            </label>
-
-
-
-                            <input
-
-                                type="number"
-
-                                step="0.01"
-
-                                name="current_tread"
-
-                                value="{{ old('current_tread', $tire->current_tread_depth) }}"
-                                placeholder="Ex: 16.68"
-
-                                required
-
-                            >
-
-                        </div>
-
-
-
-
-
-                        <div class="measurement-notes-field">
-
-                            <label>
-
-                                Observações
-
-                            </label>
-
-
-
-                            <input
-
-                                type="text"
-
-                                name="notes"
-
-                                placeholder="Opcional"
-
-                            >
-
-                        </div>
-
-
-
-                    </div>
 
                         <div class="tire-measure-actions">
 
@@ -653,7 +2436,9 @@
 
                                 class="tire-save-action"
 
-                            >
+
+                                disabled
+                                title="Preencha os sulcos e altere ao menos uma leitura para salvar.">
 
                                 <i class="bi bi-floppy"></i>
 
@@ -796,6 +2581,8 @@
         @endforeach
 
 
+
+        </div>
 
     </div>
 
@@ -1642,6 +3429,134 @@
 </div>
 
 <script>
+
+function syncTireMeasurementSubmit(form) {
+    if (! form) {
+        return;
+    }
+
+    const button =
+        form.querySelector('.tire-save-action');
+
+    if (! button) {
+        return;
+    }
+
+    const grooveField =
+        form.querySelector(
+            '[name="tread_grooves_count"]'
+        );
+
+    const grooveCount =
+        Number(grooveField?.value || 0);
+
+    if (![3, 4].includes(grooveCount)) {
+        button.disabled = true;
+
+        button.title =
+            'Informe se o pneu possui 3 ou 4 sulcos.';
+
+        return;
+    }
+
+    const fieldNames =
+        grooveCount === 4
+            ? [
+                'tread_1',
+                'tread_2',
+                'tread_3',
+                'tread_4',
+            ]
+            : [
+                'tread_1',
+                'tread_2',
+                'tread_3',
+            ];
+
+    const values =
+        fieldNames.map((name) => {
+            const field =
+                form.querySelector(
+                    `[name="${name}"]`
+                );
+
+            if (! field || field.disabled) {
+                return null;
+            }
+
+            const raw =
+                String(field.value ?? '').trim();
+
+            if (raw === '') {
+                return null;
+            }
+
+            const value =
+                Number(
+                    raw.replace(',', '.')
+                );
+
+            return Number.isFinite(value)
+                ? value
+                : null;
+        });
+
+    const complete =
+        values.length === grooveCount
+        &&
+        values.every(
+            (value) => value !== null
+        );
+
+    if (! complete) {
+        button.disabled = true;
+
+        button.title =
+            'Preencha todas as leituras dos sulcos.';
+
+        return;
+    }
+
+    const previousComparable =
+        form.dataset.previousComparable === '1';
+
+    const previousGrooveCount =
+        Number(
+            form.dataset.previousGrooveCount || 0
+        );
+
+    let changed = true;
+
+    if (
+        previousComparable
+        &&
+        previousGrooveCount === grooveCount
+    ) {
+        const previous = [
+            Number(form.dataset.previousTread1),
+            Number(form.dataset.previousTread2),
+            Number(form.dataset.previousTread3),
+            Number(form.dataset.previousTread4),
+        ].slice(0, grooveCount);
+
+        changed =
+            values.some(
+                (value, index) =>
+                    Math.round(value * 100)
+                    !==
+                    Math.round(previous[index] * 100)
+            );
+    }
+
+    button.disabled = ! changed;
+
+    button.title =
+        changed
+            ? 'Salvar nova medição.'
+            : 'As leituras são iguais à última medição registrada.';
+}
+
+
 function confirmTireKmReading(form, field) {
     const input = form.querySelector(`[name="${field}"]`);
     const confirmation = form.querySelector('[name="km_reading_confirmed"]');

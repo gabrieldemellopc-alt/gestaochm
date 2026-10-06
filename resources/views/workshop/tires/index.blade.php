@@ -125,10 +125,13 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
         <div class="workshop-hero-actions">
             @if($canCreateTireEntry)
-                <button type="button" class="workshop-hero-btn workshop-hero-btn-primary" onclick="window.dispatchEvent(new CustomEvent('open-tire-entry'))">
+                <a
+                    href="{{ route('workshop.tires.create') }}"
+                    class="workshop-hero-btn workshop-hero-btn-primary"
+                >
                     <i class="bi bi-box-seam"></i>
                     Nova entrada
-                </button>
+                </a>
             @endif
 
             <button type="button" class="workshop-hero-btn tire-dashboard-trigger" onclick="openTireDashboard()"><i class="bi bi-speedometer2"></i> Painel de pneus</button>
@@ -192,614 +195,6 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
             <strong>{{ $summary['discarded'] }}</strong>
 
         </div>
-
-
-
-    </div>
-
-
-
-    <div class="workshop-grid">
-
-
-
-        @if($canCreateTireEntry)
-<section
-            class="workshop-card workshop-entry-card"
-            x-data="{
-                open: {{ $errors->any() ? 'true' : 'false' }}
-            }"
-            @open-tire-entry.window="open = true; $nextTick(() => $el.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
-        >
-
-            <div class="workshop-card-header workshop-entry-card-header">
-
-                <div>
-                    <h2>
-                        Entrada de lote
-                    </h2>
-
-                    <p>
-                        Registre uma compra e gere automaticamente os pneus individuais no estoque.
-                    </p>
-                </div>
-
-                <button type="button" class="workshop-entry-toggle" @click="open = !open" :class="{ 'is-open': open }" :aria-expanded="open.toString()">
-                    <i class="bi" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                    <span x-text="open ? 'Recolher' : 'Expandir'"></span>
-                </button>
-
-            </div>
-
-
-            <div
-                class="workshop-entry-form-wrapper"
-                x-show="open"
-                x-collapse
-                x-cloak
-            >
-            <form
-
-                method="POST"
-
-                action="{{ route('workshop.tires.entries.store') }}"
-
-                class="workshop-entry-form"
-
-            >
-
-
-
-                @csrf
-
-
-
-                <div class="workshop-form-grid">
-
-
-
-                    <div class="form-group">
-
-                        <label>Data da entrada</label>
-
-                        <input
-
-                            type="date"
-
-                            name="entry_date"
-
-                            value="{{ old('entry_date', now()->format('Y-m-d')) }}"
-
-                            required
-
-                        >
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>Quantidade</label>
-
-                        <input
-
-                            type="number"
-
-                            name="quantity"
-
-                            value="{{ old('quantity', 1) }}"
-
-                            min="1"
-
-                            required
-
-                        >
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>Prefixo do código</label>
-
-                        <input
-
-                            type="text"
-
-                            name="code_prefix"
-
-                            value="{{ old('code_prefix', 'PN') }}"
-
-                            placeholder="Ex: PN, AKSA-PN"
-
-                            required
-
-                        >
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>Marca</label>
-
-                        <input
-
-                            type="text"
-
-                            name="brand"
-
-                            value="{{ old('brand') }}"
-
-                            placeholder="Ex: Michelin"
-
-                        >
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>Modelo/Banda</label>
-
-                        <input
-
-                            type="text"
-
-                            name="model"
-
-                            value="{{ old('model') }}"
-
-                            placeholder="Ex: X Multi"
-
-                        >
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>Medida</label>
-
-                        <input
-
-                            type="text"
-
-                            name="size"
-
-                            value="{{ old('size') }}"
-
-                            placeholder="Ex: 275/80 R22.5"
-
-                        >
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>
-
-                            Sulco inicial
-
-                        </label>
-
-
-
-                        <div class="input-with-suffix">
-
-                            <input
-
-                                type="number"
-
-                                step="0.01"
-
-                                name="initial_tread_depth"
-
-                                value="{{ old('initial_tread_depth') }}"
-
-                                placeholder="Ex: 15"
-
-                            >
-
-
-
-                            <span>
-
-                                mm
-
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>
-
-                            Alerta de atenção
-
-                        </label>
-
-
-
-                        <div class="input-with-suffix">
-
-                            <input
-
-                                type="number"
-
-                                step="0.01"
-
-                                name="warning_tread_depth"
-
-                                value="{{ old('warning_tread_depth', 5) }}"
-
-                                placeholder="Ex: 5.00"
-
-                            >
-
-
-
-                            <span>
-
-                                mm
-
-                            </span>
-
-                        </div>
-
-
-
-                        <small class="form-help">
-
-                            Valor sugerido: 5 mm. Abaixo ou igual a este sulco, o pneu entra em atenção.
-
-                        </small>
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>
-
-                            Alerta crítico
-
-                        </label>
-
-
-
-                        <div class="input-with-suffix">
-
-                            <input
-
-                                type="number"
-
-                                step="0.01"
-
-                                name="critical_tread_depth"
-
-                                value="{{ old('critical_tread_depth', 3) }}"
-
-                                placeholder="Ex: 3.00"
-
-                            >
-
-
-
-                            <span>
-
-                                mm
-
-                            </span>
-
-                        </div>
-
-
-
-                        <small class="form-help">
-
-                            Valor sugerido: 3 mm. Abaixo ou igual a este sulco, o pneu fica crítico.
-
-                        </small>
-
-                    </div>
-
-
-
-                    @if($canViewTireCosts)
-<div class="form-group">
-
-                        <label>Valor unitário</label>
-
-                        <input
-
-                            type="number"
-
-                            step="0.01"
-
-                            name="unit_cost"
-
-                            value="{{ old('unit_cost') }}"
-
-                            placeholder="Ex: 1200.00"
-
-                        >
-
-                    </div>
-@endif
-
-
-
-                    <div class="form-group">
-
-                        <label>Fornecedor</label>
-
-                        <x-supplier-autocomplete value="{{ old('supplier_name') }}" document-name="supplier_document" document-value="{{ old('supplier_document') }}" placeholder="Ex.: Pneus Bahia" />
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label>Nota fiscal</label>
-
-                        <input
-
-                            type="text"
-
-                            name="invoice_number"
-
-                            value="{{ old('invoice_number') }}"
-
-                            placeholder="Ex: NF 12345"
-
-                        >
-
-                    </div>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-                    <label>Observações</label>
-
-                    <textarea
-
-                        name="notes"
-
-                        rows="3"
-
-                        placeholder="Informações adicionais sobre a entrada..."
-
-                    >{{ old('notes') }}</textarea>
-
-                </div>
-
-
-
-                <button
-
-                    type="submit"
-
-                    class="workshop-submit-btn"
-
-                >
-
-                    <i class="bi bi-floppy"></i>
-
-                    Registrar entrada
-
-                </button>
-
-
-
-            </form>
-            </div>
-
-
-
-        </section>
-
-
-
-        @endif
-<aside class="workshop-card workshop-recent-entries-card" x-data="{ open: false }">
-
-
-
-            <button type="button" class="workshop-card-header workshop-recent-entries-toggle" @click="open = !open" :aria-expanded="open.toString()">
-
-
-
-                <div>
-
-                    <h2>
-
-                        Últimas entradas
-
-                    </h2>
-
-
-
-                    <p>
-
-                        Lotes registrados recentemente.
-
-                    </p>
-
-                </div>
-
-
-
-                <span class="workshop-recent-entries-icon">
-                    <i class="bi bi-clock-history"></i>
-                    <i class="bi" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                </span>
-
-
-
-            </button>
-
-
-
-            <div class="workshop-entry-list" x-show="open" x-collapse x-cloak>
-
-
-
-                @forelse($entries as $entry)
-
-
-
-                    <div class="workshop-entry-item">
-
-
-
-                        <div>
-
-                            <strong>
-
-                                {{ optional($entry->entry_date)->format('d/m/Y') }}
-
-                            </strong>
-
-
-
-                            <span>
-
-                                {{ $entry->items_count }} pneu(s)
-
-                                ·
-
-                                {{ $entry->brand ?? 'Sem marca' }}
-
-                            </span>
-
-                        </div>
-
-
-
-                        <small>
-
-                            {{ $entry->invoice_number ?? 'Sem NF' }}
-
-                        </small>
-
-                        @if($entry->is_cancelled)
-                            <span class="workshop-entry-status cancelled">Cancelada</span>
-                            @can('viewAuditLogs')
-                                @if($entry->cancel_reason)
-                                    <span class="workshop-entry-cancel-reason">{{ $entry->cancel_reason }}</span>
-                                @endif
-                            @endcan
-                        @else
-                            @if($canCancelTireRecords)
-                            <div
-                                class="workshop-entry-cancel"
-                                x-data="{ cancelling: false }"
-                            >
-
-                                <button
-                                    type="button"
-                                    class="workshop-entry-cancel-trigger"
-                                    x-show="! cancelling"
-                                    @click="cancelling = true"
-                                >
-                                    <i class="bi bi-slash-circle"></i>
-                                    Cancelar entrada
-                                </button>
-
-                                <form
-                                    method="POST"
-                                    action="{{ route('workshop.tires.entries.cancel', $entry) }}"
-                                    class="workshop-entry-cancel-form"
-                                    x-show="cancelling"
-                                    x-collapse
-                                    x-cloak
-                                >
-                                    @csrf
-
-                                    <label>
-                                        Motivo do cancelamento
-                                    </label>
-
-                                    <textarea
-                                        name="reason"
-                                        rows="2"
-                                        minlength="5"
-                                        maxlength="2000"
-                                        required
-                                        placeholder="Descreva por que esta entrada será cancelada..."
-                                    ></textarea>
-
-                                    <div class="workshop-entry-cancel-actions">
-
-                                        <button
-                                            type="button"
-                                            class="workshop-entry-cancel-back"
-                                            @click="cancelling = false"
-                                        >
-                                            Voltar
-                                        </button>
-
-                                        <button
-                                            type="submit"
-                                            class="workshop-entry-cancel-confirm"
-                                            onclick="return confirm('Confirma o cancelamento desta entrada?');"
-                                        >
-                                            <i class="bi bi-slash-circle"></i>
-                                            Confirmar cancelamento
-                                        </button>
-
-                                    </div>
-
-                                </form>
-
-                            </div>
-                        @endif
-                        @endif
-
-                    </div>
-
-
-
-                @empty
-
-
-
-                    <div class="workshop-empty">
-
-                        Nenhuma entrada registrada.
-
-                    </div>
-
-
-
-                @endforelse
-
-
-
-            </div>
-
-
-
-        </aside>
 
 
 
@@ -989,7 +384,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
         <div>Localização</div>
 
-        <div>Sulco atual</div>
+        <div>Menor sulco atual</div>
 
         <div>Ações</div>
 
@@ -1008,14 +403,173 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
             @php
+                              $installation =
+                                  $tire->activeInstallation;
 
-                $installation = $tire->activeInstallation;
+                              $latestMeasurement =
+                                  $tire->latestMeasurement;
 
-            @endphp
+                              $grooveCount =
+                                  in_array(
+                                      (int) $tire->tread_grooves_count,
+                                      [3, 4],
+                                      true
+                                  )
+                                      ? (int) $tire->tread_grooves_count
+                                      : 0;
+
+                              $grooveReadings = [];
+
+                              /*
+                               * Só mostramos S1-S4 como leitura atual
+                               * quando a referência atual realmente vem
+                               * de uma medição.
+                               */
+                              if (
+                                  $latestMeasurement
+                                  && $tire->current_tread_source
+                                      === 'measurement'
+                              ) {
+                                  if (
+                                      $latestMeasurement->outer_tread
+                                      !== null
+                                  ) {
+                                      $grooveReadings['S1'] = [
+                                          'label' => 'Lado externo',
+                                          'value' =>
+                                              (float)
+                                              $latestMeasurement
+                                                  ->outer_tread,
+                                      ];
+                                  }
+
+                                  if (
+                                      $latestMeasurement
+                                          ->center_outer_tread
+                                      !== null
+                                  ) {
+                                      $grooveReadings['S2'] = [
+                                          'label' =>
+                                              $grooveCount === 4
+                                                  ? 'Centro externo'
+                                                  : 'Centro',
+                                          'value' =>
+                                              (float)
+                                              $latestMeasurement
+                                                  ->center_outer_tread,
+                                      ];
+                                  }
+
+                                  if (
+                                      $grooveCount === 4
+                                      && $latestMeasurement
+                                          ->center_inner_tread
+                                          !== null
+                                  ) {
+                                      $grooveReadings['S3'] = [
+                                          'label' => 'Centro interno',
+                                          'value' =>
+                                              (float)
+                                              $latestMeasurement
+                                                  ->center_inner_tread,
+                                      ];
+                                  }
+
+                                  if (
+                                      $latestMeasurement->inner_tread
+                                      !== null
+                                  ) {
+                                      $grooveReadings[
+                                          $grooveCount === 4
+                                              ? 'S4'
+                                              : 'S3'
+                                      ] = [
+                                          'label' => 'Lado interno',
+                                          'value' =>
+                                              (float)
+                                              $latestMeasurement
+                                                  ->inner_tread,
+                                      ];
+                                  }
+                              }
+
+                              $grooveValues =
+                                  collect($grooveReadings)
+                                      ->pluck('value');
+
+                              $grooveSpread =
+                                  $grooveValues->count() >= 2
+                                      ? round(
+                                          (float) $grooveValues->max()
+                                          - (float) $grooveValues->min(),
+                                          2
+                                      )
+                                      : null;
+
+                              $mostWornGroove = null;
+
+                              if ($grooveValues->count() >= 2) {
+                                  $minimumGrooveValue =
+                                      (float) $grooveValues->min();
+
+                                  foreach (
+                                      $grooveReadings
+                                      as $code => $reading
+                                  ) {
+                                      if (
+                                          (float) $reading['value']
+                                          === $minimumGrooveValue
+                                      ) {
+                                          $mostWornGroove = [
+                                              'code' => $code,
+                                              'label' => $reading['label'],
+                                          ];
+
+                                          break;
+                                      }
+                                  }
+                              }
+
+                              $currentTread =
+                                  $tire->current_tread_depth !== null
+                                      ? (float)
+                                          $tire->current_tread_depth
+                                      : null;
+
+                              if (
+                                  $currentTread !== null
+                                  && $tire->critical_tread_depth
+                                      !== null
+                                  && $currentTread
+                                      <= (float)
+                                          $tire->critical_tread_depth
+                              ) {
+                                  $treadAlertLevel = 'critical';
+                              } elseif (
+                                  $currentTread !== null
+                                  && $tire->warning_tread_depth
+                                      !== null
+                                  && $currentTread
+                                      <= (float)
+                                          $tire->warning_tread_depth
+                              ) {
+                                  $treadAlertLevel = 'warning';
+                              } else {
+                                  $treadAlertLevel = 'normal';
+                              }
+                          @endphp
 
 
 
-            <div class="workshop-table-row">
+            <article
+                  class="workshop-tire-control-item"
+                  x-data="{ open: false }"
+              >
+
+              <div
+                  class="workshop-table-row"
+                  :class="{ 'is-open': open }"
+              >
 
 
 
@@ -1146,6 +700,7 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
                             'size' => $tire->size,
 
                             'initial_tread_depth' => $tire->initial_tread_depth,
+                            'tread_grooves_count' => $tire->tread_grooves_count,
 
                             'warning_tread_depth' => $tire->warning_tread_depth,
 
@@ -1154,6 +709,12 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
                             'status' => $tire->status,
 
                             'notes' => $tire->notes,
+                            'has_measurements' =>
+                                (int) $tire->measurements_count > 0,
+                            'has_operational_history' =>
+                                (int) $tire->measurements_count > 0
+                                || (int) $tire->installations_count > 0
+                                || (int) $tire->retreads_count > 0,
 
                         ];
 
@@ -1161,7 +722,36 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-                    @if($tire->status === 'maintenance' && $canRetreadTires)
+                    <button
+                              type="button"
+                              class="
+                                  workshop-table-action
+                                  workshop-detail-toggle
+                              "
+                              @click="open = !open"
+                              :aria-expanded="
+                                  open.toString()
+                              "
+                          >
+                              <i
+                                  class="bi"
+                                  :class="
+                                      open
+                                          ? 'bi-chevron-up'
+                                          : 'bi-chevron-down'
+                                  "
+                              ></i>
+
+                              <span
+                                  x-text="
+                                      open
+                                          ? 'Recolher'
+                                          : 'Detalhes'
+                                  "
+                              ></span>
+                          </button>
+
+                          @if($tire->status === 'maintenance' && $canRetreadTires)
 
                         <button
 
@@ -1210,9 +800,317 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
                 </div>
 
+              </div>
+
+              <div
+                  class="workshop-tire-control-details"
+                  x-show="open"
+                  x-collapse
+                  x-cloak
+              >
+
+                  <div class="workshop-tire-detail-summary">
+
+                      <article>
+                          <small>Menor sulco atual</small>
+                          <strong>
+                              {{
+                                  $currentTread !== null
+                                      ? number_format(
+                                          $currentTread,
+                                          2,
+                                          ',',
+                                          '.'
+                                      ) . ' mm'
+                                      : '--'
+                              }}
+                          </strong>
+                      </article>
+
+                      <article>
+                          <small>{{ $latestMeasurement?->measurement_type === 'entry'
+    ? 'Média da condição de entrada'
+    : 'Média da última medição' }}</small>
+                          <strong>
+                              {{
+                                  $latestMeasurement?->average_tread
+                                      !== null
+                                      ? number_format(
+                                          (float)
+                                          $latestMeasurement
+                                              ->average_tread,
+                                          2,
+                                          ',',
+                                          '.'
+                                      ) . ' mm'
+                                      : '--'
+                              }}
+                          </strong>
+                      </article>
+
+                      <article>
+                          <small>Alerta de atenção</small>
+                          <strong>
+                              {{
+                                  $tire->warning_tread_depth !== null
+                                      ? number_format(
+                                          (float)
+                                          $tire->warning_tread_depth,
+                                          2,
+                                          ',',
+                                          '.'
+                                      ) . ' mm'
+                                      : '--'
+                              }}
+                          </strong>
+                      </article>
+
+                      <article>
+                          <small>Alerta crítico</small>
+                          <strong>
+                              {{
+                                  $tire->critical_tread_depth !== null
+                                      ? number_format(
+                                          (float)
+                                          $tire->critical_tread_depth,
+                                          2,
+                                          ',',
+                                          '.'
+                                      ) . ' mm'
+                                      : '--'
+                              }}
+                          </strong>
+                      </article>
+
+                  </div>
 
 
-            </div>
+                  <div class="workshop-tire-detail-grid">
+
+                      <section class="workshop-tire-detail-card">
+
+                          <div class="workshop-tire-detail-heading">
+                              <div>
+                                  <small>Leitura atual</small>
+                                  <h3>Distribuição dos sulcos</h3>
+                              </div>
+
+                              @if($grooveCount)
+                                  <span>
+                                      {{ $grooveCount }} sulcos
+                                  </span>
+                              @endif
+                          </div>
+
+
+                          @if(count($grooveReadings))
+
+                              <div
+                                  class="workshop-tire-grooves"
+                                  style="
+                                      --groove-count:
+                                      {{ count($grooveReadings) }};
+                                  "
+                              >
+
+                                  @foreach(
+                                      $grooveReadings
+                                      as $grooveCode => $grooveReading
+                                  )
+
+                                      <div>
+                                          <small>
+                                              {{ $grooveCode }}
+                                          </small>
+
+                                          <span>
+                                              {{ $grooveReading['label'] }}
+                                          </span>
+
+                                          <strong>
+                                              {{
+                                                  number_format(
+                                                      (float)
+                                                      $grooveReading['value'],
+                                                      2,
+                                                      ',',
+                                                      '.'
+                                                  )
+                                              }}
+                                              mm
+                                          </strong>
+                                      </div>
+
+                                  @endforeach
+
+                              </div>
+
+
+                              @if(
+                                  $mostWornGroove
+                                  && $grooveSpread !== null
+                              )
+                                  <div class="workshop-tire-wear-note">
+                                      <span>
+                                          <i class="bi bi-distribute-horizontal"></i>
+
+                                          Maior desgaste:
+                                          <strong>
+                                              {{
+                                                  $mostWornGroove['code']
+                                              }}
+                                              ·
+                                              {{
+                                                  $mostWornGroove['label']
+                                              }}
+                                          </strong>
+                                      </span>
+
+                                      <span>
+                                          Diferença:
+                                          <strong>
+                                              {{
+                                                  number_format(
+                                                      $grooveSpread,
+                                                      2,
+                                                      ',',
+                                                      '.'
+                                                  )
+                                              }}
+                                              mm
+                                          </strong>
+                                      </span>
+                                  </div>
+                              @endif
+
+                          @else
+
+                              <div class="workshop-tire-no-grooves">
+                                  <i class="bi bi-rulers"></i>
+
+                                  <div>
+                                      <strong>
+                                          Sem leitura individual atual
+                                      </strong>
+
+                                      <span>
+                                          As leituras S1–S4 aparecerão após
+                                          uma medição detalhada do pneu.
+                                      </span>
+                                  </div>
+                              </div>
+
+                          @endif
+
+                      </section>
+
+
+                      <section class="workshop-tire-detail-card">
+
+                          <div class="workshop-tire-detail-heading">
+                              <div>
+                                  <small>Situação operacional</small>
+                                  <h3>Localização e condição</h3>
+                              </div>
+
+                              <span
+                                  class="
+                                      workshop-tire-alert-badge
+                                      {{ $treadAlertLevel }}
+                                  "
+                              >
+                                  @switch($treadAlertLevel)
+                                      @case('critical')
+                                          Crítico
+                                          @break
+
+                                      @case('warning')
+                                          Atenção
+                                          @break
+
+                                      @default
+                                          Normal
+                                  @endswitch
+                              </span>
+                          </div>
+
+
+                          <div class="workshop-tire-facts">
+
+                              <div>
+                                  <small>Localização</small>
+                                  <strong>
+                                      @if($installation)
+                                          {{
+                                              $installation->vehicle?->plate
+                                              ?? 'Veículo'
+                                          }}
+                                          ·
+                                          {{
+                                              $installation->position_code
+                                          }}
+                                      @else
+                                          Estoque
+                                      @endif
+                                  </strong>
+                              </div>
+
+                              <div>
+                                  <small>Recapagens</small>
+                                  <strong>
+                                      {{ $tire->retreads_count }}
+                                  </strong>
+                              </div>
+
+                              <div>
+                                  <small>Referência atual</small>
+                                  <strong>
+                                      @switch($tire->current_tread_source)
+                                          @case('measurement')
+                                              @if(
+                                                  $tire->latestMeasurement?->measurement_type
+                                                  === 'entry'
+                                              )
+                                                  Condição de entrada
+                                              @else
+                                                  Última medição
+                                              @endif
+                                              @break
+
+                                          @case('retread')
+                                              Última recapagem
+                                              @break
+
+                                          @default
+                                              Sulco inicial
+                                      @endswitch
+                                  </strong>
+                              </div>
+
+                              <div>
+                                  <small>Quantidade de sulcos</small>
+                                  <strong>
+                                      {{
+                                          $grooveCount
+                                              ? $grooveCount . ' sulcos'
+                                              : 'Não definida'
+                                      }}
+                                  </strong>
+                              </div>
+
+                          </div>
+
+                      </section>
+
+                  </div>
+
+              </div>
+
+          </article>
+
+
+
+
 
 
 
@@ -1470,39 +1368,13 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-                <div class="form-group">
 
-                    <label>Status</label>
-
-
-
-                    <select name="status" id="editTireStatus">
-
-                        <option value="available">Disponível</option>
-
-                        <option value="maintenance">Manutenção/Reforma</option>
-
-                        <option value="discarded">Descartado</option>
-
-                        <option value="installed">Instalado</option>
-
-                    </select>
-
-
-
-                    <small class="form-help">
-
-                        Pneus instalados devem ser removidos pela tela do veículo.
-
-                    </small>
-
-                </div>
 
 
 
                 <div class="form-group">
 
-                    <label>Sulco atual / inicial</label>
+                    <label>Sulco inicial</label>
 
 
 
@@ -1528,14 +1400,37 @@ href="{{ asset('css/pages/workshop-tires.css') }}?v=5"
 
 
 
-                    <small class="form-help">
-
-                        Em caso de reforma, informe o novo sulco após retorno.
-
+                    <small
+                        class="form-help"
+                        id="editTireInitialHelp"
+                    >
+                        Valor de origem do pneu.
                     </small>
 
                 </div>
 
+
+
+                <div class="form-group">
+                    <label>Quantidade de sulcos</label>
+
+                    <select
+                        name="tread_grooves_count"
+                        id="editTireGroovesCount"
+                        required
+                    >
+                        <option value="">Selecione</option>
+                        <option value="3">3 sulcos</option>
+                        <option value="4">4 sulcos</option>
+                    </select>
+
+                    <small
+                        class="form-help"
+                        id="editTireGroovesHelp"
+                    >
+                        Define quantas leituras serão realizadas neste pneu.
+                    </small>
+                </div>
 
 
                 <div class="form-group">
@@ -1841,12 +1736,54 @@ function openEditTireModal(tire) {
     document.getElementById('editTireSize').value =
 
         tire.size || '';
+    const initialTread =
+        document.getElementById(
+            'editTireInitialTread'
+        );
 
+    const groovesCount =
+        document.getElementById(
+            'editTireGroovesCount'
+        );
 
+    const initialHelp =
+        document.getElementById(
+            'editTireInitialHelp'
+        );
 
-    document.getElementById('editTireInitialTread').value =
+    const groovesHelp =
+        document.getElementById(
+            'editTireGroovesHelp'
+        );
 
+    initialTread.value =
         tire.initial_tread_depth || '';
+
+    groovesCount.value =
+        tire.tread_grooves_count || '';
+
+    const hasOperationalHistory =
+        Boolean(tire.has_operational_history);
+
+    const hasMeasurements =
+        Boolean(tire.has_measurements);
+
+    initialTread.readOnly =
+        hasOperationalHistory;
+
+    groovesCount.disabled =
+        hasMeasurements;
+
+    initialHelp.textContent =
+        hasOperationalHistory
+            ? 'Valor histórico bloqueado após o início da operação.'
+            : 'Valor de origem do pneu. Ainda pode ser corrigido.';
+
+    groovesHelp.textContent =
+        hasMeasurements
+            ? 'Quantidade bloqueada porque já existem medições registradas.'
+            : 'Define quantas leituras serão realizadas neste pneu.';
+
 
 
 
@@ -1860,11 +1797,6 @@ function openEditTireModal(tire) {
 
         tire.critical_tread_depth || 3;
 
-
-
-    document.getElementById('editTireStatus').value =
-
-        tire.status || 'available';
 
 
 

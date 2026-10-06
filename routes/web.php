@@ -842,6 +842,12 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
         )->name('tires.index');
 
         Route::get(
+            '/tires/create',
+            [WorkshopTireController::class, 'create']
+        )->name('tires.create');
+
+
+        Route::get(
             '/tires/{tire}/history',
             [WorkshopTireController::class, 'history']
         )->name('tires.history');
@@ -855,6 +861,12 @@ Route::post('/vehicles/{vehicle}/reading-correction/evidence', [VehicleReadingCo
             [WorkshopTireController::class, 'storeEntry']
 
         )->name('tires.entries.store');
+
+        Route::post(
+            '/tires/entries/individual',
+            [WorkshopTireController::class, 'storeIndividualEntry']
+        )->name('tires.entries.individual.store');
+
 
         Route::post(
             '/tires/entries/{entry}/cancel',

@@ -41,7 +41,7 @@ class WorkshopTireController extends Controller
         };
         $user = $request->user();
         $tires = Tire::query()->where('tenant_id', $user->tenant_id)->where('location_id', $location->id)->notCancelled()->with(['latestMeasurement','latestRetread','activeInstallation.vehicle'])->get();
-        $measurements = TireMeasurement::query()->where('tenant_id',$user->tenant_id)->whereNull('cancelled_at')->whereBetween('measured_at',[$start,$end])->get();
+        $measurements = TireMeasurement::query()->where('tenant_id',$user->tenant_id)->whereNull('cancelled_at')->where('measurement_type', 'operation')->whereBetween('measured_at',[$start,$end])->get();
         $retreads = TireRetread::query()->where('tenant_id',$user->tenant_id)->whereNull('cancelled_at')->whereBetween('retreaded_at',[$start,$end])->count();
         $current = $tires->filter(fn($tire) => $tire->status === 'installed');
         $critical = $current->filter(fn($tire) => $tire->current_tread_depth !== null && $tire->critical_tread_depth !== null && (float)$tire->current_tread_depth <= (float)$tire->critical_tread_depth);
@@ -107,9 +107,13 @@ class WorkshopTireController extends Controller
 
                 ->with([
                     'activeInstallation.vehicle',
-
+                    'latestMeasurement',
                 ])
-                ->withCount('retreads');
+                ->withCount([
+                    'retreads',
+                    'measurements',
+                    'installations',
+                ]);
 
 
         /*
@@ -368,6 +372,30 @@ class WorkshopTireController extends Controller
 
 
 
+    public function create()
+    {
+        $activeLocation =
+            $this->activeLocation();
+
+        if (! $activeLocation) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $this->authorizeTirePermission('tires.entry');
+
+        $tirePermissions =
+            $this->tirePermissions();
+
+        return view(
+            'workshop.tires.create',
+            compact(
+                'activeLocation',
+                'tirePermissions'
+            )
+        );
+    }
+
+
     public function storeEntry(Request $request)
     {
 
@@ -470,6 +498,12 @@ class WorkshopTireController extends Controller
 
                     'max:50',
 
+                ],
+
+                'tread_grooves_count' => [
+                    'required',
+                    'integer',
+                    'in:3,4',
                 ],
 
                 'warning_tread_depth' => [
@@ -785,6 +819,9 @@ class WorkshopTireController extends Controller
 
                             $data['initial_tread_depth'] ?? null,
 
+                        'tread_grooves_count' =>
+                            $data['tread_grooves_count'],
+
                         'warning_tread_depth' =>
 
                             $data['warning_tread_depth'] ?? 5,
@@ -851,6 +888,460 @@ class WorkshopTireController extends Controller
 
     }
 
+
+
+    public function storeIndividualEntry(Request $request)
+    {
+        $user = auth()->user();
+
+        $activeLocation =
+            $this->activeLocation();
+
+        if (! $activeLocation) {
+            return $this->missingActiveLocationRedirect();
+        }
+
+        $this->authorizeTirePermission('tires.entry');
+
+        $data = $request->validate([
+            'entry_mode' => [
+                'required',
+                'in:individual',
+            ],
+
+            'entry_date' => [
+                'required',
+                'date',
+            ],
+
+            'acquisition_condition' => [
+                'required',
+                'in:new,used,retread_acquired',
+            ],
+
+            'code_prefix' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+
+            'brand' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'model' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'size' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'tread_grooves_count' => [
+                'required',
+                'integer',
+                'in:3,4',
+            ],
+
+            'initial_tread_depth' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50',
+            ],
+
+            'tread_1' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50',
+            ],
+
+            'tread_2' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50',
+            ],
+
+            'tread_3' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50',
+            ],
+
+            'tread_4' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50',
+            ],
+
+            'warning_tread_depth' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50',
+            ],
+
+            'critical_tread_depth' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50',
+            ],
+
+            'supplier_name' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
+
+            'supplier_id' => [
+                'nullable',
+                'integer',
+            ],
+
+            'supplier_document' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+
+            'invoice_number' => [
+                'nullable',
+                'string',
+                'max:80',
+            ],
+
+            'unit_cost' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'notes' => [
+                'nullable',
+                'string',
+            ],
+        ]);
+
+        if (
+            ! empty($data['warning_tread_depth'])
+            &&
+            ! empty($data['critical_tread_depth'])
+            &&
+            (float) $data['critical_tread_depth']
+                > (float) $data['warning_tread_depth']
+        ) {
+            throw ValidationException::withMessages([
+                'critical_tread_depth' =>
+                    'O limite crítico não pode ser maior que o limite de atenção.',
+            ]);
+        }
+
+        $condition =
+            $data['acquisition_condition'];
+
+        $grooveCount =
+            (int) $data['tread_grooves_count'];
+
+        $isDetailedEntry =
+            in_array(
+                $condition,
+                ['used', 'retread_acquired'],
+                true
+            );
+
+        $readings = [];
+
+        if ($isDetailedEntry) {
+            for ($i = 1; $i <= $grooveCount; $i++) {
+                $key = 'tread_'.$i;
+
+                if (
+                    ! array_key_exists($key, $data)
+                    ||
+                    $data[$key] === null
+                    ||
+                    $data[$key] === ''
+                ) {
+                    throw ValidationException::withMessages([
+                        $key =>
+                            'Informe a leitura de todos os sulcos.',
+                    ]);
+                }
+
+                $readings[] =
+                    (float) $data[$key];
+            }
+        } else {
+            if (
+                ! array_key_exists(
+                    'initial_tread_depth',
+                    $data
+                )
+                ||
+                $data['initial_tread_depth'] === null
+                ||
+                $data['initial_tread_depth'] === ''
+            ) {
+                throw ValidationException::withMessages([
+                    'initial_tread_depth' =>
+                        'Informe o sulco inicial do pneu novo.',
+                ]);
+            }
+        }
+
+        $minimumTread =
+            $isDetailedEntry
+                ? min($readings)
+                : (float) $data['initial_tread_depth'];
+
+        $averageTread =
+            $isDetailedEntry
+                ? round(
+                    array_sum($readings)
+                    / count($readings),
+                    2
+                )
+                : (float) $data['initial_tread_depth'];
+
+        $initialTreadDepth =
+            $minimumTread;
+
+        DB::transaction(
+            function () use (
+                $data,
+                $user,
+                $activeLocation,
+                $condition,
+                $grooveCount,
+                $isDetailedEntry,
+                $readings,
+                $minimumTread,
+                $averageTread,
+                $initialTreadDepth
+            ) {
+                $supplier = app(
+                    \App\Services\SupplierResolverService::class
+                )->resolve(
+                    $user->tenant_id,
+                    $data['supplier_id'] ?? null,
+                    $data['supplier_name'] ?? null,
+                    $data['supplier_document'] ?? null
+                );
+
+                $data = array_merge(
+                    $data,
+                    app(
+                        \App\Services\SupplierSnapshotService::class
+                    )->fromResolvedSupplier(
+                        $supplier,
+                        $data['supplier_name'] ?? null
+                    )
+                );
+
+                $unitCost =
+                    isset($data['unit_cost'])
+                    && $data['unit_cost'] !== ''
+                        ? (float) $data['unit_cost']
+                        : null;
+
+                $entry = TireEntry::create([
+                    'tenant_id' =>
+                        $user->tenant_id,
+
+                    'location_id' =>
+                        $activeLocation->id,
+
+                    'entry_date' =>
+                        $data['entry_date'],
+
+                    'supplier_name' =>
+                        $data['supplier_name'] ?? null,
+
+                    'supplier_id' =>
+                        $data['supplier_id'] ?? null,
+
+                    'supplier_document' =>
+                        $data['supplier_document'] ?? null,
+
+                    'invoice_number' =>
+                        $data['invoice_number'] ?? null,
+
+                    'quantity' =>
+                        1,
+
+                    'unit_cost' =>
+                        $unitCost,
+
+                    'total_cost' =>
+                        $unitCost,
+
+                    'brand' =>
+                        $data['brand'] ?? null,
+
+                    'model' =>
+                        $data['model'] ?? null,
+
+                    'size' =>
+                        $data['size'] ?? null,
+
+                    'initial_tread_depth' =>
+                        $initialTreadDepth,
+
+                    'code_prefix' =>
+                        $data['code_prefix'],
+
+                    'notes' =>
+                        $data['notes'] ?? null,
+
+                    'created_by' =>
+                        $user->id,
+                ]);
+
+                $nextNumber =
+                    $this->nextSequenceForPrefix(
+                        $user->tenant_id,
+                        $data['code_prefix']
+                    );
+
+                $code =
+                    $this->formatTireCode(
+                        $data['code_prefix'],
+                        $nextNumber
+                    );
+
+                $tire = Tire::create([
+                    'tenant_id' =>
+                        $user->tenant_id,
+
+                    'location_id' =>
+                        $activeLocation->id,
+
+                    'entry_id' =>
+                        $entry->id,
+
+                    'code' =>
+                        $code,
+
+                    'brand' =>
+                        $data['brand'] ?? null,
+
+                    'model' =>
+                        $data['model'] ?? null,
+
+                    'size' =>
+                        $data['size'] ?? null,
+
+                    'initial_tread_depth' =>
+                        $initialTreadDepth,
+
+                    'tread_grooves_count' =>
+                        $grooveCount,
+
+                    'acquisition_condition' =>
+                        $condition,
+
+                    'warning_tread_depth' =>
+                        $data['warning_tread_depth'] ?? 5,
+
+                    'critical_tread_depth' =>
+                        $data['critical_tread_depth'] ?? 3,
+
+                    'purchase_date' =>
+                        $data['entry_date'],
+
+                    'unit_cost' =>
+                        $unitCost,
+
+                    'status' =>
+                        'available',
+
+                    'notes' =>
+                        $data['notes'] ?? null,
+                ]);
+
+                TireEntryItem::create([
+                    'tire_entry_id' =>
+                        $entry->id,
+
+                    'tire_id' =>
+                        $tire->id,
+                ]);
+
+                if ($isDetailedEntry) {
+                    TireMeasurement::create([
+                        'tenant_id' =>
+                            $user->tenant_id,
+
+                        'tire_id' =>
+                            $tire->id,
+
+                        'vehicle_id' =>
+                            null,
+
+                        'position_code' =>
+                            null,
+
+                        'measurement_type' =>
+                            'entry',
+
+                        'measured_at' =>
+                            $data['entry_date'],
+
+                        'vehicle_km' =>
+                            null,
+
+                        'outer_tread' =>
+                            $readings[0],
+
+                        'center_outer_tread' =>
+                            $readings[1],
+
+                        'center_inner_tread' =>
+                            $grooveCount === 4
+                                ? $readings[2]
+                                : null,
+
+                        'inner_tread' =>
+                            $grooveCount === 4
+                                ? $readings[3]
+                                : $readings[2],
+
+                        'average_tread' =>
+                            $averageTread,
+
+                        'minimum_tread' =>
+                            $minimumTread,
+
+                        'notes' =>
+                            $condition === 'used'
+                                ? 'Condição registrada na entrada do pneu usado.'
+                                : 'Condição registrada na entrada do pneu recapado adquirido.',
+
+                        'user_id' =>
+                            $user->id,
+                    ]);
+                }
+            }
+        );
+
+        return redirect()
+            ->route('workshop.tires.create')
+            ->with(
+                'success',
+                'Entrada individual registrada com sucesso.'
+            );
+    }
 
 
     public function cancelEntry(Request $request, TireEntry $entry)
@@ -1088,33 +1579,177 @@ class WorkshopTireController extends Controller
         }
 
         foreach ($tire->allMeasurements as $measurement) {
+            $isEntryMeasurement =
+                $measurement->measurement_type === 'entry';
+
             $vehicle = $measurement->vehicle;
             $vehicleLabel = $vehicle
                 ? trim(($vehicle->name ?? '') . ($vehicle->plate ? ' · ' . $vehicle->plate : ''))
                 : null;
 
-            $timeline->push([
-                'type' => 'measurement',
-                'title' => $measurement->is_cancelled
-                    ? 'Medicao de sulco cancelada'
-                    : 'Medicao de sulco',
-                'date' => $measurement->measured_at,
-                'sort_key' => $this->tireHistorySortKey($measurement->measured_at, 40, $measurement->id),
-                'details' => [
+            $measurementGrooveCount =
+                in_array(
+                    (int) $tire->tread_grooves_count,
+                    [3, 4],
+                    true
+                )
+                    ? (int) $tire->tread_grooves_count
+                    : null;
+
+            if ($isEntryMeasurement) {
+                $acquisitionConditionLabel = match (
+                    $tire->acquisition_condition
+                ) {
+                    'new' => 'Novo',
+                    'used' => 'Usado',
+                    'retread_acquired' =>
+                        'Recapado adquirido',
+                    default => null,
+                };
+
+                $measurementDetails = [
+                    'Condição de aquisição' =>
+                        $acquisitionConditionLabel,
+                ];
+            } else {
+                $measurementDetails = [
                     'Veículo' => $vehicleLabel,
                     'Posição' => $measurement->position_code,
                     'KM' => $measurement->vehicle_km !== null
-                        ? number_format($measurement->vehicle_km, 0, ',', '.') . ' km'
+                        ? number_format(
+                            $measurement->vehicle_km,
+                            0,
+                            ',',
+                            '.'
+                        ) . ' km'
                         : null,
-                    'Sulco mínimo' => $measurement->minimum_tread !== null
-                        ? number_format((float) $measurement->minimum_tread, 2, ',', '.') . ' mm'
-                        : null,
-                ],
+                ];
+            }
+
+            /*
+             * Leituras detalhadas dos sulcos.
+             *
+             * Convenção:
+             * 3 sulcos:
+             * S1 = externo
+             * S2 = centro
+             * S3 = interno
+             *
+             * 4 sulcos:
+             * S1 = externo
+             * S2 = centro externo
+             * S3 = centro interno
+             * S4 = interno
+             */
+            if ($measurement->outer_tread !== null) {
+                $measurementDetails[
+                    'S1 · Lado externo'
+                ] =
+                    number_format(
+                        (float) $measurement->outer_tread,
+                        2,
+                        ',',
+                        '.'
+                    ) . ' mm';
+            }
+
+            if (
+                $measurement->center_outer_tread !== null
+            ) {
+                $measurementDetails[
+                    $measurementGrooveCount === 4
+                        ? 'S2 · Centro externo'
+                        : 'S2 · Centro'
+                ] =
+                    number_format(
+                        (float)
+                        $measurement->center_outer_tread,
+                        2,
+                        ',',
+                        '.'
+                    ) . ' mm';
+            }
+
+            if (
+                $measurementGrooveCount === 4
+                && $measurement->center_inner_tread
+                    !== null
+            ) {
+                $measurementDetails[
+                    'S3 · Centro interno'
+                ] =
+                    number_format(
+                        (float)
+                        $measurement->center_inner_tread,
+                        2,
+                        ',',
+                        '.'
+                    ) . ' mm';
+            }
+
+            if ($measurement->inner_tread !== null) {
+                $measurementDetails[
+                    $measurementGrooveCount === 4
+                        ? 'S4 · Lado interno'
+                        : 'S3 · Lado interno'
+                ] =
+                    number_format(
+                        (float) $measurement->inner_tread,
+                        2,
+                        ',',
+                        '.'
+                    ) . ' mm';
+            }
+
+            $measurementDetails['Menor sulco'] =
+                $measurement->minimum_tread !== null
+                    ? number_format(
+                        (float) $measurement->minimum_tread,
+                        2,
+                        ',',
+                        '.'
+                    ) . ' mm'
+                    : null;
+
+            $measurementDetails['Média'] =
+                $measurement->average_tread !== null
+                    ? number_format(
+                        (float) $measurement->average_tread,
+                        2,
+                        ',',
+                        '.'
+                    ) . ' mm'
+                    : null;
+
+            $timeline->push([
+                'type' =>
+                    $isEntryMeasurement
+                        ? 'entry_measurement'
+                        : 'measurement',
+
+                'title' =>
+                    $isEntryMeasurement
+                        ? 'Condição de entrada'
+                        : (
+                            $measurement->is_cancelled
+                                ? 'Medição de sulco cancelada'
+                                : 'Medição de sulco'
+                        ),
+                'date' => $measurement->measured_at,
+                'sort_key' => $this->tireHistorySortKey(
+                    $measurement->measured_at,
+                    40,
+                    $measurement->id
+                ),
+                'details' => $measurementDetails,
                 'notes' => $measurement->notes,
                 'record' => $measurement,
-                'is_cancelled' => $measurement->is_cancelled,
-                'cancelled_at' => $measurement->cancelled_at,
-                'cancel_reason' => $measurement->cancel_reason,
+                'is_cancelled' =>
+                    $measurement->is_cancelled,
+                'cancelled_at' =>
+                    $measurement->cancelled_at,
+                'cancel_reason' =>
+                    $measurement->cancel_reason,
             ]);
         }
 
@@ -1291,6 +1926,15 @@ class WorkshopTireController extends Controller
                 ->first();
 
             abort_unless($lockedMeasurement, 403);
+
+            if (
+                $lockedMeasurement->measurement_type === 'entry'
+            ) {
+                throw ValidationException::withMessages([
+                    'reason' =>
+                        'A condição de entrada faz parte do recebimento original do pneu e não pode ser cancelada isoladamente.',
+                ]);
+            }
 
             if ($lockedMeasurement->cancelled_at) {
                 throw ValidationException::withMessages([
@@ -1492,6 +2136,9 @@ class WorkshopTireController extends Controller
 
 
 
+        $hasMeasurementsBeforeUpdate =
+            $tire->measurements()->exists();
+
         $data =
 
             $request->validate([
@@ -1546,6 +2193,12 @@ class WorkshopTireController extends Controller
 
 
 
+                'tread_grooves_count' => [
+                    'required',
+                    'integer',
+                    'in:3,4',
+                ],
+
                 'warning_tread_depth' => [
 
                     'nullable',
@@ -1572,17 +2225,6 @@ class WorkshopTireController extends Controller
 
                 ],
 
-
-
-                'status' => [
-
-                    'required',
-
-                    'string',
-
-                    'in:available,installed,maintenance,discarded',
-
-                ],
 
 
 
@@ -1628,99 +2270,45 @@ class WorkshopTireController extends Controller
 
 
 
-        /*
+        $hasMeasurements =
+            $tire->measurements()->exists();
 
-        |--------------------------------------------------------------------------
+        $hasOperationalHistory =
+            $hasMeasurements
+            || $tire->installations()->exists()
+            || $tire->retreads()->exists();
 
-        | SEGURANÇA OPERACIONAL
-
-        |--------------------------------------------------------------------------
-
-        | Se o pneu estiver instalado, não permitimos mudar manualmente para
-
-        | disponível/manutenção/descarte por aqui. A remoção deve ser feita no
-
-        | controle de pneus do veículo para registrar histórico corretamente.
-
-        */
-
-
-
-        if (
-
-            $tire->status === 'installed'
-
-            &&
-
-            $data['status'] !== 'installed'
-
-        ) {
-
-            return back()
-
-                ->withErrors([
-
-                    'status' =>
-
-                        'Pneu instalado deve ser removido pelo controle de pneus do veículo.',
-
-                ])
-
-                ->withInput();
-
-        }
-
-
-
-        $tire->update([
-
+        $updateData = [
             'brand' =>
-
                 $data['brand'] ?? null,
 
-
-
             'model' =>
-
                 $data['model'] ?? null,
 
-
-
             'size' =>
-
                 $data['size'] ?? null,
 
-
-
-            'initial_tread_depth' =>
-
-                $data['initial_tread_depth'] ?? null,
-
-
-
             'warning_tread_depth' =>
-
                 $data['warning_tread_depth'] ?? null,
 
-
-
             'critical_tread_depth' =>
-
                 $data['critical_tread_depth'] ?? null,
 
-
-
-            'status' =>
-
-                $data['status'],
-
-
-
             'notes' =>
-
                 $data['notes'] ?? null,
+        ];
 
-        ]);
+        if (! $hasOperationalHistory) {
+            $updateData['initial_tread_depth'] =
+                $data['initial_tread_depth'] ?? null;
+        }
+
+        if (! $hasMeasurements) {
+            $updateData['tread_grooves_count'] =
+                $data['tread_grooves_count'];
+        }
+
+        $tire->update($updateData);
 
 
 
